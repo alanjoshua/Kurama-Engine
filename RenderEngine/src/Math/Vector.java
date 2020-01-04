@@ -44,7 +44,7 @@ public class Vector {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return new Vector(res);
 	}
 
@@ -259,15 +259,15 @@ public class Vector {
 		this.data = data;
 		this.numberOfDimensions = data.length;
 	}
-	
+
 	public float getDataElement(int index) {
 		return data[index];
 	}
-	
+
 	public void setDataElement(int index, float val) {
 		data[index] = val;
 	}
-	
+
 	public Vector cross(Vector v) {
 		float[] res = new float[3];
 		res[0] = (this.getDataElement(1) * v.getDataElement(2)) - (this.getDataElement(2) * v.getDataElement(1));
@@ -275,8 +275,8 @@ public class Vector {
 		res[2] = (this.getDataElement(0) * v.getDataElement(1)) - (this.getDataElement(1) * v.getDataElement(0));
 		return new Vector(res);
 	}
-	
-	public static Vector cross(Vector u,Vector v) {
+
+	public static Vector cross(Vector u, Vector v) {
 		float[] res = new float[3];
 		res[0] = (u.getDataElement(1) * v.getDataElement(2)) - (u.getDataElement(2) * v.getDataElement(1));
 		res[1] = -((u.getDataElement(0) * v.getDataElement(2)) - (u.getDataElement(2) * v.getDataElement(0)));
@@ -335,13 +335,13 @@ public class Vector {
 			System.out.println(v.getData()[i]);
 		}
 	}
-	
+
 	public static Matrix addDimensionToVec(Vector[] v, float val) {
 
 		Vector[] resData = new Vector[v.length];
 
 		for (int i = 0; i < v.length; i++) {
-			float[] tempDat = new float[v[i].getNumberOfDimensions()+1];
+			float[] tempDat = new float[v[i].getNumberOfDimensions() + 1];
 			for (int j = 0; j < v[i].getNumberOfDimensions(); j++) {
 				tempDat[j] = v[i].getDataElement(j);
 			}
@@ -350,6 +350,18 @@ public class Vector {
 		}
 
 		return new Matrix(resData);
+	}
+
+	public Vector addDimensionToVec(float val) {
+
+		float[] tempDat = new float[this.getNumberOfDimensions() + 1];
+		
+		for (int j = 0; j < this.getNumberOfDimensions(); j++) {
+			tempDat[j] = this.getDataElement(j);
+		}
+		tempDat[this.getNumberOfDimensions()] = val;
+
+		return new Vector(tempDat);
 	}
 
 }

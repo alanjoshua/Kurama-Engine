@@ -757,5 +757,101 @@ public class Matrix {
 		return new Matrix(data);
 
 	}
+	
+	public Matrix addColumn(Vector v) {
+		Matrix res = null;
+		float[][] dat = new float[this.rows][this.cols + 1];
+		try {
+			if(v.getNumberOfDimensions() == this.getRows()) {
+				for(int i = 0;i < this.getRows();i++) {
+					dat[i][this.getCols()] = v.getDataElement(i); 
+				}
+				for(int i = 0;i < this.getRows();i++) {
+					for(int j = 0;j < this.getCols();j++) {
+						dat[i][j] = this.getData()[i][j];
+					}
+				}
+			}
+			else {
+				throw new IllegalArgumentException("The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		res = new Matrix(dat);
+		return res;
+	}
+	
+	public static Matrix addColumn(Matrix m, Vector v) {
+		Matrix res = null;
+		float[][] dat = new float[m.rows][m.cols + 1];
+		try {
+			if(v.getNumberOfDimensions() == m.getRows()) {
+				for(int i = 0;i < m.getRows();i++) {
+					dat[i][m.getCols()] = v.getDataElement(i); 
+				}
+				for(int i = 0;i < m.getRows();i++) {
+					for(int j = 0;j < m.getCols();j++) {
+						dat[i][j] = m.getData()[i][j];
+					}
+				}
+			}
+			else {
+				throw new IllegalArgumentException("The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		res = new Matrix(dat);
+		return res;
+	}
+	
+	public Matrix addRow(Vector v) {
+		Matrix res = null;
+		float[][] dat = new float[this.rows + 1][this.cols];
+		
+		try {
+			if(v.getNumberOfDimensions() == this.getCols()) {
+				for(int i = 0;i < this.getCols();i++) {
+					dat[this.getRows()][i] = v.getDataElement(i); 
+				}
+				for(int i = 0;i < this.getRows();i++) {
+					for(int j = 0;j < this.getCols();j++) {
+						dat[i][j] = this.getData()[i][j];
+					}
+				}
+			}
+			else {
+				throw new IllegalArgumentException("The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		res = new Matrix(dat);
+		return res;
+	}
+	
+	public static Matrix addRow(Matrix m,Vector v) {
+		Matrix res = null;
+		float[][] dat = new float[m.rows + 1][m.cols];
+		try {
+			if(v.getNumberOfDimensions() == m.getCols()) {
+				for(int i = 0;i < m.getCols();i++) {
+					dat[m.getRows()][i] = v.getDataElement(i); 
+				}
+				for(int i = 0;i < m.getRows();i++) {
+					for(int j = 0;j < m.getCols();j++) {
+						dat[i][j] = m.getData()[i][j];
+					}
+				}
+			}
+			else {
+				throw new IllegalArgumentException("The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
 
 }

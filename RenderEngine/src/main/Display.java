@@ -7,12 +7,16 @@ import java.awt.event.ComponentEvent;
 
 import javax.swing.JFrame;
 
+import inputs.Mouse;
+
 public class Display extends Canvas {
 	
 	private JFrame frame;
 	private Game game;
+	private Mouse mouseInput;
 	
 	public Display(int w, int h,Game game) {
+		mouseInput = new Mouse(game);
 		this.setSize(w, h);
 		this.setBackground(Color.black);
 		frame = new JFrame();
@@ -24,18 +28,17 @@ public class Display extends Canvas {
 		
 		frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                // This is only called when the user releases the mouse button.
-//            	if(getWidth() && getHeight() != null) {
             	try {
             	game.getCamera().setImageWidth(getWidth());
             	game.getCamera().setImageHeight(getHeight());
-                game.getCamera().updateValues();
-            	}catch(Exception ex) {
-            		
-            	}
+                game.getCamera().setShouldUpdateValues(true);
+            	}catch(Exception ex) {}
             }
         });
 		
+		this.addMouseListener(mouseInput);
+		this.addMouseMotionListener(mouseInput);
+		this.addMouseWheelListener(mouseInput);
 	}
 
 	public JFrame getFrame() {

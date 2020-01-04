@@ -42,13 +42,12 @@ public class Game {
 //		};
 //		
 		 camData = new float[][] {
-			{-0.95424f,0.0861242f,-0.28637f,-5.734612f},
-			{0,0.95763f,0.288002f,10.610426f},
-			{0.299041f,0.274823f,-0.913809f,-30.152769f},
-			{0,0,0,1}
+			{-0.95424f,0.0861242f,-0.28637f},
+			{0,0.95763f,0.288002f},
+			{0.299041f,0.274823f,-0.913809f}
 		};
 		
-		cam = new Camera(this,camData,90,0.1f,1000,display.getWidth(),display.getHeight(),Camera.gameModeCamera);
+		cam = new Camera(this,camData,null,90,0.1f,100,display.getWidth(),display.getHeight());
 		
 		List<Vector> rot = new ArrayList<Vector>();
 		rot.add(new Vector(new float[]{1,0}));
@@ -93,7 +92,7 @@ public class Game {
 //		deer.setPos(new Vector(new float[]{(float)display.getWidth()/2.0f,display.getHeight()/1.3f,0}));
 		deer.setScale(new Vector(new float[] {0.01f,0.01f,0.01f}));
 //		deer.setRotation(rot);
-		deer.setTickObj(t);
+//		deer.setTickObj(t);
 		
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[]{(float)display.getWidth()/2.0f,display.getHeight()/1.7f,2}));
@@ -111,7 +110,7 @@ public class Game {
 		ship.setRotation(rot);
 		
 		Model teapot = ModelBuilder.buildModelFromFile("teapot.obj");
-//		teapot.setPos(new Vector(new float[] {0,0,-10}));
+//		teapot.setPos(new Vector(new float[] {0,0,10}));
 //		teapot.setScale(new Vector(new float[] {0.1f,0.1f,0.1f}));
 		teapot.setRotation(rot);
 		teapot.setTickObj(t);
@@ -126,10 +125,8 @@ public class Game {
 //		models.add(mill);
 		
 		RenderingEngine.renderingMode = RenderingEngine.PERSPECTIVE;
+		cam.updateValues();
 		cam.lookAtModel(teapot);
-		
-		render();
-		render();
 	}
 	
 	public void run() {
