@@ -1,5 +1,7 @@
 package inputs;
 
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
@@ -8,11 +10,11 @@ import javax.swing.event.MouseInputListener;
 
 import main.Game;
 
-public class Mouse implements MouseInputListener, MouseWheelListener {
+public class Inputs implements MouseInputListener, MouseWheelListener, KeyListener {
 	
 	Game game;
 	
-	public Mouse(Game game) {
+	public Inputs(Game game) {
 		this.game = game;
 	}
 
@@ -57,6 +59,23 @@ public class Mouse implements MouseInputListener, MouseWheelListener {
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		game.getCamera().mouseScrollInput(e);
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		
 	}
 	
 	

@@ -1,5 +1,6 @@
 package rendering;
 
+import java.awt.Canvas;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 
@@ -45,7 +46,7 @@ public class Camera {
 	private Matrix orthographicProjectionMatrix = null;
 	
 	private Vector pos = null;
-	private Vector dir;
+	private Vector pointingDir;
 	private float[][] data;
 
 	private final float inchToMm = 25.4f;
@@ -53,7 +54,7 @@ public class Camera {
 	private boolean shouldUpdateValues = false;
 	private boolean shouldUpdateCameraMatrix = false;
 	
-	private int mouseX = 0, mouseY = 0;
+	private Vector mouse = null;
 
 //	public Camera(Game game, float[][] data, float focalLength, float filmApertureWidth, float filmApertureHeight,
 //			float nearClippingPlane, float farClippingPlane, int imageWidht, int imageHeight, int cameraMode) {
@@ -167,27 +168,22 @@ public class Camera {
 		
 		Matrix temp = new Matrix(this.getData());
 		temp = temp.addColumn(getPos());
+		getPos().display();
 		temp = temp.addRow(new Vector(new float[] {0,0,0,1}));
-//		temp.display();
+
 		return temp;
 	}
 	
 	public void mouseScrollInput(MouseWheelEvent e) {
 		float scrollDir = (float) e.getPreciseWheelRotation();
 		
-		float[] newPos = new float[3];
-		newPos[0] = pos.getDataElement(0);
-		newPos[1] = pos.getDataElement(1);
-		
 		Vector v = null;
 		
-		if(scrollDir > 0) {
-			newPos[2] = this.getPos().getDataElement(2) + 1;
-			v = pos.sub(dir.scalarMul(0.1f));
+		if(scrollDir < 0) {    
+			v = pos.sub(pointingDir.scalarMul(1f));
 		}
 		else {
-			newPos[2] = this.getPos().getDataElement(2) - 1;
-			v = pos.add(dir.scalarMul(0.1f));
+			v = pos.add(pointingDir.scalarMul(1f));
 		}
 		
 		this.setPos(v);
@@ -199,8 +195,28 @@ public class Camera {
 	}
 	
 	public void mouseMoveInput(MouseEvent e) {
-		this.mouseX = e.getX();
-		this.mouseY = e.getY();
+		this.mouse = new Vector(new float[]{e.getX(), (imageHeight - e.getY())});
+		
+		float[] canvasCoords = new float[3];
+		canvasCoords[0] = (((mouse.getDataElement(0) / imageWidth) * 2) - 1)  * right;
+		canvasCoords[1] = (((mouse.getDataElement(1) / imageHeight) * 2) - 1) * top;
+		canvasCoords[2]  = this.nearClippingPlane;
+		
+		Vector canvasCoordsVec = new Vector(canvasCoords);
+		this.setDir(canvasCoordsVec.normalise());
+		
+		Vector[] axes = this.getAxesFromforwardVec(this.pointingDir.scalarMul(-1f));
+		
+		float[][] data = new float[3][3];
+		
+		for(int i = 0 ;i < 3;i++) {
+			for(int j = 0;j < 3;j++) {
+				data[i][j] = axes[i].getDataElement(j);
+			}
+		}
+
+		this.data = data;
+		this.setShouldUpdateCameraMatrix(true);
 	}
 
 	public void lookAtModel(Model m) {
@@ -238,11 +254,11 @@ public class Camera {
 
 		Vector dir = from.sub(to);
 		Vector z = dir.normalise();
-		this.setDir(dir);
-		Vector temp = new Vector(new float[] { 0, 1, 0 });
-		Vector x = temp.normalise().cross(z);
-		Vector y = z.cross(x);
-
+		Vector[] axes = this.getAxesFromforwardVec(z);
+		Vector x = axes[0];
+		Vector y = axes[1];
+		this.setDir(dir.scalarMul(-1));
+		
 		float[][] res = new float[4][4];
 
 		res[0][0] = x.getDataElement(0);
@@ -267,6 +283,21 @@ public class Camera {
 		res[3][3] = 1;
 
 		return new Matrix(res);
+	}
+	
+	public Vector[] getAxesFromforwardVec(Vector v) {
+		Vector z = v.normalise();
+		Vector temp = new Vector(new float[] { 0, 1, 0 });
+		temp = temp.normalise();
+		Vector x = temp.cross(z);
+		Vector y = z.cross(x);
+		
+		Vector[] res = new Vector[3];
+		res[0] = x;
+		res[1] = y;
+		res[2] = z;
+		
+		return res;
 	}
 
 	public Vector[] getWorldBoundingBox() {
@@ -483,20 +514,12 @@ public class Camera {
 		this.data = data;
 	}
 
-	public int getMouseX() {
-		return mouseX;
+	public Vector getMouse() {
+		return mouse;
 	}
 
-	public void setMouseX(int mouseX) {
-		this.mouseX = mouseX;
-	}
-
-	public int getMouseY() {
-		return mouseY;
-	}
-
-	public void setMouseY(int mouseY) {
-		this.mouseY = mouseY;
+	public void setMouse(Vector mouse) {
+		this.mouse = mouse;
 	}
 
 	public float getNearClippingPlane() {
@@ -528,11 +551,11 @@ public class Camera {
 	}
 
 	public Vector getDir() {
-		return dir;
+		return pointingDir;
 	}
 
 	public void setDir(Vector dir) {
-		this.dir = dir;
+		this.pointingDir = dir;
 	}
 
 	public Matrix getCamMatrix() {

@@ -47,6 +47,12 @@ public class Game {
 			{0.299041f,0.274823f,-0.913809f}
 		};
 		
+		camData = new float[][] {
+			{-1,0,0},
+			{0,1,0},
+			{0,0,-1}
+		};
+		
 		cam = new Camera(this,camData,null,90,0.1f,100,display.getWidth(),display.getHeight());
 		
 		List<Vector> rot = new ArrayList<Vector>();

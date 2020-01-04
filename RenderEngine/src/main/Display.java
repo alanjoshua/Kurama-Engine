@@ -7,16 +7,16 @@ import java.awt.event.ComponentEvent;
 
 import javax.swing.JFrame;
 
-import inputs.Mouse;
+import inputs.Inputs;
 
 public class Display extends Canvas {
 	
 	private JFrame frame;
 	private Game game;
-	private Mouse mouseInput;
+	private Inputs input;
 	
 	public Display(int w, int h,Game game) {
-		mouseInput = new Mouse(game);
+		input = new Inputs(game);
 		this.setSize(w, h);
 		this.setBackground(Color.black);
 		frame = new JFrame();
@@ -36,9 +36,10 @@ public class Display extends Canvas {
             }
         });
 		
-		this.addMouseListener(mouseInput);
-		this.addMouseMotionListener(mouseInput);
-		this.addMouseWheelListener(mouseInput);
+		this.addMouseListener(input);
+		this.addMouseMotionListener(input);
+		this.addMouseWheelListener(input);
+		this.addKeyListener(input);
 	}
 
 	public JFrame getFrame() {

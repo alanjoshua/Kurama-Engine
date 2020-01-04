@@ -566,27 +566,40 @@ public class Matrix {
 	}
 
 	public Vector toVector() {
-		if (getCols() == 1) {
-			return new Vector(this.transpose().getData()[0]);
-		} else if (getRows() == 1) {
-			return new Vector(getData()[0]);
-		} else {
-			System.err.println("Matrix is not a row or column vector");
-			System.out.println("Returning row Vector of size 1 with 1");
-			return new Vector(new float[] { 1f });
+		
+		float[] data = null;
+		
+		try {
+			if (this.getCols() == 1) {
+				data = this.transpose().getData()[0];
+			} else if (this.getRows() == 1) {
+				data = this.getData()[0];
+			} else {
+				throw new IllegalArgumentException("Matrix is not a row or column vector");
+			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
 		}
+		
+		return new Vector(data);
 	}
 
 	public static Vector toVector(Matrix a) {
-		if (a.getCols() == 1) {
-			return new Vector(a.transpose().getData()[0]);
-		} else if (a.getRows() == 1) {
-			return new Vector(a.getData()[0]);
-		} else {
-			System.err.println("Matrix is not a row or column vector");
-			System.out.println("Returning row Vector of size 1 with 1");
-			return new Vector(new float[] { 1f });
+		float[] data = null;
+		
+		try {
+			if (a.getCols() == 1) {
+				data = a.transpose().getData()[0];
+			} else if (a.getRows() == 1) {
+				data = a.getData()[0];
+			} else {
+				throw new IllegalArgumentException("Matrix is not a row or column vector");
+			}
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
 		}
+		
+		return new Vector(data);
 	}
 
 	public void display() {
@@ -611,7 +624,6 @@ public class Matrix {
 		return new Matrix(this.data);
 	}
 
-	
 	public Matrix getInverse() {
 		float[][] data = null;
 
@@ -619,10 +631,10 @@ public class Matrix {
 			System.err.println("Only the inverse of a square matrix could be computed");
 			return null;
 		}
-		
+
 		float det = Matrix.getDeterminant(this);
-		
-		if(det == 0) {
+
+		if (det == 0) {
 			System.out.println("Determinant is zero. Returning null");
 			return null;
 		}
@@ -634,7 +646,7 @@ public class Matrix {
 			data[1][1] = this.getData()[0][0];
 			data[1][0] = this.getData()[1][0] * -1;
 			data[0][1] = this.getData()[0][1] * -1;
-									
+
 		} else {
 			for (int i = 0; i < this.rows; i++) {
 				for (int j = 0; j < this.cols; j++) {
@@ -757,98 +769,98 @@ public class Matrix {
 		return new Matrix(data);
 
 	}
-	
+
 	public Matrix addColumn(Vector v) {
 		Matrix res = null;
 		float[][] dat = new float[this.rows][this.cols + 1];
 		try {
-			if(v.getNumberOfDimensions() == this.getRows()) {
-				for(int i = 0;i < this.getRows();i++) {
-					dat[i][this.getCols()] = v.getDataElement(i); 
+			if (v.getNumberOfDimensions() == this.getRows()) {
+				for (int i = 0; i < this.getRows(); i++) {
+					dat[i][this.getCols()] = v.getDataElement(i);
 				}
-				for(int i = 0;i < this.getRows();i++) {
-					for(int j = 0;j < this.getCols();j++) {
+				for (int i = 0; i < this.getRows(); i++) {
+					for (int j = 0; j < this.getCols(); j++) {
 						dat[i][j] = this.getData()[i][j];
 					}
 				}
+			} else {
+				throw new IllegalArgumentException(
+						"The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
 			}
-			else {
-				throw new IllegalArgumentException("The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
-			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		res = new Matrix(dat);
 		return res;
 	}
-	
+
 	public static Matrix addColumn(Matrix m, Vector v) {
 		Matrix res = null;
 		float[][] dat = new float[m.rows][m.cols + 1];
 		try {
-			if(v.getNumberOfDimensions() == m.getRows()) {
-				for(int i = 0;i < m.getRows();i++) {
-					dat[i][m.getCols()] = v.getDataElement(i); 
+			if (v.getNumberOfDimensions() == m.getRows()) {
+				for (int i = 0; i < m.getRows(); i++) {
+					dat[i][m.getCols()] = v.getDataElement(i);
 				}
-				for(int i = 0;i < m.getRows();i++) {
-					for(int j = 0;j < m.getCols();j++) {
+				for (int i = 0; i < m.getRows(); i++) {
+					for (int j = 0; j < m.getCols(); j++) {
 						dat[i][j] = m.getData()[i][j];
 					}
 				}
+			} else {
+				throw new IllegalArgumentException(
+						"The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
 			}
-			else {
-				throw new IllegalArgumentException("The number of rows of the vector column being added should have the same number of rows as the matrix it is being added to");
-			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		res = new Matrix(dat);
 		return res;
 	}
-	
+
 	public Matrix addRow(Vector v) {
 		Matrix res = null;
 		float[][] dat = new float[this.rows + 1][this.cols];
-		
+
 		try {
-			if(v.getNumberOfDimensions() == this.getCols()) {
-				for(int i = 0;i < this.getCols();i++) {
-					dat[this.getRows()][i] = v.getDataElement(i); 
+			if (v.getNumberOfDimensions() == this.getCols()) {
+				for (int i = 0; i < this.getCols(); i++) {
+					dat[this.getRows()][i] = v.getDataElement(i);
 				}
-				for(int i = 0;i < this.getRows();i++) {
-					for(int j = 0;j < this.getCols();j++) {
+				for (int i = 0; i < this.getRows(); i++) {
+					for (int j = 0; j < this.getCols(); j++) {
 						dat[i][j] = this.getData()[i][j];
 					}
 				}
+			} else {
+				throw new IllegalArgumentException(
+						"The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
 			}
-			else {
-				throw new IllegalArgumentException("The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
-			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		res = new Matrix(dat);
 		return res;
 	}
-	
-	public static Matrix addRow(Matrix m,Vector v) {
+
+	public static Matrix addRow(Matrix m, Vector v) {
 		Matrix res = null;
 		float[][] dat = new float[m.rows + 1][m.cols];
 		try {
-			if(v.getNumberOfDimensions() == m.getCols()) {
-				for(int i = 0;i < m.getCols();i++) {
-					dat[m.getRows()][i] = v.getDataElement(i); 
+			if (v.getNumberOfDimensions() == m.getCols()) {
+				for (int i = 0; i < m.getCols(); i++) {
+					dat[m.getRows()][i] = v.getDataElement(i);
 				}
-				for(int i = 0;i < m.getRows();i++) {
-					for(int j = 0;j < m.getCols();j++) {
+				for (int i = 0; i < m.getRows(); i++) {
+					for (int j = 0; j < m.getCols(); j++) {
 						dat[i][j] = m.getData()[i][j];
 					}
 				}
+			} else {
+				throw new IllegalArgumentException(
+						"The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
 			}
-			else {
-				throw new IllegalArgumentException("The number of columns of the vector row being added should have the same number of columns as the matrix it is being added to");
-			}
-		}catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return res;
