@@ -29,6 +29,14 @@ public class Vector {
 			data[i] = val;
 		}
 	}
+	
+	public Vector(Vector v) {
+		this.numberOfDimensions = v.getNumberOfDimensions();
+		data = new float[numberOfDimensions];
+		for (int i = 0; i < numberOfDimensions; i++) {
+			data[i] = v.getDataElement(i);
+		}
+	}
 
 	public Vector add(Vector v) {
 		float[] res = null;
@@ -46,6 +54,14 @@ public class Vector {
 		}
 
 		return new Vector(res);
+	}
+	
+	public float getAngleBetweenVectors(Vector x) {
+		Vector v = this.normalise();
+		Vector w = x.normalise();
+		
+		float angle = v.dot(w);
+		return (float) Math.toDegrees(angle);
 	}
 
 	public static Vector add(Vector u, Vector v) {
@@ -68,12 +84,12 @@ public class Vector {
 
 	}
 
-	public double getLength() {
-		double sum = 0;
+	public float getNorm() {
+		float sum = 0;
 		for (float f : data) {
 			sum += (f * f);
 		}
-		double l = Math.sqrt(sum);
+		float l = (float) Math.sqrt(sum);
 		return l;
 	}
 
@@ -87,11 +103,21 @@ public class Vector {
 	}
 
 	public Vector normalise() {
-		return this.scalarMul((float) (1.0 / this.getLength()));
+		if(this.getNorm() != 0) {
+			return this.scalarMul((float) (1.0 / this.getNorm()));
+		}
+		else {
+			return this;
+		}
 	}
 
 	public static Vector normalise(Vector v) {
-		return v.scalarMul((float) (1.0 / v.getLength()));
+		if(v.getNorm() != 0) {
+			return v.scalarMul((float) (1.0 / v.getNorm()));
+		}
+		else {
+			return v;
+		}
 	}
 
 	public Vector sub(Vector v) {
@@ -362,6 +388,28 @@ public class Vector {
 		tempDat[this.getNumberOfDimensions()] = val;
 
 		return new Vector(tempDat);
+	}
+
+	public Vector getCopy() {
+		float[] res = new float[this.getNumberOfDimensions()];
+		
+		for(int i = 0;i < this.getNumberOfDimensions();i++) {
+			res[i] = this.getDataElement(i);
+		}
+		return new Vector(res);
+	}
+	
+	public String toString() {
+		String res = "";
+		res+="[";
+		for (int i = 0; i < getNumberOfDimensions(); i++) {
+			res+=(getData()[i]);
+			if (i + 1 != getNumberOfDimensions()) {
+				res+="    ";
+			}
+		}
+		res+="]";
+		return res;
 	}
 
 }

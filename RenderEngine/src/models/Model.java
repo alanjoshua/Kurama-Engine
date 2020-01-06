@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Math.Matrix;
+import Math.Quaternion;
 import Math.Vector;
 
 public class Model {
@@ -21,6 +22,7 @@ public class Model {
 	private Tick tickObj;
 	private Vector min;
 	private Vector max;
+	private Quaternion quaternion;
 
 	public Model(Vector[] vertices, Vector[] connections) {
 		this.connections = connections;
@@ -29,6 +31,7 @@ public class Model {
 		scale = new Vector(new float[] {1,1,1});
 		pos = new Vector(3,0);
 		tickObj = null;
+		quaternion = new Quaternion(new Vector(new float[] {0,1,0}),0);
 		calculateMinMax();
 	}
 
@@ -41,48 +44,52 @@ public class Model {
 	public Matrix getObjectToWorldMatrix() {
 
 		Matrix rotScalMatrix = null;
-		Matrix rotationMatrix = Matrix.getIdentityMatrix(3);
-
-		for (Vector v : this.getRotation()) {
-
-			switch ((int) v.getDataElement(0)) {
-			case 0:
-				rotationMatrix = Matrix.getRotateX(v.getDataElement(1)).matMul(rotationMatrix);
-				break;
-			case 1:
-				rotationMatrix = Matrix.getRotateY(v.getDataElement(1)).matMul(rotationMatrix);
-				break;
-			case 2:
-				rotationMatrix = Matrix.getRotateZ(v.getDataElement(1)).matMul(rotationMatrix);
-				break;
-			default:
-				System.err.println("Model rotation argument 1 should be be integers 0,1 or 2");
-				break;
-			}
-		}
-
+//		Matrix rotationMatrix = Matrix.getIdentityMatrix(3);
+//
+//		for (Vector v : this.getRotation()) {
+//
+//			switch ((int) v.getDataElement(0)) {
+//			case 0:
+//				rotationMatrix = Matrix.getRotateX(v.getDataElement(1)).matMul(rotationMatrix);
+//				break;
+//			case 1:
+//				rotationMatrix = Matrix.getRotateY(v.getDataElement(1)).matMul(rotationMatrix);
+//				break;
+//			case 2:
+//				rotationMatrix = Matrix.getRotateZ(v.getDataElement(1)).matMul(rotationMatrix);
+//				break;
+//			default:
+//				System.err.println("Model rotation argument 1 should be be integers 0,1 or 2");
+//				break;
+//			}
+//		}
+		
+		Matrix rotationMatrix = this.quaternion.getRotationMatrix();
 		Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
 		rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-
-		float[][] data = new float[4][4];
-		for (int r = 0; r < 3; r++) {
-			for (int c = 0; c < 3; c++) {
-				data[r][c] = rotScalMatrix.getData()[r][c];
-			}
-		}
-
-		for (int r = 0; r < 4; r++) {
-			if (r != 3) {
-				data[r][3] = this.getPos().getDataElement(r);
-			} else {
-				data[r][3] = 1;
-			}
-		}
-
-		for (int c = 0; c < 3; c++) {
-			data[3][c] = 0;
-		}
-		Matrix transformationMatrix = new Matrix(data);
+//
+//		float[][] data = new float[4][4];
+//		for (int r = 0; r < 3; r++) {
+//			for (int c = 0; c < 3; c++) {
+//				data[r][c] = rotScalMatrix.getData()[r][c];
+//			}
+//		}
+//		
+//		for (int r = 0; r < 4; r++) {
+//			if (r != 3) {
+//				data[r][3] = this.getPos().getDataElement(r);
+//			} else {
+//				data[r][3] = 1;
+//			}
+//		}
+//
+//		for (int c = 0; c < 3; c++) {
+//			data[3][c] = 0;
+//		}
+//		Matrix transformationMatrix = new Matrix(data);
+		
+		Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
+		transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0,0,0,1}));
 		return transformationMatrix;
 	}
 	
@@ -176,6 +183,14 @@ public class Model {
 		
 		this.rotation = rotation;
 		
+	}
+
+	public Quaternion getQuaternion() {
+		return quaternion;
+	}
+
+	public void setQuaternion(Quaternion quaternion) {
+		this.quaternion = quaternion;
 	}
 
 	public Vector[] getVertices() {

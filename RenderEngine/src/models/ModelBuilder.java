@@ -109,9 +109,51 @@ public class ModelBuilder {
 //					v.setDataElement(1, v.getDataElement(1) * -1);
 //				}
 
+//				
+//				for (int i = 0; i < vertArr.length; i++) {
+//					vertArr[i] = vertex.get(i);
+//				}
+//				
+				float[] dataMin = new float[3];
+				dataMin[0] = Float.POSITIVE_INFINITY;
+				dataMin[1] = Float.POSITIVE_INFINITY;
+				dataMin[2] = Float.POSITIVE_INFINITY;
+				
+				float[] dataMax = new float[3];
+				dataMax[0] = Float.NEGATIVE_INFINITY;
+				dataMax[1] = Float.NEGATIVE_INFINITY;
+				dataMax[2] = Float.NEGATIVE_INFINITY;
+				
+				for(Vector v : vertex) {
+					if(v.getDataElement(0) < dataMin[0]) {
+						dataMin[0] = v.getDataElement(0);
+					}
+					if(v.getDataElement(1) < dataMin[1]) {
+						dataMin[1] = v.getDataElement(1);
+					}
+					if(v.getDataElement(2) < dataMin[2]) {
+						dataMin[2] = v.getDataElement(2);
+					}
+					
+					if(v.getDataElement(0) > dataMax[0]) {
+						dataMax[0] = v.getDataElement(0);
+					}
+					if(v.getDataElement(1) > dataMax[1]) {
+						dataMax[1] = v.getDataElement(1);
+					}
+					if(v.getDataElement(2) > dataMax[2]) {
+						dataMax[2] = v.getDataElement(2);
+					}
+				}
+				
+				Vector min = new Vector(dataMin);
+				Vector max = new Vector(dataMax);
+				
+				Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
+				
 				Vector[] vertArr = new Vector[vertex.size()];
 				for (int i = 0; i < vertArr.length; i++) {
-					vertArr[i] = vertex.get(i);
+					vertArr[i] = vertex.get(i).sub(change);
 				}
 
 				Vector[] connArr = new Vector[connections.size()];

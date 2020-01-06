@@ -1,18 +1,14 @@
 package rendering;
 
-import java.awt.Canvas;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 
 import Math.Matrix;
+import Math.Quaternion;
 import Math.Vector;
 import main.Game;
 import models.Model;
 
 public class Camera {
-
-	private Matrix camMatrix;
-	private Matrix camMatrixInverse;
 
 	private Game game;
 
@@ -46,15 +42,12 @@ public class Camera {
 	private Matrix orthographicProjectionMatrix = null;
 	
 	private Vector pos = null;
-	private Vector pointingDir;
-	private float[][] data;
 
 	private final float inchToMm = 25.4f;
 	
 	private boolean shouldUpdateValues = false;
-	private boolean shouldUpdateCameraMatrix = false;
 	
-	private Vector mouse = null;
+	private Quaternion quaternion;
 
 //	public Camera(Game game, float[][] data, float focalLength, float filmApertureWidth, float filmApertureHeight,
 //			float nearClippingPlane, float farClippingPlane, int imageWidht, int imageHeight, int cameraMode) {
@@ -76,7 +69,7 @@ public class Camera {
 //		updateValues();
 //	}
 
-	public Camera(Game game, float[][] data, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
+	public Camera(Game game, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
 			int imageWidht, int imageHeight) {
 		this.game = game;
 		this.filmApertureWidth = 0;
@@ -87,34 +80,60 @@ public class Camera {
 		this.imageWidth = imageWidht;
 		this.imageHeight = imageHeight;
 		this.fovX = fovX;
-		this.data = data;
 		this.pos = pos;
 		canvasWidth = 0;
 		canvasHeight = 0;
+		
+//		this.forward = forward;
+//		this.up = up;
+		this.quaternion = quaternion;
+		
+//		if(forward == null) {
+//			this.forward = new Quaternion(new Vector(new float[] {0,0,1}));
+//		}
+//		
+//		if(up == null) {
+//			this.up = new Quaternion(new Vector(new float[] {0,1,0}));
+//		}
+		
+		if(quaternion == null) {
+//			this.quaternion = new Quaternion(new Vector(new float[] {1,0,0}),0);
+			this.setQuaternion(new Quaternion(new Vector(new float[] {0, 0, 0}),0));
+		}
 		
 		if(pos == null) {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 		
-		this.setCamMatrix(this.makeCameraMatrix());
 		updateValues();
 	}
 
 	public void tick() {
 		
-		if(shouldUpdateCameraMatrix) {
-			this.setCamMatrix(this.makeCameraMatrix());
-			this.setShouldUpdateCameraMatrix(false);
+//		if(shouldUpdateCameraMatrix) {
+//			this.setCamToWorld(this.makeCameraMatrix());
+//			float[] temp = new float[3];
+//			for(int i = 0;i < 3;i++) {
+//				temp[i] = this.getData()[i][2];
+//			}
+//			this.setDirection(new Vector(temp));
+//			this.setShouldUpdateCameraMatrix(false);
 			
-			if(RenderingEngine.renderingMode == RenderingEngine.ORTHO) {
-				this.setShouldUpdateValues(true);
-			}
-		}
+//			if(RenderingEngine.renderingMode == RenderingEngine.ORTHO) {
+//				this.setShouldUpdateValues(true);
+//			}
+//		}
 		
 		if(shouldUpdateValues) {
 			updateValues();
 			this.setShouldUpdateValues(false);
 		}
+	}
+	
+	public void rotate(Quaternion rotation) {
+		this.quaternion = rotation.multiply(this.quaternion);
+//		this.forward = rotation.multiply(forward);
+//		this.up = rotation.multiply(up);
 	}
 
 	public void updateValues() {
@@ -144,8 +163,8 @@ public class Camera {
 			else if(RenderingEngine.renderingMode == RenderingEngine.ORTHO) {
 				
 				Vector[] bounds = getWorldBoundingBox();
-				Vector minCam = (camMatrixInverse.matMul(bounds[0].addDimensionToVec(1))).toVector();
-				Vector maxCam = (camMatrixInverse.matMul(bounds[1].addDimensionToVec(1))).toVector();
+				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
+				Vector maxCam = (getWorldToCam().matMul(bounds[1].addDimensionToVec(1))).toVector();
 //				maxCam.display();
 				float maxX = Math.max(Math.abs(minCam.getDataElement(0)), Math.abs(maxCam.getDataElement(0)));
 				float maxY = Math.max(Math.abs(minCam.getDataElement(1)), Math.abs(maxCam.getDataElement(1)));
@@ -164,71 +183,60 @@ public class Camera {
 		}
 	}
 	
-	public Matrix makeCameraMatrix() {
-		
-		Matrix temp = new Matrix(this.getData());
-		temp = temp.addColumn(getPos());
-		getPos().display();
-		temp = temp.addRow(new Vector(new float[] {0,0,0,1}));
-
-		return temp;
-	}
-	
-	public void mouseScrollInput(MouseWheelEvent e) {
-		float scrollDir = (float) e.getPreciseWheelRotation();
-		
-		Vector v = null;
-		
-		if(scrollDir < 0) {    
-			v = pos.sub(pointingDir.scalarMul(1f));
-		}
-		else {
-			v = pos.add(pointingDir.scalarMul(1f));
-		}
-		
-		this.setPos(v);
-		this.setShouldUpdateCameraMatrix(true);
-	}
-	
-	public void mouseDragInput(MouseEvent e) {
-		
-	}
-	
-	public void mouseMoveInput(MouseEvent e) {
-		this.mouse = new Vector(new float[]{e.getX(), (imageHeight - e.getY())});
-		
-		float[] canvasCoords = new float[3];
-		canvasCoords[0] = (((mouse.getDataElement(0) / imageWidth) * 2) - 1)  * right;
-		canvasCoords[1] = (((mouse.getDataElement(1) / imageHeight) * 2) - 1) * top;
-		canvasCoords[2]  = this.nearClippingPlane;
-		
-		Vector canvasCoordsVec = new Vector(canvasCoords);
-		this.setDir(canvasCoordsVec.normalise());
-		
-		Vector[] axes = this.getAxesFromforwardVec(this.pointingDir.scalarMul(-1f));
-		
-		float[][] data = new float[3][3];
-		
-		for(int i = 0 ;i < 3;i++) {
-			for(int j = 0;j < 3;j++) {
-				data[i][j] = axes[i].getDataElement(j);
-			}
-		}
-
-		this.data = data;
-		this.setShouldUpdateCameraMatrix(true);
-	}
+//	public void mouseScrollInput(MouseWheelEvent e) {
+//		float scrollDir = (float) e.getPreciseWheelRotation();
+//		
+//		Vector v = null;
+//		
+//		if(scrollDir < 0) {    
+//			v = pos.sub(pointingDir.scalarMul(1f));
+//		}
+//		else {
+//			v = pos.add(pointingDir.scalarMul(1f));
+//		}
+//		
+//		this.setPos(v);
+//		this.setShouldUpdateCameraMatrix(true);
+//	}
+//	
+//	public void mouseMoveInput() {
+//		this.mouse = game.getInput().getPosition();
+//		
+//		float[] canvasCoords = new float[3];
+//		canvasCoords[0] = (((mouse.getDataElement(0) / imageWidth) * 2) - 1)  * right;
+//		canvasCoords[1] = (((mouse.getDataElement(1) / imageHeight) * 2) - 1) * top;
+//		canvasCoords[2]  = this.nearClippingPlane;
+//		
+//		Vector canvasCoordsVec = new Vector(canvasCoords);
+//		this.setDirection(canvasCoordsVec.normalise());
+//		
+//		Vector[] axes = this.getAxesFromforwardVec(this.pointingDir.scalarMul(-1f));
+//		
+//		float[][] data = new float[3][3];
+//		
+//		for(int i = 0 ;i < 3;i++) {
+//			for(int j = 0;j < 3;j++) {
+//				data[i][j] = axes[i].getDataElement(j);
+//			}
+//		}
+//
+//		this.data = data;
+//		this.setShouldUpdateCameraMatrix(true);
+//	}
 
 	public void lookAtModel(Model m) {
+		
 		Vector min = ((m.getMin().mul(m.getScale())).add(m.getPos()));
 		Vector max = (m.getMax().mul(m.getScale()).add(m.getPos()));
 		Vector diff = max.sub(min);
+		
+//		min.display();
 		
 		float[] midFrontData = new float[3];
 		midFrontData[0] = min.getDataElement(0) + diff.getDataElement(0) / 2;
 		midFrontData[1] = min.getDataElement(1) + diff.getDataElement(1) / 2;
 		midFrontData[2] = min.getDataElement(2);
-		Vector midFront = new Vector(midFrontData);
+		Vector to = new Vector(midFrontData);
 
 		float[] fromData = new float[3];
 		float z = 0;
@@ -240,57 +248,73 @@ public class Camera {
 		}
 
 		fromData[0] = midFrontData[0];
-		fromData[1] = midFrontData[1] + 5;
-		fromData[2] = min.getDataElement(2) - z;
+		fromData[1] = midFrontData[1];
+		fromData[2] = (max.getDataElement(2) + z);
 		Vector from = new Vector(fromData);
-		Matrix mat = lookAtPoint(from, midFront);
+		this.setPos(from);
 		
-		this.pos = from;
-		this.data = Matrix.getSmallerMatrix(mat, 3, 3).getData();
-		this.setShouldUpdateCameraMatrix(true);
+		Vector temp = from.sub(to);
+
+//		Quaternion localRot = Quaternion.eulerToQuaternion(temp.scalarMul(1));
+//		this.setQuaternion(this.getQuaternion().multiply(localRot));
 	}
 
-	public Matrix lookAtPoint(Vector from, Vector to) {
+	public void lookAtPoint(Vector from, Vector to) {
 
-		Vector dir = from.sub(to);
-		Vector z = dir.normalise();
-		Vector[] axes = this.getAxesFromforwardVec(z);
-		Vector x = axes[0];
-		Vector y = axes[1];
-		this.setDir(dir.scalarMul(-1));
+//		Vector dir = from.sub(to);
+//		Vector z = dir.normalise();
+//		Vector[] axes = this.getAxesFromforwardVec(z);
+//		Vector x = axes[0];
+//		Vector y = axes[1];
 		
-		float[][] res = new float[4][4];
-
-		res[0][0] = x.getDataElement(0);
-		res[1][0] = x.getDataElement(1);
-		res[2][0] = x.getDataElement(2);
-
-		res[0][1] = y.getDataElement(0);
-		res[1][1] = y.getDataElement(1);
-		res[2][1] = y.getDataElement(2);
-
-		res[0][2] = z.getDataElement(0);
-		res[1][2] = z.getDataElement(1);
-		res[2][2] = z.getDataElement(2);
-
-		res[0][3] = from.getDataElement(0);
-		res[1][3] = from.getDataElement(1);
-		res[2][3] = from.getDataElement(2);
-
-		res[3][0] = 0;
-		res[3][1] = 0;
-		res[3][2] = 0;
-		res[3][3] = 1;
-
-		return new Matrix(res);
+		
+		
+//		float[][] res = new float[4][4];
+//
+//		res[0][0] = x.getDataElement(0);
+//		res[1][0] = x.getDataElement(1);
+//		res[2][0] = x.getDataElement(2);
+//
+//		res[0][1] = y.getDataElement(0);
+//		res[1][1] = y.getDataElement(1);
+//		res[2][1] = y.getDataElement(2);
+//
+//		res[0][2] = z.getDataElement(0);
+//		res[1][2] = z.getDataElement(1);
+//		res[2][2] = z.getDataElement(2);
+//
+//		res[0][3] = from.getDataElement(0);
+//		res[1][3] = from.getDataElement(1);
+//		res[2][3] = from.getDataElement(2);
+//
+//		res[3][0] = 0;
+//		res[3][1] = 0;
+//		res[3][2] = 0;
+//		res[3][3] = 1;
+//
+//		return new Matrix(res);
 	}
 	
 	public Vector[] getAxesFromforwardVec(Vector v) {
-		Vector z = v.normalise();
+		
 		Vector temp = new Vector(new float[] { 0, 1, 0 });
+		Vector x = null;
+		Vector y = null;
+		Vector z = null;
+		
+		if(temp.sub(v).getNorm() != 0) {
+		z = v.normalise();
 		temp = temp.normalise();
-		Vector x = temp.cross(z);
-		Vector y = z.cross(x);
+		x = temp.cross(z);
+		y = z.cross(x);
+		}
+		else {
+			z = temp;
+			x = new Vector(new float[] {-1,0,0});
+			y = new Vector(new float[] {0,0,-1});
+		}
+		
+		System.out.println(y.dot(z));
 		
 		Vector[] res = new Vector[3];
 		res[0] = x;
@@ -373,6 +397,36 @@ public class Camera {
 				{ 0, 0, 0, 1 } };
 		this.orthographicProjectionMatrix = new Matrix(data);
 	}
+	
+//	public void renderAxes(Graphics2D g) {
+//		Matrix dat = new Matrix(data);
+//		dat = dat.addColumn(new Vector(new float[] {0,0,0}));
+//		dat = dat.addRow(new Vector(new float[] {0,0,0,1}));
+//		
+////		Vector[] axes = (camMatrix.matMul(dat)).convertToVectorArray();
+//		
+//		Vector offset = new Vector(new float[] {imageWidth/2,imageHeight/2,0});
+//		Vector[] axes = (new Matrix(data).scalarMul(-100)).convertToVectorArray();
+//		
+//		for(int i =0; i < axes.length;i++) {
+////			axes[i].getData()[1] *= -1;;
+//			axes[i] = axes[i].add(offset);
+//		}
+//		
+//		Vector tempPos = pos.add(offset);
+//		
+//		g.setColor(Color.green);
+//		RenderingEngine.drawLine(g, tempPos, axes[0]);
+//		g.drawString("X", axes[0].getDataElement(0), axes[0].getDataElement(1));
+//		
+//		g.setColor(Color.blue);
+//		RenderingEngine.drawLine(g, tempPos, axes[1]);
+//		g.drawString("Y", axes[1].getDataElement(0), axes[1].getDataElement(1));
+//		
+//		g.setColor(Color.red);
+//		RenderingEngine.drawLine(g, tempPos, axes[2]);
+//		g.drawString("Z", axes[2].getDataElement(0), axes[2].getDataElement(1));
+//	}
 
 	public Matrix getPerspectiveProjectionMatrix() {
 		return perspectiveProjectionMatrix;
@@ -446,14 +500,6 @@ public class Camera {
 		this.shouldUpdateValues = shouldUpdateValues;
 	}
 
-	public boolean isShouldUpdateCameraMatrix() {
-		return shouldUpdateCameraMatrix;
-	}
-
-	public void setShouldUpdateCameraMatrix(boolean shouldUpdateCameraMatrix) {
-		this.shouldUpdateCameraMatrix = shouldUpdateCameraMatrix;
-	}
-
 	public float getFovX() {
 		return fovX;
 	}
@@ -482,6 +528,14 @@ public class Camera {
 		return bottom;
 	}
 
+	public Quaternion getQuaternion() {
+		return quaternion;
+	}
+
+	public void setQuaternion(Quaternion quaternion) {
+		this.quaternion = quaternion;
+	}
+
 	public float getFilmApertureWidth() {
 		return filmApertureWidth;
 	}
@@ -504,22 +558,6 @@ public class Camera {
 
 	public void setFocalLength(float focalLength) {
 		this.focalLength = focalLength;
-	}
-
-	public float[][] getData() {
-		return data;
-	}
-
-	public void setData(float[][] data) {
-		this.data = data;
-	}
-
-	public Vector getMouse() {
-		return mouse;
-	}
-
-	public void setMouse(Vector mouse) {
-		this.mouse = mouse;
 	}
 
 	public float getNearClippingPlane() {
@@ -546,29 +584,32 @@ public class Camera {
 		return canvasHeight;
 	}
 
-	public void computeInverse() {
-		camMatrixInverse = camMatrix.getInverse();
+	public Matrix getCamToWorld() {
+//		Vector[] axes = new Vector[3];
+//		axes[2] = forward.getPureVec();
+//		axes[1] = up.getPureVec();
+//		axes[0] = axes[1].cross(axes[2]);
+		
+		Matrix m = quaternion.getRotationMatrix();
+//		Matrix m = new Matrix(axes);
+		m = m.addColumn(pos);
+		m = m.addRow(new Vector(new float[] {0,0,0,1}));
+		return m;
 	}
 
-	public Vector getDir() {
-		return pointingDir;
-	}
-
-	public void setDir(Vector dir) {
-		this.pointingDir = dir;
-	}
-
-	public Matrix getCamMatrix() {
-		return camMatrix;
-	}
-
-	public void setCamMatrix(Matrix camMat) {
-		this.camMatrix = camMat;
-		this.computeInverse();
-	}
-
-	public Matrix getCamInverse() {
-		return camMatrixInverse;
+	public Matrix getWorldToCam() {
+//		Vector[] axes = new Vector[3];
+//		axes[2] = (forward.getPureVec()).scalarMul(-1);
+//		axes[1] = (up.getPureVec()).scalarMul(-1);
+//		axes[0] = axes[1].cross(axes[2]);
+		
+		Matrix m_ = quaternion.getInverse().getRotationMatrix();
+//		Matrix m_ = new Matrix(axes);
+		Vector pos_ = (m_.matMul(pos).toVector()).scalarMul(-1);
+		Matrix res = m_.addColumn(pos_);
+		res = res.addRow(new Vector(new float[]{0,0,0,1}));
+		
+		return res;
 	}
 
 	public Vector getPos() {

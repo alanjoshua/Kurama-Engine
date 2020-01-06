@@ -1,6 +1,7 @@
 package rendering;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ public class RenderingEngine {
 		for (Model m : models) {
 			
 			Matrix transformed = m.getObjectToWorldMatrix().matMul(Vector.addDimensionToVec(m.getVertices(), 1));
-			Matrix camSpace = cam.getCamInverse().matMul(transformed);
+			Matrix camSpace = cam.getWorldToCam().matMul(transformed);
 			Matrix projected = null;
 			
 			if(renderingMode == PERSPECTIVE) {
@@ -91,6 +92,75 @@ public class RenderingEngine {
 
 		}
 	}
+	
+//	public static void renderAxes(Graphics2D g, Camera cam) {
+//		
+//		Vector offset = new Vector(new float[] {cam.getImageWidth()/2,cam.getImageHeight()/2,0});
+////		Vector[] axes = (new Matrix(cam.getData())).convertToVectorArray();
+//		
+////		for(int i =0; i < axes.length;i++) {
+////			axes[i] = axes[i].add(offset);
+////		}
+//		
+////		Vector tempPos = cam.getPos().add(offset);
+//		Vector tempPos = offset;
+//		
+//		Vector[] axes = (new Matrix(cam.getData())).convertToVectorArray();
+//		
+//		Matrix worldCoords = (((Vector.addDimensionToVec(axes, 0)).scalarMul(5)).AddVectorToColumns(new Vector(new float[] {0,0,cam.getNearClippingPlane(),1}))).addColumn(new Vector(new float[]{0,0,0,1}));
+//		Matrix camSpace = cam.getWorldToCam().matMul(worldCoords);
+//		
+////		Matrix camSpace = (new Matrix(axes).scalarMul(5)).addColumn(new Vector(new float[] {0,0,cam.getNearClippingPlane()}));
+////		camSpace = Vector.addDimensionToVec(camSpace.convertToVectorArray(),1);
+//		Matrix projected = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
+//		
+//		List<Vector> normalisedVectors = new ArrayList<Vector>();
+//		projected.convertToVectorList().forEach((v) -> {
+//				float x = v.getDataElement(0);
+//				float y = v.getDataElement(1);
+//				float z = v.getDataElement(2);
+//				float w = v.getDataElement(3);
+//				Vector temp = new Vector(new float[] {
+//						x/w,
+//						y/w,
+//						z/w
+//				});
+//				normalisedVectors.add(temp);	
+//		});
+//		
+//		List<Vector> rasterVectors = new ArrayList<Vector>();
+//		normalisedVectors.forEach((v) -> {
+//				rasterVectors.add(new Vector(new float[] { 
+//						(int)((v.getDataElement(0)+1)*0.5*cam.getImageWidth()),
+//						(int)((1 - (v.getDataElement(1) + 1) * 0.5)*cam.getImageHeight())
+//				}));
+//		});
+//		
+//		g.setColor(Color.green);
+//		RenderingEngine.drawLine(g, rasterVectors.get(3), rasterVectors.get(0));
+//		g.drawString("X", rasterVectors.get(0).getDataElement(0), rasterVectors.get(0).getDataElement(1));
+//		
+//		g.setColor(Color.blue);
+//		RenderingEngine.drawLine(g, rasterVectors.get(3), rasterVectors.get(1));
+//		g.drawString("Y", rasterVectors.get(1).getDataElement(0), rasterVectors.get(1).getDataElement(1));
+//		
+//		g.setColor(Color.red);
+//		RenderingEngine.drawLine(g, rasterVectors.get(3), rasterVectors.get(2));
+//		g.drawString("Z", rasterVectors.get(2).getDataElement(0), rasterVectors.get(2).getDataElement(1));
+//		
+//////		Vector[] axes = (camMatrix.matMul(dat)).convertToVectorArray();
+////		
+////		Vector offset = new Vector(new float[] {cam.getimageWidth/2,imageHeight/2,0});
+////		Vector[] axes = (new Matrix(data).scalarMul(-100)).convertToVectorArray();
+////		
+////		for(int i =0; i < axes.length;i++) {
+//////			axes[i].getData()[1] *= -1;;
+////			axes[i] = axes[i].add(offset);
+////		}
+////		
+////		Vector tempPos = pos.add(offset);
+//		
+//	}
 
 	public static void renderVectors(Graphics2D g, Vector[] v) {
 		for (Vector vv : v) {
@@ -117,7 +187,7 @@ public class RenderingEngine {
 		try {
 
 			Vector dir = Vector.sub(p2, p1);
-			double len = dir.getLength();
+			double len = dir.getNorm();
 			dir = dir.normalise();
 
 			for (int i = 1; i < len; i++) {
@@ -147,7 +217,7 @@ public class RenderingEngine {
 //			System.out.println("Dir vector : ");
 //			dir.display();
 
-			double len = dir.getLength();
+			double len = dir.getNorm();
 
 //			System.out.println("lenght is : " + len);
 

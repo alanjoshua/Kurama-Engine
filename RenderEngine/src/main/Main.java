@@ -37,7 +37,7 @@ public class Main {
 //		test.display();
 //		System.out.println("----------------------------------------------");
 //		test.getInverse().matMul(new Vector(new float[] {0,1,-1,2})).display();
-		
+
 		game = new Game(1000,1000);
 		game.init();
 		game.run();

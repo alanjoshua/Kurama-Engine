@@ -619,6 +619,28 @@ public class Matrix {
 			System.out.println();
 		}
 	}
+	
+	public Matrix AddVectorToColumns(Vector v) {
+		float[][] data = null;
+		try {
+			if(v.getNumberOfDimensions() == this.rows) {
+				data = new float[this.getRows()][this.getCols()];
+				for(int i = 0; i < this.getRows();i++) {
+					for(int j= 0 ;j < this.getCols();j++) {
+						data[i][j] = this.getData()[i][j] + v.getDataElement(i);
+					}
+				}
+			}
+			else {
+				throw new IllegalArgumentException("Number of rows of input vectors and matrix should be the same");
+			}
+		}catch(IllegalArgumentException e) {
+			e.printStackTrace();
+		}
+		
+		return new Matrix(data);
+		
+	}
 
 	public Matrix getCopy() {
 		return new Matrix(this.data);
