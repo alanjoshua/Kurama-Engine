@@ -1,14 +1,12 @@
 package rendering;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
 import Math.Matrix;
+import Math.Quaternion;
 import Math.Vector;
-import main.Display;
 import main.Game;
 import models.Model;
 
@@ -23,15 +21,42 @@ public class RenderingEngine {
 
 		for (Model m : models) {
 			
-			Matrix transformed = m.getObjectToWorldMatrix().matMul(Vector.addDimensionToVec(m.getVertices(), 1));
-			Matrix camSpace = cam.getWorldToCam().matMul(transformed);
+			Vector[] transformedV;
+			
+			if(m.isChanged()) {
+				transformedV = new Vector[m.getVertices().length];
+				int i = 0;
+				for(Vector v : m.getVertices()) {
+					transformedV[i] = ((m.getOrientation().rotatePoint(v.mul(m.getScale())))).add(m.getPos());
+					i++;
+				}
+				m.setTransformedVertices(transformedV);
+				m.setChanged(false);
+			}
+			else {
+				transformedV = m.getTranformedVertices();
+			}
+			
+			Vector[] camSpaceV = cam.getOrientation().getInverse().rotatePoints(transformedV);
+			Vector pos_ = cam.getOrientation().getInverse().rotatePoint(cam.getPos());
+			
+			for(int i = 0;i < camSpaceV.length;i++) {
+				camSpaceV[i] = camSpaceV[i].sub(pos_);
+			}
+			
+//			Matrix transformed = m.getObjectToWorldMatrix().matMul(new Matrix(Vector.addDimensionToVec(m.getVertices(), 1)));
+//			Matrix camSpace = cam.getWorldToCam().matMul(transformed);
 			Matrix projected = null;
+			Matrix camSpaceVM = new Matrix(Vector.addDimensionToVec(camSpaceV,1));
+			
+//			camSpaceVM.convertToVectorArray()[0].sub(camSpace.convertToVectorArray()[0]).display();
+//			System.out.println();
 			
 			if(renderingMode == PERSPECTIVE) {
-				projected = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
+				projected = cam.getPerspectiveProjectionMatrix().matMul(camSpaceVM);
 			}
 			else if(renderingMode == ORTHO) {
-				projected = cam.getOrthographicProjectionMatrix().matMul(camSpace);
+				projected = cam.getOrthographicProjectionMatrix().matMul(camSpaceVM);
 			}
 			
 			List<Boolean> isVisible = new ArrayList<Boolean>();
@@ -67,24 +92,15 @@ public class RenderingEngine {
 
 			for (Vector con : m.getConnections()) {
 				for (int i = 0; i < con.getNumberOfDimensions(); i++) {
+					
 					if (i != con.getNumberOfDimensions() - 1) {
 						if(isVisible.get((int) con.getData()[i]) || isVisible.get((int) con.getData()[i + 1])) {
-//							g.setColor(Color.green);
 							drawLine(g, rasterVectors.get((int) con.getData()[i]), rasterVectors.get((int) con.getData()[i + 1]));
 						}
-						else {
-//							g.setColor(Color.red);
-						}
-//						drawLine(g, rasterVectors.get((int) con.getData()[i]), rasterVectors.get((int) con.getData()[i + 1]));
 					} else {
-						if(isVisible.get((int) con.getData()[i]) || isVisible.get((int) con.getData()[0])) {
-//							g.setColor(Color.green);
+						if(isVisible.get((int) con.getData()[i]) || isVisible.get((int) con.getData()[0])) {						
 							drawLine(g, rasterVectors.get((int) con.getData()[i]), rasterVectors.get((int) con.getData()[0]));
 						}
-						else {
-//							g.setColor(Color.red);
-						}
-//						drawLine(g, rasterVectors.get((int) con.getData()[i]), rasterVectors.get((int) con.getData()[0]));
 					}
 				}
 			}
@@ -92,6 +108,56 @@ public class RenderingEngine {
 
 		}
 	}
+	
+//	public static void renderGrid(Vector offset, Quaternion rotation, Camera cam, Graphics2D g) {
+//		
+//		List<Vector> vertices = new ArrayList<Vector>();
+//		Vector totalOffset = new Vector(new float[] {cam.getPos().getDataElement(0), -cam.getPos().getDataElement(1), cam.getPos().getDataElement(2)}).add(offset);
+//		
+//		for(int i = 0;i < (cam.getFarClippingPlane() - cam.getNearClippingPlane());i++) {
+//			Vector v = new Vector(new float[] {-cam.getLeft(),0,i}).add(totalOffset);
+//			Vector u = new Vector(new float[] {cam.getRight(), 0, i}).add(totalOffset);
+//			vertices.add(v);
+//			vertices.add(u);
+//		}
+//		
+//		for(int i = 0;i < cam.getCanvasWidth();i++) {
+//			Vector v = new Vector(new float[] {i-cam.getLeft(),0,0}).add(totalOffset);
+//			Vector u = new Vector(new float[] {i-cam.getLeft(), 0, (cam.getFarClippingPlane() - cam.getNearClippingPlane())}).add(totalOffset);
+//			vertices.add(v);
+//			vertices.add(u);
+//		}
+//		
+//		Matrix camSpace = cam.getWorldToCam().matMul(Vector.addDimensionToVec(vertices, 1));
+//		Matrix projected = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
+//		
+//		List<Vector> normalisedVectors = new ArrayList<Vector>();
+//		projected.convertToVectorList().forEach((v) -> {
+//				float x = v.getDataElement(0);
+//				float y = v.getDataElement(1);
+//				float z = v.getDataElement(2);
+//				float w = v.getDataElement(3);
+//				Vector temp = new Vector(new float[] {
+//						x/w,
+//						y/w,
+//						z/w
+//				});
+//				normalisedVectors.add(temp);
+//		});
+//		
+//		List<Vector> rasterVectors = new ArrayList<Vector>();
+//		normalisedVectors.forEach((v) -> {
+//				rasterVectors.add(new Vector(new float[] { 
+//						(int)((v.getDataElement(0)+1)*0.5*cam.getImageWidth()),
+//						(int)((1 - (v.getDataElement(1) + 1) * 0.5)*cam.getImageHeight())
+//				}));
+//		});
+//		
+//		for(int i = 0; i < rasterVectors.size();i+=2) {
+//			drawLine(g, rasterVectors.get(i), rasterVectors.get(i+1));
+//		}
+//		
+//	}
 	
 //	public static void renderAxes(Graphics2D g, Camera cam) {
 //		
@@ -105,7 +171,7 @@ public class RenderingEngine {
 ////		Vector tempPos = cam.getPos().add(offset);
 //		Vector tempPos = offset;
 //		
-//		Vector[] axes = (new Matrix(cam.getData())).convertToVectorArray();
+//		Vector[] axes = cam.getQuaternion().getRotationMatrix().convertToVectorArray();
 //		
 //		Matrix worldCoords = (((Vector.addDimensionToVec(axes, 0)).scalarMul(5)).AddVectorToColumns(new Vector(new float[] {0,0,cam.getNearClippingPlane(),1}))).addColumn(new Vector(new float[]{0,0,0,1}));
 //		Matrix camSpace = cam.getWorldToCam().matMul(worldCoords);

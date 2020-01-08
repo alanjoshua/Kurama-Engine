@@ -1,5 +1,7 @@
 package Math;
 
+import java.util.List;
+
 public class Vector {
 
 	private float[] data;
@@ -362,7 +364,7 @@ public class Vector {
 		}
 	}
 
-	public static Matrix addDimensionToVec(Vector[] v, float val) {
+	public static Vector[] addDimensionToVec(Vector[] v, float val) {
 
 		Vector[] resData = new Vector[v.length];
 
@@ -372,6 +374,22 @@ public class Vector {
 				tempDat[j] = v[i].getDataElement(j);
 			}
 			tempDat[v[i].getNumberOfDimensions()] = val;
+			resData[i] = new Vector(tempDat);
+		}
+
+		return resData;
+	}
+	
+	public static Matrix addDimensionToVec(List<Vector> v, float val) {
+
+		Vector[] resData = new Vector[v.size()];
+
+		for (int i = 0; i < v.size(); i++) {
+			float[] tempDat = new float[v.get(i).getNumberOfDimensions() + 1];
+			for (int j = 0; j < v.get(i).getNumberOfDimensions(); j++) {
+				tempDat[j] = v.get(i).getDataElement(j);
+			}
+			tempDat[v.get(i).getNumberOfDimensions()] = val;
 			resData[i] = new Vector(tempDat);
 		}
 

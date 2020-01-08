@@ -23,20 +23,21 @@ public class Quaternion {
 
 		try {
 			if (v.getNumberOfDimensions() == 4) {
-				this.coordinate = v.normalise();
+				this.coordinate = v;
 			} else if (v.getNumberOfDimensions() == 3) {
 				float[] dat = new float[4];
 				dat[0] = 0f;
 				dat[1] = v.getDataElement(0);
 				dat[2] = v.getDataElement(1);
 				dat[3] = v.getDataElement(2);
-				this.coordinate = new Vector(dat).normalise();
+				this.coordinate = new Vector(dat);
+//				this.coordinate = new Vector(dat).normalise();
 			} else
 				throw new Exception("Coordinate of a quaternion should only have 3 or 4 elements ");
 		} catch (Exception e) {
 		}
 
-		reculateAxisAngle();
+//		reculateAxisAngle();
 	}
 
 	public Quaternion multiply(Quaternion r) {
@@ -50,38 +51,35 @@ public class Quaternion {
 //		res[3] = r[0] * q[3] - r[1] * q[2] + r[2] * q[1] - r[3] * q[0];
 //
 //		return new Quaternion(new Vector(res));
-		
-		Vector v = new Vector(new float[] {this.getCoordinate().getDataElement(1),this.getCoordinate().getDataElement(2),this.getCoordinate().getDataElement(3)});
-		Vector w = new Vector(new float[] {r.getCoordinate().getDataElement(1),r.getCoordinate().getDataElement(2),r.getCoordinate().getDataElement(3)});
+
+		Vector v = this.getPureVec();
+		Vector w = r.getPureVec();
 		float s = this.getCoordinate().getDataElement(0);
 		float t = r.getCoordinate().getDataElement(0);
-		
-		float w_ = (s*t) - v.dot(w);
+
+		float w_ = (s * t) - v.dot(w);
 		Vector v_ = (w.scalarMul(s).add(v.scalarMul(t))).add(v.cross(w));
-		
-		float[] res = new float[] {
-				w_,
-				v_.getDataElement(0),
-				v_.getDataElement(1),
-				v_.getDataElement(2),
-		};
-		
+
+		float[] res = new float[] { w_, v_.getDataElement(0), v_.getDataElement(1), v_.getDataElement(2) };
+
 		return new Quaternion(new Vector(res));
-		
+
 	}
-	
 	public static Quaternion eulerToQuaternion(Vector v) {
-		Quaternion pitch = new Quaternion(new Vector(new float[] {1,0,0}),v.getDataElement(0));
-		Quaternion yaw = new Quaternion(new Vector(new float[] {0,1,0}),v.getDataElement(1));
-		Quaternion roll = new Quaternion(new Vector(new float[] {0,0,1}),v.getDataElement(2));
-		
-		Quaternion temp = pitch.multiply(roll);
-		temp = yaw.multiply(temp);
+
+		Quaternion temp = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+		Quaternion pitch = new Quaternion(new Vector(new float[] { 1, 0, 0 }), v.getDataElement(0));
+		Quaternion yaw = new Quaternion(new Vector(new float[] { 0, 1, 0 }), v.getDataElement(1));
+		Quaternion roll = new Quaternion(new Vector(new float[] { 0, 0, 1 }), v.getDataElement(2));
+
+		temp = pitch.multiply(yaw);
+		temp = temp.multiply(roll);
 		return temp;
 	}
 
 	public Quaternion getInverse() {
-		Vector temp = getConjugate().getCoordinate();
+		Vector q = getConjugate().getCoordinate();
+		Vector temp = q.scalarMul(1 / (q.getNorm()));
 		return new Quaternion(temp);
 	}
 
@@ -96,25 +94,51 @@ public class Quaternion {
 		Quaternion q_ = getInverse();
 		Quaternion res = (new Quaternion(v)).multiply(q_);
 		res = this.multiply(res);
-		float[] resDat = new float[] { 
-				res.getCoordinate().getDataElement(1), 
-				res.getCoordinate().getDataElement(2),
-				res.getCoordinate().getDataElement(3)
-				};
-		return new Vector(resDat);
+		return res.getPureVec();
+	}
+
+	public Vector[] rotatePoints(Vector[] vList) {
+		
+		Quaternion q_ = getInverse();
+		Vector[] res = new Vector[vList.length];
+		
+		int i = 0;
+		for (Vector v : vList) {
+			Quaternion temp = (new Quaternion(v)).multiply(q_);
+			temp = this.multiply(temp);
+			res[i] = temp.getPureVec();
+			i++;
+		}
+		
+		return res;
 	}
 
 	public Matrix getRotationMatrix() {
-		
+
 		float[] q = this.getCoordinate().getData();
 
 		float[][] data = new float[][] {
-				{1 - 2*(q[2]*q[2] + q[3]*q[3]), 2*(q[1]*q[2] - q[3]*q[0]), 2*(q[1]*q[3] + q[2]*q[0])},
-				{2*(q[1]*q[2] + q[3]*q[0]), 1 - 2*(q[1]*q[1] + q[3]*q[3]), 2*(q[2]*q[3] - q[1]*q[0])},
-				{2*(q[1]*q[3] - q[2]*q[0]), 2*(q[2]*q[3] + q[1]*q[0]), 1 - 2*(q[1]*q[1] + q[2]*q[2])}
-		};
+				{ 1 - 2 * (q[2] * q[2] + q[3] * q[3]), 2 * (q[1] * q[2] - q[3] * q[0]),
+						2 * (q[1] * q[3] + q[2] * q[0]) },
+				{ 2 * (q[1] * q[2] + q[3] * q[0]), 1 - 2 * (q[1] * q[1] + q[3] * q[3]),
+						2 * (q[2] * q[3] - q[1] * q[0]) },
+				{ 2 * (q[1] * q[3] - q[2] * q[0]), 2 * (q[2] * q[3] + q[1] * q[0]),
+						1 - 2 * (q[1] * q[1] + q[2] * q[2]) } };
 
 		return new Matrix(data);
+	}
+
+	public Vector getPitchYawRoll() {
+		float x = this.getCoordinate().getDataElement(1);
+		float y = this.getCoordinate().getDataElement(2);
+		float z = this.getCoordinate().getDataElement(3);
+		float w = this.getCoordinate().getDataElement(0);
+
+		float yaw = (float) Math.toDegrees(Math.atan2(2 * y * w - 2 * x * z, 1 - 2 * y * y - 2 * z * z));
+		float pitch = (float) Math.toDegrees(Math.atan2(2 * x * w - 2 * y * z, 1 - 2 * x * x - 2 * z * z));
+		float roll = (float) Math.toDegrees(Math.asin(2 * x * y + 2 * z * w));
+
+		return new Vector(new float[] { pitch, yaw, roll });
 	}
 
 	public float getNorm() {
@@ -163,21 +187,17 @@ public class Quaternion {
 	public void reculateAxisAngle() {
 		float angle = (float) (2 * Math.acos(this.coordinate.getDataElement(0)));
 		this.angle = (float) Math.toDegrees(angle);
-		
+
 		if (this.angle != 0) {
-			
+
 			float temp = (float) Math.sqrt(1 - (coordinate.getDataElement(0) * coordinate.getDataElement(0)));
-			float[] axisData = new float[] { 
-					(float) (coordinate.getDataElement(1) / temp),
-					(float) (coordinate.getDataElement(2) / temp),
-					(float) (coordinate.getDataElement(3) / temp)
-					};
+			float[] axisData = new float[] { (float) (coordinate.getDataElement(1) / temp),
+					(float) (coordinate.getDataElement(2) / temp), (float) (coordinate.getDataElement(3) / temp) };
 
 			this.axis = new Vector(axisData).normalise();
 
-		}
-		else {
-			float[] axisData = new float[] {0,0,1};
+		} else {
+			float[] axisData = new float[] { 0, 0, 1 };
 			this.axis = new Vector(axisData);
 		}
 	}
@@ -188,9 +208,10 @@ public class Quaternion {
 				(float) (Math.sin(a) * axis.getDataElement(1)), (float) (Math.sin(a) * axis.getDataElement(2)) };
 		this.coordinate = new Vector(data);
 	}
-	
+
 	public Vector getPureVec() {
-		return new Vector(new float[] {coordinate.getDataElement(1),coordinate.getDataElement(2),coordinate.getDataElement(3)});
+		return new Vector(new float[] { coordinate.getDataElement(1), coordinate.getDataElement(2),
+				coordinate.getDataElement(3) });
 	}
 
 	public void setAxis(Vector axis) {

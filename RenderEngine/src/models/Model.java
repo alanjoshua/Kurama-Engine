@@ -13,16 +13,18 @@ public class Model {
 		public void tick(Model m);
 	}
 	
-	private List<Vector> rotation;
-	private Vector[] vertices;
-	private Vector[] connections;
-//	private Matrix scaledVertices;
-	private Vector scale;
-	private Vector pos;
-	private Tick tickObj;
-	private Vector min;
-	private Vector max;
-	private Quaternion quaternion;
+	protected List<Vector> rotation;
+	protected Vector[] vertices;
+	protected Vector[] connections;
+//	protected Matrix scaledVertices;
+	protected Vector scale;
+	protected Vector pos;
+	protected Tick tickObj;
+	protected Vector min;
+	protected Vector max;
+	protected Quaternion orientation;
+	protected Vector[] transformedVertices;
+	protected boolean isChanged = true;
 
 	public Model(Vector[] vertices, Vector[] connections) {
 		this.connections = connections;
@@ -31,7 +33,7 @@ public class Model {
 		scale = new Vector(new float[] {1,1,1});
 		pos = new Vector(3,0);
 		tickObj = null;
-		quaternion = new Quaternion(new Vector(new float[] {0,1,0}),0);
+		orientation = new Quaternion(new Vector(new float[] {1,0,0,0}));
 		calculateMinMax();
 	}
 
@@ -42,51 +44,10 @@ public class Model {
 	}
 	
 	public Matrix getObjectToWorldMatrix() {
-
 		Matrix rotScalMatrix = null;
-//		Matrix rotationMatrix = Matrix.getIdentityMatrix(3);
-//
-//		for (Vector v : this.getRotation()) {
-//
-//			switch ((int) v.getDataElement(0)) {
-//			case 0:
-//				rotationMatrix = Matrix.getRotateX(v.getDataElement(1)).matMul(rotationMatrix);
-//				break;
-//			case 1:
-//				rotationMatrix = Matrix.getRotateY(v.getDataElement(1)).matMul(rotationMatrix);
-//				break;
-//			case 2:
-//				rotationMatrix = Matrix.getRotateZ(v.getDataElement(1)).matMul(rotationMatrix);
-//				break;
-//			default:
-//				System.err.println("Model rotation argument 1 should be be integers 0,1 or 2");
-//				break;
-//			}
-//		}
-		
-		Matrix rotationMatrix = this.quaternion.getRotationMatrix();
+		Matrix rotationMatrix = this.orientation.getRotationMatrix();
 		Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
 		rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-//
-//		float[][] data = new float[4][4];
-//		for (int r = 0; r < 3; r++) {
-//			for (int c = 0; c < 3; c++) {
-//				data[r][c] = rotScalMatrix.getData()[r][c];
-//			}
-//		}
-//		
-//		for (int r = 0; r < 4; r++) {
-//			if (r != 3) {
-//				data[r][3] = this.getPos().getDataElement(r);
-//			} else {
-//				data[r][3] = 1;
-//			}
-//		}
-//
-//		for (int c = 0; c < 3; c++) {
-//			data[3][c] = 0;
-//		}
-//		Matrix transformationMatrix = new Matrix(data);
 		
 		Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
 		transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0,0,0,1}));
@@ -154,6 +115,7 @@ public class Model {
 
 	public void setPos(Vector pos) {
 		this.pos = pos;
+		isChanged = true;
 	}
 
 	public Vector getScale() {
@@ -162,35 +124,16 @@ public class Model {
 
 	public void setScale(Vector scale) {
 		this.scale = scale;
-//		scaledVertices = new Matrix(vertices).scalarMul(scale);
+		isChanged = true;
 	}
 
-	public List<Vector> getRotation() {
-		return rotation;
+	public Quaternion getOrientation() {
+		return orientation;
 	}
 
-	public void setRotation(List<Vector> rotation) {
-		
-		for(Vector v: rotation) {
-			if(v.getDataElement(1) > 360) {
-				v.setDataElement(1, v.getDataElement(1) - 360);
-			}
-			
-			if(v.getDataElement(1) < -360) {
-				v.setDataElement(1, v.getDataElement(1) + 360);
-			}
-		}
-		
-		this.rotation = rotation;
-		
-	}
-
-	public Quaternion getQuaternion() {
-		return quaternion;
-	}
-
-	public void setQuaternion(Quaternion quaternion) {
-		this.quaternion = quaternion;
+	public void setOrientation(Quaternion quaternion) {
+		this.orientation = quaternion;
+		isChanged = true;
 	}
 
 	public Vector[] getVertices() {
@@ -201,10 +144,20 @@ public class Model {
 		return connections;
 	}
 	
-	public void setVerticesConnections(Vector[] vertices, Vector[] connections) {
-		this.connections = connections;
-		this.vertices = vertices;
-//		scaledVertices = new Matrix(vertices).scalarMul(scale);
+	public Vector[] getTranformedVertices() {
+		return transformedVertices;
+	}
+	
+	public void setTransformedVertices(Vector[] vertices) {
+		this.transformedVertices = vertices;
+	}
+
+	public boolean isChanged() {
+		return isChanged;
+	}
+
+	public void setChanged(boolean isChanged) {
+		this.isChanged = isChanged;
 	}
 	
 }

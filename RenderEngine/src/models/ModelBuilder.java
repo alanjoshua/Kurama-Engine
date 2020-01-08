@@ -46,7 +46,7 @@ public class ModelBuilder {
 	}
 
 	public static Model buildModelFromFile(String loc) {
-				
+
 		URL url = ModelBuilder.class.getResource("Resources");
 		String path = url.getPath() + File.separator + loc;
 
@@ -118,39 +118,39 @@ public class ModelBuilder {
 				dataMin[0] = Float.POSITIVE_INFINITY;
 				dataMin[1] = Float.POSITIVE_INFINITY;
 				dataMin[2] = Float.POSITIVE_INFINITY;
-				
+
 				float[] dataMax = new float[3];
 				dataMax[0] = Float.NEGATIVE_INFINITY;
 				dataMax[1] = Float.NEGATIVE_INFINITY;
 				dataMax[2] = Float.NEGATIVE_INFINITY;
-				
-				for(Vector v : vertex) {
-					if(v.getDataElement(0) < dataMin[0]) {
+
+				for (Vector v : vertex) {
+					if (v.getDataElement(0) < dataMin[0]) {
 						dataMin[0] = v.getDataElement(0);
 					}
-					if(v.getDataElement(1) < dataMin[1]) {
+					if (v.getDataElement(1) < dataMin[1]) {
 						dataMin[1] = v.getDataElement(1);
 					}
-					if(v.getDataElement(2) < dataMin[2]) {
+					if (v.getDataElement(2) < dataMin[2]) {
 						dataMin[2] = v.getDataElement(2);
 					}
-					
-					if(v.getDataElement(0) > dataMax[0]) {
+
+					if (v.getDataElement(0) > dataMax[0]) {
 						dataMax[0] = v.getDataElement(0);
 					}
-					if(v.getDataElement(1) > dataMax[1]) {
+					if (v.getDataElement(1) > dataMax[1]) {
 						dataMax[1] = v.getDataElement(1);
 					}
-					if(v.getDataElement(2) > dataMax[2]) {
+					if (v.getDataElement(2) > dataMax[2]) {
 						dataMax[2] = v.getDataElement(2);
 					}
 				}
-				
+
 				Vector min = new Vector(dataMin);
 				Vector max = new Vector(dataMax);
-				
+
 				Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
-				
+
 				Vector[] vertArr = new Vector[vertex.size()];
 				for (int i = 0; i < vertArr.length; i++) {
 					vertArr[i] = vertex.get(i).sub(change);
@@ -170,6 +170,50 @@ public class ModelBuilder {
 		}
 
 		return res;
+	}
+
+	public static Model buildGrid(int w, int d) {
+
+		Vector[][] verts = new Vector[w][d];
+		List<Vector> cons = new ArrayList<Vector>();
+
+		for (int i = -w / 2; i < w / 2; i++) {
+			for (int k = -d / 2; k < d / 2; k++) {
+				verts[i+ w/2][k+d/2] = new Vector(new float[] { i, 0, k });
+			}
+		}
+
+		for (int i = 0; i < w; i++) {
+			for (int j = 0; j < (d - 1); j++) {
+				cons.add(new Vector(new float[] { (i * w) + j, (i * w) + (j + 1) }));
+			}
+		}
+
+		for (int j = 0; j < d; j++) {
+			for (int i = 0; i < w - 1; i++) {
+				cons.add(new Vector(new float[] {(i * w) + j, ((i+1) * w) + (j)}));
+			}
+		}
+
+		Vector[] connections = new Vector[cons.size()];
+
+		for (int i = 0; i < cons.size(); i++) {
+			connections[i] = cons.get(i);
+		}
+
+//		for (int i = 0; i < connections.length; i++) {
+//			connections[i] = new Vector(new float[] { i });
+//		}
+
+		Vector[] vertices = new Vector[verts.length * verts[0].length];
+
+		for (int i = 0; i < verts.length; i++) {
+			for(int j = 0; j < verts[i].length;j++) {
+				vertices[i*w + j] = verts[i][j];
+			}
+		}
+
+		return new Model(vertices, connections);
 	}
 
 	public static Model buildShip() {
