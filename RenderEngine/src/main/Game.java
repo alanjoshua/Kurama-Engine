@@ -16,12 +16,14 @@ import models.Model.Tick;
 import models.ModelBuilder;
 import rendering.Camera;
 import rendering.RenderingEngine;
+import rendering.RenderingEngine.RenderPipeline;
+import rendering.RenderingEngine.RenderingMode;
 
 public class Game {
 
 	private Display display;
 	private List<Model> models;
-	private double targetFPS = 60;
+	private double targetFPS = 120;
 	private boolean shouldFPS = false;
 	private boolean running = true;
 	private Camera cam;
@@ -48,11 +50,9 @@ public class Game {
 				display.getWidth(), display.getHeight());
 
 		Tick tQuat = (m -> {
-			Quaternion rot2 = Quaternion.eulerToQuaternion(new Vector(new float[] { 0, 1, 0 }));
-			Quaternion newR2 = rot2.multiply(m.getOrientation());
-			m.setOrientation(newR2);
-//			m.setPos(m.getPos().add(new Vector(new float[] {0.1f,0,0})));
-
+			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 1);
+			Quaternion newQ = rot.multiply(m.getOrientation());
+			m.setOrientation(newQ);
 		});
 
 		Model cube = ModelBuilder.buildCube();
@@ -80,7 +80,7 @@ public class Game {
 		deer.setPos(new Vector(new float[] {-20,7,7}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //		deer.setRotation(rot);
-		deer.setOrientation(Quaternion.eulerToQuaternion(new Vector(new float[] {0,0,0})));
+//		deer.setOrientation(Quaternion.eulerToQuaternion(new Vector(new float[] {0,0,0})));
 		deer.setTickObj(tQuat);
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
@@ -108,7 +108,8 @@ public class Game {
 		models.add(grid);
 		models.add(mill);
 
-		RenderingEngine.renderingMode = RenderingEngine.PERSPECTIVE;
+		RenderingEngine.renderingMode = RenderingMode.ORTHO;
+		RenderingEngine.renderPipeline = RenderPipeline.Matrix;
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
 	}
@@ -187,7 +188,7 @@ public class Game {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.setOrientation(new Quaternion(new Vector(new float[] {0, 0, 0}),0));
+			cam.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[] {0, 0, 0}),0));
 			cam.lookAtModel(models.get(0));
 		}
 		
@@ -250,7 +251,6 @@ public class Game {
 			float rollIncrease = 0;
 			
 			Vector currentAngle = cam.getOrientation().getPitchYawRoll();
-//			Vector currentAngle = m.getQuaternion().getPitchYawRoll();
 			float currentPitch = currentAngle.getDataElement(0) + pitchIncrease;
 			
 			if(currentPitch >= 0 && currentPitch > 60) {
@@ -260,8 +260,8 @@ public class Game {
 				pitchIncrease = 0;
 			}
 			
-			Quaternion pitch = new Quaternion(new Vector(new float[] {1,0,0}),pitchIncrease);
-			Quaternion yaw = new Quaternion(new Vector(new float[] {0,1,0}),yawIncrease);
+			Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
+			Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 			
 			Quaternion q = cam.getOrientation();
 			

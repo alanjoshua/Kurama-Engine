@@ -7,6 +7,7 @@ import Math.Quaternion;
 import Math.Vector;
 import main.Game;
 import models.Model;
+import rendering.RenderingEngine.RenderingMode;
 
 public class Camera {
 
@@ -110,7 +111,7 @@ public class Camera {
 			
 			 imageAspectRatio = imageWidth / (float) imageHeight;
 
-			if (RenderingEngine.renderingMode == RenderingEngine.PERSPECTIVE) {
+			if (RenderingEngine.renderingMode == RenderingMode.PERSPECTIVE) {
 				
 				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
 
@@ -128,7 +129,7 @@ public class Camera {
 				
 				buildPerspectiveProjectionMatrix();
 			}
-			else if(RenderingEngine.renderingMode == RenderingEngine.ORTHO) {
+			else if(RenderingEngine.renderingMode == RenderingMode.ORTHO) {
 				
 				Vector[] bounds = getWorldBoundingBox();
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
@@ -186,8 +187,8 @@ public class Camera {
 		float yawIncrease   = (float) Math.toRadians(Math.acos(dir.dot(new Vector(new float[] {1,0,0}))));
 		float pitchIncrease = (float) Math.toRadians(Math.acos(dir.dot(new Vector(new float[] {0,0,1}))));
 		
-		Quaternion pitch = new Quaternion(new Vector(new float[] {1,0,0}),pitchIncrease);
-		Quaternion yaw = new Quaternion(new Vector(new float[] {0,1,0}),yawIncrease);
+		Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
+		Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 		
 		Quaternion q = new Quaternion(new Vector(new float[] {1,0,0,0}));
 		q = q.multiply(pitch);

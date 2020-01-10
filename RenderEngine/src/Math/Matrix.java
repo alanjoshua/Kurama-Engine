@@ -359,6 +359,33 @@ public class Matrix {
 		}
 		return res;
 	}
+	
+	public Matrix columnMul(Vector b) {
+
+		Matrix res = null;
+
+		try {
+			float[][] resData = new float[rows][cols];
+			if (rows == b.getNumberOfDimensions()) {
+				for (int i = 0; i < rows; i++) {
+					for (int j = 0; j < cols; j++) {
+						resData[i][j] = data[i][j] * b.getData()[i];
+					}
+				}
+				res = new Matrix(resData);
+			}
+
+			else {
+				throw new Exception("Number of rows of matrix and the vector should be the same");
+//			System.err.println("Size of Matrix A and B should be the same");
+//			System.out.println("Returning Matrix of size A with values 1");
+//			res = new Matrix(rows, cols, 1f);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
 
 	public Matrix divide(Matrix b) {
 
