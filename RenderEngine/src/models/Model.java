@@ -15,7 +15,7 @@ public class Model {
 	
 	protected List<Vector> rotation;
 	protected Vector[] vertices;
-	protected Vector[] connections;
+	protected List<int[]> connections;
 //	protected Matrix scaledVertices;
 	protected Vector scale;
 	protected Vector pos;
@@ -26,7 +26,7 @@ public class Model {
 	protected Vector[] transformedVertices;
 	protected boolean isChanged = true;
 
-	public Model(Vector[] vertices, Vector[] connections) {
+	public Model(Vector[] vertices, List<int[]> connections) {
 		this.connections = connections;
 		this.vertices = vertices;
 		rotation = new ArrayList<Vector>();
@@ -140,7 +140,7 @@ public class Model {
 		return vertices;
 	}
 
-	public Vector[] getConnections() {
+	public List<int[]> getConnections() {
 		return connections;
 	}
 	

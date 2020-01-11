@@ -761,6 +761,16 @@ public class Matrix {
 
 		return new Matrix(data2D);
 	}
+	
+	public Matrix getMatrixWithoutLastRow() {
+		float[][] data = new float[this.rows - 1][this.cols];
+		for(int i = 0;i < data.length;i++) {
+			for(int j = 0;j < this.cols;j++) {
+				data[i][j] = this.data[i][j];
+			}
+		}
+		return new Matrix(data);
+	}
 
 	public Vector[] convertToVectorArray() {
 		Vector[] v = new Vector[cols];

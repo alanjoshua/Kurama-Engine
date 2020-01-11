@@ -24,23 +24,24 @@ public class ModelBuilder {
 		vertexO[6] = new Vector(new float[] { 0, 1, 1 });
 		vertexO[7] = new Vector(new float[] { 1, 1, 1 });
 
-		Vector[] cons = new Vector[12];
+//		Vector[] cons = new Vector[12];
+		List<int[]> cons = new ArrayList<int[]>();
 
-		cons[0] = new Vector(new float[] { 0, 1 });
-		cons[1] = new Vector(new float[] { 1, 3 });
-		cons[2] = new Vector(new float[] { 3, 2 });
-		cons[3] = new Vector(new float[] { 0, 2 });
-
-		cons[4] = new Vector(new float[] { 0, 4 });
-		cons[5] = new Vector(new float[] { 2, 6 });
-		cons[6] = new Vector(new float[] { 4, 6 });
-
-		cons[7] = new Vector(new float[] { 1, 5 });
-		cons[8] = new Vector(new float[] { 3, 7 });
-		cons[9] = new Vector(new float[] { 5, 7 });
-
-		cons[10] = new Vector(new float[] { 6, 7 });
-		cons[11] = new Vector(new float[] { 4, 5 });
+		cons.add(new int[] { 0, 1 });
+		cons.add(new int[] { 1, 3 });
+		cons.add(new int[] { 3, 2 });
+		cons.add(new int[] { 0, 2 });
+		
+		cons.add(new int[] { 0, 4 });
+		cons.add(new int[] { 2, 6 });
+		cons.add(new int[] { 4, 6 });
+		
+		cons.add(new int[] { 1, 5 });
+		cons.add(new int[] { 4, 7 });
+		cons.add(new int[] { 5, 7 });
+		
+		cons.add(new int[] { 6, 7 });
+		cons.add(new int[] { 4, 5 });
 
 		return new Model(vertexO, cons);
 	}
@@ -52,7 +53,7 @@ public class ModelBuilder {
 
 		Model res = null;
 		List<Vector> vertex = new ArrayList<Vector>();
-		List<Vector> connections = new ArrayList<Vector>();
+		List<int[]> connections = new ArrayList<int[]>();
 
 		if (path.substring(path.length() - 3, path.length()).equalsIgnoreCase("obj")) {
 
@@ -85,21 +86,21 @@ public class ModelBuilder {
 
 						if (split[0].equalsIgnoreCase("f")) {
 
-							List<Float> data = new ArrayList<Float>();
+							List<Integer> data = new ArrayList<Integer>();
 							for (int i = 1; i < split.length; i++) {
 								try {
-									data.add(Float.parseFloat(split[i].split("/")[0]) - 1);
+									data.add(Integer.parseInt(split[i].split("/")[0]) - 1);
 
 								} catch (Exception e) {
 								}
 								;
 							}
 
-							float[] data2 = new float[data.size()];
+							int[] data2 = new int[data.size()];
 							for (int i = 0; i < data2.length; i++) {
 								data2[i] = data.get(i);
 							}
-							connections.add(new Vector(data2));
+							connections.add(data2);
 
 						}
 					}
@@ -156,12 +157,12 @@ public class ModelBuilder {
 					vertArr[i] = vertex.get(i).sub(change);
 				}
 
-				Vector[] connArr = new Vector[connections.size()];
-				for (int i = 0; i < connArr.length; i++) {
-					connArr[i] = connections.get(i);
-				}
+//				Vector[] connArr = new Vector[connections.size()];
+//				for (int i = 0; i < connArr.length; i++) {
+//					connArr[i] = connections.get(i);
+//				}
 
-				res = new Model(vertArr, connArr);
+				res = new Model(vertArr, connections);
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -175,7 +176,7 @@ public class ModelBuilder {
 	public static Model buildGrid(int w, int d) {
 
 		Vector[][] verts = new Vector[w][d];
-		List<Vector> cons = new ArrayList<Vector>();
+		List<int[]> cons = new ArrayList<int[]>();
 
 		for (int i = -w / 2; i < w / 2; i++) {
 			for (int k = -d / 2; k < d / 2; k++) {
@@ -185,20 +186,14 @@ public class ModelBuilder {
 
 		for (int i = 0; i < w; i++) {
 			for (int j = 0; j < (d - 1); j++) {
-				cons.add(new Vector(new float[] { (i * w) + j, (i * w) + (j + 1) }));
+				cons.add(new int[] { (i * w) + j, (i * w) + (j + 1) });
 			}
 		}
 
 		for (int j = 0; j < d; j++) {
 			for (int i = 0; i < w - 1; i++) {
-				cons.add(new Vector(new float[] {(i * w) + j, ((i+1) * w) + (j)}));
+				cons.add(new int[] {(i * w) + j, ((i+1) * w) + (j)});
 			}
-		}
-
-		Vector[] connections = new Vector[cons.size()];
-
-		for (int i = 0; i < cons.size(); i++) {
-			connections[i] = cons.get(i);
 		}
 
 //		for (int i = 0; i < connections.length; i++) {
@@ -213,7 +208,7 @@ public class ModelBuilder {
 			}
 		}
 
-		return new Model(vertices, connections);
+		return new Model(vertices, cons);
 	}
 
 	public static Model buildShip() {
@@ -236,17 +231,23 @@ public class ModelBuilder {
 			vertices[i] = v;
 		}
 
-		float[] connections = new float[] { 4, 0, 5, 0, 1, 5, 1, 2, 5, 5, 2, 6, 3, 7, 2, 2, 7, 6, 5, 9, 4, 4, 9, 8, 5,
+		int[] connections = new int[] { 4, 0, 5, 0, 1, 5, 1, 2, 5, 5, 2, 6, 3, 7, 2, 2, 7, 6, 5, 9, 4, 4, 9, 8, 5,
 				6, 9, 9, 6, 10, 7, 11, 6, 6, 11, 10, 9, 13, 8, 8, 13, 12, 10, 14, 9, 9, 14, 13, 10, 11, 14, 14, 11, 15,
 				17, 16, 13, 12, 13, 16, 13, 14, 17, 17, 14, 18, 15, 19, 14, 14, 19, 18, 16, 17, 20, 20, 17, 21, 18, 22,
 				17, 17, 22, 21, 18, 19, 22, 22, 19, 23, 20, 21, 0, 21, 1, 0, 22, 2, 21, 21, 2, 1, 22, 23, 2, 2, 23, 3,
 				3, 23, 24, 3, 24, 7, 24, 23, 15, 15, 23, 19, 24, 15, 7, 7, 15, 11, 0, 25, 20, 0, 4, 25, 20, 25, 16, 16,
 				25, 12, 25, 4, 12, 12, 4, 8, 26, 27, 28, 29, 30, 31, 32, 34, 33 };
 
-		Vector[] cons = new Vector[connections.length / 3];
-
-		for (int i = 0; i < cons.length; i++) {
-			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
+//		Vector[] cons = new Vector[connections.length / 3];
+//
+//		for (int i = 0; i < cons.length; i++) {
+//			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
+//		}
+		
+		List<int[]> cons = new ArrayList<int[]>();
+		for (int i = 0; i < connections.length / 3; i++) {
+			cons.add(new int[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
+//			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 		}
 
 		return new Model(vertices, cons);
@@ -298,7 +299,7 @@ public class ModelBuilder {
 			vertices[i] = v;
 		}
 
-		float[] connections = new float[] { 8, 7, 9, 6, 5, 7, 4, 3, 5, 2, 1, 3, 0, 9, 1, 5, 3, 7, 7, 3, 9, 9, 3, 1, 10,
+		int[] connections = new int[] { 8, 7, 9, 6, 5, 7, 4, 3, 5, 2, 1, 3, 0, 9, 1, 5, 3, 7, 7, 3, 9, 9, 3, 1, 10,
 				12, 11, 13, 15, 14, 15, 13, 16, 13, 17, 16, 18, 20, 19, 17, 20, 21, 20, 23, 22, 20, 24, 23, 23, 26, 25,
 				24, 26, 23, 26, 27, 25, 26, 28, 27, 27, 30, 29, 28, 30, 27, 30, 32, 31, 30, 33, 32, 27, 30, 34, 32, 36,
 				35, 33, 36, 32, 36, 38, 37, 36, 39, 38, 38, 41, 40, 39, 41, 38, 41, 43, 42, 41, 44, 43, 44, 45, 43, 44,
@@ -315,10 +316,12 @@ public class ModelBuilder {
 				133, 135, 104, 101, 133, 104, 104, 136, 137, 104, 137, 107, 137, 138, 109, 107, 137, 109, 109, 139, 140,
 				109, 140, 112, 112, 140, 141, 112, 142, 143, 112, 143, 116, 116, 143, 144, 116, 145, 119 };
 
-		Vector[] cons = new Vector[connections.length / 3];
+//		Vector[] cons = new Vector[connections.length / 3];
+		List<int[]> cons = new ArrayList<int[]>();
 
-		for (int i = 0; i < cons.length; i++) {
-			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
+		for (int i = 0; i < connections.length / 3; i++) {
+			cons.add(new int[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
+//			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 		}
 
 		return new Model(vertices, cons);

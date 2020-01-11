@@ -33,7 +33,7 @@ public class RenderingEngine {
 			
 			if (renderPipeline == RenderPipeline.Quat) {
 				Vector[] transformedV;
-
+				
 				if (m.isChanged()) {
 					transformedV = new Vector[m.getVertices().length];
 					transformedV = ((m.getOrientation().rotatePoints(
@@ -42,12 +42,12 @@ public class RenderingEngine {
 						transformedV[i] = transformedV[i].add(m.getPos());
 					}
 
-					m.setTransformedVertices(transformedV);
+					m.setTransformedVertices(Vector.addDimensionToVec(transformedV,1));
 					m.setChanged(false);
 				} else {
 					transformedV = m.getTranformedVertices();
 				}
-
+				
 				Vector[] camSpaceV = cam.getOrientation().getInverse().rotatePoints(transformedV);
 				Vector pos_ = cam.getOrientation().getInverse().rotatePoint(cam.getPos());
 
@@ -58,8 +58,17 @@ public class RenderingEngine {
 			}
 			
 			else if(renderPipeline == RenderPipeline.Matrix) {
-				Matrix transformed = m.getObjectToWorldMatrix().matMul(new Matrix(Vector.addDimensionToVec(m.getVertices(), 1)));
-				camSpace = cam.getWorldToCam().matMul(transformed);
+				Vector[] transformedV = null;
+				
+				if(m.isChanged()) {
+					transformedV = (m.getObjectToWorldMatrix().matMul(new Matrix(Vector.addDimensionToVec(m.getVertices(), 1)))).convertToVectorArray();
+					m.setChanged(false);
+					m.setTransformedVertices(transformedV);
+				}
+				else {
+					transformedV = m.getTranformedVertices();
+				}
+				camSpace = cam.getWorldToCam().matMul(new Matrix(transformedV));
 			}
 
 			if (renderingMode == RenderingMode.PERSPECTIVE) {
@@ -95,18 +104,18 @@ public class RenderingEngine {
 								(int) ((1 - (v.getDataElement(1) + 1) * 0.5) * cam.getImageHeight()) }));
 			});
 
-			for (Vector con : m.getConnections()) {
-				for (int i = 0; i < con.getNumberOfDimensions(); i++) {
+			for (int[] con : m.getConnections()) {
+				for (int i = 0; i < con.length; i++) {
 
-					if (i != con.getNumberOfDimensions() - 1) {
-						if (isVisible.get((int) con.getData()[i]) || isVisible.get((int) con.getData()[i + 1])) {
-							drawLine(g, rasterVectors.get((int) con.getData()[i]),
-									rasterVectors.get((int) con.getData()[i + 1]));
+					if (i != con.length - 1) {
+						if (isVisible.get(con[i]) || isVisible.get(con[i + 1])) {
+							drawLine(g, rasterVectors.get(con[i]),
+									rasterVectors.get(con[i + 1]));
 						}
 					} else {
-						if (isVisible.get((int) con.getData()[i]) || isVisible.get((int) con.getData()[0])) {
-							drawLine(g, rasterVectors.get((int) con.getData()[i]),
-									rasterVectors.get((int) con.getData()[0]));
+						if (isVisible.get(con[i]) || isVisible.get(con[0])) {
+							drawLine(g, rasterVectors.get(con[i]),
+									rasterVectors.get(con[0]));
 						}
 					}
 				}

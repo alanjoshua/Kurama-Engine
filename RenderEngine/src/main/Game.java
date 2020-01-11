@@ -24,18 +24,19 @@ public class Game {
 	private Display display;
 	private List<Model> models;
 	private double targetFPS = 120;
-	private boolean shouldFPS = false;
+	private boolean shouldDisplayFPS = false;
 	private boolean running = true;
 	private Camera cam;
 	private Input input;
 	private boolean shouldCursorCenter = true;
 	private float fps;
 	private float displayFPS;
-	private float mouseXSensitivity = 10f;
-	private float mouseYSensitivity = 10f;
-	private double dt = 0.0;
-	private float speed = 10f;
+	private float mouseXSensitivity = 20f;
+	private float mouseYSensitivity = 20f;
+	private float speed = 15f;
 	private float speedMultiplier = 1;
+	private float speedIncreaseMultiplier = 2;
+	private float speedConstant;
 	
 	public Game(int width, int height) {
 
@@ -50,7 +51,7 @@ public class Game {
 				display.getWidth(), display.getHeight());
 
 		Tick tQuat = (m -> {
-			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 1);
+			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50*speedConstant);
 			Quaternion newQ = rot.multiply(m.getOrientation());
 			m.setOrientation(newQ);
 		});
@@ -108,44 +109,47 @@ public class Game {
 		models.add(grid);
 		models.add(mill);
 
-		RenderingEngine.renderingMode = RenderingMode.ORTHO;
-		RenderingEngine.renderPipeline = RenderPipeline.Matrix;
+		RenderingEngine.renderingMode = RenderingMode.PERSPECTIVE;
+		RenderingEngine.renderPipeline = RenderPipeline.Quat;
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
 	}
 
 	public void run() {
 
-		dt = 0.0;
+		double dt = 0.0;
 		double startTime = System.nanoTime();
 		double currentTime = System.nanoTime();
-		double startTime2 = System.nanoTime();
-		double frameInterval = ((1.0 / targetFPS));
-		double delta = 0.0;
+		double timerStartTime = System.nanoTime();
+		double timer = 0.0;
+		double tempDt = 0;
+		float tickInterval = 0;
 
 		while (running) {
-
-			if (dt >= frameInterval) {
+			
+			double timeU = ((1000000000.0 / targetFPS));
+			currentTime = System.nanoTime();
+			tempDt = (currentTime - startTime);
+			dt += tempDt/timeU;
+			tickInterval += tempDt;
+			startTime = currentTime;
+			timer = (currentTime - timerStartTime);
+			
+			if (dt >= 1) {
+				speedConstant = (float) (tickInterval /1000000000.0);
+				tickInterval = 0;
 				tick();
 				render();
 				fps++;
-				startTime = System.nanoTime();
+				dt = 0;
 			}
 
-			if (delta >= 1) {
-				if (shouldFPS) {
-					System.out.println("FPS : " + fps);
-				}
+			if (timer >= 1000000000.0) {
 				displayFPS = fps;
-				fps = 0.0f;
-				delta = 0.0;
-				startTime = System.nanoTime();
-				startTime2 = System.nanoTime();
+				fps = 0;
+				timer = 0;
+				timerStartTime = System.nanoTime();
 			}
-
-			currentTime = System.nanoTime();
-			dt = (currentTime - startTime) / 1000000000.0;
-			delta = (currentTime - startTime2) / 1000000000.0;
 		}
 
 		display.getFrame().dispose();
@@ -155,6 +159,7 @@ public class Game {
 	public void tick() {
 //		cam.getQuaternion().getAxis().display();
 //		cam.getForward().getCoordinate().display();
+//		System.out.println(speedConstant);
 		
 		if (input.keyDownOnce(KeyEvent.VK_ESCAPE)) {
 			if (shouldCursorCenter)
@@ -171,7 +176,7 @@ public class Game {
 			display.enableCursor();
 
 		input.poll();
-		cameraTick();
+		inputTick();
 		cam.tick();
 		
 		for (Model m : models) {
@@ -182,9 +187,9 @@ public class Game {
 		
 	}
 
-	public void cameraTick() {
+	public void inputTick() {
 		
-		float cameraSpeed = (float) (speed * dt * speedMultiplier);
+		float cameraSpeed = (float) (speed * speedConstant * speedMultiplier);
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
@@ -193,8 +198,15 @@ public class Game {
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
-			if(speedMultiplier == 1) speedMultiplier = 2;
+			if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
 			else speedMultiplier = 1;
+		}
+		
+		if (input.keyDownOnce(KeyEvent.VK_F)) {
+			if(targetFPS == 120)
+				targetFPS = 1000;
+			else 		
+				targetFPS = 120;
 		}
 		
 		if (input.keyDown(KeyEvent.VK_W)) {
@@ -230,25 +242,16 @@ public class Game {
 			Vector v = new Vector(new float[] {0,1,0});
 			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
 		}
-
-		if (input.isScrolled()) {
-			Vector v = null;
-			Vector dir = cam.getOrientation().getRotationMatrix().convertToVectorList().get(2);
-
-			if (input.getScrollVal() < 0) {
-				v = cam.getPos().sub(dir.scalarMul(1f));
-			} else {
-				v = cam.getPos().add(dir.scalarMul(1f));
-			}
-
-			cam.setPos(v);
+		
+		if (input.keyDownOnce(KeyEvent.VK_Q)) {
+			if(RenderingEngine.renderPipeline == RenderPipeline.Quat) RenderingEngine.renderPipeline = RenderPipeline.Matrix;
+			else RenderingEngine.renderPipeline = RenderPipeline.Quat;
 		}
 		
 		if (input.getPosition().getNorm() != 0 && shouldCursorCenter) {
 		
-			float yawIncrease   = (float) (mouseXSensitivity * dt * -input.getPosition().getDataElement(0));
-			float pitchIncrease = (float) (mouseYSensitivity * dt * input.getPosition().getDataElement(1));
-			float rollIncrease = 0;
+			float yawIncrease   = (float) (mouseXSensitivity * speedConstant * -input.getPosition().getDataElement(0));
+			float pitchIncrease = (float) (mouseYSensitivity * speedConstant * input.getPosition().getDataElement(1));
 			
 			Vector currentAngle = cam.getOrientation().getPitchYawRoll();
 			float currentPitch = currentAngle.getDataElement(0) + pitchIncrease;
@@ -293,8 +296,9 @@ public class Game {
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
-
 			RenderingEngine.render(this, models, g, cam);
+			g.setColor(Color.RED);;
+			g.drawString("Rendering Pipeline : " + RenderingEngine.renderPipeline, (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 			g.dispose();
 		} while (bs.contentsLost());
 
@@ -318,11 +322,11 @@ public class Game {
 	}
 
 	public boolean isShouldFPS() {
-		return shouldFPS;
+		return shouldDisplayFPS;
 	}
 
 	public void setShouldFPS(boolean shouldFPS) {
-		this.shouldFPS = shouldFPS;
+		this.shouldDisplayFPS = shouldFPS;
 	}
 
 	public boolean isRunning() {

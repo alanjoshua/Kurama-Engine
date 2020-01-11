@@ -101,8 +101,9 @@ public class Quaternion {
 	}
 
 	public Vector rotatePoint(Vector v) {
-		Quaternion q_ = getInverse();
-		Quaternion res = (new Quaternion(v)).multiply(q_);
+		Quaternion q_ = getInverse();		
+		
+		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.getDataElement(0),v.getDataElement(1),v.getDataElement(2)}))).multiply(q_);
 		res = this.multiply(res);
 		return res.getPureVec();
 	}
@@ -111,10 +112,11 @@ public class Quaternion {
 
 		Quaternion q_ = getInverse();
 		Vector[] res = new Vector[vList.length];
-
+		Vector tempV = null;
+		
 		int i = 0;
 		for (Vector v : vList) {
-			Quaternion temp = (new Quaternion(v)).multiply(q_);
+			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.getDataElement(0),v.getDataElement(1),v.getDataElement(2)}))).multiply(q_);
 			temp = this.multiply(temp);
 			res[i] = temp.getPureVec();
 			i++;
