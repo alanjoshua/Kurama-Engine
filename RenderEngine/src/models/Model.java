@@ -15,8 +15,12 @@ public class Model {
 	
 	protected List<Vector> rotation;
 	protected Vector[] vertices;
+	protected Vector[] textureCoords;
+	protected Vector[] normals;
 	protected List<int[]> faces;
-//	protected Matrix scaledVertices;
+	protected List<int[]> textureFaces;
+	protected List<int[]> normalFaces;
+	
 	protected Vector scale;
 	protected Vector pos;
 	protected Tick tickObj;
@@ -26,9 +30,16 @@ public class Model {
 	protected Vector[] transformedVertices;
 	protected boolean isChanged = true;
 
-	public Model(Vector[] vertices, List<int[]> faces) {
-		this.faces = faces;
+	public Model(Vector[] vertices, List<int[]> faces, Vector[] textureCoords, List<int[]> textureFaces,Vector[] normals, List<int[]> normalFaces) {
 		this.vertices = vertices;
+		this.faces = faces;
+		
+		this.textureFaces = textureFaces;
+		this.textureCoords = textureCoords;
+		
+		this.normalFaces = normalFaces;
+		this.normals = normals;
+		
 		rotation = new ArrayList<Vector>();
 		scale = new Vector(new float[] {1,1,1});
 		pos = new Vector(3,0);
@@ -144,6 +155,22 @@ public class Model {
 		return faces;
 	}
 	
+	public Vector[] getTextureCoords() {
+		return textureCoords;
+	}
+
+	public Vector[] getNormals() {
+		return normals;
+	}
+
+	public List<int[]> getTextureFaces() {
+		return textureFaces;
+	}
+
+	public List<int[]> getNormalFaces() {
+		return normalFaces;
+	}
+
 	public Vector[] getTranformedVertices() {
 		return transformedVertices;
 	}

@@ -43,7 +43,7 @@ public class ModelBuilder {
 		cons.add(new int[] { 6, 7 });
 		cons.add(new int[] { 4, 5 });
 
-		return new Model(vertexO, cons);
+		return new Model(vertexO, cons, null, null, null, null);
 	}
 
 	public static Model buildModelFromFile(String loc) {
@@ -158,7 +158,6 @@ public class ModelBuilder {
 							textureFaces.add(tdata);
 							normalFaces.add(ndata);
 						}
-						
 
 //						if (split[0].equalsIgnoreCase("f")) {
 //
@@ -225,11 +224,19 @@ public class ModelBuilder {
 				Vector[] vertArr = new Vector[vertex.size()];
 				for (int i = 0; i < vertArr.length; i++) {
 					vertArr[i] = vertex.get(i).sub(change);
-//					vertArr[i] = vertex.get(i);
-
+				}
+				
+				Vector[] vnArray = new Vector[vn.size()];
+				for(int i = 0; i < vnArray.length; i++) {
+					vnArray[i] = vn.get(i);
+				}
+				
+				Vector[] vtArray = new Vector[vt.size()];
+				for(int i = 0; i < vtArray.length; i++) {
+					vtArray[i] = vt.get(i);
 				}
 
-				res = new Model(vertArr, faces);
+				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -275,7 +282,7 @@ public class ModelBuilder {
 			}
 		}
 
-		return new Model(vertices, cons);
+		return new Model(vertices, cons, null, null, null, null);
 	}
 
 	public static Model buildShip() {
@@ -317,7 +324,7 @@ public class ModelBuilder {
 //			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 		}
 
-		return new Model(vertices, cons);
+		return new Model(vertices, cons, null, null, null, null);
 	}
 
 	public static Model buildTree() {
@@ -391,7 +398,7 @@ public class ModelBuilder {
 //			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 		}
 
-		return new Model(vertices, cons);
+		return new Model(vertices, cons, null, null, null, null);
 	}
 
 }
