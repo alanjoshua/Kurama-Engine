@@ -117,70 +117,68 @@ public class ModelBuilder {
 							vt.add(new Vector(data));
 						}
 
-//						if (split[0].equalsIgnoreCase("f")) {
-//
-//							int[] fdata = new int[split.length];
-//							int[] tdata = new int[split.length];
-//							int[] ndata = new int[split.length];
-//
-//							String[] doubleSplitTest = split[1].split("/");
-//							System.out.println(doubleSplitTest.length);
-//
-//							if (doubleSplitTest.length == 1) {
-//								tdata = null;
-//								ndata = null;
-//								for (int i = 1; i < split.length; i++) {
-//									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
-//								}
-//							} else if (doubleSplitTest.length == 2) {
-//								ndata = null;
-//								for (int i = 1; i < split.length; i++) {
-//									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-//									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-//								}
-//							} else if (doubleSplitTest.length == 3) {
-//
-//								if (doubleSplitTest[1].equalsIgnoreCase("")) {
-//									tdata = null;
-//									System.out.println("ignore");
-//									for (int i = 1; i < split.length; i++) {
-//										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-//										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
-//									}
-//								} else {
-//									for (int i = 1; i < split.length; i++) {
-//										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-//										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-//										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
-//									}
-//								}
-//							}
-//
-//							faces.add(fdata);
-//							textureFaces.add(tdata);
-//							normalFaces.add(ndata);
-//						}
-						
-
 						if (split[0].equalsIgnoreCase("f")) {
 
-							List<Integer> data = new ArrayList<Integer>();
-							for (int i = 1; i < split.length; i++) {
-								try {
-									data.add(Integer.parseInt(split[i].split("/")[0]) - 1);
+							int[] fdata = new int[split.length - 1];
+							int[] tdata = new int[split.length - 1];
+							int[] ndata = new int[split.length - 1];
 
-								} catch (Exception e) {
+							String[] doubleSplitTest = split[1].split("/");
+
+							if (doubleSplitTest.length == 1) {
+								tdata = null;
+								ndata = null;
+								for (int i = 1; i < split.length; i++) {
+									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
 								}
-								;
+							} else if (doubleSplitTest.length == 2) {
+								ndata = null;
+								for (int i = 1; i < split.length; i++) {
+									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+								}
+							} else if (doubleSplitTest.length == 3) {
+
+								if (doubleSplitTest[1].equalsIgnoreCase("")) {
+									tdata = null;
+									for (int i = 1; i < split.length; i++) {
+										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+									}
+								} else {
+									for (int i = 1; i < split.length; i++) {
+										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+									}
+								}
 							}
 
-							int[] data2 = new int[data.size()];
-							for (int i = 0; i < data2.length; i++) {
-								data2[i] = data.get(i);
-							}
-							faces.add(data2);
-
+							faces.add(fdata);
+							textureFaces.add(tdata);
+							normalFaces.add(ndata);
 						}
+						
+
+//						if (split[0].equalsIgnoreCase("f")) {
+//
+//							List<Integer> data = new ArrayList<Integer>();
+//							for (int i = 1; i < split.length; i++) {
+//								try {
+//									data.add(Integer.parseInt(split[i].split("/")[0]) - 1);
+//
+//								} catch (Exception e) {
+//								}
+//								;
+//							}
+//
+//							int[] data2 = new int[data.size()];
+//							for (int i = 0; i < data2.length; i++) {
+//								data2[i] = data.get(i);
+//							}
+//							faces.add(data2);
+//
+//						}
 						
 					}
 				}
