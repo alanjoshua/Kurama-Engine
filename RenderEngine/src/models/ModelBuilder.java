@@ -31,15 +31,15 @@ public class ModelBuilder {
 		cons.add(new int[] { 1, 3 });
 		cons.add(new int[] { 3, 2 });
 		cons.add(new int[] { 0, 2 });
-		
+
 		cons.add(new int[] { 0, 4 });
 		cons.add(new int[] { 2, 6 });
 		cons.add(new int[] { 4, 6 });
-		
+
 		cons.add(new int[] { 1, 5 });
 		cons.add(new int[] { 4, 7 });
 		cons.add(new int[] { 5, 7 });
-		
+
 		cons.add(new int[] { 6, 7 });
 		cons.add(new int[] { 4, 5 });
 
@@ -53,7 +53,11 @@ public class ModelBuilder {
 
 		Model res = null;
 		List<Vector> vertex = new ArrayList<Vector>();
-		List<int[]> connections = new ArrayList<int[]>();
+		List<Vector> vn = new ArrayList<Vector>();
+		List<Vector> vt = new ArrayList<Vector>();
+		List<int[]> faces = new ArrayList<int[]>();
+		List<int[]> textureFaces = new ArrayList<int[]>();
+		List<int[]> normalFaces = new ArrayList<int[]>();
 
 		if (path.substring(path.length() - 3, path.length()).equalsIgnoreCase("obj")) {
 
@@ -62,27 +66,101 @@ public class ModelBuilder {
 				BufferedReader br = new BufferedReader(new FileReader(new File(path)));
 
 				while ((line = br.readLine()) != null) {
-					String[] split = line.split(" ");
+
+					String[] split = line.split("\\s+");
+
 					if (split.length > 1) {
+
+//						Reads lines which start with "v" and stores the vertex data in the vertex list. 
+//						If the fourth coordinate "w" is not given, it is given a default value of 1.0
+
 						if (split[0].equalsIgnoreCase("v")) {
-							List<Float> data = new ArrayList<Float>();
-							for (int i = 1; i < split.length; i++) {
-								try {
-									data.add(Float.parseFloat(split[i]));
-
-								} catch (Exception e) {
-								}
-								;
+							float[] data = new float[4];
+							for (int i = 0; i < 3; i++) {
+								data[i] = Float.parseFloat(split[i + 1]);
 							}
-
-							float[] data2 = new float[data.size()];
-							for (int i = 0; i < data2.length; i++) {
-								data2[i] = data.get(i);
+							if (split.length == 4) {
+								data[3] = 1.0f;
+							} else if (split.length == 5) {
+								data[3] = Float.parseFloat(split[4]);
 							}
-
-							vertex.add(new Vector(data2));
-
+							vertex.add(new Vector(data));
 						}
+
+						if (split[0].equalsIgnoreCase("vn")) {
+							float[] data = new float[4];
+							for (int i = 0; i < 3; i++) {
+								data[i] = Float.parseFloat(split[i + 1]);
+							}
+							if (split.length == 4) {
+								data[3] = 1.0f;
+							} else if (split.length == 5) {
+								data[3] = Float.parseFloat(split[4]);
+							}
+							vn.add(new Vector(data));
+						}
+
+						if (split[0].equalsIgnoreCase("vt")) {
+							float[] data = new float[3];
+							data[0] = Float.parseFloat(split[1]);
+							if (split.length == 2) {
+								data[1] = 0f;
+								data[2] = 0f;
+							} else if (split.length == 3) {
+								data[1] = Float.parseFloat(split[2]);
+								data[2] = 0f;
+							} else if (split.length == 4) {
+								data[1] = Float.parseFloat(split[2]);
+								data[2] = Float.parseFloat(split[3]);
+							}
+
+							vt.add(new Vector(data));
+						}
+
+//						if (split[0].equalsIgnoreCase("f")) {
+//
+//							int[] fdata = new int[split.length];
+//							int[] tdata = new int[split.length];
+//							int[] ndata = new int[split.length];
+//
+//							String[] doubleSplitTest = split[1].split("/");
+//							System.out.println(doubleSplitTest.length);
+//
+//							if (doubleSplitTest.length == 1) {
+//								tdata = null;
+//								ndata = null;
+//								for (int i = 1; i < split.length; i++) {
+//									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
+//								}
+//							} else if (doubleSplitTest.length == 2) {
+//								ndata = null;
+//								for (int i = 1; i < split.length; i++) {
+//									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+//									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+//								}
+//							} else if (doubleSplitTest.length == 3) {
+//
+//								if (doubleSplitTest[1].equalsIgnoreCase("")) {
+//									tdata = null;
+//									System.out.println("ignore");
+//									for (int i = 1; i < split.length; i++) {
+//										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+//										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+//									}
+//								} else {
+//									for (int i = 1; i < split.length; i++) {
+//										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+//										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+//										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+//									}
+//								}
+//							}
+//
+//							faces.add(fdata);
+//							textureFaces.add(tdata);
+//							normalFaces.add(ndata);
+//						}
+						
 
 						if (split[0].equalsIgnoreCase("f")) {
 
@@ -100,30 +178,24 @@ public class ModelBuilder {
 							for (int i = 0; i < data2.length; i++) {
 								data2[i] = data.get(i);
 							}
-							connections.add(data2);
+							faces.add(data2);
 
 						}
+						
 					}
 				}
 
-//				for(Vector v: vertex) {
-//					v.setDataElement(1, v.getDataElement(1) * -1);
-//				}
-
-//				
-//				for (int i = 0; i < vertArr.length; i++) {
-//					vertArr[i] = vertex.get(i);
-//				}
-//				
-				float[] dataMin = new float[3];
+				float[] dataMin = new float[4];
 				dataMin[0] = Float.POSITIVE_INFINITY;
 				dataMin[1] = Float.POSITIVE_INFINITY;
 				dataMin[2] = Float.POSITIVE_INFINITY;
+				dataMin[3] = 0;
 
-				float[] dataMax = new float[3];
+				float[] dataMax = new float[4];
 				dataMax[0] = Float.NEGATIVE_INFINITY;
 				dataMax[1] = Float.NEGATIVE_INFINITY;
 				dataMax[2] = Float.NEGATIVE_INFINITY;
+				dataMax[3] = 0;
 
 				for (Vector v : vertex) {
 					if (v.getDataElement(0) < dataMin[0]) {
@@ -155,14 +227,11 @@ public class ModelBuilder {
 				Vector[] vertArr = new Vector[vertex.size()];
 				for (int i = 0; i < vertArr.length; i++) {
 					vertArr[i] = vertex.get(i).sub(change);
+//					vertArr[i] = vertex.get(i);
+
 				}
 
-//				Vector[] connArr = new Vector[connections.size()];
-//				for (int i = 0; i < connArr.length; i++) {
-//					connArr[i] = connections.get(i);
-//				}
-
-				res = new Model(vertArr, connections);
+				res = new Model(vertArr, faces);
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -180,7 +249,7 @@ public class ModelBuilder {
 
 		for (int i = -w / 2; i < w / 2; i++) {
 			for (int k = -d / 2; k < d / 2; k++) {
-				verts[i+ w/2][k+d/2] = new Vector(new float[] { i, 0, k });
+				verts[i + w / 2][k + d / 2] = new Vector(new float[] { i, 0, k, 1 });
 			}
 		}
 
@@ -192,7 +261,7 @@ public class ModelBuilder {
 
 		for (int j = 0; j < d; j++) {
 			for (int i = 0; i < w - 1; i++) {
-				cons.add(new int[] {(i * w) + j, ((i+1) * w) + (j)});
+				cons.add(new int[] { (i * w) + j, ((i + 1) * w) + (j) });
 			}
 		}
 
@@ -203,8 +272,8 @@ public class ModelBuilder {
 		Vector[] vertices = new Vector[verts.length * verts[0].length];
 
 		for (int i = 0; i < verts.length; i++) {
-			for(int j = 0; j < verts[i].length;j++) {
-				vertices[i*w + j] = verts[i][j];
+			for (int j = 0; j < verts[i].length; j++) {
+				vertices[i * w + j] = verts[i][j];
 			}
 		}
 
@@ -231,19 +300,19 @@ public class ModelBuilder {
 			vertices[i] = v;
 		}
 
-		int[] connections = new int[] { 4, 0, 5, 0, 1, 5, 1, 2, 5, 5, 2, 6, 3, 7, 2, 2, 7, 6, 5, 9, 4, 4, 9, 8, 5,
-				6, 9, 9, 6, 10, 7, 11, 6, 6, 11, 10, 9, 13, 8, 8, 13, 12, 10, 14, 9, 9, 14, 13, 10, 11, 14, 14, 11, 15,
-				17, 16, 13, 12, 13, 16, 13, 14, 17, 17, 14, 18, 15, 19, 14, 14, 19, 18, 16, 17, 20, 20, 17, 21, 18, 22,
-				17, 17, 22, 21, 18, 19, 22, 22, 19, 23, 20, 21, 0, 21, 1, 0, 22, 2, 21, 21, 2, 1, 22, 23, 2, 2, 23, 3,
-				3, 23, 24, 3, 24, 7, 24, 23, 15, 15, 23, 19, 24, 15, 7, 7, 15, 11, 0, 25, 20, 0, 4, 25, 20, 25, 16, 16,
-				25, 12, 25, 4, 12, 12, 4, 8, 26, 27, 28, 29, 30, 31, 32, 34, 33 };
+		int[] connections = new int[] { 4, 0, 5, 0, 1, 5, 1, 2, 5, 5, 2, 6, 3, 7, 2, 2, 7, 6, 5, 9, 4, 4, 9, 8, 5, 6, 9,
+				9, 6, 10, 7, 11, 6, 6, 11, 10, 9, 13, 8, 8, 13, 12, 10, 14, 9, 9, 14, 13, 10, 11, 14, 14, 11, 15, 17,
+				16, 13, 12, 13, 16, 13, 14, 17, 17, 14, 18, 15, 19, 14, 14, 19, 18, 16, 17, 20, 20, 17, 21, 18, 22, 17,
+				17, 22, 21, 18, 19, 22, 22, 19, 23, 20, 21, 0, 21, 1, 0, 22, 2, 21, 21, 2, 1, 22, 23, 2, 2, 23, 3, 3,
+				23, 24, 3, 24, 7, 24, 23, 15, 15, 23, 19, 24, 15, 7, 7, 15, 11, 0, 25, 20, 0, 4, 25, 20, 25, 16, 16, 25,
+				12, 25, 4, 12, 12, 4, 8, 26, 27, 28, 29, 30, 31, 32, 34, 33 };
 
 //		Vector[] cons = new Vector[connections.length / 3];
 //
 //		for (int i = 0; i < cons.length; i++) {
 //			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 //		}
-		
+
 		List<int[]> cons = new ArrayList<int[]>();
 		for (int i = 0; i < connections.length / 3; i++) {
 			cons.add(new int[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
@@ -299,22 +368,22 @@ public class ModelBuilder {
 			vertices[i] = v;
 		}
 
-		int[] connections = new int[] { 8, 7, 9, 6, 5, 7, 4, 3, 5, 2, 1, 3, 0, 9, 1, 5, 3, 7, 7, 3, 9, 9, 3, 1, 10,
-				12, 11, 13, 15, 14, 15, 13, 16, 13, 17, 16, 18, 20, 19, 17, 20, 21, 20, 23, 22, 20, 24, 23, 23, 26, 25,
-				24, 26, 23, 26, 27, 25, 26, 28, 27, 27, 30, 29, 28, 30, 27, 30, 32, 31, 30, 33, 32, 27, 30, 34, 32, 36,
-				35, 33, 36, 32, 36, 38, 37, 36, 39, 38, 38, 41, 40, 39, 41, 38, 41, 43, 42, 41, 44, 43, 44, 45, 43, 44,
-				47, 46, 44, 48, 47, 48, 49, 47, 48, 51, 50, 10, 52, 12, 13, 53, 54, 55, 17, 54, 13, 54, 17, 56, 57, 20,
-				17, 58, 20, 20, 59, 60, 20, 60, 24, 60, 61, 26, 24, 60, 26, 26, 61, 62, 26, 62, 28, 62, 63, 30, 28, 62,
-				30, 30, 64, 65, 30, 65, 33, 62, 66, 30, 65, 67, 36, 33, 65, 36, 36, 68, 69, 36, 69, 39, 69, 70, 41, 39,
-				69, 41, 41, 71, 72, 41, 72, 44, 44, 72, 73, 44, 74, 75, 44, 75, 48, 48, 75, 76, 48, 77, 51, 78, 80, 79,
-				81, 83, 82, 83, 81, 84, 81, 85, 84, 86, 88, 87, 85, 88, 89, 88, 91, 90, 88, 92, 91, 91, 94, 93, 92, 94,
-				91, 94, 95, 93, 94, 96, 95, 95, 98, 97, 96, 98, 95, 98, 100, 99, 98, 101, 100, 95, 98, 102, 100, 104,
-				103, 101, 104, 100, 104, 106, 105, 104, 107, 106, 106, 109, 108, 107, 109, 106, 109, 111, 110, 109, 112,
-				111, 112, 113, 111, 112, 115, 114, 112, 116, 115, 116, 117, 115, 116, 119, 118, 78, 120, 80, 81, 121,
-				122, 123, 85, 122, 81, 122, 85, 124, 125, 88, 85, 126, 88, 88, 127, 128, 88, 128, 92, 128, 129, 94, 92,
-				128, 94, 94, 129, 130, 94, 130, 96, 130, 131, 98, 96, 130, 98, 98, 132, 133, 98, 133, 101, 130, 134, 98,
-				133, 135, 104, 101, 133, 104, 104, 136, 137, 104, 137, 107, 137, 138, 109, 107, 137, 109, 109, 139, 140,
-				109, 140, 112, 112, 140, 141, 112, 142, 143, 112, 143, 116, 116, 143, 144, 116, 145, 119 };
+		int[] connections = new int[] { 8, 7, 9, 6, 5, 7, 4, 3, 5, 2, 1, 3, 0, 9, 1, 5, 3, 7, 7, 3, 9, 9, 3, 1, 10, 12,
+				11, 13, 15, 14, 15, 13, 16, 13, 17, 16, 18, 20, 19, 17, 20, 21, 20, 23, 22, 20, 24, 23, 23, 26, 25, 24,
+				26, 23, 26, 27, 25, 26, 28, 27, 27, 30, 29, 28, 30, 27, 30, 32, 31, 30, 33, 32, 27, 30, 34, 32, 36, 35,
+				33, 36, 32, 36, 38, 37, 36, 39, 38, 38, 41, 40, 39, 41, 38, 41, 43, 42, 41, 44, 43, 44, 45, 43, 44, 47,
+				46, 44, 48, 47, 48, 49, 47, 48, 51, 50, 10, 52, 12, 13, 53, 54, 55, 17, 54, 13, 54, 17, 56, 57, 20, 17,
+				58, 20, 20, 59, 60, 20, 60, 24, 60, 61, 26, 24, 60, 26, 26, 61, 62, 26, 62, 28, 62, 63, 30, 28, 62, 30,
+				30, 64, 65, 30, 65, 33, 62, 66, 30, 65, 67, 36, 33, 65, 36, 36, 68, 69, 36, 69, 39, 69, 70, 41, 39, 69,
+				41, 41, 71, 72, 41, 72, 44, 44, 72, 73, 44, 74, 75, 44, 75, 48, 48, 75, 76, 48, 77, 51, 78, 80, 79, 81,
+				83, 82, 83, 81, 84, 81, 85, 84, 86, 88, 87, 85, 88, 89, 88, 91, 90, 88, 92, 91, 91, 94, 93, 92, 94, 91,
+				94, 95, 93, 94, 96, 95, 95, 98, 97, 96, 98, 95, 98, 100, 99, 98, 101, 100, 95, 98, 102, 100, 104, 103,
+				101, 104, 100, 104, 106, 105, 104, 107, 106, 106, 109, 108, 107, 109, 106, 109, 111, 110, 109, 112, 111,
+				112, 113, 111, 112, 115, 114, 112, 116, 115, 116, 117, 115, 116, 119, 118, 78, 120, 80, 81, 121, 122,
+				123, 85, 122, 81, 122, 85, 124, 125, 88, 85, 126, 88, 88, 127, 128, 88, 128, 92, 128, 129, 94, 92, 128,
+				94, 94, 129, 130, 94, 130, 96, 130, 131, 98, 96, 130, 98, 98, 132, 133, 98, 133, 101, 130, 134, 98, 133,
+				135, 104, 101, 133, 104, 104, 136, 137, 104, 137, 107, 137, 138, 109, 107, 137, 109, 109, 139, 140, 109,
+				140, 112, 112, 140, 141, 112, 142, 143, 112, 143, 116, 116, 143, 144, 116, 145, 119 };
 
 //		Vector[] cons = new Vector[connections.length / 3];
 		List<int[]> cons = new ArrayList<int[]>();

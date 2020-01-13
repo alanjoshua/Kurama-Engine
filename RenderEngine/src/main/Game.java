@@ -39,7 +39,6 @@ public class Game {
 	private float speedConstant;
 	
 	public Game(int width, int height) {
-
 		display = new Display(width, height, this);
 		input = new Input(this);
 		display.setInput(input);
@@ -72,16 +71,11 @@ public class Game {
 		crate.setScale(new Vector(new float[] { 100, 100, 100 }));
 
 		Model ironMan = ModelBuilder.buildModelFromFile("IronMan.obj");
-//		ironMan.setPos(new Vector(new float[] { (float) display.getWidth() / 2.0f, display.getHeight() / 0.7f, 1 }));
-//		ironMan.setScale(new Vector(new float[] { 3, -3, 3 }));
 		ironMan.setTickObj(tQuat);
 
 		Model deer = ModelBuilder.buildModelFromFile("deer.obj");
-//		deer.setPos(new Vector(new float[]{(float)display.getWidth()/2.0f,display.getHeight()/1.3f,0}));
 		deer.setPos(new Vector(new float[] {-20,7,7}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-//		deer.setRotation(rot);
-//		deer.setOrientation(Quaternion.eulerToQuaternion(new Vector(new float[] {0,0,0})));
 		deer.setTickObj(tQuat);
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
@@ -93,24 +87,15 @@ public class Game {
 		Model teapot = ModelBuilder.buildModelFromFile("teapot.obj");
 		teapot.setPos(new Vector(new float[] { 0, 0, 0}));
 		teapot.setScale(new Vector(new float[] {0.1f,0.1f,0.1f}));
-//		teapot.setRotation(rot);
-//		teapot.setQuaternion(new Quaternion(new Vector(new float[] {0,0,-1}),0));
-//		teapot.setTickObj(tQuat);
 		
 		Model grid = ModelBuilder.buildGrid(100, 100);
 
-//		models.add(teapot);
-//		models.add(ship);
-//		models.add(cube);
-//		models.add(tree);
-//		models.add(crate);
-//		models.add(ironMan);
 		models.add(deer);
 		models.add(grid);
 		models.add(mill);
 
 		RenderingEngine.renderingMode = RenderingMode.PERSPECTIVE;
-		RenderingEngine.renderPipeline = RenderPipeline.Quat;
+		RenderingEngine.renderPipeline = RenderPipeline.Matrix;
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
 	}

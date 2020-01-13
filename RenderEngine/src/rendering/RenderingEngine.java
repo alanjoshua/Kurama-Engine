@@ -37,7 +37,7 @@ public class RenderingEngine {
 				if (m.isChanged()) {
 					transformedV = new Vector[m.getVertices().length];
 					transformedV = ((m.getOrientation().rotatePoints(
-							(new Matrix(m.getVertices()).columnMul(m.getScale())).convertToVectorArray())));
+							(new Matrix(m.getVertices()).columnMul(m.getScale().addDimensionToVec(1))).convertToVectorArray())));
 					for (int i = 0; i < transformedV.length; i++) {
 						transformedV[i] = transformedV[i].add(m.getPos());
 					}
@@ -61,7 +61,7 @@ public class RenderingEngine {
 				Vector[] transformedV = null;
 				
 				if(m.isChanged()) {
-					transformedV = (m.getObjectToWorldMatrix().matMul(new Matrix(Vector.addDimensionToVec(m.getVertices(), 1)))).convertToVectorArray();
+					transformedV = (m.getObjectToWorldMatrix().matMul(new Matrix(m.getVertices()))).convertToVectorArray();
 					m.setChanged(false);
 					m.setTransformedVertices(transformedV);
 				}
@@ -104,18 +104,18 @@ public class RenderingEngine {
 								(int) ((1 - (v.getDataElement(1) + 1) * 0.5) * cam.getImageHeight()) }));
 			});
 
-			for (int[] con : m.getConnections()) {
-				for (int i = 0; i < con.length; i++) {
+			for (int[] f : m.getFaces()) {
+				for (int i = 0; i < f.length; i++) {
 
-					if (i != con.length - 1) {
-						if (isVisible.get(con[i]) || isVisible.get(con[i + 1])) {
-							drawLine(g, rasterVectors.get(con[i]),
-									rasterVectors.get(con[i + 1]));
+					if (i != f.length - 1) {
+						if (isVisible.get(f[i]) || isVisible.get(f[i + 1])) {
+							drawLine(g, rasterVectors.get(f[i]),
+									rasterVectors.get(f[i + 1]));
 						}
 					} else {
-						if (isVisible.get(con[i]) || isVisible.get(con[0])) {
-							drawLine(g, rasterVectors.get(con[i]),
-									rasterVectors.get(con[0]));
+						if (isVisible.get(f[i]) || isVisible.get(f[0])) {
+							drawLine(g, rasterVectors.get(f[i]),
+									rasterVectors.get(f[0]));
 						}
 					}
 				}

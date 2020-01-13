@@ -477,7 +477,7 @@ public class Matrix {
 				}
 				res = new Matrix(resData);
 			} else {
-				throw new Exception("number of Columns on Mat A and rows of Mat B do not match");
+				throw new Exception("number of Columns on Mat A (" + this.cols + ") and rows of Mat B ("+ m.getRows() +") do not match\n ");
 //			System.err.println("Size of Matrix A and B should be the same");
 //			System.out.println("Returning Matrix of size A with values 1");
 //			res = new Matrix(rows, cols, 1f);
