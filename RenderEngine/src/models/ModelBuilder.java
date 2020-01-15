@@ -181,6 +181,73 @@ public class ModelBuilder {
 						
 					}
 				}
+				
+//				List<int[]> facesTriangle = new ArrayList<int[]>();
+//				List<int[]> textureFacesTriangle = new ArrayList<int[]>();
+//				List<int[]> normalFacesTriangle = new ArrayList<int[]>();
+//				
+//				if (faces != null) {
+//				for (int[] x : faces) {
+//					if (x.length == 4) {
+//						int[] t1 = new int[3];
+//						int[] t2 = new int[3];
+//						t1[0] = x[0];
+//						t1[1] = x[1];
+//						t1[2] = x[3];
+//						t2[0] = x[1];
+//						t2[1] = x[2];
+//						t2[2] = x[3];
+//						facesTriangle.add(t1);
+//						facesTriangle.add(t2);
+//					} else {
+//						facesTriangle.add(x);
+//					}
+//				}
+//			} else {
+//				facesTriangle = null;
+//			}
+//
+//			if (textureFaces != null) {
+//				for (int[] x : textureFaces) {
+//					if (x != null && x.length == 4) {
+//						int[] t1 = new int[3];
+//						int[] t2 = new int[3];
+//						t1[0] = x[0];
+//						t1[1] = x[1];
+//						t1[2] = x[3];
+//						t2[0] = x[1];
+//						t2[1] = x[2];
+//						t2[2] = x[3];
+//						textureFacesTriangle.add(t1);
+//						textureFacesTriangle.add(t2);
+//					} else {
+//						textureFacesTriangle.add(x);
+//					}
+//				}
+//			} else {
+//				textureFacesTriangle = null;
+//			}
+//
+//			if (normalFaces != null) {
+//				for (int[] x : normalFaces) {
+//					if (x != null && x.length == 4) {
+//						int[] t1 = new int[3];
+//						int[] t2 = new int[3];
+//						t1[0] = x[0];
+//						t1[1] = x[1];
+//						t1[2] = x[3];
+//						t2[0] = x[1];
+//						t2[1] = x[2];
+//						t2[2] = x[3];
+//						normalFacesTriangle.add(t1);
+//						normalFacesTriangle.add(t2);
+//					} else {
+//						normalFacesTriangle.add(x);
+//					}
+//				}
+//			} else {
+//				normalFacesTriangle = null;
+//			}
 
 				float[] dataMin = new float[4];
 				dataMin[0] = Float.POSITIVE_INFINITY;
