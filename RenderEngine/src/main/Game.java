@@ -103,6 +103,14 @@ public class Game {
 		RenderingEngine.renderPipeline = RenderPipeline.Matrix;
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
+		
+//		Vector v1 = new Vector(new float[] {-1,0,0});
+//		Vector v3 = new Vector(new float[] {1,0,0});
+//		Vector v2= new Vector(new float[] {0,1,0});
+//		Vector p = new Vector(new float[] {0,0.7f,1});
+//		
+//		System.out.println(ModelBuilder.isVertexInsideTriangle(v1, v2, v3, p));
+	
 	}
 
 	public void run() {

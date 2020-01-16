@@ -317,8 +317,9 @@ public class ModelBuilder {
 	public static boolean isVertexInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
 		Vector e1 = v0.sub(v1);
 		Vector e2 = v2.sub(v1);
-		Vector proj1 = e1.normalise().scalarMul(((e1).dot(p))/e1.getNorm());
-		Vector proj2 = e2.normalise().scalarMul(((e1).dot(p))/e2.getNorm());
+		
+		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
+		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
 		Vector p_ = proj1.add(proj2);
 		
 		float pa = (v0.sub(p_)).getNorm();
@@ -326,11 +327,15 @@ public class ModelBuilder {
 		float pc = (v2.sub(p_)).getNorm();
 		float totalArea = e1.getNorm() * e2.getNorm() /2.0f;
 		
-		float alpha = pa * pb / 2.0f;
-		float beta = pb * pc / 2.0f;
-		float gamma = pc * pa / 2.0f;
+		float alpha = pa * pb / (2.0f * totalArea);
+		float beta = pb * pc / (2.0f * totalArea);
+		float gamma = 1 - alpha - beta;
 		
-		if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && gamma >= 0 && gamma <= 1 && alpha + beta + gamma == 1) {
+		System.out.println(alpha);
+		System.out.println(beta);
+		System.out.println(gamma);
+		
+		if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1) {
 			return true;
 		}
 		else {
