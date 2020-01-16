@@ -1,6 +1,7 @@
 package models;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import Math.Matrix;
@@ -127,6 +128,72 @@ public class Model {
 						t2[2] = x[3];
 						facesTriangle.add(t1);
 						facesTriangle.add(t2);
+					}
+					else {
+						List<Integer> reflex = new ArrayList<Integer>();
+						List<Integer> convex = new ArrayList<Integer>();
+						List<Integer> ears = new ArrayList<Integer>();
+						List<Integer> vertsLeft = new ArrayList<Integer>();
+						
+						for(int i = 0;i < x.length;i++) {
+							vertsLeft.add(x[i]);
+						}
+						
+//						Calculating the internal angle of each vertex and adds them to either the reflex or concave list 
+						for(int i = 0;i < x.length;i++) {
+							Vector v0,vi,v2;
+							if(i == 0) {
+								v0  = vertices[x[x.length - 1]];
+								vi = vertices[0];
+								v2 = vertices[1];
+							}
+							else if(i == x.length - 1) {
+								v0  = vertices[i - 1];
+								vi = vertices[i];
+								v2 = vertices[0];
+							}
+							else {
+								v0  = vertices[i - 1];
+								vi = vertices[i];
+								v2 = vertices[i+1];
+							}
+							float angle = (v0.sub(vi)).getAngleBetweenVectors(v2.sub(vi));
+							if(angle > 180) {
+								reflex.add(i);
+							}
+							else if(angle < 180) {
+								convex.add(i);
+							}
+						}
+						
+//						Calculating which convex vertices are ears
+						for(int i = 0;i < convex.size();i++) {
+							Vector v0,vi,v2;
+							if(i == 0) {
+								v0  = vertices[x[x.length - 1]];
+								vi = vertices[0];
+								v2 = vertices[1];
+							}
+							else if(i == x.length - 1) {
+								v0  = vertices[i - 1];
+								vi = vertices[i];
+								v2 = vertices[0];
+							}
+							else {
+								v0  = vertices[i - 1];
+								vi = vertices[i];
+								v2 = vertices[i+1];
+							}
+							
+							for(int j = 0;j < reflex.size();j++) {
+								if(!ModelBuilder.isVertexInsideTriangle(v0, vi, v2, vertices[reflex.get(j)])) {
+									ears.add(convex.get(i));
+								}
+							}
+						}
+						
+						System.out.println(ears.size());
+						
 					}
 
 				} else {

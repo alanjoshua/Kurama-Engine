@@ -313,6 +313,31 @@ public class ModelBuilder {
 
 		return res;
 	}
+	
+	public static boolean isVertexInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
+		Vector e1 = v0.sub(v1);
+		Vector e2 = v2.sub(v1);
+		Vector proj1 = e1.normalise().scalarMul(((e1).dot(p))/e1.getNorm());
+		Vector proj2 = e2.normalise().scalarMul(((e1).dot(p))/e2.getNorm());
+		Vector p_ = proj1.add(proj2);
+		
+		float pa = (v0.sub(p_)).getNorm();
+		float pb = (v1.sub(p_)).getNorm();
+		float pc = (v2.sub(p_)).getNorm();
+		float totalArea = e1.getNorm() * e2.getNorm() /2.0f;
+		
+		float alpha = pa * pb / 2.0f;
+		float beta = pb * pc / 2.0f;
+		float gamma = pc * pa / 2.0f;
+		
+		if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && gamma >= 0 && gamma <= 1 && alpha + beta + gamma == 1) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		
+	}
 
 	public static Model buildGrid(int w, int d) {
 
