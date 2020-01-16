@@ -178,10 +178,10 @@ public class ModelBuilder {
 //							faces.add(data2);
 //
 //						}
-						
+
 					}
 				}
-				
+
 //				List<int[]> facesTriangle = new ArrayList<int[]>();
 //				List<int[]> textureFacesTriangle = new ArrayList<int[]>();
 //				List<int[]> normalFacesTriangle = new ArrayList<int[]>();
@@ -292,14 +292,14 @@ public class ModelBuilder {
 				for (int i = 0; i < vertArr.length; i++) {
 					vertArr[i] = vertex.get(i).sub(change);
 				}
-				
+
 				Vector[] vnArray = new Vector[vn.size()];
-				for(int i = 0; i < vnArray.length; i++) {
+				for (int i = 0; i < vnArray.length; i++) {
 					vnArray[i] = vn.get(i);
 				}
-				
+
 				Vector[] vtArray = new Vector[vt.size()];
-				for(int i = 0; i < vtArray.length; i++) {
+				for (int i = 0; i < vtArray.length; i++) {
 					vtArray[i] = vt.get(i);
 				}
 
@@ -313,35 +313,234 @@ public class ModelBuilder {
 
 		return res;
 	}
-	
+
+	public static void earClippingAlgorithm(Vector[] vertices, List<Vector> vn, List<Vector> vt, List<int[]> faces,
+			List<int[]> textureFaces, List<int[]> normalFaces) {
+
+		for (int[] x : faces) {
+
+			List<Integer> reflex = new ArrayList<Integer>();
+			List<Integer> convex = new ArrayList<Integer>();
+			List<Integer> ears = new ArrayList<Integer>();
+			List<Integer> vertsLeft = new ArrayList<Integer>();
+
+			List<int[]> triangles = new ArrayList<int[]>();
+
+			for (int i = 0; i < x.length; i++) {
+				vertsLeft.add(x[i]);
+			}
+
+//		Calculating the internal angle of each vertex and adds them to either the reflex or concave list 
+			for (int i = 0; i < x.length; i++) {
+				Vector v0, vi, v2;
+				if (i == 0) {
+					v0 = vertices[x[x.length - 1]];
+					vi = vertices[0];
+					v2 = vertices[1];
+				} else if (i == x.length - 1) {
+					v0 = vertices[i - 1];
+					vi = vertices[i];
+					v2 = vertices[0];
+				} else {
+					v0 = vertices[i - 1];
+					vi = vertices[i];
+					v2 = vertices[i + 1];
+				}
+				float angle = (v0.sub(vi)).getAngleBetweenVectors(v2.sub(vi));
+				if (angle > 180) {
+					reflex.add(i);
+				} else if (angle < 180) {
+					convex.add(i);
+				}
+			}
+
+//		Calculating which convex vertices are ears
+			for (int i = 0; i < convex.size(); i++) {
+				Vector v0, vi, v2;
+				if (i == 0) {
+					v0 = vertices[x[x.length - 1]];
+					vi = vertices[0];
+					v2 = vertices[1];
+				} else if (i == x.length - 1) {
+					v0 = vertices[i - 1];
+					vi = vertices[i];
+					v2 = vertices[0];
+				} else {
+					v0 = vertices[i - 1];
+					vi = vertices[i];
+					v2 = vertices[i + 1];
+				}
+
+				boolean isEar = true;
+				for (int j = 0; j < reflex.size(); j++) {
+					if (ModelBuilder.isVertexInsideTriangle(v0, vi, v2, vertices[reflex.get(j)])) {
+						isEar = false;
+					}
+				}
+				if (isEar)
+					ears.add(convex.get(i));
+			}
+
+			for (int y : ears) {
+
+				int i = vertsLeft.indexOf(y);
+				int v0, vi, v2;
+
+				if (i == 0) {
+					v0 = vertsLeft.get(vertsLeft.size() - 1);
+					vi = y;
+					v2 = vertsLeft.get(i + 1);
+				} else if (i == vertsLeft.size()) {
+					v0 = vertsLeft.get(i - 1);
+					vi = y;
+					v2 = vertsLeft.get(0);
+				} else {
+					v0 = vertsLeft.get(i - 1);
+					vi = y;
+					v2 = vertsLeft.get(i + 1);
+				}
+
+				int[] temp = new int[] { v0, vi, v2 };
+				triangles.add(temp);
+				ears.remove(ears.indexOf(y));
+				vertsLeft.remove(i);
+
+				if (reflex.indexOf(v0) != -1) {
+					int j = vertsLeft.indexOf(v0);
+					int r0, ri, r2;
+					if (j == 0) {
+						r0 = vertsLeft.get(vertsLeft.size() - 1);
+						ri = v0;
+						r2 = vertsLeft.get(j + 1);
+					} else if (i == vertsLeft.size()) {
+						r0 = vertsLeft.get(j - 1);
+						ri = v0;
+						r2 = vertsLeft.get(0);
+					} else {
+						r0 = vertsLeft.get(j - 1);
+						ri = v0;
+						r2 = vertsLeft.get(j + 1);
+					}
+					float angle = (vertices[r0].sub(vertices[ri]))
+							.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
+					if (angle < 180) {
+						convex.add(v0);
+						reflex.remove(v0);
+					}
+
+				}
+				
+				if (reflex.indexOf(v2) != -1) {
+					int j = vertsLeft.indexOf(v2);
+					int r0, ri, r2;
+					if (j == 0) {
+						r0 = vertsLeft.get(vertsLeft.size() - 1);
+						ri = v2;
+						r2 = vertsLeft.get(j + 1);
+					} else if (i == vertsLeft.size()) {
+						r0 = vertsLeft.get(j - 1);
+						ri = v2;
+						r2 = vertsLeft.get(0);
+					} else {
+						r0 = vertsLeft.get(j - 1);
+						ri = v2;
+						r2 = vertsLeft.get(j + 1);
+					}
+					float angle = (vertices[r0].sub(vertices[ri]))
+							.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
+					if (angle < 180) {
+						convex.add(v2);
+						reflex.remove(v2);
+					}
+
+				}
+				
+				if(convex.indexOf(v0) != -1) {
+					int j = vertsLeft.indexOf(v0);
+					int c0, ci, c2;
+					if (j == 0) {
+						c0 = vertsLeft.get(vertsLeft.size() - 1);
+						ci = v0;
+						c2 = vertsLeft.get(j + 1);
+					} else if (i == vertsLeft.size()) {
+						c0 = vertsLeft.get(j - 1);
+						ci = v0;
+						c2 = vertsLeft.get(0);
+					} else {
+						c0 = vertsLeft.get(j - 1);
+						ci = v0;
+						c2 = vertsLeft.get(j + 1);
+					}
+					
+					boolean isEar = true;
+					for (int k = 0; k < reflex.size(); k++) {
+						if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2], vertices[reflex.get(k)])) {
+							isEar = false;
+						}
+					}
+					if (isEar)
+						ears.add(convex.get(i));
+				}
+				
+				if(convex.indexOf(v2) != -1) {
+					int j = vertsLeft.indexOf(v2);
+					int c0, ci, c2;
+					if (j == 0) {
+						c0 = vertsLeft.get(vertsLeft.size() - 1);
+						ci = v2;
+						c2 = vertsLeft.get(j + 1);
+					} else if (i == vertsLeft.size()) {
+						c0 = vertsLeft.get(j - 1);
+						ci = v2;
+						c2 = vertsLeft.get(0);
+					} else {
+						c0 = vertsLeft.get(j - 1);
+						ci = v2;
+						c2 = vertsLeft.get(j + 1);
+					}
+					
+					boolean isEar = true;
+					for (int k = 0; k < reflex.size(); k++) {
+						if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2], vertices[reflex.get(k)])) {
+							isEar = false;
+						}
+					}
+					if (isEar)
+						ears.add(convex.get(i));
+				}
+
+			}
+		}
+
+	}
+
 	public static boolean isVertexInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
 		Vector e1 = v0.sub(v1);
 		Vector e2 = v2.sub(v1);
-		
+
 		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
 		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
 		Vector p_ = proj1.add(proj2);
-		
+
 		float pa = (v0.sub(p_)).getNorm();
 		float pb = (v1.sub(p_)).getNorm();
 		float pc = (v2.sub(p_)).getNorm();
-		float totalArea = e1.getNorm() * e2.getNorm() /2.0f;
-		
+		float totalArea = e1.getNorm() * e2.getNorm() / 2.0f;
+
 		float alpha = pa * pb / (2.0f * totalArea);
 		float beta = pb * pc / (2.0f * totalArea);
 		float gamma = 1 - alpha - beta;
-		
+
 		System.out.println(alpha);
 		System.out.println(beta);
 		System.out.println(gamma);
-		
-		if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1) {
+
+		if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1) {
 			return true;
-		}
-		else {
+		} else {
 			return false;
 		}
-		
+
 	}
 
 	public static Model buildGrid(int w, int d) {
