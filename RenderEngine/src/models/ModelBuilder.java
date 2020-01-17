@@ -303,12 +303,12 @@ public class ModelBuilder {
 				for (int i = 0; i < vtArray.length; i++) {
 					vtArray[i] = vt.get(i);
 				}
-				
-				List<Object> triangulatedData = triangulate(vertArr, vn, vt, faces, textureFaces, normalFaces);
-				res = new Model(vertArr, (List<int[]>)triangulatedData.get(0), vtArray, textureFaces, vnArray, normalFaces);
-				
-//				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
+				List<Object> triangulatedData = triangulate(vertArr, vn, vt, faces, textureFaces, normalFaces);
+				res = new Model(vertArr, (List<int[]>) triangulatedData.get(0), vtArray,
+						(List<int[]>) triangulatedData.get(1), vnArray, (List<int[]>) triangulatedData.get(2));
+
+//				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -321,16 +321,16 @@ public class ModelBuilder {
 
 	public static List<Object> triangulate(Vector[] vertices, List<Vector> vn, List<Vector> vt, List<int[]> faces,
 			List<int[]> textureFaces, List<int[]> normalFaces) {
-		
+
 		List<int[]> facesTriangulated = new ArrayList<int[]>();
 		List<int[]> textureFacesTriangulated = new ArrayList<int[]>();
 		List<int[]> normalFacesTriangulated = new ArrayList<int[]>();
-		
-		for (int count = 0;count < faces.size();count++) {
+
+		for (int count = 0; count < faces.size(); count++) {
 			int[] x = faces.get(count);
 			if (x != null && x.length > 3) {
 
-				if (x.length == 400) {
+				if (x.length == 4) {
 					int[] t1 = new int[3];
 					int[] t2 = new int[3];
 					t1[0] = x[0];
@@ -341,34 +341,41 @@ public class ModelBuilder {
 					t2[2] = x[3];
 					facesTriangulated.add(t1);
 					facesTriangulated.add(t2);
-					
-					int[] tex1 = new int[3];
-					int[] tex2 = new int[3];
-					int[] y = textureFaces.get(count);
-					
-					tex1[0] = y[0];
-					tex1[1] = y[1];
-					tex1[2] = y[3];
-					tex2[0] = y[1];
-					tex2[1] = y[2];
-					tex2[2] = y[3];
-					textureFacesTriangulated.add(tex1);
-					textureFacesTriangulated.add(tex2);
-					
-					int[] norm1 = new int[3];
-					int[] norm2 = new int[3];
-					int[] z = textureFaces.get(count);
-					
-					norm1[0] = z[0];
-					norm1[1] = z[1];
-					norm1[2] = z[3];
-					norm2[0] = z[1];
-					norm2[1] = z[2];
-					norm2[2] = z[3];
-					normalFacesTriangulated.add(norm1);
-					normalFacesTriangulated.add(norm2);
-				}
-				else {
+
+					if (textureFaces != null) {
+						int[] y = textureFaces.get(count);
+						if (y != null) {
+							int[] tex1 = new int[3];
+							int[] tex2 = new int[3];
+
+							tex1[0] = y[0];
+							tex1[1] = y[1];
+							tex1[2] = y[3];
+							tex2[0] = y[1];
+							tex2[1] = y[2];
+							tex2[2] = y[3];
+							textureFacesTriangulated.add(tex1);
+							textureFacesTriangulated.add(tex2);
+						}
+					}
+
+					if (normalFaces != null) {
+						int[] z = normalFaces.get(count);
+						if (z != null) {
+							int[] norm1 = new int[3];
+							int[] norm2 = new int[3];
+
+							norm1[0] = z[0];
+							norm1[1] = z[1];
+							norm1[2] = z[3];
+							norm2[0] = z[1];
+							norm2[1] = z[2];
+							norm2[2] = z[3];
+							normalFacesTriangulated.add(norm1);
+							normalFacesTriangulated.add(norm2);
+						}
+					}
+				} else {
 					List<Integer> reflex = new ArrayList<Integer>();
 					List<Integer> convex = new ArrayList<Integer>();
 					List<Integer> ears = new ArrayList<Integer>();
@@ -376,29 +383,27 @@ public class ModelBuilder {
 					List<Integer> totalVerts = new ArrayList<Integer>();
 					List<Integer> totalTextures = new ArrayList<Integer>();
 					List<Integer> totalNormals = new ArrayList<Integer>();
-					
-					for(int t : x) {
+
+					for (int t : x) {
 						totalVerts.add(t);
 					}
-					
-					if(textureFaces!= null) {
-						if(textureFaces.get(count)!=null) {
-							for(int t : textureFaces.get(count)) {
+
+					if (textureFaces != null) {
+						if (textureFaces.get(count) != null) {
+							for (int t : textureFaces.get(count)) {
 								totalTextures.add(t);
 							}
-						}
-						else {
+						} else {
 							totalTextures = null;
 						}
 					}
-					
-					if(normalFaces!= null) {
-						if(normalFaces.get(count)!=null) {
-							for(int t : normalFaces.get(count)) {
+
+					if (normalFaces != null) {
+						if (normalFaces.get(count) != null) {
+							for (int t : normalFaces.get(count)) {
 								totalNormals.add(t);
 							}
-						}
-						else {
+						} else {
 							totalNormals = null;
 						}
 					}
@@ -412,7 +417,7 @@ public class ModelBuilder {
 						int v0, vi, v2;
 						int currentVert = x[i];
 						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
-						
+
 						if (indexInVertsLeftList == 0) {
 							v0 = vertsLeft.get(vertsLeft.size() - 1);
 							vi = currentVert;
@@ -426,8 +431,9 @@ public class ModelBuilder {
 							vi = currentVert;
 							v2 = vertsLeft.get(indexInVertsLeftList + 1);
 						}
-						float angle = (vertices[v0].sub(vertices[vi])).getAngleBetweenVectors(vertices[v2].sub(vertices[vi]));
-						if(angle < 0) {
+						float angle = (vertices[v0].sub(vertices[vi]))
+								.getAngleBetweenVectors(vertices[v2].sub(vertices[vi]));
+						if (angle < 0) {
 							angle = 180 - angle;
 						}
 						if (angle > 180) {
@@ -442,7 +448,7 @@ public class ModelBuilder {
 						int v0, vi, v2;
 						int currentVert = x[i];
 						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
-						
+
 						if (indexInVertsLeftList == 0) {
 							v0 = vertsLeft.get(vertsLeft.size() - 1);
 							vi = currentVert;
@@ -459,7 +465,8 @@ public class ModelBuilder {
 
 						boolean isEar = true;
 						for (int j = 0; j < reflex.size(); j++) {
-							if (ModelBuilder.isVertexInsideTriangle(vertices[v0], vertices[vi], vertices[v2], vertices[reflex.get(j)])) {
+							if (ModelBuilder.isVertexInsideTriangle(vertices[v0], vertices[vi], vertices[v2],
+									vertices[reflex.get(j)])) {
 								isEar = false;
 							}
 						}
@@ -467,18 +474,18 @@ public class ModelBuilder {
 							ears.add(convex.get(i));
 					}
 
-					for (int i = 0;i < ears.size();i++) {
-						
-						if(vertsLeft.size() == 3) {
+					for (int i = 0; i < ears.size(); i++) {
+
+						if (vertsLeft.size() == 3) {
 							int[] temp = new int[] { vertsLeft.get(0), vertsLeft.get(1), vertsLeft.get(2) };
 							facesTriangulated.add(temp);
 							break;
 						}
-						
+
 						int earVertex = ears.get(i);
 						int v0, vi, v2;
 						int earIndexInVertsLeftList = vertsLeft.indexOf(earVertex);
-						
+
 						if (earIndexInVertsLeftList == 0) {
 							v0 = vertsLeft.get(vertsLeft.size() - 1);
 							vi = earVertex;
@@ -495,18 +502,20 @@ public class ModelBuilder {
 
 						int[] temp = new int[] { v0, vi, v2 };
 						facesTriangulated.add(temp);
-						
+
 						int ind0 = totalVerts.indexOf(v0);
 						int ind1 = totalVerts.indexOf(vi);
 						int ind2 = totalVerts.indexOf(v2);
-						
-						if(totalTextures != null) {
-							textureFacesTriangulated.add(new int[] {totalTextures.get(ind0), totalTextures.get(ind1), totalTextures.get(ind2)});
+
+						if (totalTextures != null) {
+							textureFacesTriangulated.add(new int[] { totalTextures.get(ind0), totalTextures.get(ind1),
+									totalTextures.get(ind2) });
 						}
-						if(totalNormals != null) {
-							normalFacesTriangulated.add(new int[] {totalNormals.get(ind0), totalNormals.get(ind1), totalNormals.get(ind2)});
+						if (totalNormals != null) {
+							normalFacesTriangulated.add(new int[] { totalNormals.get(ind0), totalNormals.get(ind1),
+									totalNormals.get(ind2) });
 						}
-						
+
 						ears.remove(ears.indexOf(earVertex));
 						i--;
 						vertsLeft.remove(earIndexInVertsLeftList);
@@ -535,7 +544,7 @@ public class ModelBuilder {
 							}
 
 						}
-						
+
 						if (reflex.indexOf(v2) != -1) {
 							int indexAtVertsLeftList = vertsLeft.indexOf(v2);
 							int r0, ri, r2;
@@ -560,8 +569,8 @@ public class ModelBuilder {
 							}
 
 						}
-						
-						if(convex.indexOf(v0) != -1) {
+
+						if (convex.indexOf(v0) != -1) {
 							int indexArVertsLeftList = vertsLeft.indexOf(v0);
 							int c0, ci, c2;
 							if (indexArVertsLeftList == 0) {
@@ -577,20 +586,21 @@ public class ModelBuilder {
 								ci = v0;
 								c2 = vertsLeft.get(indexArVertsLeftList + 1);
 							}
-							
+
 							boolean isEar = true;
 							for (int k = 0; k < reflex.size(); k++) {
-								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2], vertices[reflex.get(k)])) {
+								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
+										vertices[reflex.get(k)])) {
 									isEar = false;
 								}
 							}
 							if (isEar) {
-								ears.add(i+1,convex.get(convex.indexOf(v0)));
+								ears.add(i + 1, convex.get(convex.indexOf(v0)));
 							}
-							
+
 						}
-						
-						if(convex.indexOf(v2) != -1) {
+
+						if (convex.indexOf(v2) != -1) {
 							int indexInVertsLeftList = vertsLeft.indexOf(v2);
 							int c0, ci, c2;
 							if (indexInVertsLeftList == 0) {
@@ -606,15 +616,16 @@ public class ModelBuilder {
 								ci = v2;
 								c2 = vertsLeft.get(indexInVertsLeftList + 1);
 							}
-							
+
 							boolean isEar = true;
 							for (int k = 0; k < reflex.size(); k++) {
-								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2], vertices[reflex.get(k)])) {
+								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
+										vertices[reflex.get(k)])) {
 									isEar = false;
 								}
 							}
 							if (isEar)
-								ears.add(i+1,convex.get(convex.indexOf(v2)));
+								ears.add(i + 1, convex.get(convex.indexOf(v2)));
 						}
 
 					}
@@ -626,7 +637,7 @@ public class ModelBuilder {
 				normalFacesTriangulated.add(normalFaces.get(count));
 			}
 		}
-		
+
 		List<Object> res = new ArrayList<Object>();
 		res.add(facesTriangulated);
 		res.add(textureFacesTriangulated);
