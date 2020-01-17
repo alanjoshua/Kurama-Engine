@@ -77,22 +77,22 @@ public class Game {
 		deer.setPos(new Vector(new float[] {-20,7,7}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 		deer.setTickObj(tQuat);
-		deer.triangulate();
+//		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-		mill.triangulate();
+//		mill.triangulate();
 
 		Model ship = ModelBuilder.buildShip();
 
 		Model teapot = ModelBuilder.buildModelFromFile("teapot.obj");
 		teapot.setPos(new Vector(new float[] { 20, 10, 10}));
 		teapot.setScale(new Vector(new float[] {1f,1f,1f}));
-		teapot.triangulate();
+//		teapot.triangulate();
 		
 		Model grid = ModelBuilder.buildGrid(100, 100);
-		grid.triangulate();
+//		grid.triangulate();
 
 		models.add(deer);
 		models.add(grid);
