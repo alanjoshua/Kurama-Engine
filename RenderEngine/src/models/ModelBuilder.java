@@ -381,45 +381,47 @@ public class ModelBuilder {
 					ears.add(convex.get(i));
 			}
 
-			for (int y : ears) {
+			for (int i = 0;i < ears.size();i++) {
 
-				int i = vertsLeft.indexOf(y);
+				int earVertex = ears.get(i);
 				int v0, vi, v2;
-
-				if (i == 0) {
+				int earIndexInVertsLeftList = vertsLeft.indexOf(earVertex);
+				
+				if (earIndexInVertsLeftList == 0) {
 					v0 = vertsLeft.get(vertsLeft.size() - 1);
-					vi = y;
-					v2 = vertsLeft.get(i + 1);
-				} else if (i == vertsLeft.size()) {
-					v0 = vertsLeft.get(i - 1);
-					vi = y;
+					vi = earVertex;
+					v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
+				} else if (earIndexInVertsLeftList == vertsLeft.size()) {
+					v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
+					vi = earVertex;
 					v2 = vertsLeft.get(0);
 				} else {
-					v0 = vertsLeft.get(i - 1);
-					vi = y;
-					v2 = vertsLeft.get(i + 1);
+					v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
+					vi = earVertex;
+					v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
 				}
 
 				int[] temp = new int[] { v0, vi, v2 };
 				triangles.add(temp);
-				ears.remove(ears.indexOf(y));
-				vertsLeft.remove(i);
+				ears.remove(ears.indexOf(earVertex));
+				i--;
+				vertsLeft.remove(earIndexInVertsLeftList);
 
 				if (reflex.indexOf(v0) != -1) {
-					int j = vertsLeft.indexOf(v0);
+					int indexInVertsLeftList = vertsLeft.indexOf(v0);
 					int r0, ri, r2;
-					if (j == 0) {
+					if (indexInVertsLeftList == 0) {
 						r0 = vertsLeft.get(vertsLeft.size() - 1);
 						ri = v0;
-						r2 = vertsLeft.get(j + 1);
-					} else if (i == vertsLeft.size()) {
-						r0 = vertsLeft.get(j - 1);
+						r2 = vertsLeft.get(indexInVertsLeftList + 1);
+					} else if (indexInVertsLeftList == vertsLeft.size()) {
+						r0 = vertsLeft.get(indexInVertsLeftList - 1);
 						ri = v0;
 						r2 = vertsLeft.get(0);
 					} else {
-						r0 = vertsLeft.get(j - 1);
+						r0 = vertsLeft.get(indexInVertsLeftList - 1);
 						ri = v0;
-						r2 = vertsLeft.get(j + 1);
+						r2 = vertsLeft.get(indexInVertsLeftList + 1);
 					}
 					float angle = (vertices[r0].sub(vertices[ri]))
 							.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
@@ -431,20 +433,20 @@ public class ModelBuilder {
 				}
 				
 				if (reflex.indexOf(v2) != -1) {
-					int j = vertsLeft.indexOf(v2);
+					int indexAtVertsLeftList = vertsLeft.indexOf(v2);
 					int r0, ri, r2;
-					if (j == 0) {
+					if (indexAtVertsLeftList == 0) {
 						r0 = vertsLeft.get(vertsLeft.size() - 1);
 						ri = v2;
-						r2 = vertsLeft.get(j + 1);
-					} else if (i == vertsLeft.size()) {
-						r0 = vertsLeft.get(j - 1);
+						r2 = vertsLeft.get(indexAtVertsLeftList + 1);
+					} else if (indexAtVertsLeftList == vertsLeft.size()) {
+						r0 = vertsLeft.get(indexAtVertsLeftList - 1);
 						ri = v2;
 						r2 = vertsLeft.get(0);
 					} else {
-						r0 = vertsLeft.get(j - 1);
+						r0 = vertsLeft.get(indexAtVertsLeftList - 1);
 						ri = v2;
-						r2 = vertsLeft.get(j + 1);
+						r2 = vertsLeft.get(indexAtVertsLeftList + 1);
 					}
 					float angle = (vertices[r0].sub(vertices[ri]))
 							.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
@@ -456,20 +458,20 @@ public class ModelBuilder {
 				}
 				
 				if(convex.indexOf(v0) != -1) {
-					int j = vertsLeft.indexOf(v0);
+					int indexArVertsLeftList = vertsLeft.indexOf(v0);
 					int c0, ci, c2;
-					if (j == 0) {
+					if (indexArVertsLeftList == 0) {
 						c0 = vertsLeft.get(vertsLeft.size() - 1);
 						ci = v0;
-						c2 = vertsLeft.get(j + 1);
-					} else if (i == vertsLeft.size()) {
-						c0 = vertsLeft.get(j - 1);
+						c2 = vertsLeft.get(indexArVertsLeftList + 1);
+					} else if (indexArVertsLeftList == vertsLeft.size()) {
+						c0 = vertsLeft.get(indexArVertsLeftList - 1);
 						ci = v0;
 						c2 = vertsLeft.get(0);
 					} else {
-						c0 = vertsLeft.get(j - 1);
+						c0 = vertsLeft.get(indexArVertsLeftList - 1);
 						ci = v0;
-						c2 = vertsLeft.get(j + 1);
+						c2 = vertsLeft.get(indexArVertsLeftList + 1);
 					}
 					
 					boolean isEar = true;
@@ -479,24 +481,25 @@ public class ModelBuilder {
 						}
 					}
 					if (isEar)
-						ears.add(convex.get(i));
+						ears.add(i+1,convex.get(earIndexInVertsLeftList));
+					
 				}
 				
 				if(convex.indexOf(v2) != -1) {
-					int j = vertsLeft.indexOf(v2);
+					int indexInVertsLeftList = vertsLeft.indexOf(v2);
 					int c0, ci, c2;
-					if (j == 0) {
+					if (indexInVertsLeftList == 0) {
 						c0 = vertsLeft.get(vertsLeft.size() - 1);
 						ci = v2;
-						c2 = vertsLeft.get(j + 1);
-					} else if (i == vertsLeft.size()) {
-						c0 = vertsLeft.get(j - 1);
+						c2 = vertsLeft.get(indexInVertsLeftList + 1);
+					} else if (indexInVertsLeftList == vertsLeft.size()) {
+						c0 = vertsLeft.get(indexInVertsLeftList - 1);
 						ci = v2;
 						c2 = vertsLeft.get(0);
 					} else {
-						c0 = vertsLeft.get(j - 1);
+						c0 = vertsLeft.get(indexInVertsLeftList - 1);
 						ci = v2;
-						c2 = vertsLeft.get(j + 1);
+						c2 = vertsLeft.get(indexInVertsLeftList + 1);
 					}
 					
 					boolean isEar = true;
@@ -506,7 +509,7 @@ public class ModelBuilder {
 						}
 					}
 					if (isEar)
-						ears.add(convex.get(i));
+						ears.add(i+1,convex.get(earIndexInVertsLeftList));
 				}
 
 			}
@@ -530,10 +533,6 @@ public class ModelBuilder {
 		float alpha = pa * pb / (2.0f * totalArea);
 		float beta = pb * pc / (2.0f * totalArea);
 		float gamma = 1 - alpha - beta;
-
-		System.out.println(alpha);
-		System.out.println(beta);
-		System.out.println(gamma);
 
 		if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1) {
 			return true;
