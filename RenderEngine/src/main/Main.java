@@ -26,18 +26,6 @@ public class Main {
 	}
 	
 	public void start() {
-//		Matrix test = Matrix.getDiagonalMatrix(new Vector(new float[] {2,2,5,6,1}));
-//		float[][] data = new float[][] {
-//			{1,0,1,2},
-//			{-1,1,2,0},
-//			{-2,0,1,2},
-//			{0,0,0,1}
-//		};
-//		test = new Matrix(data);
-//		test.display();
-//		System.out.println("----------------------------------------------");
-//		test.getInverse().matMul(new Vector(new float[] {0,1,-1,2})).display();
-
 		game = new Game(1000,1000);
 		game.init();
 		game.run();

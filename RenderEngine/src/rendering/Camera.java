@@ -154,8 +154,43 @@ public class Camera {
 
 	public void lookAtModel(Model m) {
 		
-		Vector min = ((m.getMin().mul(m.getScale())).add(m.getPos()));
-		Vector max = (m.getMax().mul(m.getScale()).add(m.getPos()));
+		float[] dataMin = new float[3];
+		dataMin[0] = Float.POSITIVE_INFINITY;
+		dataMin[1] = Float.POSITIVE_INFINITY;
+		dataMin[2] = Float.POSITIVE_INFINITY;
+
+		float[] dataMax = new float[3];
+		dataMax[0] = Float.NEGATIVE_INFINITY;
+		dataMax[1] = Float.NEGATIVE_INFINITY;
+		dataMax[2] = Float.NEGATIVE_INFINITY;
+
+		for (Vector v : m.getVertices()) {
+			if (v.getDataElement(0) < dataMin[0]) {
+				dataMin[0] = v.getDataElement(0);
+			}
+			if (v.getDataElement(1) < dataMin[1]) {
+				dataMin[1] = v.getDataElement(1);
+			}
+			if (v.getDataElement(2) < dataMin[2]) {
+				dataMin[2] = v.getDataElement(2);
+			}
+
+			if (v.getDataElement(0) > dataMax[0]) {
+				dataMax[0] = v.getDataElement(0);
+			}
+			if (v.getDataElement(1) > dataMax[1]) {
+				dataMax[1] = v.getDataElement(1);
+			}
+			if (v.getDataElement(2) > dataMax[2]) {
+				dataMax[2] = v.getDataElement(2);
+			}
+		}
+
+		Vector minT = new Vector(dataMin);
+		Vector maxT = new Vector(dataMax);
+		
+		Vector min = ((minT.mul(m.getScale())).add(m.getPos()));
+		Vector max = (maxT.mul(m.getScale()).add(m.getPos()));
 		Vector diff = max.sub(min);
 		
 		float[] midFrontData = new float[3];
@@ -241,7 +276,10 @@ public class Camera {
 
 		for (Model m : game.getModels()) {
 			for (Vector vv : m.getVertices()) {
-				Vector v = (vv.mul(m.getScale())).add(m.getPos());
+				
+				Vector temp = new Vector(new float[] {vv.getDataElement(0),vv.getDataElement(1),vv.getDataElement(2)});
+				Vector v = (temp.mul(m.getScale())).add(m.getPos());
+				
 				if (v.getDataElement(0) < dataMin[0]) {
 					dataMin[0] = v.getDataElement(0);
 				}

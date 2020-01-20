@@ -25,8 +25,6 @@ public class Model {
 	protected Vector scale;
 	protected Vector pos;
 	protected Tick tickObj;
-	protected Vector min;
-	protected Vector max;
 	protected Quaternion orientation;
 	protected Vector[] transformedVertices;
 	protected boolean isChanged = true;
@@ -47,7 +45,6 @@ public class Model {
 		pos = new Vector(3, 0);
 		tickObj = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
-		calculateMinMax();
 	}
 
 	public void tick() {
@@ -67,136 +64,13 @@ public class Model {
 		return transformationMatrix;
 	}
 
-	public void calculateMinMax() {
-
-		float[] dataMin = new float[3];
-		dataMin[0] = Float.POSITIVE_INFINITY;
-		dataMin[1] = Float.POSITIVE_INFINITY;
-		dataMin[2] = Float.POSITIVE_INFINITY;
-
-		float[] dataMax = new float[3];
-		dataMax[0] = Float.NEGATIVE_INFINITY;
-		dataMax[1] = Float.NEGATIVE_INFINITY;
-		dataMax[2] = Float.NEGATIVE_INFINITY;
-
-		for (Vector v : vertices) {
-			if (v.getDataElement(0) < dataMin[0]) {
-				dataMin[0] = v.getDataElement(0);
-			}
-			if (v.getDataElement(1) < dataMin[1]) {
-				dataMin[1] = v.getDataElement(1);
-			}
-			if (v.getDataElement(2) < dataMin[2]) {
-				dataMin[2] = v.getDataElement(2);
-			}
-
-			if (v.getDataElement(0) > dataMax[0]) {
-				dataMax[0] = v.getDataElement(0);
-			}
-			if (v.getDataElement(1) > dataMax[1]) {
-				dataMax[1] = v.getDataElement(1);
-			}
-			if (v.getDataElement(2) > dataMax[2]) {
-				dataMax[2] = v.getDataElement(2);
-			}
-		}
-
-		min = new Vector(dataMin);
-		max = new Vector(dataMax);
-
-	}
-
+	@SuppressWarnings("unchecked")
 	public void triangulate() {
-		List<int[]> facesTriangle = new ArrayList<int[]>();
-		List<int[]> textureFacesTriangle = new ArrayList<int[]>();
-		List<int[]> normalFacesTriangle = new ArrayList<int[]>();
-
-		if (faces != null) {
-
-			for (int[] x : faces) {
-
-				if (x != null && x.length > 3) {
-
-					if (x.length == 4) {
-						int[] t1 = new int[3];
-						int[] t2 = new int[3];
-						t1[0] = x[0];
-						t1[1] = x[1];
-						t1[2] = x[3];
-						t2[0] = x[1];
-						t2[1] = x[2];
-						t2[2] = x[3];
-						facesTriangle.add(t1);
-						facesTriangle.add(t2);
-					}
-					else {
-					}
-
-				} else {
-					facesTriangle.add(x);
-				}
-			}
-
-		} else {
-			facesTriangle = null;
-		}
-
-		if (textureFaces != null) {
-			for (int[] x : textureFaces) {
-
-				if (x != null && x.length > 3) {
-
-					if (x.length == 4) {
-						int[] t1 = new int[3];
-						int[] t2 = new int[3];
-						t1[0] = x[0];
-						t1[1] = x[1];
-						t1[2] = x[3];
-						t2[0] = x[1];
-						t2[1] = x[2];
-						t2[2] = x[3];
-						textureFacesTriangle.add(t1);
-						textureFacesTriangle.add(t2);
-					}
-
-				} else {
-					textureFacesTriangle.add(x);
-				}
-			}
-		} else {
-			textureFacesTriangle = null;
-		}
-
-		if (normalFaces != null) {
-			for (int[] x : normalFaces) {
-
-				if (x != null && x.length > 3) {
-
-					if (x.length == 4) {
-						int[] t1 = new int[3];
-						int[] t2 = new int[3];
-						t1[0] = x[0];
-						t1[1] = x[1];
-						t1[2] = x[3];
-						t2[0] = x[1];
-						t2[1] = x[2];
-						t2[2] = x[3];
-						normalFacesTriangle.add(t1);
-						normalFacesTriangle.add(t2);
-					}
-
-				} else {
-					normalFacesTriangle.add(x);
-				}
-			}
-		} else {
-			normalFacesTriangle = null;
-		}
-
-		this.faces = facesTriangle;
-		this.textureFaces = textureFacesTriangle;
-		this.normalFaces = normalFacesTriangle;
-
+		List<Object> triangulatedData = ModelBuilder.triangulate(this.vertices, faces, textureFaces, normalFaces);
+		this.faces = (List<int[]>) triangulatedData.get(0);
+		this.normalFaces = (List<int[]>) triangulatedData.get(2);
+		this.textureFaces = (List<int[]>) triangulatedData.get(1);
+		
 	}
 
 	public Tick getTickObj() {
@@ -209,14 +83,6 @@ public class Model {
 
 	public Vector getPos() {
 		return pos;
-	}
-
-	public Vector getMin() {
-		return min;
-	}
-
-	public Vector getMax() {
-		return max;
 	}
 
 	public void setPos(Vector pos) {

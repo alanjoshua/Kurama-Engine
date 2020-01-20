@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import Math.Utils;
 import Math.Vector;
 
 public class ModelBuilder {
@@ -160,95 +161,8 @@ public class ModelBuilder {
 							normalFaces.add(ndata);
 						}
 
-//						if (split[0].equalsIgnoreCase("f")) {
-//
-//							List<Integer> data = new ArrayList<Integer>();
-//							for (int i = 1; i < split.length; i++) {
-//								try {
-//									data.add(Integer.parseInt(split[i].split("/")[0]) - 1);
-//
-//								} catch (Exception e) {
-//								}
-//								;
-//							}
-//
-//							int[] data2 = new int[data.size()];
-//							for (int i = 0; i < data2.length; i++) {
-//								data2[i] = data.get(i);
-//							}
-//							faces.add(data2);
-//
-//						}
-
 					}
 				}
-
-//				List<int[]> facesTriangle = new ArrayList<int[]>();
-//				List<int[]> textureFacesTriangle = new ArrayList<int[]>();
-//				List<int[]> normalFacesTriangle = new ArrayList<int[]>();
-//				
-//				if (faces != null) {
-//				for (int[] x : faces) {
-//					if (x.length == 4) {
-//						int[] t1 = new int[3];
-//						int[] t2 = new int[3];
-//						t1[0] = x[0];
-//						t1[1] = x[1];
-//						t1[2] = x[3];
-//						t2[0] = x[1];
-//						t2[1] = x[2];
-//						t2[2] = x[3];
-//						facesTriangle.add(t1);
-//						facesTriangle.add(t2);
-//					} else {
-//						facesTriangle.add(x);
-//					}
-//				}
-//			} else {
-//				facesTriangle = null;
-//			}
-//
-//			if (textureFaces != null) {
-//				for (int[] x : textureFaces) {
-//					if (x != null && x.length == 4) {
-//						int[] t1 = new int[3];
-//						int[] t2 = new int[3];
-//						t1[0] = x[0];
-//						t1[1] = x[1];
-//						t1[2] = x[3];
-//						t2[0] = x[1];
-//						t2[1] = x[2];
-//						t2[2] = x[3];
-//						textureFacesTriangle.add(t1);
-//						textureFacesTriangle.add(t2);
-//					} else {
-//						textureFacesTriangle.add(x);
-//					}
-//				}
-//			} else {
-//				textureFacesTriangle = null;
-//			}
-//
-//			if (normalFaces != null) {
-//				for (int[] x : normalFaces) {
-//					if (x != null && x.length == 4) {
-//						int[] t1 = new int[3];
-//						int[] t2 = new int[3];
-//						t1[0] = x[0];
-//						t1[1] = x[1];
-//						t1[2] = x[3];
-//						t2[0] = x[1];
-//						t2[1] = x[2];
-//						t2[2] = x[3];
-//						normalFacesTriangle.add(t1);
-//						normalFacesTriangle.add(t2);
-//					} else {
-//						normalFacesTriangle.add(x);
-//					}
-//				}
-//			} else {
-//				normalFacesTriangle = null;
-//			}
 
 				float[] dataMin = new float[4];
 				dataMin[0] = Float.POSITIVE_INFINITY;
@@ -304,11 +218,7 @@ public class ModelBuilder {
 					vtArray[i] = vt.get(i);
 				}
 
-				List<Object> triangulatedData = triangulate(vertArr, vn, vt, faces, textureFaces, normalFaces);
-				res = new Model(vertArr, (List<int[]>) triangulatedData.get(0), vtArray,
-						(List<int[]>) triangulatedData.get(1), vnArray, (List<int[]>) triangulatedData.get(2));
-
-//				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
+				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -319,7 +229,7 @@ public class ModelBuilder {
 		return res;
 	}
 
-	public static List<Object> triangulate(Vector[] vertices, List<Vector> vn, List<Vector> vt, List<int[]> faces,
+	public static List<Object> triangulate(Vector[] vertices, List<int[]> faces,
 			List<int[]> textureFaces, List<int[]> normalFaces) {
 
 		List<int[]> facesTriangulated = new ArrayList<int[]>();
@@ -330,7 +240,7 @@ public class ModelBuilder {
 			int[] x = faces.get(count);
 			if (x != null && x.length > 3) {
 
-				if (x.length == 4) {
+				if (x.length == 400) {
 					int[] t1 = new int[3];
 					int[] t2 = new int[3];
 					t1[0] = x[0];
@@ -383,9 +293,12 @@ public class ModelBuilder {
 					List<Integer> totalVerts = new ArrayList<Integer>();
 					List<Integer> totalTextures = new ArrayList<Integer>();
 					List<Integer> totalNormals = new ArrayList<Integer>();
-
+					
+					int countI = 0;
 					for (int t : x) {
 						totalVerts.add(t);
+						vertsLeft.add(x[countI]);
+						countI++;
 					}
 
 					if (textureFaces != null) {
@@ -408,16 +321,16 @@ public class ModelBuilder {
 						}
 					}
 
-					for (int i = 0; i < x.length; i++) {
-						vertsLeft.add(x[i]);
-					}
+//					for (int i = 0; i < x.length; i++) {
+//						vertsLeft.add(x[i]);
+//					}
 
 //				Calculating the internal angle of each vertex and adds them to either the reflex or concave list 
 					for (int i = 0; i < x.length; i++) {
 						int v0, vi, v2;
 						int currentVert = x[i];
 						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
-
+						
 						if (indexInVertsLeftList == 0) {
 							v0 = vertsLeft.get(vertsLeft.size() - 1);
 							vi = currentVert;
@@ -431,6 +344,7 @@ public class ModelBuilder {
 							vi = currentVert;
 							v2 = vertsLeft.get(indexInVertsLeftList + 1);
 						}
+						
 						float angle = (vertices[v0].sub(vertices[vi]))
 								.getAngleBetweenVectors(vertices[v2].sub(vertices[vi]));
 						if (angle < 0) {
@@ -465,8 +379,7 @@ public class ModelBuilder {
 
 						boolean isEar = true;
 						for (int j = 0; j < reflex.size(); j++) {
-							if (ModelBuilder.isVertexInsideTriangle(vertices[v0], vertices[vi], vertices[v2],
-									vertices[reflex.get(j)])) {
+							if (Utils.isPointInsideTriangle(vertices[v0], vertices[vi], vertices[v2],vertices[reflex.get(j)],true)) {
 								isEar = false;
 							}
 						}
@@ -589,8 +502,9 @@ public class ModelBuilder {
 
 							boolean isEar = true;
 							for (int k = 0; k < reflex.size(); k++) {
-								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
-										vertices[reflex.get(k)])) {
+//								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
+//										vertices[reflex.get(k)])) {
+								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
 									isEar = false;
 								}
 							}
@@ -619,8 +533,7 @@ public class ModelBuilder {
 
 							boolean isEar = true;
 							for (int k = 0; k < reflex.size(); k++) {
-								if (ModelBuilder.isVertexInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
-										vertices[reflex.get(k)])) {
+								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
 									isEar = false;
 								}
 							}
@@ -646,7 +559,7 @@ public class ModelBuilder {
 
 	}
 
-	public static boolean isVertexInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
+	public static boolean isPointInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
 		Vector e1 = v0.sub(v1);
 		Vector e2 = v2.sub(v1);
 

@@ -1,5 +1,6 @@
 package rendering;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,6 +106,12 @@ public class RenderingEngine {
 			});
 
 			for (int[] f : m.getFaces()) {
+//				if(f.length == 3) {
+//					g.setColor(Color.GREEN);
+//				}
+//				else {
+//					g.setColor(Color.white);
+//				}
 				for (int i = 0; i < f.length; i++) {
 
 					if (i != f.length - 1) {
