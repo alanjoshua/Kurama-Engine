@@ -82,7 +82,7 @@ public class Game {
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-		mill.triangulate();
+		mill.triangulate(true);
 
 		Model ship = ModelBuilder.buildShip();
 		
@@ -93,7 +93,7 @@ public class Game {
 		
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
-
+		
 		models.add(deer);
 		models.add(grid);
 		models.add(mill);

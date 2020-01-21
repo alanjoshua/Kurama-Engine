@@ -66,11 +66,18 @@ public class Model {
 
 	@SuppressWarnings("unchecked")
 	public void triangulate() {
-		List<Object> triangulatedData = ModelBuilder.triangulate(this.vertices, faces, textureFaces, normalFaces);
+		List<Object> triangulatedData = ModelBuilder.triangulate(this.vertices, faces, textureFaces, normalFaces, false);
 		this.faces = (List<int[]>) triangulatedData.get(0);
 		this.normalFaces = (List<int[]>) triangulatedData.get(2);
 		this.textureFaces = (List<int[]>) triangulatedData.get(1);
-		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void triangulate(boolean forceUseEarClipping) {
+		List<Object> triangulatedData = ModelBuilder.triangulate(this.vertices, faces, textureFaces, normalFaces, forceUseEarClipping);
+		this.faces = (List<int[]>) triangulatedData.get(0);
+		this.normalFaces = (List<int[]>) triangulatedData.get(2);
+		this.textureFaces = (List<int[]>) triangulatedData.get(1);
 	}
 
 	public Tick getTickObj() {

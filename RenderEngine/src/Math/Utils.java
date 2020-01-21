@@ -31,7 +31,8 @@ public class Utils {
 		float w2 = edge(v1, v3, point);
 		float w3 = edge(v1, v2, point);
 		
-		if(w1 >= 0 && w1 <= 1 && w2 >= 0 && w2 <= 1 && w3 >= 0 && w3 <= 1) {
+//		if(w1 >= 0 && w1 <= 1 && w2 >= 0 && w2 <= 1 && w3 >= 0 && w3 <= 1) {
+		if(w1 >= 0 && w2 >= 0 && w3 >= 0) {
 			res = true;
 		}
 		
