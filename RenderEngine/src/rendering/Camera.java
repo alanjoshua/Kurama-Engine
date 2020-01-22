@@ -114,13 +114,14 @@ public class Camera {
 			if (RenderingEngine.renderingMode == RenderingMode.PERSPECTIVE) {
 				
 				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
-
+				
 				if (imageAspectRatio >= 1) {
 					top = right;
 					right = top * imageAspectRatio;
 				} else {
 					top = right * (1 / imageAspectRatio);
 				}
+			
 				left = -right;
 				bottom = -top;
 				fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
@@ -317,9 +318,10 @@ public class Camera {
 		float b = this.getBottom();
 		float f = this.getFarClippingPlane();
 
-		float[][] data = new float[][] { { (2 * n) / (r - l), 0, (r + l) / (r - l), 0 },
-				{ 0, (2 * n) / (t - b), (t + b) / (t - b), 0 }, { 0, 0, -(f + n) / (f - n), -(2 * f * n) / (f - n) },
-				{ 0, 0, -1, 0 } };
+		float[][] data = new float[][] {{ (2 * n) / (r - l), 0,				   (r + l) / (r - l),   0 },
+										{ 0, 				(2 * n) / (t - b), (t + b) / (t - b),   0 }, 
+										{ 0,				 0, 			   -(f + n) / (f - n), -(2 * f * n) / (f - n) },
+										{ 0, 				 0, 			   -1,                  0 } };
 		this.perspectiveProjectionMatrix = new Matrix(data);
 	}
 

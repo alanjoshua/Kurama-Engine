@@ -241,7 +241,6 @@ public class ModelBuilder {
 			if (x != null && x.length > 3) {
 
 				if (x.length == 4 && !forceUseEarClipping) {
-					System.out.println("using if");
 					int[] t1 = new int[3];
 					int[] t2 = new int[3];
 					t1[0] = x[0];
@@ -287,7 +286,6 @@ public class ModelBuilder {
 						}
 					}
 				} else {
-					System.out.println("using else");
 					List<Integer> reflex = new ArrayList<Integer>();
 					List<Integer> convex = new ArrayList<Integer>();
 					List<Integer> ears = new ArrayList<Integer>();
