@@ -38,10 +38,13 @@ public class Game {
 	private float speedIncreaseMultiplier = 2;
 	private float speedConstant;
 	
+	private RenderingEngine renderingEngine;
+	
 	public Game(int width, int height) {
 		display = new Display(width, height, this);
 		input = new Input(this);
 		display.setInput(input);
+		renderingEngine = new RenderingEngine(this);
 	}
 
 	public void init() {
@@ -99,8 +102,8 @@ public class Game {
 		models.add(mill);
 		models.add(teapot);
 
-		RenderingEngine.renderingMode = RenderingMode.PERSPECTIVE;
-		RenderingEngine.renderPipeline = RenderPipeline.Matrix;
+		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
+		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
 		
@@ -242,8 +245,8 @@ public class Game {
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_Q)) {
-			if(RenderingEngine.renderPipeline == RenderPipeline.Quat) RenderingEngine.renderPipeline = RenderPipeline.Matrix;
-			else RenderingEngine.renderPipeline = RenderPipeline.Quat;
+			if(renderingEngine.getRenderPipeline() == RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
+			else renderingEngine.setRenderPipeline(RenderPipeline.Quat);
 		}
 		
 		if (input.getPosition().getNorm() != 0 && shouldCursorCenter) {
@@ -279,6 +282,10 @@ public class Game {
 
 	}
 
+	public RenderingEngine getRenderingEngine() {
+		return renderingEngine;
+	}
+
 	public void render() {
 		BufferStrategy bs = display.getBufferStrategy();
 
@@ -294,9 +301,9 @@ public class Game {
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
-			RenderingEngine.render(this, models, g, cam);
+			renderingEngine.render(models, g, cam);
 			g.setColor(Color.RED);;
-			g.drawString("Rendering Pipeline : " + RenderingEngine.renderPipeline, (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
+			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 			g.dispose();
 		} while (bs.contentsLost());
 

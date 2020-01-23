@@ -22,10 +22,14 @@ public class RenderingEngine {
 		Matrix, Quat
 	}
 	
-	public static RenderingMode renderingMode = RenderingMode.PERSPECTIVE;
-	public static RenderPipeline renderPipeline = RenderPipeline.Quat;
+	private RenderingMode renderingMode = RenderingMode.PERSPECTIVE;
+	private RenderPipeline renderPipeline = RenderPipeline.Quat;
+	
+	public RenderingEngine(Game game)  {
+		this.game = game;
+	}
 
-	public static void render(Game game, List<Model> models, Graphics2D g, Camera cam) {
+	public void render(List<Model> models, Graphics2D g, Camera cam) {
 		
 		for (Model m : models) {
 			
@@ -80,6 +84,7 @@ public class RenderingEngine {
 
 			List<Boolean> isVisible = new ArrayList<Boolean>();
 			List<Vector> normalisedVectors = new ArrayList<Vector>();
+			
 			projected.convertToVectorList().forEach((v) -> {
 				float x = v.getDataElement(0);
 				float y = v.getDataElement(1);
@@ -106,12 +111,7 @@ public class RenderingEngine {
 			});
 
 			for (int[] f : m.getFaces()) {
-//				if(f.length == 3) {
-//					g.setColor(Color.GREEN);
-//				}
-//				else {
-//					g.setColor(Color.white);
-//				}
+
 				for (int i = 0; i < f.length; i++) {
 
 					if (i != f.length - 1) {
@@ -250,23 +250,39 @@ public class RenderingEngine {
 //		
 //	}
 
-	public static void renderVectors(Graphics2D g, Vector[] v) {
+	public RenderingMode getRenderingMode() {
+		return renderingMode;
+	}
+
+	public void setRenderingMode(RenderingMode renderingMode) {
+		this.renderingMode = renderingMode;
+	}
+
+	public RenderPipeline getRenderPipeline() {
+		return renderPipeline;
+	}
+
+	public void setRenderPipeline(RenderPipeline renderPipeline) {
+		this.renderPipeline = renderPipeline;
+	}
+
+	public void renderVectors(Graphics2D g, Vector[] v) {
 		for (Vector vv : v) {
 			g.drawOval((int) vv.getData()[0], (int) vv.getData()[1], 1, 1);
 		}
 	}
 
-	public static void renderVectors(Graphics2D g, List<Vector> v) {
+	public void renderVectors(Graphics2D g, List<Vector> v) {
 		for (Vector vv : v) {
 			g.drawOval((int) vv.getData()[0], (int) vv.getData()[1], 1, 1);
 		}
 	}
 
-	public static void drawLine(Graphics2D g, Vector p1, Vector p2) {
+	public void drawLine(Graphics2D g, Vector p1, Vector p2) {
 		g.drawLine((int) p1.getData()[0], (int) p1.getData()[1], (int) p2.getData()[0], (int) p2.getData()[1]);
 	}
 
-	public static Vector[] lineVectorArrayFromVertixes(Vector p1, Vector p2) {
+	public Vector[] lineVectorArrayFromVertixes(Vector p1, Vector p2) {
 
 		Vector[] res = null;
 		List<Vector> resList = new ArrayList<Vector>();

@@ -111,7 +111,7 @@ public class Camera {
 			
 			 imageAspectRatio = imageWidth / (float) imageHeight;
 
-			if (RenderingEngine.renderingMode == RenderingMode.PERSPECTIVE) {
+			if (game.getRenderingEngine().getRenderingMode() == RenderingMode.PERSPECTIVE) {
 				
 				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
 				
@@ -130,7 +130,7 @@ public class Camera {
 				
 				buildPerspectiveProjectionMatrix();
 			}
-			else if(RenderingEngine.renderingMode == RenderingMode.ORTHO) {
+			else if(game.getRenderingEngine().getRenderingMode() == RenderingMode.ORTHO) {
 				
 				Vector[] bounds = getWorldBoundingBox();
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
