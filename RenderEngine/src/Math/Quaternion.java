@@ -11,9 +11,9 @@ public class Quaternion {
 			} else if (v.getNumberOfDimensions() == 3) {
 				float[] dat = new float[4];
 				dat[0] = 0f;
-				dat[1] = v.getDataElement(0);
-				dat[2] = v.getDataElement(1);
-				dat[3] = v.getDataElement(2);
+				dat[1] = v.get(0);
+				dat[2] = v.get(1);
+				dat[3] = v.get(2);
 				this.coordinate = new Vector(dat);
 			} else
 				throw new Exception(
@@ -37,8 +37,8 @@ public class Quaternion {
 	public static Quaternion getAxisAsQuat(Vector v, float angle) {
 		
 		float a = (float) Math.toRadians(angle / 2f);
-		float[] data = new float[] { (float) Math.cos(a), (float) (Math.sin(a) * v.getDataElement(0)),
-				(float) (Math.sin(a) * v.getDataElement(1)), (float) (Math.sin(a) * v.getDataElement(2)) };
+		float[] data = new float[] { (float) Math.cos(a), (float) (Math.sin(a) * v.get(0)),
+				(float) (Math.sin(a) * v.get(1)), (float) (Math.sin(a) * v.get(2)) };
 		
 		return new Quaternion(new Vector(data));
 	}
@@ -47,21 +47,21 @@ public class Quaternion {
 
 		Vector v = this.getPureVec();
 		Vector w = r.getPureVec();
-		float s = this.getCoordinate().getDataElement(0);
-		float t = r.getCoordinate().getDataElement(0);
+		float s = this.getCoordinate().get(0);
+		float t = r.getCoordinate().get(0);
 
 		float w_ = (s * t) - v.dot(w);
 		Vector v_ = (w.scalarMul(s).add(v.scalarMul(t))).add(v.cross(w));
 
-		float[] res = new float[] { w_, v_.getDataElement(0), v_.getDataElement(1), v_.getDataElement(2) };
+		float[] res = new float[] { w_, v_.get(0), v_.get(1), v_.get(2) };
 
 		return new Quaternion(new Vector(res));
 
 	}
 
 	public Vector getPureVec() {
-		return new Vector(new float[] { coordinate.getDataElement(1), coordinate.getDataElement(2),
-				coordinate.getDataElement(3) });
+		return new Vector(new float[] { coordinate.get(1), coordinate.get(2),
+				coordinate.get(3) });
 	}
 
 	public Matrix getRotationMatrix() {
@@ -86,10 +86,10 @@ public class Quaternion {
 
 		if (angle != 0) {
 
-			float temp = (float) Math.sqrt(1 - (coordinate.getDataElement(0) * coordinate.getDataElement(0)));
+			float temp = (float) Math.sqrt(1 - (coordinate.get(0) * coordinate.get(0)));
 
-			float[] axisData = new float[] { (float) (coordinate.getDataElement(1) / temp),
-					(float) (coordinate.getDataElement(2) / temp), (float) (coordinate.getDataElement(3) / temp) };
+			float[] axisData = new float[] { (float) (coordinate.get(1) / temp),
+					(float) (coordinate.get(2) / temp), (float) (coordinate.get(3) / temp) };
 
 			axis = new Vector(axisData).normalise();
 
@@ -103,7 +103,7 @@ public class Quaternion {
 	public Vector rotatePoint(Vector v) {
 		Quaternion q_ = getInverse();		
 		
-		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.getDataElement(0),v.getDataElement(1),v.getDataElement(2)}))).multiply(q_);
+		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
 		res = this.multiply(res);
 		return res.getPureVec();
 	}
@@ -116,7 +116,7 @@ public class Quaternion {
 		
 		int i = 0;
 		for (Vector v : vList) {
-			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.getDataElement(0),v.getDataElement(1),v.getDataElement(2)}))).multiply(q_);
+			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
 			temp = this.multiply(temp);
 			res[i] = temp.getPureVec();
 			i++;
@@ -126,14 +126,14 @@ public class Quaternion {
 	}
 
 	public float getAngleOfRotation() {
-		float angle = (float) (2 * Math.acos(this.coordinate.getDataElement(0)));
+		float angle = (float) (2 * Math.acos(this.coordinate.get(0)));
 		angle = (float) Math.toDegrees(angle);
 		return angle;
 	}
 
 	public Quaternion getConjugate() {
-		float[] res = new float[] { coordinate.getDataElement(0), -1 * coordinate.getDataElement(1),
-				-1 * coordinate.getDataElement(2), -1 * coordinate.getDataElement(3) };
+		float[] res = new float[] { coordinate.get(0), -1 * coordinate.get(1),
+				-1 * coordinate.get(2), -1 * coordinate.get(3) };
 		return new Quaternion(new Vector(res));
 	}
 
@@ -148,9 +148,9 @@ public class Quaternion {
 			} else if (v.getNumberOfDimensions() == 3) {
 				float[] dat = new float[4];
 				dat[0] = 0f;
-				dat[1] = v.getDataElement(0);
-				dat[2] = v.getDataElement(1);
-				dat[3] = v.getDataElement(2);
+				dat[1] = v.get(0);
+				dat[2] = v.get(1);
+				dat[3] = v.get(2);
 				this.coordinate = new Vector(dat);
 			} else
 				throw new Exception(
@@ -160,10 +160,10 @@ public class Quaternion {
 	}
 	
 	public Vector getPitchYawRoll() {
-		float x = this.getCoordinate().getDataElement(1);
-		float y = this.getCoordinate().getDataElement(2);
-		float z = this.getCoordinate().getDataElement(3);
-		float w = this.getCoordinate().getDataElement(0);
+		float x = this.getCoordinate().get(1);
+		float y = this.getCoordinate().get(2);
+		float z = this.getCoordinate().get(3);
+		float w = this.getCoordinate().get(0);
 
 		float yaw = (float) Math.toDegrees(Math.atan2(2 * y * w - 2 * x * z, 1 - 2 * y * y - 2 * z * z));
 		float pitch = (float) Math.toDegrees(Math.atan2(2 * x * w - 2 * y * z, 1 - 2 * x * x - 2 * z * z));

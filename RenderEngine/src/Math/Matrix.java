@@ -110,7 +110,7 @@ public class Matrix {
 	public static Matrix getDiagonalMatrix(Vector v) {
 		float[][] res = new float[v.getNumberOfDimensions()][v.getNumberOfDimensions()];
 		for (int i = 0; i < res.length; i++) {
-			res[i][i] = v.getDataElement(i);
+			res[i][i] = v.get(i);
 		}
 		return new Matrix(res);
 	}
@@ -654,7 +654,7 @@ public class Matrix {
 				data = new float[this.getRows()][this.getCols()];
 				for(int i = 0; i < this.getRows();i++) {
 					for(int j= 0 ;j < this.getCols();j++) {
-						data[i][j] = this.getData()[i][j] + v.getDataElement(i);
+						data[i][j] = this.getData()[i][j] + v.get(i);
 					}
 				}
 			}
@@ -835,7 +835,7 @@ public class Matrix {
 		try {
 			if (v.getNumberOfDimensions() == this.getRows()) {
 				for (int i = 0; i < this.getRows(); i++) {
-					dat[i][this.getCols()] = v.getDataElement(i);
+					dat[i][this.getCols()] = v.get(i);
 				}
 				for (int i = 0; i < this.getRows(); i++) {
 					for (int j = 0; j < this.getCols(); j++) {
@@ -859,7 +859,7 @@ public class Matrix {
 		try {
 			if (v.getNumberOfDimensions() == m.getRows()) {
 				for (int i = 0; i < m.getRows(); i++) {
-					dat[i][m.getCols()] = v.getDataElement(i);
+					dat[i][m.getCols()] = v.get(i);
 				}
 				for (int i = 0; i < m.getRows(); i++) {
 					for (int j = 0; j < m.getCols(); j++) {
@@ -884,7 +884,7 @@ public class Matrix {
 		try {
 			if (v.getNumberOfDimensions() == this.getCols()) {
 				for (int i = 0; i < this.getCols(); i++) {
-					dat[this.getRows()][i] = v.getDataElement(i);
+					dat[this.getRows()][i] = v.get(i);
 				}
 				for (int i = 0; i < this.getRows(); i++) {
 					for (int j = 0; j < this.getCols(); j++) {
@@ -908,7 +908,7 @@ public class Matrix {
 		try {
 			if (v.getNumberOfDimensions() == m.getCols()) {
 				for (int i = 0; i < m.getCols(); i++) {
-					dat[m.getRows()][i] = v.getDataElement(i);
+					dat[m.getRows()][i] = v.get(i);
 				}
 				for (int i = 0; i < m.getRows(); i++) {
 					for (int j = 0; j < m.getCols(); j++) {

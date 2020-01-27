@@ -177,24 +177,24 @@ public class ModelBuilder {
 				dataMax[3] = 0;
 
 				for (Vector v : vertex) {
-					if (v.getDataElement(0) < dataMin[0]) {
-						dataMin[0] = v.getDataElement(0);
+					if (v.get(0) < dataMin[0]) {
+						dataMin[0] = v.get(0);
 					}
-					if (v.getDataElement(1) < dataMin[1]) {
-						dataMin[1] = v.getDataElement(1);
+					if (v.get(1) < dataMin[1]) {
+						dataMin[1] = v.get(1);
 					}
-					if (v.getDataElement(2) < dataMin[2]) {
-						dataMin[2] = v.getDataElement(2);
+					if (v.get(2) < dataMin[2]) {
+						dataMin[2] = v.get(2);
 					}
 
-					if (v.getDataElement(0) > dataMax[0]) {
-						dataMax[0] = v.getDataElement(0);
+					if (v.get(0) > dataMax[0]) {
+						dataMax[0] = v.get(0);
 					}
-					if (v.getDataElement(1) > dataMax[1]) {
-						dataMax[1] = v.getDataElement(1);
+					if (v.get(1) > dataMax[1]) {
+						dataMax[1] = v.get(1);
 					}
-					if (v.getDataElement(2) > dataMax[2]) {
-						dataMax[2] = v.getDataElement(2);
+					if (v.get(2) > dataMax[2]) {
+						dataMax[2] = v.get(2);
 					}
 				}
 

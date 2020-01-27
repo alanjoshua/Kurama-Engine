@@ -136,8 +136,8 @@ public class Camera {
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
 				Vector maxCam = (getWorldToCam().matMul(bounds[1].addDimensionToVec(1))).toVector();
 //				maxCam.display();
-				float maxX = Math.max(Math.abs(minCam.getDataElement(0)), Math.abs(maxCam.getDataElement(0)));
-				float maxY = Math.max(Math.abs(minCam.getDataElement(1)), Math.abs(maxCam.getDataElement(1)));
+				float maxX = Math.max(Math.abs(minCam.get(0)), Math.abs(maxCam.get(0)));
+				float maxY = Math.max(Math.abs(minCam.get(1)), Math.abs(maxCam.get(1)));
 				float max = Math.max(maxX, maxY);
 //				System.out.println(max);
 				right = max * imageAspectRatio;
@@ -166,24 +166,24 @@ public class Camera {
 		dataMax[2] = Float.NEGATIVE_INFINITY;
 
 		for (Vector v : m.getVertices()) {
-			if (v.getDataElement(0) < dataMin[0]) {
-				dataMin[0] = v.getDataElement(0);
+			if (v.get(0) < dataMin[0]) {
+				dataMin[0] = v.get(0);
 			}
-			if (v.getDataElement(1) < dataMin[1]) {
-				dataMin[1] = v.getDataElement(1);
+			if (v.get(1) < dataMin[1]) {
+				dataMin[1] = v.get(1);
 			}
-			if (v.getDataElement(2) < dataMin[2]) {
-				dataMin[2] = v.getDataElement(2);
+			if (v.get(2) < dataMin[2]) {
+				dataMin[2] = v.get(2);
 			}
 
-			if (v.getDataElement(0) > dataMax[0]) {
-				dataMax[0] = v.getDataElement(0);
+			if (v.get(0) > dataMax[0]) {
+				dataMax[0] = v.get(0);
 			}
-			if (v.getDataElement(1) > dataMax[1]) {
-				dataMax[1] = v.getDataElement(1);
+			if (v.get(1) > dataMax[1]) {
+				dataMax[1] = v.get(1);
 			}
-			if (v.getDataElement(2) > dataMax[2]) {
-				dataMax[2] = v.getDataElement(2);
+			if (v.get(2) > dataMax[2]) {
+				dataMax[2] = v.get(2);
 			}
 		}
 
@@ -195,23 +195,23 @@ public class Camera {
 		Vector diff = max.sub(min);
 		
 		float[] midFrontData = new float[3];
-		midFrontData[0] = min.getDataElement(0) + diff.getDataElement(0) / 2;
-		midFrontData[1] = min.getDataElement(1) + diff.getDataElement(1) / 2;
-		midFrontData[2] = min.getDataElement(2);
+		midFrontData[0] = min.get(0) + diff.get(0) / 2;
+		midFrontData[1] = min.get(1) + diff.get(1) / 2;
+		midFrontData[2] = min.get(2);
 		Vector to = new Vector(midFrontData);
 
 		float[] fromData = new float[3];
 		float z = 0;
 
-		if (diff.getDataElement(0) > diff.getDataElement(1)) {
-			z = (float) ((diff.getDataElement(0) / 2f) / Math.tan(fovX / 2f));
+		if (diff.get(0) > diff.get(1)) {
+			z = (float) ((diff.get(0) / 2f) / Math.tan(fovX / 2f));
 		} else {
-			z = (float) ((diff.getDataElement(1) / 2f) / Math.tan(fovY / 2f));
+			z = (float) ((diff.get(1) / 2f) / Math.tan(fovY / 2f));
 		}
 
 		fromData[0] = midFrontData[0];
 		fromData[1] = midFrontData[1];
-		fromData[2] = (max.getDataElement(2) + z);
+		fromData[2] = (max.get(2) + z);
 		
 		Vector from = new Vector(fromData);
 		lookAtPoint(from, to);
@@ -278,27 +278,27 @@ public class Camera {
 		for (Model m : game.getModels()) {
 			for (Vector vv : m.getVertices()) {
 				
-				Vector temp = new Vector(new float[] {vv.getDataElement(0),vv.getDataElement(1),vv.getDataElement(2)});
+				Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
 				Vector v = (temp.mul(m.getScale())).add(m.getPos());
 				
-				if (v.getDataElement(0) < dataMin[0]) {
-					dataMin[0] = v.getDataElement(0);
+				if (v.get(0) < dataMin[0]) {
+					dataMin[0] = v.get(0);
 				}
-				if (v.getDataElement(1) < dataMin[1]) {
-					dataMin[1] = v.getDataElement(1);
+				if (v.get(1) < dataMin[1]) {
+					dataMin[1] = v.get(1);
 				}
-				if (v.getDataElement(2) < dataMin[2]) {
-					dataMin[2] = v.getDataElement(2);
+				if (v.get(2) < dataMin[2]) {
+					dataMin[2] = v.get(2);
 				}
 
-				if (v.getDataElement(0) > dataMax[0]) {
-					dataMax[0] = v.getDataElement(0);
+				if (v.get(0) > dataMax[0]) {
+					dataMax[0] = v.get(0);
 				}
-				if (v.getDataElement(1) > dataMax[1]) {
-					dataMax[1] = v.getDataElement(1);
+				if (v.get(1) > dataMax[1]) {
+					dataMax[1] = v.get(1);
 				}
-				if (v.getDataElement(2) > dataMax[2]) {
-					dataMax[2] = v.getDataElement(2);
+				if (v.get(2) > dataMax[2]) {
+					dataMax[2] = v.get(2);
 				}
 			}
 		}

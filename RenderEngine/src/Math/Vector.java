@@ -36,7 +36,7 @@ public class Vector {
 		this.numberOfDimensions = v.getNumberOfDimensions();
 		data = new float[numberOfDimensions];
 		for (int i = 0; i < numberOfDimensions; i++) {
-			data[i] = v.getDataElement(i);
+			data[i] = v.get(i);
 		}
 	}
 
@@ -288,7 +288,7 @@ public class Vector {
 		this.numberOfDimensions = data.length;
 	}
 
-	public float getDataElement(int index) {
+	public float get(int index) {
 		return data[index];
 	}
 
@@ -298,17 +298,17 @@ public class Vector {
 
 	public Vector cross(Vector v) {
 		float[] res = new float[3];
-		res[0] = (this.getDataElement(1) * v.getDataElement(2)) - (this.getDataElement(2) * v.getDataElement(1));
-		res[1] = -((this.getDataElement(0) * v.getDataElement(2)) - (this.getDataElement(2) * v.getDataElement(0)));
-		res[2] = (this.getDataElement(0) * v.getDataElement(1)) - (this.getDataElement(1) * v.getDataElement(0));
+		res[0] = (this.get(1) * v.get(2)) - (this.get(2) * v.get(1));
+		res[1] = -((this.get(0) * v.get(2)) - (this.get(2) * v.get(0)));
+		res[2] = (this.get(0) * v.get(1)) - (this.get(1) * v.get(0));
 		return new Vector(res);
 	}
 
 	public static Vector cross(Vector u, Vector v) {
 		float[] res = new float[3];
-		res[0] = (u.getDataElement(1) * v.getDataElement(2)) - (u.getDataElement(2) * v.getDataElement(1));
-		res[1] = -((u.getDataElement(0) * v.getDataElement(2)) - (u.getDataElement(2) * v.getDataElement(0)));
-		res[2] = (u.getDataElement(0) * v.getDataElement(1)) - (u.getDataElement(1) * v.getDataElement(0));
+		res[0] = (u.get(1) * v.get(2)) - (u.get(2) * v.get(1));
+		res[1] = -((u.get(0) * v.get(2)) - (u.get(2) * v.get(0)));
+		res[2] = (u.get(0) * v.get(1)) - (u.get(1) * v.get(0));
 		return new Vector(res);
 	}
 
@@ -371,7 +371,7 @@ public class Vector {
 		for (int i = 0; i < v.length; i++) {
 			float[] tempDat = new float[v[i].getNumberOfDimensions() + 1];
 			for (int j = 0; j < v[i].getNumberOfDimensions(); j++) {
-				tempDat[j] = v[i].getDataElement(j);
+				tempDat[j] = v[i].get(j);
 			}
 			tempDat[v[i].getNumberOfDimensions()] = val;
 			resData[i] = new Vector(tempDat);
@@ -387,7 +387,7 @@ public class Vector {
 		for (int i = 0; i < v.size(); i++) {
 			float[] tempDat = new float[v.get(i).getNumberOfDimensions() + 1];
 			for (int j = 0; j < v.get(i).getNumberOfDimensions(); j++) {
-				tempDat[j] = v.get(i).getDataElement(j);
+				tempDat[j] = v.get(i).get(j);
 			}
 			tempDat[v.get(i).getNumberOfDimensions()] = val;
 			resData[i] = new Vector(tempDat);
@@ -401,7 +401,7 @@ public class Vector {
 		float[] tempDat = new float[this.getNumberOfDimensions() + 1];
 		
 		for (int j = 0; j < this.getNumberOfDimensions(); j++) {
-			tempDat[j] = this.getDataElement(j);
+			tempDat[j] = this.get(j);
 		}
 		tempDat[this.getNumberOfDimensions()] = val;
 
@@ -412,7 +412,7 @@ public class Vector {
 		float[] res = new float[this.getNumberOfDimensions()];
 		
 		for(int i = 0;i < this.getNumberOfDimensions();i++) {
-			res[i] = this.getDataElement(i);
+			res[i] = this.get(i);
 		}
 		return new Vector(res);
 	}

@@ -9,6 +9,7 @@ import java.util.List;
 
 import Math.Matrix;
 import Math.Quaternion;
+import Math.Utils;
 import Math.Vector;
 import inputs.Input;
 import models.Model;
@@ -49,7 +50,7 @@ public class Game {
 
 	public void init() {
 		models = new ArrayList<Model>();
-		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.01f, 1000,
+		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.0001f, 1000,
 				display.getWidth(), display.getHeight());
 
 		Tick tQuat = (m -> {
@@ -80,7 +81,7 @@ public class Game {
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 		deer.setTickObj(tQuat);
-//		deer.triangulate();
+		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
@@ -98,21 +99,14 @@ public class Game {
 		grid.setPos(new Vector(new float[] {0,0,0}));
 		
 		models.add(deer);
-		models.add(grid);
-		models.add(mill);
+//		models.add(grid);
+//		models.add(mill);
 		models.add(teapot);
 
 		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
-		
-//		Vector v1 = new Vector(new float[] {-1,0,0});
-//		Vector v3 = new Vector(new float[] {1,0,0});
-//		Vector v2= new Vector(new float[] {0,1,0});
-//		Vector p = new Vector(new float[] {0,0.7f,1});
-//		
-//		System.out.println(ModelBuilder.isVertexInsideTriangle(v1, v2, v3, p));
 	
 	}
 
@@ -251,11 +245,11 @@ public class Game {
 		
 		if (input.getPosition().getNorm() != 0 && shouldCursorCenter) {
 		
-			float yawIncrease   = (float) (mouseXSensitivity * speedConstant * -input.getPosition().getDataElement(0));
-			float pitchIncrease = (float) (mouseYSensitivity * speedConstant * input.getPosition().getDataElement(1));
+			float yawIncrease   = (float) (mouseXSensitivity * speedConstant * -input.getPosition().get(0));
+			float pitchIncrease = (float) (mouseYSensitivity * speedConstant * input.getPosition().get(1));
 			
 			Vector currentAngle = cam.getOrientation().getPitchYawRoll();
-			float currentPitch = currentAngle.getDataElement(0) + pitchIncrease;
+			float currentPitch = currentAngle.get(0) + pitchIncrease;
 			
 			if(currentPitch >= 0 && currentPitch > 60) {
 				pitchIncrease = 0;
@@ -296,15 +290,21 @@ public class Game {
 
 		do {
 			Graphics2D g = (Graphics2D) bs.getDrawGraphics();
-			g.setColor(Color.black);
-			g.fillRect(0, 0, display.getWidth(), display.getHeight());
+			
+//			g.setColor(Color.black);
+			g.clearRect(0, 0,display.getWidth(), display.getHeight());
+			g.setBackground(Color.BLACK);
+//			g.fillRect(0, 0, display.getWidth(), display.getHeight());
+			g.setColor(Color.WHITE);
+			renderingEngine.render(models, g, cam);
+			
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
-			renderingEngine.render(models, g, cam);
-			g.setColor(Color.RED);;
+			g.setColor(Color.RED);
 			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 			g.dispose();
+
 		} while (bs.contentsLost());
 
 		bs.show();

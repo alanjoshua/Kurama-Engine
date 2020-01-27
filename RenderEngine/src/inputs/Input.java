@@ -227,8 +227,8 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	public synchronized void mouseMoved(MouseEvent e) {
 		if (isRelative()) {
 			Point p = e.getPoint();
-			dx += p.x - center.getDataElement(0);
-			dy += center.getDataElement(1) - p.y;
+			dx += p.x - center.get(0);
+			dy += center.get(1) - p.y;
 			centerMouse();
 		} else {
 			currentPos = new Vector(new float[] { e.getPoint().x, e.getPoint().y});
@@ -251,7 +251,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 		if (robot != null && component.isShowing()) {
 			// Because the convertPointToScreen method
 			// changes the object, make a copy!
-			Point copy = new Point((int) center.getDataElement(0), (int) center.getDataElement(1));
+			Point copy = new Point((int) center.get(0), (int) center.get(1));
 			SwingUtilities.convertPointToScreen(copy, component);
 			robot.mouseMove(copy.x, copy.y);
 		}
