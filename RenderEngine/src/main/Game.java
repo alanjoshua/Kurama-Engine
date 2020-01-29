@@ -50,7 +50,7 @@ public class Game {
 
 	public void init() {
 		models = new ArrayList<Model>();
-		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.0001f, 1000,
+		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
 				display.getWidth(), display.getHeight());
 
 		Tick tQuat = (m -> {
@@ -80,7 +80,7 @@ public class Game {
 		Model deer = ModelBuilder.buildModelFromFile("deer.obj");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-		deer.setTickObj(tQuat);
+//		deer.setTickObj(tQuat);
 		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
@@ -101,7 +101,7 @@ public class Game {
 		models.add(deer);
 //		models.add(grid);
 //		models.add(mill);
-		models.add(teapot);
+//		models.add(teapot);
 
 		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);

@@ -45,6 +45,7 @@ public class RenderingEngine {
 			List<Boolean> isVisible = new ArrayList<Boolean>();
 			List<Vector> projectedVectors = null;
 			List<Vector> rasterVectors = new ArrayList<Vector>();
+			List<Vector> camSpaceNormals = new ArrayList<Vector>();
 			
 			List<Vector> camSpaceList = null;
 
@@ -90,7 +91,7 @@ public class RenderingEngine {
 			}
 			
 			camSpaceList = camSpace.convertToVectorList();
-
+			
 			if (renderingMode == RenderingMode.PERSPECTIVE) {
 				projectedMatrix = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
 			} else if (renderingMode == RenderingMode.ORTHO) {
@@ -105,12 +106,14 @@ public class RenderingEngine {
 				float y = v.get(1);
 				float z = v.get(2);
 				float w = v.get(3);
-				Vector temp = new Vector(new float[] { x / w, y / w, z / w });
+				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
 				projectedVectors.set(i, temp);
 
 				if ((-1 <= temp.getData()[0] && temp.getData()[0] <= 1)
 						&& (-1 <= temp.getData()[1] && temp.getData()[1] <= 1)
-						&& (-1 <= temp.getData()[2] && temp.getData()[2] <= 1)) {
+						&& (-1 <= temp.getData()[2] && temp.getData()[2] <= 1)
+//						&& (temp.getData()[2] >= 0)
+						) {
 					isVisible.add(Boolean.TRUE);
 				} else {
 					isVisible.add(Boolean.FALSE);
@@ -120,9 +123,11 @@ public class RenderingEngine {
 			for(int i = 0;i < projectedVectors.size();i++) {
 				Vector v = projectedVectors.get(i);
 				rasterVectors.add(new Vector(new float[] { (int) ((v.get(0) + 1) * 0.5 * cam.getImageWidth()),
-						(int) ((1 - (v.get(1) + 1) * 0.5) * cam.getImageHeight()), 1 / camSpaceList.get(i).get(2)}));
+						(int) ((1 - (v.get(1) + 1) * 0.5) * cam.getImageHeight()), v.get(2)}));
 			}
-
+			
+			rasterVectors.get(0).display();
+			
 //			float[] zBuffer = new float[cam.getImageWidth() * cam.getImageHeight()];
 //			int[] frameBuffer = new int[zBuffer.length];
 //			

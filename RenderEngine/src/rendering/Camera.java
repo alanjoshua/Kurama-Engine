@@ -106,7 +106,6 @@ public class Camera {
 	}
 
 	public void updateValues() {
-		
 		 if (cameraMode == gameModeCamera) {
 			
 			 imageAspectRatio = imageWidth / (float) imageHeight;
