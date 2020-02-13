@@ -1,4 +1,4 @@
-# RenderingEngine
+# Rendering Engine
 
 <p></p>
 &nbsp &nbsp &nbsp
@@ -25,9 +25,12 @@
 
 ## Usage
 
-<p> The program takes control of the mouse to control the camera so press the escape key on your keyboard to switch to normal mouse movement mode</p>
+* The repository has a test program with a main class. Run it to test the program
+* The test program has only been tested to work on my windows laptop and PC and would probably not work on a Mac as there is a difference between handling file path and windows management.
 
 ### GUI controls
+<p> The program takes control of the mouse to control the camera so press the escape key on your keyboard to switch to normal mouse movement mode</p>
+
 * Esc - Toggles between mouse camera control and normal desktop control mode
 * R - Currenly programmed to reorient camera to the first model in the scene (deer)
 * Q - toggles between matrix and quaternion mode
