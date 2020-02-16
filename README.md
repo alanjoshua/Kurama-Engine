@@ -15,6 +15,8 @@
 
 <p> Since this project in its infancy and so far I have been mainly using it only to test different algorithms, it is not yet properly documented</p>
 
+<p> This program currently does not have a properly functioning API as it embedded with my test program. I am working on making the graphics engine separate 
+
 ## Features
 
 * Reading .OBJ files and rendering the models as a mesh
@@ -23,10 +25,12 @@
 * Freely move camera's position and orientation with the keyboard and mouse/trackpad
 * Ability to instantly change camera's position and orientation to focus on a particular model
 
-## Usage
-
-* The repository has a test program with a main class. Run it to test the program
-* The test program has only been tested on my windows laptop and PC and would probably not work on a Mac as there is a difference between handling file path and windows management.
+## Test Program
+* The repository includes a test program named "app.jar" in the root folder. Download and run it to test it.
+* The program has been tested on several windows 10 machines and one macbook air.  
+* This program has a simple control scheme to control the camera using the keyboard and mouse.
+* This program renders three 3D models on a grid.
+* The purpose for creating this test program was for me to be able to test the features of my rendering engine.
 
 ### GUI controls
 <p> The program takes control of the mouse to control the camera so press the escape key on your keyboard to switch to normal mouse movement mode</p>
