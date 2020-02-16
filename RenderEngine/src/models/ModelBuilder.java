@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ import Math.Utils;
 import Math.Vector;
 
 public class ModelBuilder {
-
+	
 	public static Model buildCube() {
 		Vector[] vertexO = new Vector[8];
 		vertexO[0] = new Vector(new float[] { 0, 0, 0 });
@@ -50,8 +52,14 @@ public class ModelBuilder {
 	@SuppressWarnings("unchecked")
 	public static Model buildModelFromFile(String loc) {
 
-		URL url = ModelBuilder.class.getResource("Resources");
-		String path = url.getPath() + File.separator + loc;
+//		URL url = ModelBuilder.class.getResource("Resources");
+//		String path = url.getPath() + File.separator + loc;
+//		URL url = ModelBuilder.class.getClassLoader().getResource("Resources");
+//		String path = url.getPath() + File.separator + loc;
+		ModelBuilder m = new ModelBuilder();
+		InputStream url = m.getClass().getResourceAsStream("/models/resources/"+loc);
+//		URL url = m.getClass().getClassLoader().getResource(loc);
+		String path = loc;
 
 		Model res = null;
 		List<Vector> vertex = new ArrayList<Vector>();
@@ -65,7 +73,7 @@ public class ModelBuilder {
 
 			try {
 				String line = "";
-				BufferedReader br = new BufferedReader(new FileReader(new File(path)));
+				BufferedReader br = new BufferedReader(new InputStreamReader(url));
 
 				while ((line = br.readLine()) != null) {
 

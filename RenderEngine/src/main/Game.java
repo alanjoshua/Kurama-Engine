@@ -99,8 +99,8 @@ public class Game {
 		grid.setPos(new Vector(new float[] {0,0,0}));
 		
 		models.add(deer);
-//		models.add(grid);
-//		models.add(mill);
+		models.add(grid);
+		models.add(mill);
 //		models.add(teapot);
 
 		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
