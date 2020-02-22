@@ -51,6 +51,8 @@ public class Display extends Canvas {
 		frame.add(this);
 		frame.pack();
 
+		this.requestFocus();
+
 		screen.setFullScreenWindow(frame);
 		
 		frame.addComponentListener(new ComponentAdapter() {
@@ -78,11 +80,6 @@ public class Display extends Canvas {
 	
 	public void setInput(Input input) {
 		this.input = input;
-
-		frame.addMouseListener(input);
-		frame.addMouseMotionListener(input);
-		frame.addMouseWheelListener(input);
-		frame.addKeyListener(input);
 		
 		this.addMouseListener(input);
 		this.addMouseMotionListener(input);
