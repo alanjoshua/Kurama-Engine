@@ -1,34 +1,57 @@
 package main;
 
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-import javax.swing.JFrame;
+import javax.swing.*;
 
 import inputs.Input;
 
 public class Display extends Canvas {
-	
+
 	private JFrame frame;
+	private GraphicsDevice screen;
 	private Game game;
 	private Input input;
+	private int w;
+	private int h;
 	
 	public Display(int w, int h,Game game) {
-		this.setSize(w, h);
+
+		this.w = w;
+		this.h = h;
+
+		screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
+		if (!screen.isFullScreenSupported()) {
+			System.out.println("Full screen mode not supported");
+			System.exit(1);
+		}
+
+		this.setSize(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getSize());
+
 		this.setBackground(Color.black);
 		frame = new JFrame();
-		frame.add(this);
-		frame.pack();
+
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.setResizable(true);
 		frame.setIgnoreRepaint( true );
+		frame.setUndecorated(true);
+		frame.setVisible(true);
+
+//		if (!frame.isUndecorated()) {
+//			frame.setUndecorated(true);
+//		}
+//		if(!frame.isVisible()){
+//			frame.setVisible(true);
+//		}
+
+		frame.add(this);
+		frame.pack();
+
+		screen.setFullScreenWindow(frame);
 		
 		frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
@@ -42,13 +65,19 @@ public class Display extends Canvas {
 		
 //		disableCursor();
 	}
+
+	public void setFullScreen() {
+		screen.setFullScreenWindow(frame);
+	}
+
+	public void removeFullScreen() {
+		screen.setFullScreenWindow(null);
+//		input.recalibrateCentre();
+//		frame.pack();
+	}
 	
-public void setInput(Input input) {
+	public void setInput(Input input) {
 		this.input = input;
-		frame.addMouseListener(input);
-		frame.addMouseMotionListener(input);
-		frame.addMouseWheelListener(input);
-		frame.addKeyListener(input);
 		
 		this.addMouseListener(input);
 		this.addMouseMotionListener(input);
@@ -71,6 +100,10 @@ public void setInput(Input input) {
 	
 	public void enableCursor() {
 	    frame.setCursor(Cursor.getDefaultCursor());
+	}
+
+	public GraphicsDevice getScreen() {
+		return screen;
 	}
 	
 }

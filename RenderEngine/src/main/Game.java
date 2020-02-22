@@ -1,15 +1,13 @@
 package main;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
 import java.util.List;
 
-import Math.Matrix;
+import GUI.Button;
 import Math.Quaternion;
-import Math.Utils;
 import Math.Vector;
 import inputs.Input;
 import models.Model;
@@ -26,10 +24,10 @@ public class Game {
 	private List<Model> models;
 	private double targetFPS = 120;
 	private boolean shouldDisplayFPS = false;
-	private boolean running = true;
+	private boolean programRunning = true;
 	private Camera cam;
 	private Input input;
-	private boolean shouldCursorCenter = true;
+	private boolean isGameRunning = true;
 	private float fps;
 	private float displayFPS;
 	private float mouseXSensitivity = 20f;
@@ -38,6 +36,8 @@ public class Game {
 	private float speedMultiplier = 1;
 	private float speedIncreaseMultiplier = 2;
 	private float speedConstant;
+
+	private Button EXIT;
 	
 	private RenderingEngine renderingEngine;
 	
@@ -107,7 +107,29 @@ public class Game {
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
-	
+
+		EXIT = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		EXIT.text = "EXIT";
+
+		Button.Tick t = (mp,isPressed) -> {
+
+			if(mp.get(0) >= EXIT.position.get(0) && mp.get(0) <= EXIT.position.get(0) + EXIT.width && mp.get(1) >= EXIT.position.get(1) && mp.get(1) <= EXIT.position.get(1) + EXIT.height) {
+				EXIT.textColor = Color.RED;
+
+				if(isPressed) {
+					programRunning = false;
+				}
+
+			}
+			else {
+				EXIT.textColor = Color.LIGHT_GRAY;
+			}
+		};
+
+		EXIT.bgColor = Color.DARK_GRAY;
+		EXIT.tickObj = t;
+		EXIT.textFont = new Font("Consolas", Font.BOLD,24);
+
 	}
 
 	public void run() {
@@ -120,7 +142,7 @@ public class Game {
 		double tempDt = 0;
 		float tickInterval = 0;
 
-		while (running) {
+		while (programRunning) {
 			
 			double timeU = ((1000000000.0 / targetFPS));
 			currentTime = System.nanoTime();
@@ -152,20 +174,22 @@ public class Game {
 	}
 
 	public void tick() {
-//		cam.getQuaternion().getAxis().display();
-//		cam.getForward().getCoordinate().display();
-//		System.out.println(speedConstant);
 		
 		if (input.keyDownOnce(KeyEvent.VK_ESCAPE)) {
-			if (shouldCursorCenter)
-				shouldCursorCenter = false;
-			else
-				shouldCursorCenter = true;
+
+			if (isGameRunning) {
+//				getDisplay().removeFullScreen();
+				isGameRunning = false;
+			}
+			else {
+//				getDisplay().setFullScreen();
+				isGameRunning = true;
+			}
 		}
 
-		input.setRelative(shouldCursorCenter);
+		input.setRelative(isGameRunning);
 
-		if (shouldCursorCenter)
+		if (isGameRunning)
 			display.disableCursor();
 		else
 			display.enableCursor();
@@ -177,6 +201,8 @@ public class Game {
 		for (Model m : models) {
 			m.tick();
 		}
+
+		if(!isGameRunning) EXIT.tick(input.getPosition(),input.buttonDown(1));
 		
 //		cam.getQuaternion().getRotationMatrix().convertToVectorArray()[2].display();
 		
@@ -243,8 +269,10 @@ public class Game {
 			else renderingEngine.setRenderPipeline(RenderPipeline.Quat);
 		}
 		
-		if (input.getPosition().getNorm() != 0 && shouldCursorCenter) {
-		
+		if (input.getPosition().getNorm() != 0 && isGameRunning) {
+
+//			input.getPosition().display();
+
 			float yawIncrease   = (float) (mouseXSensitivity * speedConstant * -input.getPosition().get(0));
 			float pitchIncrease = (float) (mouseYSensitivity * speedConstant * input.getPosition().get(1));
 			
@@ -284,14 +312,13 @@ public class Game {
 		BufferStrategy bs = display.getBufferStrategy();
 
 		if (bs == null) {
-			display.createBufferStrategy(3);
+			display.createBufferStrategy(2);
 			return;
 		}
 
 		do {
 			Graphics2D g = (Graphics2D) bs.getDrawGraphics();
-			
-//			g.setColor(Color.black);
+
 			g.clearRect(0, 0,display.getWidth(), display.getHeight());
 			g.setBackground(Color.BLACK);
 //			g.fillRect(0, 0, display.getWidth(), display.getHeight());
@@ -303,6 +330,9 @@ public class Game {
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
 			g.setColor(Color.RED);
 			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
+
+			if(!this.isGameRunning) EXIT.render(g);
+
 			g.dispose();
 
 		} while (bs.contentsLost());
@@ -334,12 +364,12 @@ public class Game {
 		this.shouldDisplayFPS = shouldFPS;
 	}
 
-	public boolean isRunning() {
-		return running;
+	public boolean isProgramRunning() {
+		return programRunning;
 	}
 
-	public void setRunning(boolean running) {
-		this.running = running;
+	public void setProgramRunning(boolean programRunning) {
+		this.programRunning = programRunning;
 	}
 
 	public Display getDisplay() {

@@ -225,6 +225,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	}
 
 	public synchronized void mouseMoved(MouseEvent e) {
+//		System.out.println(e.getX() + " : " + e.getY());
 		if (isRelative()) {
 			Point p = e.getPoint();
 			dx += p.x - center.get(0);
@@ -239,6 +240,17 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 		// Not needed
 	}
 
+	public Vector getCenter() {return center;}
+
+//	public void recalibrateCentre() {
+//		Point tempC = new Point(0,0);
+//		SwingUtilities.convertPointToScreen(tempC, component);
+//		System.out.println(tempC.x + " : " + tempC.y);
+//		Vector centerNew = new Vector(new float[]{(float)(center.get(0)+tempC.getX()),(float)(center.get(1)+tempC.getY())});
+//		center = centerNew;
+//		center.display();
+//	}
+
 	public boolean isScrolled() {
 		return isScrolled;
 	}
@@ -251,6 +263,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 		if (robot != null && component.isShowing()) {
 			// Because the convertPointToScreen method
 			// changes the object, make a copy!
+
 			Point copy = new Point((int) center.get(0), (int) center.get(1));
 			SwingUtilities.convertPointToScreen(copy, component);
 			robot.mouseMove(copy.x, copy.y);

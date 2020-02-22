@@ -126,7 +126,7 @@ public class RenderingEngine {
 						(int) ((1 - (v.get(1) + 1) * 0.5) * cam.getImageHeight()), v.get(2)}));
 			}
 			
-			rasterVectors.get(0).display();
+//			rasterVectors.get(0).display();
 			
 //			float[] zBuffer = new float[cam.getImageWidth() * cam.getImageHeight()];
 //			int[] frameBuffer = new int[zBuffer.length];
