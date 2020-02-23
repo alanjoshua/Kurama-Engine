@@ -57,9 +57,21 @@ public class Game {
 
 		pauseButtons = new ArrayList<GUI.Button>();
 		models = new ArrayList<Model>();
+
 		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
 				display.getWidth(), display.getHeight());
 
+		initModels();
+		initPauseScreen();
+
+		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
+		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
+		cam.lookAtModel(models.get(0));
+		cam.updateValues();
+
+	}
+
+	public void initModels() {
 		Tick tQuat = (m -> {
 			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50*speedConstant);
 			Quaternion newQ = rot.multiply(m.getOrientation());
@@ -96,26 +108,22 @@ public class Game {
 		mill.triangulate(true);
 
 		Model ship = ModelBuilder.buildShip();
-		
+
 		Model teapot = ModelBuilder.buildModelFromFile("teapot.obj");
 		teapot.setPos(new Vector(new float[] { -20, 10, 10}));
 		teapot.setScale(new Vector(new float[] {1f,1f,1f}));
 		teapot.triangulate();
-		
+
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
-		
+
 		models.add(deer);
 		models.add(grid);
 		models.add(mill);
-//		models.add(teapot);
+	}
 
-		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
-		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
-		cam.lookAtModel(models.get(0));
-		cam.updateValues();
-
-//		Making Exit button
+	public void initPauseScreen() {
+		//		Making Exit button
 		EXIT = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
 		EXIT.text = "EXIT";
 
@@ -186,7 +194,6 @@ public class Game {
 		pauseButtons.add(EXIT);
 		pauseButtons.add(FULLSCREEN);
 		pauseButtons.add(WINDOWED);
-
 	}
 
 	public void run() {
