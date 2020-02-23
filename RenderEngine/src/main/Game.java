@@ -22,6 +22,7 @@ public class Game {
 
 	private Display display;
 	private List<Model> models;
+	private List<GUI.Button> pauseButtons;
 	private double targetFPS = 120;
 	private boolean shouldDisplayFPS = false;
 	private boolean programRunning = true;
@@ -38,6 +39,8 @@ public class Game {
 	private float speedConstant;
 
 	private Button EXIT;
+	private Button FULLSCREEN;
+	private Button WINDOWED;
 	
 	private RenderingEngine renderingEngine;
 	
@@ -49,6 +52,10 @@ public class Game {
 	}
 
 	public void init() {
+
+		display.startScreen();
+
+		pauseButtons = new ArrayList<GUI.Button>();
 		models = new ArrayList<Model>();
 		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
 				display.getWidth(), display.getHeight());
@@ -108,27 +115,77 @@ public class Game {
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
 
+//		Making Exit button
 		EXIT = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
 		EXIT.text = "EXIT";
 
-		Button.Tick t = (mp,isPressed) -> {
+		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
 
-			if(mp.get(0) >= EXIT.position.get(0) && mp.get(0) <= EXIT.position.get(0) + EXIT.width && mp.get(1) >= EXIT.position.get(1) && mp.get(1) <= EXIT.position.get(1) + EXIT.height) {
-				EXIT.textColor = Color.RED;
-
+			if(b.isMouseInside(mp)) {
+				b.textColor = Color.RED;
 				if(isPressed) {
 					programRunning = false;
 				}
-
 			}
 			else {
-				EXIT.textColor = Color.LIGHT_GRAY;
+				b.textColor = Color.LIGHT_GRAY;
 			}
 		};
 
 		EXIT.bgColor = Color.DARK_GRAY;
-		EXIT.tickObj = t;
+		EXIT.behaviour = exitButtonBehaviour;
 		EXIT.textFont = new Font("Consolas", Font.BOLD,24);
+
+
+//		Making FullScreen Toggle
+		FULLSCREEN = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.25)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		FULLSCREEN.text = "FULLSCREEN";
+
+		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
+
+			if(b.isMouseInside(mp)) {
+				b.textColor = Color.RED;
+				if(isPressed && getDisplay().displayMode != Display.DisplayMode.FULLSCREEN) {
+					getDisplay().displayMode = Display.DisplayMode.FULLSCREEN;
+					getDisplay().startScreen();
+				}
+			}
+			else {
+				b.textColor = Color.LIGHT_GRAY;
+			}
+
+		};
+
+		FULLSCREEN.setBehaviour(fullscreenBehaviour);
+		FULLSCREEN.bgColor = Color.DARK_GRAY;
+		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,24);
+
+//		Making WindowedMode Toggle
+		WINDOWED = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.4)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		WINDOWED.text = "WINDOWED MODE";
+
+		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
+
+			if(b.isMouseInside(mp)) {
+				b.textColor = Color.RED;
+				if(isPressed && getDisplay().displayMode != Display.DisplayMode.WINDOWED) {
+					getDisplay().displayMode = Display.DisplayMode.WINDOWED;
+					getDisplay().startScreen();
+				}
+			}
+			else {
+				b.textColor = Color.LIGHT_GRAY;
+			}
+
+		};
+
+		WINDOWED.setBehaviour(windowedBehaviour);
+		WINDOWED.bgColor = Color.DARK_GRAY;
+		WINDOWED.textFont = new Font("Consolas", Font.BOLD,24);
+
+		pauseButtons.add(EXIT);
+		pauseButtons.add(FULLSCREEN);
+		pauseButtons.add(WINDOWED);
 
 	}
 
@@ -188,21 +245,26 @@ public class Game {
 		}
 
 		input.setRelative(isGameRunning);
+		input.poll();
 
 		if (isGameRunning)
 			display.disableCursor();
 		else
 			display.enableCursor();
-
-		input.poll();
-		inputTick();
-		cam.tick();
 		
 		for (Model m : models) {
 			m.tick();
 		}
 
-		if(!isGameRunning) EXIT.tick(input.getPosition(),input.buttonDown(1));
+		if(!isGameRunning) {
+			for(GUI.Button b:pauseButtons) {
+				b.tick(input.getPosition(),input.buttonDown(1));
+			}
+		}
+		else {
+			inputTick();
+			cam.tick();
+		}
 		
 //		cam.getQuaternion().getRotationMatrix().convertToVectorArray()[2].display();
 		
@@ -331,7 +393,11 @@ public class Game {
 			g.setColor(Color.RED);
 			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 
-			if(!this.isGameRunning) EXIT.render(g);
+			if(!this.isGameRunning) {
+				for(GUI.Button b:pauseButtons) {
+					b.render(g);
+				}
+			}
 
 			g.dispose();
 

@@ -1,14 +1,13 @@
 package GUI;
 
 import Math.Vector;
-import models.Model;
 
 import java.awt.*;
 
 public class Button {
 
-    public interface Tick {
-        public void tick(Vector mousePos,boolean isPressed);
+    public interface Behaviour {
+        public void executeBehaviour(Button b, Vector mousePos, boolean isPressed);
     }
 
 //    public interface Render {
@@ -18,7 +17,7 @@ public class Button {
     public Vector position;
     public int width;
     public int height;
-    public Tick tickObj;
+    public Behaviour behaviour;
 //  Render renderObj;
     public String text;
     public Color textColor;
@@ -42,16 +41,22 @@ public class Button {
         g.drawString(text,(int)position.get(0) + dx,(int)position.get(1) + height / 2);
     }
 
-    public void setTickObj(Tick t) {
-        this.tickObj = t;
+    public void setBehaviour(Behaviour t) {
+        this.behaviour = t;
     }
 
-//    public void setRenderObj(Render r) {
-//        this.renderObj = r;
-//    }
-
     public void tick(Vector mousePos, boolean isPressed) {
-        tickObj.tick(mousePos, isPressed);
+        behaviour.executeBehaviour(this,mousePos, isPressed);
+    }
+
+    public boolean isMouseInside(Vector mp) {
+
+        if(mp.get(0) >= position.get(0) && mp.get(0) <= position.get(0) + width && mp.get(1) >= position.get(1) && mp.get(1) <= position.get(1) + height) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
 }
