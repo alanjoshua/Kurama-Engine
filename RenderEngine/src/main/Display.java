@@ -17,6 +17,10 @@ public class Display extends Canvas {
     private int defaultWindowedWidth = 1280;
     private int defaultWindowedHeight = 720;
 
+    public static String OS = System.getProperty("os.name").toLowerCase();
+    public static final int winDPI = 96;
+    public static final int macDPI = 72;
+
     public static enum DisplayMode {
         FULLSCREEN, WINDOWED
     }
@@ -77,7 +81,28 @@ public class Display extends Canvas {
             System.exit(1);
         }
 
-        this.setSize(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getSize());
+        Dimension actual;
+
+        if(OS.indexOf("mac") > 0) {
+            System.out.println("Detected Mac");
+            int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+            double scale = dpi/macDPI;
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
+        }
+
+        else {
+            System.out.println("Detected Windows (!Mac)");
+            int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+            double scale = dpi/winDPI;
+            System.out.println(scale);
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            System.out.println(screenSize);
+            actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
+            System.out.println(actual);
+        }
+
+        this.setSize(actual);
         this.setBackground(Color.black);
         this.requestFocus();
 
