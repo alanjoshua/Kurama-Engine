@@ -18,8 +18,8 @@ public class Display extends Canvas {
     private int defaultWindowedHeight = 720;
 
     public static String OS = System.getProperty("os.name").toLowerCase();
-    public static final int winDPI = 96;
-    public static final int macDPI = 72;
+    public static final double winDPI = 96;
+    public static final double macDPI = 72;
 
     public static enum DisplayMode {
         FULLSCREEN, WINDOWED
