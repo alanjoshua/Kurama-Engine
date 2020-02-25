@@ -123,8 +123,9 @@ public class Game {
 	}
 
 	public void initPauseScreen() {
+
 		//		Making Exit button
-		EXIT = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		EXIT = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),0.1,0.1);
 		EXIT.text = "EXIT";
 
 		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
@@ -142,11 +143,13 @@ public class Game {
 
 		EXIT.bgColor = Color.DARK_GRAY;
 		EXIT.behaviour = exitButtonBehaviour;
-		EXIT.textFont = new Font("Consolas", Font.BOLD,24);
+
+//		Font f = Font.getFont("Arial").deriveFont(Font.BOLD,24);
+		EXIT.textFont = new Font("Sans-Serif",Font.BOLD,24);
 
 
 //		Making FullScreen Toggle
-		FULLSCREEN = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.25)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		FULLSCREEN = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.25)}),0.1,0.1);
 		FULLSCREEN.text = "FULLSCREEN";
 
 		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
@@ -169,7 +172,7 @@ public class Game {
 		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,24);
 
 //		Making WindowedMode Toggle
-		WINDOWED = new GUI.Button(new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.4)}),(int)(display.getWidth() * 0.1),(int)(display.getHeight() * 0.1));
+		WINDOWED = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.4)}),0.1,0.1);
 		WINDOWED.text = "WINDOWED MODE";
 
 		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
