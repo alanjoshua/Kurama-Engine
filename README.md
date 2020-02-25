@@ -23,7 +23,10 @@
 * Capable of triangulating n-gons (polygons with number of sides greater than 3)
 * Switching between Matrix and Quaternion rotation mode
 * Freely move camera's position and orientation with the keyboard and mouse/trackpad
-* Ability to instantly change camera's position and orientation to focus on a particular model
+* Ability to instantly change camera's position and orientation to focus on a particular model in the scene
+* Ability to create basic GUI
+* Input handling
+* Option to use either perspective or orthographic projection
 
 ## Test Program
 * The repository includes a test program named "RenderingEngine.jar" in the root folder. Download and run it to test it.
