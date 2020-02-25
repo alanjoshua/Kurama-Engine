@@ -26,7 +26,7 @@
 * Ability to instantly change camera's position and orientation to focus on a particular model
 
 ## Test Program
-* The repository includes a test program named "app.jar" in the root folder. Download and run it to test it.
+* The repository includes a test program named "RenderingEngine.jar" in the root folder. Download and run it to test it.
 * The program has been tested on several windows 10 machines and one macbook air.  
 * This program has a simple control scheme to control the camera using the keyboard and mouse.
 * This program renders three 3D models on a grid.
