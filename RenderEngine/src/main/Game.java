@@ -51,6 +51,13 @@ public class Game {
 		renderingEngine = new RenderingEngine(this);
 	}
 
+	public Game() {
+		display = new Display(this);
+		input = new Input(this);
+		display.setInput(input);
+		renderingEngine = new RenderingEngine(this);
+	}
+
 	public void init() {
 
 		display.startScreen();
@@ -124,8 +131,8 @@ public class Game {
 
 	public void initPauseScreen() {
 
-		int width = 100;
-		int height = 50;
+		int width = 200;
+		int height = 100;
 
 		//		Making Exit button
 //		EXIT = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),0.1,0.1);
@@ -149,7 +156,7 @@ public class Game {
 		EXIT.behaviour = exitButtonBehaviour;
 
 //		Font f = Font.getFont("Arial").deriveFont(Font.BOLD,24);
-		EXIT.textFont = new Font("Sans-Serif",Font.BOLD,24);
+		EXIT.textFont = new Font("Sans-Serif",Font.BOLD,20);
 
 
 //		Making FullScreen Toggle
@@ -173,7 +180,7 @@ public class Game {
 
 		FULLSCREEN.setBehaviour(fullscreenBehaviour);
 		FULLSCREEN.bgColor = Color.DARK_GRAY;
-		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,24);
+		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
 		WINDOWED = new GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
@@ -196,7 +203,7 @@ public class Game {
 
 		WINDOWED.setBehaviour(windowedBehaviour);
 		WINDOWED.bgColor = Color.DARK_GRAY;
-		WINDOWED.textFont = new Font("Consolas", Font.BOLD,24);
+		WINDOWED.textFont = new Font("Consolas", Font.BOLD,20);
 
 		pauseButtons.add(EXIT);
 		pauseButtons.add(FULLSCREEN);
@@ -395,6 +402,15 @@ public class Game {
 		do {
 			Graphics2D g = (Graphics2D) bs.getDrawGraphics();
 
+			g.setRenderingHint(
+					RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+
+			Font f = new Font("Sans-Serif",Font.PLAIN,16);
+
+			f = f.deriveFont(f.getSize() * display.getScalingRelativeToDPI());
+			g.setFont(f);
+
 			g.clearRect(0, 0,display.getWidth(), display.getHeight());
 			g.setBackground(Color.BLACK);
 //			g.fillRect(0, 0, display.getWidth(), display.getHeight());
@@ -406,6 +422,8 @@ public class Game {
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
 			g.setColor(Color.RED);
 			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
+
+			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
 
 			if(!this.isGameRunning) {
 				for(GUI.Button b:pauseButtons) {

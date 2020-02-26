@@ -39,7 +39,7 @@ public class Button {
         g.setColor(bgColor);
         g.fillRect(getX(),getY(),getWidthInPixels(),getHeightInPixels());
         g.setColor(textColor);
-        g.setFont(textFont);
+        g.setFont(textFont.deriveFont(textFont.getSize() * game.getDisplay().getScalingRelativeToDPI()));
         int len = g.getFontMetrics().stringWidth(text);
         int dx = (int)((getWidthInPixels() - len)/2);
         g.drawString(text,getX() + dx,getY() + getHeightInPixels() / 2);

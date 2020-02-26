@@ -72,7 +72,9 @@ public class Display extends Canvas {
     }
 
     public int getDPI() {
-        return Toolkit.getDefaultToolkit().getScreenResolution();
+        int d = Toolkit.getDefaultToolkit().getScreenResolution();
+        System.out.println(d);
+        return d;
     }
 
     public float getScalingRelativeToDPI() {
@@ -90,10 +92,6 @@ public class Display extends Canvas {
     private void setFullScreen() {
         removeWindow();
         screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        GraphicsConfiguration gc = screen.getDefaultConfiguration();
-
-        System.out.println(gc.getBounds());
-        System.out.println(screen.getType());
 
         if (!screen.isFullScreenSupported()) {
             System.out.println("Full screen mode not supported");
@@ -102,17 +100,11 @@ public class Display extends Canvas {
 
         double scale = getScalingRelativeToDPI();
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        System.out.println("ScreenSize: "+ screenSize);
-        Dimension actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
-        System.out.println("Actual: "+actual);
         this.setSize(screenSize);
-        System.out.println("Canvas: "+this.getSize());
         this.setBackground(Color.black);
         this.requestFocus();
         initFrame(false);
         screen.setFullScreenWindow(frame);
-
-        System.out.println("final: "+ screen.getFullScreenWindow().getSize());
     }
 
     private void setWindowedMode() {
