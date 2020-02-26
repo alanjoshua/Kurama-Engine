@@ -43,7 +43,6 @@ public class Display extends Canvas {
     }
 
     public void initFrame(boolean shouldBorder) {
-        System.out.println("init called");
         frame = new JFrame();
         frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -72,6 +71,22 @@ public class Display extends Canvas {
         });
     }
 
+    public int getDPI() {
+        return Toolkit.getDefaultToolkit().getScreenResolution();
+    }
+
+    public float getScalingRelativeToDPI() {
+        if(OS.indexOf("mac") > 0) {
+            int dpi = getDPI();
+            return (float)(dpi/macDPI);
+        }
+
+        else {
+            int dpi = getDPI();
+            return  (float)(dpi/winDPI);
+        }
+    }
+
     private void setFullScreen() {
         removeWindow();
         screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -81,34 +96,23 @@ public class Display extends Canvas {
             System.exit(1);
         }
 
-        Dimension actual;
-
-        if(OS.indexOf("mac") > 0) {
-            System.out.println("Detected Mac");
-            int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            double scale = dpi/macDPI;
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
-        }
-
-        else {
-            System.out.println("Detected Windows (!Mac)");
-            int dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-            double scale = dpi/winDPI;
-            System.out.println(scale);
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            System.out.println(screenSize);
-            actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
-            System.out.println(actual);
-        }
-
+        double scale = getScalingRelativeToDPI();
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension actual = new Dimension((int)(screenSize.getWidth()*scale),(int)(screenSize.getHeight()*scale));
+        System.out.println(actual);
         this.setSize(actual);
+        System.out.println(this.getSize());
         this.setBackground(Color.black);
         this.requestFocus();
 
         initFrame(false);
 
         screen.setFullScreenWindow(frame);
+//        for(java.awt.DisplayMode d : screen.getDisplayModes()) {
+//            System.out.println(d.toString());
+//        }
+        System.out.println(screen.getDisplayMode());
+        System.out.println(screen.getFullScreenWindow().getSize());
     }
 
     private void setWindowedMode() {

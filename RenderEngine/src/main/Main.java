@@ -25,6 +25,8 @@ public class Main {
 	public void start() {
 		game = new Game(1000,1000);
 		game.init();
+		System.out.println(game.getDisplay().getScalingRelativeToDPI());
+		System.out.println(game.getDisplay().getHeight());
 		game.run();
 	}
 }

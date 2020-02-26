@@ -124,8 +124,12 @@ public class Game {
 
 	public void initPauseScreen() {
 
+		int width = 100;
+		int height = 50;
+
 		//		Making Exit button
-		EXIT = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),0.1,0.1);
+//		EXIT = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),0.1,0.1);
+		EXIT = new GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
 		EXIT.text = "EXIT";
 
 		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
@@ -149,7 +153,7 @@ public class Game {
 
 
 //		Making FullScreen Toggle
-		FULLSCREEN = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.25)}),0.1,0.1);
+		FULLSCREEN = new GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
 		FULLSCREEN.text = "FULLSCREEN";
 
 		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
@@ -172,7 +176,7 @@ public class Game {
 		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,24);
 
 //		Making WindowedMode Toggle
-		WINDOWED = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.4)}),0.1,0.1);
+		WINDOWED = new GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
 		WINDOWED.text = "WINDOWED MODE";
 
 		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {

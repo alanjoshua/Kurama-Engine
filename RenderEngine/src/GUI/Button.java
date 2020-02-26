@@ -15,7 +15,7 @@ public class Button {
 //        public void render(Graphics g);
 //    }
 
-    public Vector position;
+    public Vector position; // relative to display width and height
     public double width;  // relative to display width; value between 0 and 1 inclusive
     public double height; // relative to display height; value between 0 and 1 inclusive
     public Behaviour behaviour;
@@ -24,6 +24,7 @@ public class Button {
     public Color textColor;
     public Color bgColor = Color.BLACK;
     public Font textFont;
+    public float scale = 1.0f;
     private Game game;
 
     public Button(Game game, Vector position, double width, double height) {
@@ -36,12 +37,12 @@ public class Button {
     public void render(Graphics g) {
 //        this.renderObj.render(g);
         g.setColor(bgColor);
-        g.fillRect((int)position.get(0),(int)position.get(1),getWidthInPixels(),getHeightInPixels());
+        g.fillRect(getX(),getY(),getWidthInPixels(),getHeightInPixels());
         g.setColor(textColor);
         g.setFont(textFont);
         int len = g.getFontMetrics().stringWidth(text);
         int dx = (int)((getWidthInPixels() - len)/2);
-        g.drawString(text,(int)position.get(0) + dx,(int)position.get(1) + getHeightInPixels() / 2);
+        g.drawString(text,getX() + dx,getY() + getHeightInPixels() / 2);
     }
 
     public void setBehaviour(Behaviour t) {
@@ -54,7 +55,7 @@ public class Button {
 
     public boolean isMouseInside(Vector mp) {
 
-        if(mp.get(0) >= position.get(0) && mp.get(0) <= position.get(0) + getWidthInPixels() && mp.get(1) >= position.get(1) && mp.get(1) <= position.get(1) + getHeightInPixels()) {
+        if(mp.get(0) >= getY() && mp.get(0) <= getX() + getWidthInPixels() && mp.get(1) >= getY() && mp.get(1) <= getY() + getHeightInPixels()) {
             return true;
         }
         else {
@@ -62,12 +63,24 @@ public class Button {
         }
     }
 
+    public int getX() {
+        return (int)(position.get(0) * game.getDisplay().getWidth());
+    }
+
+    public int getY() {
+        return (int)(position.get(1) * game.getDisplay().getHeight());
+    }
+
     private int getWidthInPixels() {
-        return (int)(width * game.getDisplay().getWidth());
+//        return (int)(width * game.getDisplay().getWidth() * scale);
+        return (int)(width * game.getDisplay().getScalingRelativeToDPI() * scale);
+
     }
 
     private int getHeightInPixels() {
-        return (int)(height * game.getDisplay().getHeight());
+//      return (int)(height * game.getDisplay().getHeight() * scale);
+        return (int)(height * game.getDisplay().getScalingRelativeToDPI() * scale);
+
     }
 
 }
