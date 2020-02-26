@@ -73,7 +73,6 @@ public class Display extends Canvas {
 
     public int getDPI() {
         int d = Toolkit.getDefaultToolkit().getScreenResolution();
-        System.out.println(d);
         return d;
     }
 
