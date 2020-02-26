@@ -423,6 +423,7 @@ public class Game {
 			g.setColor(Color.RED);
 			g.drawString("Rendering Pipeline : " + renderingEngine.getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 
+			g.setColor(Color.GREEN);
 			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
 
 			if(!this.isGameRunning) {
