@@ -18,6 +18,8 @@ public class Main {
 	Game game;
 	
 	public static void main(String[] args) {
+//		-Dsun.java2d.uiScale=1;
+		System.setProperty("sun.java2d.uiScale","1");
 		Main m = new Main();
 		m.start();
 	}
