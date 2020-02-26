@@ -27,6 +27,7 @@
 * Ability to create basic GUI
 * Input handling
 * Option to use either perspective or orthographic projection
+* Proper fullscreen support and UI elements scale with windows scaling, so things look good even in high DPI monitors
 
 ## Test Program
 * The repository includes a test program named "RenderingEngine.jar" in the root folder. Download and run it to test it.
