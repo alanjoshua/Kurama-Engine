@@ -55,7 +55,7 @@ public class Button {
 
     public boolean isMouseInside(Vector mp) {
 
-        if(mp.get(0) >= getY() && mp.get(0) <= getX() + getWidthInPixels() && mp.get(1) >= getY() && mp.get(1) <= getY() + getHeightInPixels()) {
+        if(mp.get(0) >= getX() && mp.get(0) <= getX() + getWidthInPixels() && mp.get(1) >= getY() && mp.get(1) <= getY() + getHeightInPixels()) {
             return true;
         }
         else {
