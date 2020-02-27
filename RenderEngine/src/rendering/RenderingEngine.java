@@ -119,14 +119,14 @@ public class RenderingEngine {
 					isVisible.add(Boolean.FALSE);
 				}
 			}
-			
-			for(int i = 0;i < projectedVectors.size();i++) {
-				Vector v = projectedVectors.get(i);
-				rasterVectors.add(new Vector(new float[] { (int) ((v.get(0) + 1) * 0.5 * cam.getImageWidth()),
-						(int) ((1 - (v.get(1) + 1) * 0.5) * cam.getImageHeight()), v.get(2)}));
-			}
-			
-//			rasterVectors.get(0).display();
+
+			projectedVectors.forEach(
+					v -> {
+						rasterVectors.add(new Vector(new float[]{(int) ((v.get(0) + 1) * 0.5 * cam.getImageWidth()),
+								(int) ((1 - (v.get(1) + 1) * 0.5) * cam.getImageHeight()), v.get(2)}));
+					}
+			);
+
 			
 //			float[] zBuffer = new float[cam.getImageWidth() * cam.getImageHeight()];
 //			int[] frameBuffer = new int[zBuffer.length];

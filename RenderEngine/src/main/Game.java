@@ -127,6 +127,7 @@ public class Game {
 		models.add(deer);
 		models.add(grid);
 		models.add(mill);
+
 	}
 
 	public void initPauseScreen() {
@@ -135,7 +136,6 @@ public class Game {
 		int height = 100;
 
 		//		Making Exit button
-//		EXIT = new GUI.Button(this,new Vector(new float[]{(int)(display.getWidth()*0.05),(int)(display.getHeight()*0.1)}),0.1,0.1);
 		EXIT = new GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
 		EXIT.text = "EXIT";
 
@@ -272,22 +272,16 @@ public class Game {
 			display.disableCursor();
 		else
 			display.enableCursor();
-		
-		for (Model m : models) {
-			m.tick();
-		}
+
+		models.forEach(Model::tick);
 
 		if(!isGameRunning) {
-			for(GUI.Button b:pauseButtons) {
-				b.tick(input.getPosition(),input.buttonDown(1));
-			}
+			pauseButtons.forEach((b) -> b.tick(input.getPosition(),input.buttonDown(1)));
 		}
 		else {
 			inputTick();
 			cam.tick();
 		}
-		
-//		cam.getQuaternion().getRotationMatrix().convertToVectorArray()[2].display();
 		
 	}
 

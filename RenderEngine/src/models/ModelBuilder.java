@@ -52,13 +52,8 @@ public class ModelBuilder {
 	@SuppressWarnings("unchecked")
 	public static Model buildModelFromFile(String loc) {
 
-//		URL url = ModelBuilder.class.getResource("Resources");
-//		String path = url.getPath() + File.separator + loc;
-//		URL url = ModelBuilder.class.getClassLoader().getResource("Resources");
-//		String path = url.getPath() + File.separator + loc;
 		ModelBuilder m = new ModelBuilder();
 		InputStream url = m.getClass().getResourceAsStream("/models/resources/"+loc);
-//		URL url = m.getClass().getClassLoader().getResource(loc);
 		String path = loc;
 
 		Model res = null;
