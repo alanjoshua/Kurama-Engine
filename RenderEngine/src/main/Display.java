@@ -31,10 +31,12 @@ public class Display extends Canvas {
         this.game = game;
         this.defaultWindowedWidth = defaultWindowedWidth;
         this.defaultWindowedHeight = defaultWindowedHeight;
+        this.setIgnoreRepaint(true);
     }
 
     public Display(Game game) {
         this.game = game;
+        this.setIgnoreRepaint(true);
     }
 
     public void startScreen() {
@@ -42,19 +44,26 @@ public class Display extends Canvas {
         else setWindowedMode();
     }
 
-    public void initFrame(boolean shouldBorder) {
+    public void initFrame(boolean shouldBorder, boolean shouldResizable) {
         frame = new JFrame();
         frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setResizable(true);
+
+        if(shouldResizable) {
+            frame.setResizable(true);
+        }
+        else {
+            frame.setResizable(false);
+        }
+
         frame.setIgnoreRepaint(true);
 
         if(!shouldBorder) {
             frame.setUndecorated(true);
         }
 
+        frame.setIgnoreRepaint(true);
         frame.setVisible(true);
-        frame.getContentPane().add(this);
+        frame.add(this);
         frame.pack();
 
         this.requestFocus();
@@ -102,19 +111,19 @@ public class Display extends Canvas {
         this.setSize(screenSize);
         this.setBackground(Color.black);
         this.requestFocus();
-        initFrame(false);
+        initFrame(false,false);
         screen.setFullScreenWindow(frame);
     }
 
     private void setWindowedMode() {
         removeWindow();
         this.setSize(defaultWindowedWidth, defaultWindowedHeight);
-        initFrame(true);
+        initFrame(true,true);
     }
 
     public void setWindowedMode(int width, int height) {
         this.setSize(width, height);
-        initFrame(true);
+        initFrame(true,true);
     }
 
     public void removeWindow() {

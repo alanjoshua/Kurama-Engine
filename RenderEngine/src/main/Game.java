@@ -247,7 +247,7 @@ public class Game {
 			}
 		}
 
-		display.getFrame().dispose();
+		display.removeWindow();
 
 	}
 
@@ -429,7 +429,6 @@ public class Game {
 			g.dispose();
 
 		} while (bs.contentsLost());
-
 		bs.show();
 	}
 
