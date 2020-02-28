@@ -37,9 +37,9 @@
 * The purpose for creating this test program was for me to be able to test the features of my rendering engine.
 
 ### GUI controls
-<p> The program takes control of the mouse to control the camera so press the escape key on your keyboard to switch to normal mouse movement mode</p>
+<p> The program takes control of the mouse to control the camera so press the escape key to toggle the pause screen and get access to normal mouse controls </p>
 
-* Esc - Toggles between mouse camera control and normal desktop control mode
+* Esc - Toggles the pause screen
 * R - Currenly programmed to reorient camera to the first model in the scene (deer)
 * Q - toggles between matrix and quaternion mode
 * WASD - move camera position
