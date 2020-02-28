@@ -44,6 +44,10 @@
 * Q - toggles between matrix and quaternion mode
 * WASD - move camera position
 
+### Currently known bugs
+
+* Program crashes randomly when switched to windows mode immediately after startup
+* Rendering issues when camera moves close to a model. Lines start appearing out of nowhere. My guess is that the program tries to draw a line but one end of the line is behind the camera and so the random lines are appearing over the screen. I should be able to fix it by checking for lines of a model which are not completely in front of the camera and not rendering them.
 
 
 
