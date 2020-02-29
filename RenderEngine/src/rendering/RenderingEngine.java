@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import Math.Matrix;
 import Math.Utils;
@@ -111,8 +113,8 @@ public class RenderingEngine {
 
 				if ((-1 <= temp.getData()[0] && temp.getData()[0] <= 1)
 						&& (-1 <= temp.getData()[1] && temp.getData()[1] <= 1)
-						&& (-1 <= temp.getData()[2] && temp.getData()[2] <= 1)
-//						&& (temp.getData()[2] >= 0)
+						&& (-1 < temp.getData()[2] && temp.getData()[2] <= 1)
+//						&& (temp.getData()[2] > -1)
 						) {
 					isVisible.add(Boolean.TRUE);
 				} else {

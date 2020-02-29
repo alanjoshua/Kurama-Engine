@@ -27,5 +27,9 @@ public class Main {
 		game = new Game();
 		game.init();
 		game.run();
+
+//		game = new ESL_Game();
+//		game.init();
+//		game.run();
 	}
 }
