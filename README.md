@@ -47,8 +47,6 @@
 ### Currently known bugs
 
 * Program crashes randomly when switched to windows mode immediately after startup
-* Fixed rendering issue where random lines appear when camera is moved close to a polygon. The fix is temporary and right now causes ugly and aggressive edges whenever a model is at the edge of the screen
-
 
 
 
