@@ -1,13 +1,9 @@
 package models;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +24,7 @@ public class ModelBuilder {
 		vertexO[7] = new Vector(new float[] { 1, 1, 1 });
 
 //		Vector[] cons = new Vector[12];
-		List<int[]> cons = new ArrayList<int[]>();
+		List<int[]> cons = new ArrayList<>();
 
 		cons.add(new int[] { 0, 1 });
 		cons.add(new int[] { 1, 3 });
@@ -49,22 +45,21 @@ public class ModelBuilder {
 		return new Model(vertexO, cons, null, null, null, null);
 	}
 
-	@SuppressWarnings("unchecked")
 	public static Model buildModelFromFile(String loc) {
 
 		ModelBuilder m = new ModelBuilder();
 		InputStream url = m.getClass().getResourceAsStream("/models/resources/"+loc);
-		String path = loc;
 
 		Model res = null;
 		List<Vector> vertex = new ArrayList<Vector>();
 		List<Vector> vn = new ArrayList<Vector>();
 		List<Vector> vt = new ArrayList<Vector>();
-		List<int[]> faces = new ArrayList<int[]>();
-		List<int[]> textureFaces = new ArrayList<int[]>();
-		List<int[]> normalFaces = new ArrayList<int[]>();
+		List<int[]> faces = new ArrayList<>();
+		List<int[]> textureFaces = new ArrayList<>();
+		List<int[]> normalFaces = new ArrayList<>();
 
-		if (path.substring(path.length() - 3, path.length()).equalsIgnoreCase("obj")) {
+		// noinspection StringOperationCanBeSimplified
+		if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
 
 			try {
 				String line = "";
@@ -235,9 +230,9 @@ public class ModelBuilder {
 	public static List<Object> triangulate(Vector[] vertices, List<int[]> faces,
 			List<int[]> textureFaces, List<int[]> normalFaces, boolean forceUseEarClipping) {
 
-		List<int[]> facesTriangulated = new ArrayList<int[]>();
-		List<int[]> textureFacesTriangulated = new ArrayList<int[]>();
-		List<int[]> normalFacesTriangulated = new ArrayList<int[]>();
+		List<int[]> facesTriangulated = new ArrayList<>();
+		List<int[]> textureFacesTriangulated = new ArrayList<>();
+		List<int[]> normalFacesTriangulated = new ArrayList<>();
 
 		for (int count = 0; count < faces.size(); count++) {
 			int[] x = faces.get(count);
@@ -289,13 +284,13 @@ public class ModelBuilder {
 						}
 					}
 				} else {
-					List<Integer> reflex = new ArrayList<Integer>();
-					List<Integer> convex = new ArrayList<Integer>();
-					List<Integer> ears = new ArrayList<Integer>();
-					List<Integer> vertsLeft = new ArrayList<Integer>();
-					List<Integer> totalVerts = new ArrayList<Integer>();
-					List<Integer> totalTextures = new ArrayList<Integer>();
-					List<Integer> totalNormals = new ArrayList<Integer>();
+					List<Integer> reflex = new ArrayList<>();
+					List<Integer> convex = new ArrayList<>();
+					List<Integer> ears = new ArrayList<>();
+					List<Integer> vertsLeft = new ArrayList<>();
+					List<Integer> totalVerts = new ArrayList<>();
+					List<Integer> totalTextures = new ArrayList<>();
+					List<Integer> totalNormals = new ArrayList<>();
 					
 					int countI = 0;
 					for (int t : x) {
@@ -432,7 +427,7 @@ public class ModelBuilder {
 									totalNormals.get(ind2) });
 						}
 
-						ears.remove(ears.indexOf(earVertex));
+						ears.remove((Integer)earVertex);
 						i--;
 						vertsLeft.remove(earIndexInVertsLeftList);
 
@@ -456,7 +451,7 @@ public class ModelBuilder {
 									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
 							if (angle < 180) {
 								convex.add(v0);
-								reflex.remove(reflex.indexOf(v0));
+								reflex.remove((Integer) v0);
 							}
 
 						}
@@ -481,7 +476,7 @@ public class ModelBuilder {
 									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
 							if (angle < 180) {
 								convex.add(v2);
-								reflex.remove(reflex.indexOf(v2));
+								reflex.remove((Integer) v2);
 							}
 
 						}
@@ -554,7 +549,7 @@ public class ModelBuilder {
 			}
 		}
 
-		List<Object> res = new ArrayList<Object>();
+		List<Object> res = new ArrayList<>();
 		res.add(facesTriangulated);
 		res.add(textureFacesTriangulated);
 		res.add(normalFacesTriangulated);
@@ -579,18 +574,14 @@ public class ModelBuilder {
 		float beta = pb * pc / (2.0f * totalArea);
 		float gamma = 1 - alpha - beta;
 
-		if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1) {
-			return true;
-		} else {
-			return false;
-		}
+		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
 
 	}
 
 	public static Model buildGrid(int w, int d) {
 
 		Vector[][] verts = new Vector[w][d];
-		List<int[]> cons = new ArrayList<int[]>();
+		List<int[]> cons = new ArrayList<>();
 
 		for (int i = -w / 2; i < w / 2; i++) {
 			for (int k = -d / 2; k < d / 2; k++) {
@@ -658,7 +649,7 @@ public class ModelBuilder {
 //			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 //		}
 
-		List<int[]> cons = new ArrayList<int[]>();
+		List<int[]> cons = new ArrayList<>();
 		for (int i = 0; i < connections.length / 3; i++) {
 			cons.add(new int[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
 //			cons[i] = new Vector(new float[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });
@@ -731,7 +722,7 @@ public class ModelBuilder {
 				140, 112, 112, 140, 141, 112, 142, 143, 112, 143, 116, 116, 143, 144, 116, 145, 119 };
 
 //		Vector[] cons = new Vector[connections.length / 3];
-		List<int[]> cons = new ArrayList<int[]>();
+		List<int[]> cons = new ArrayList<>();
 
 		for (int i = 0; i < connections.length / 3; i++) {
 			cons.add(new int[] { connections[i * 3], connections[i * 3 + 1], connections[i * 3 + 2] });

@@ -8,7 +8,7 @@ import java.awt.*;
 public class Button {
 
     public interface Behaviour {
-        public void executeBehaviour(Button b, Vector mousePos, boolean isPressed);
+        void executeBehaviour(Button b, Vector mousePos, boolean isPressed);
     }
 
 //    public interface Render {
@@ -41,7 +41,7 @@ public class Button {
         g.setColor(textColor);
         g.setFont(textFont.deriveFont(textFont.getSize() * game.getDisplay().getScalingRelativeToDPI()));
         int len = g.getFontMetrics().stringWidth(text);
-        int dx = (int)((getWidthInPixels() - len)/2);
+        int dx = (getWidthInPixels() - len)/2;
         g.drawString(text,getX() + dx,getY() + getHeightInPixels() / 2);
     }
 
@@ -55,12 +55,7 @@ public class Button {
 
     public boolean isMouseInside(Vector mp) {
 
-        if(mp.get(0) >= getX() && mp.get(0) <= getX() + getWidthInPixels() && mp.get(1) >= getY() && mp.get(1) <= getY() + getHeightInPixels()) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return mp.get(0) >= getX() && mp.get(0) <= getX() + getWidthInPixels() && mp.get(1) >= getY() && mp.get(1) <= getY() + getHeightInPixels();
     }
 
     public int getX() {

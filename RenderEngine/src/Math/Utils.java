@@ -9,8 +9,7 @@ public class Utils {
 	public static Vector projectPointToPlane(Vector e1, Vector e2, Vector p) {
 		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
 		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
-		Vector p_ = proj1.add(proj2);
-		return p_;
+		return proj1.add(proj2);
 	}
 	
 	public static float edge(Vector v1, Vector v2, Vector p) {

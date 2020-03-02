@@ -753,9 +753,7 @@ public class Matrix {
 			}
 		}
 
-		Matrix fin = new Matrix(data).scalarMul(1 / det);
-
-		return fin;
+		return new Matrix(data).scalarMul(1 / det);
 	}
 
 	public static float getDeterminant(Matrix m) {
@@ -813,9 +811,7 @@ public class Matrix {
 	public Matrix getMatrixWithoutLastRow() {
 		float[][] data = new float[this.rows - 1][this.cols];
 		for(int i = 0;i < data.length;i++) {
-			for(int j = 0;j < this.cols;j++) {
-				data[i][j] = this.data[i][j];
-			}
+			if (this.cols >= 0) System.arraycopy(this.data[i], 0, data[i], 0, this.cols);
 		}
 		return new Matrix(data);
 	}

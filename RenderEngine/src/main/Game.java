@@ -62,8 +62,8 @@ public class Game {
 
 		display.startScreen();
 
-		pauseButtons = new ArrayList<GUI.Button>();
-		models = new ArrayList<Model>();
+		pauseButtons = new ArrayList<>();
+		models = new ArrayList<>();
 
 		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
 				display.getWidth(), display.getHeight());
@@ -229,14 +229,9 @@ public class Game {
 		
 		if (input.keyDownOnce(KeyEvent.VK_ESCAPE)) {
 
-			if (isGameRunning) {
-//				getDisplay().removeFullScreen();
-				isGameRunning = false;
-			}
-			else {
-//				getDisplay().setFullScreen();
-				isGameRunning = true;
-			}
+			//				getDisplay().removeFullScreen();
+			//				getDisplay().setFullScreen();
+			isGameRunning = !isGameRunning;
 		}
 
 		input.setRelative(isGameRunning);
@@ -261,7 +256,7 @@ public class Game {
 
 	public void inputTick() {
 		
-		float cameraSpeed = (float) (speed * speedConstant * speedMultiplier);
+		float cameraSpeed = speed * speedConstant * speedMultiplier;
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
@@ -297,7 +292,7 @@ public class Game {
 		
 		if (input.keyDown(KeyEvent.VK_A)) {
 			Vector v = rotationMatrix[0];
-			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));;
+			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
 		}
 		
 		if (input.keyDown(KeyEvent.VK_D)) {
@@ -324,8 +319,8 @@ public class Game {
 
 //			input.getPosition().display();
 
-			float yawIncrease   = (float) (mouseXSensitivity * speedConstant * -input.getPosition().get(0));
-			float pitchIncrease = (float) (mouseYSensitivity * speedConstant * input.getPosition().get(1));
+			float yawIncrease   = mouseXSensitivity * speedConstant * -input.getPosition().get(0);
+			float pitchIncrease = mouseYSensitivity * speedConstant * input.getPosition().get(1);
 			
 			Vector currentAngle = cam.getOrientation().getPitchYawRoll();
 			float currentPitch = currentAngle.get(0) + pitchIncrease;

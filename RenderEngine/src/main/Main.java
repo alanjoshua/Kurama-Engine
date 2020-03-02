@@ -1,18 +1,5 @@
 package main;
 
-import java.awt.*;
-import java.awt.image.BufferStrategy;
-import java.util.ArrayList;
-import java.util.List;
-
-import Math.Matrix;
-import Math.Vector;
-import models.Cube;
-import models.Model;
-import models.Model.Tick;
-import models.ModelBuilder;
-import rendering.RenderingEngine;
-
 public class Main {
 	
 	Game game;

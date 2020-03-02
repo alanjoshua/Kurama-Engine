@@ -1,7 +1,6 @@
 package models;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import Math.Matrix;
@@ -11,7 +10,7 @@ import Math.Vector;
 public class Model {
 
 	public interface Tick {
-		public void tick(Model m);
+		void tick(Model m);
 	}
 
 	protected List<Vector> rotation;

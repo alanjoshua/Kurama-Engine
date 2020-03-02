@@ -1,7 +1,5 @@
 package Math;
 
-import jdk.swing.interop.SwingInterOpUtils;
-
 public class Quaternion {
 
 	private Vector coordinate;
@@ -90,8 +88,8 @@ public class Quaternion {
 
 			float temp = (float) Math.sqrt(1 - (coordinate.get(0) * coordinate.get(0)));
 
-			float[] axisData = new float[] { (float) (coordinate.get(1) / temp),
-					(float) (coordinate.get(2) / temp), (float) (coordinate.get(3) / temp) };
+			float[] axisData = new float[] {coordinate.get(1) / temp,
+					coordinate.get(2) / temp, coordinate.get(3) / temp};
 
 			axis = new Vector(axisData).normalise();
 
@@ -107,8 +105,7 @@ public class Quaternion {
 		Vector w = this.getPureVec();
 		float w2 = (float)Math.pow(w.getNorm(),2);
 
-		Vector ans = p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
-		return ans;
+		return p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
 
 //		Old method
 //		Quaternion q_ = getInverse();

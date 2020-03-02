@@ -12,7 +12,7 @@ import models.Model;
 
 public class RenderingEngine {
 
-	private Game game;
+	Game game;
 
 	public enum ProjectionMode {
 		ORTHO, PERSPECTIVE
@@ -24,14 +24,11 @@ public class RenderingEngine {
 
 	private ProjectionMode projectionMode = ProjectionMode.PERSPECTIVE;
 	private RenderPipeline renderPipeline = RenderPipeline.Quat;
-	
-	private int black;
-	private int white;
 
 	public RenderingEngine(Game game) {
+		int black = Color.BLACK.getRGB();
+		int white = Color.WHITE.getRGB();
 		this.game = game;
-		black = Color.BLACK.getRGB();
-		white = Color.WHITE.getRGB();
 	}
 
 	public void render(List<Model> models, Graphics2D g, Camera cam) {

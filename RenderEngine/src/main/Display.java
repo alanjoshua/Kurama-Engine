@@ -21,7 +21,7 @@ public class Display extends Canvas {
     public static final double winDPI = 96;
     public static final double macDPI = 72;
 
-    public static enum DisplayMode {
+    public enum DisplayMode {
         FULLSCREEN, WINDOWED
     }
 
@@ -81,8 +81,7 @@ public class Display extends Canvas {
     }
 
     public int getDPI() {
-        int d = Toolkit.getDefaultToolkit().getScreenResolution();
-        return d;
+        return Toolkit.getDefaultToolkit().getScreenResolution();
     }
 
     public float getScalingRelativeToDPI() {

@@ -40,8 +40,8 @@ public class ESL_Game extends Game {
 
         display.startScreen();
 
-        pauseButtons = new ArrayList<Button>();
-        models = new ArrayList<Model>(N+1);
+        pauseButtons = new ArrayList<>();
+        models = new ArrayList<>(N + 1);
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 1000,
                 display.getWidth(), display.getHeight());
@@ -69,7 +69,7 @@ public class ESL_Game extends Game {
             Vector pos = new Vector(new float[]{rand.nextInt(gridWidth) - gridWidth/2,7,rand.nextInt(gridDepth) - gridDepth/2});
             deer.setPos(pos);
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-
+            deer.triangulate(true);
             int angle = (rand.nextInt(200) - 100);
 
             deer.setTickObj(

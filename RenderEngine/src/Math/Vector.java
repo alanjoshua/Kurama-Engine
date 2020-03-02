@@ -91,8 +91,7 @@ public class Vector {
 		for (float f : data) {
 			sum += (f * f);
 		}
-		float l = (float) Math.sqrt(sum);
-		return l;
+		return (float) Math.sqrt(sum);
 	}
 
 	public static double getLength(Vector v) {
@@ -100,8 +99,7 @@ public class Vector {
 		for (float f : v.getData()) {
 			sum += (f * f);
 		}
-		double l = Math.sqrt(sum);
-		return l;
+		return Math.sqrt(sum);
 	}
 
 	public Vector normalise() {
