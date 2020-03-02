@@ -46,7 +46,7 @@
 
 ### Currently known bugs
 
-* Program crashes randomly when switched to windows mode immediately after startup
+* Exit button is mistakenly clicked sometimes when nearby buttons are pressed 
 
 
 
