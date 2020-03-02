@@ -1,13 +1,11 @@
 package rendering;
 
-import java.awt.event.MouseWheelEvent;
-
 import Math.Matrix;
 import Math.Quaternion;
 import Math.Vector;
 import main.Game;
 import models.Model;
-import rendering.RenderingEngine.RenderingMode;
+import rendering.RenderingEngine.ProjectionMode;
 
 public class Camera {
 
@@ -110,7 +108,7 @@ public class Camera {
 			
 			 imageAspectRatio = imageWidth / (float) imageHeight;
 
-			if (game.getRenderingEngine().getRenderingMode() == RenderingMode.PERSPECTIVE) {
+			if (game.getRenderingEngine().getProjectionMode() == ProjectionMode.PERSPECTIVE) {
 				
 				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
 				
@@ -129,7 +127,7 @@ public class Camera {
 				
 				buildPerspectiveProjectionMatrix();
 			}
-			else if(game.getRenderingEngine().getRenderingMode() == RenderingMode.ORTHO) {
+			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
 				Vector[] bounds = getWorldBoundingBox();
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();

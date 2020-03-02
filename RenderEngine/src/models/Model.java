@@ -54,10 +54,10 @@ public class Model {
 	}
 
 	public Matrix getObjectToWorldMatrix() {
-		Matrix rotScalMatrix = null;
+
 		Matrix rotationMatrix = this.orientation.getRotationMatrix();
 		Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
-		rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
+		Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
 		Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
 		transformationMatrix = transformationMatrix.addRow(new Vector(new float[] { 0, 0, 0, 1 }));

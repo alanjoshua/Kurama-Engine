@@ -1,5 +1,7 @@
 package Math;
 
+import jdk.swing.interop.SwingInterOpUtils;
+
 public class Quaternion {
 
 	private Vector coordinate;
@@ -100,19 +102,19 @@ public class Quaternion {
 		return axis;
 	}
 
-	public Vector rotatePoint(Vector v) {
+	public Vector rotatePoint(Vector p) {
 //		New Method
-//		Vector w = this.getPureVec();
-//		float w2 = (float)Math.pow(w.getNorm(),2);
-//
-//		Vector ans = v.scalarMul((float)Math.pow(this.coordinad te.get(0),2) - w2).add(w.scalarMul(2).scalarMul(v.dot(w))).add((w.cross(v)).scalarMul(2f * coordinate.get(0)));
-//		return ans;
+		Vector w = this.getPureVec();
+		float w2 = (float)Math.pow(w.getNorm(),2);
+
+		Vector ans = p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
+		return ans;
 
 //		Old method
-		Quaternion q_ = getInverse();
-		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
-		res = this.multiply(res);
-		return res.getPureVec();
+//		Quaternion q_ = getInverse();
+//		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
+//		res = this.multiply(res);
+//		return res.getPureVec();
 	}
 
 	public Vector[] rotatePoints(Vector[] vList) {
@@ -121,18 +123,21 @@ public class Quaternion {
 		Vector[] res = new Vector[vList.length];
 		Vector tempV = null;
 
-//		Vector w = this.getPureVec();
-//		float w2 = (float)Math.pow(w.getNorm(),2);
+		Vector w = this.getPureVec();
+		float w2 = (float)Math.pow(w.getNorm(),2);
 		
 		int i = 0;
 		for (Vector v : vList) {
-			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
-			temp = this.multiply(temp);
-			res[i] = temp.getPureVec();
 
-//			res[i] = v.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(v.dot(w))).add((w.cross(v)).scalarMul(2f * coordinate.get(0)));
-//			System.out.println(res[i].getNumberOfDimensions());
+//			Old method
+//			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
+//			temp = this.multiply(temp);
+//			res[i] = temp.getPureVec();
+//			i++;
 
+//			New method
+			Vector p = new Vector(new float[]{v.get(0),v.get(1),v.get(2)});
+			res[i] = p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
 			i++;
 		}
 

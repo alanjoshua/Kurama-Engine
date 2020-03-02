@@ -22,15 +22,21 @@ public class ESL_Game extends Game {
 
 
     ESL_Game() {
+
+    }
+
+    ESL_Game(int N) {
+        this.N = N;
+    }
+
+    public void init() {
+
         display = new Display(this);
         input = new Input(this);
         display.setInput(input);
         renderingEngine = new RenderingEngine(this);
         rand = new Random();
         rand.setSeed(seed);
-    }
-
-    public void init() {
 
         display.startScreen();
 
@@ -43,7 +49,7 @@ public class ESL_Game extends Game {
         initModels();
         initPauseScreen();
 
-        renderingEngine.setRenderingMode(RenderingEngine.RenderingMode.PERSPECTIVE);
+        renderingEngine.setProjectionMode(RenderingEngine.ProjectionMode.PERSPECTIVE);
         renderingEngine.setRenderPipeline(RenderingEngine.RenderPipeline.Matrix);
         cam.lookAtModel(models.get(1));
         cam.updateValues();
@@ -65,7 +71,6 @@ public class ESL_Game extends Game {
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
             int angle = (rand.nextInt(200) - 100);
-            System.out.println(angle);
 
             deer.setTickObj(
                     (m -> {

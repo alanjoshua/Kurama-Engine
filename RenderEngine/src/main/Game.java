@@ -16,14 +16,14 @@ import models.ModelBuilder;
 import rendering.Camera;
 import rendering.RenderingEngine;
 import rendering.RenderingEngine.RenderPipeline;
-import rendering.RenderingEngine.RenderingMode;
+import rendering.RenderingEngine.ProjectionMode;
 
 public class Game {
 
 	protected Display display;
 	protected List<Model> models;
 	protected List<GUI.Button> pauseButtons;
-	protected double targetFPS = 120;
+	protected double targetFPS = 1000;
 	protected boolean shouldDisplayFPS = false;
 	protected boolean programRunning = true;
 	protected Camera cam;
@@ -71,7 +71,7 @@ public class Game {
 		initModels();
 		initPauseScreen();
 
-		renderingEngine.setRenderingMode(RenderingMode.PERSPECTIVE);
+		renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 		cam.lookAtModel(models.get(0));
 		cam.updateValues();
@@ -262,7 +262,7 @@ public class Game {
 	public void inputTick() {
 		
 		float cameraSpeed = (float) (speed * speedConstant * speedMultiplier);
-		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToVectorArray();
+		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
 			cam.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[] {0, 0, 0}),0));
@@ -275,10 +275,10 @@ public class Game {
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_F)) {
-			if(targetFPS == 120)
+			if(targetFPS == 165)
 				targetFPS = 1000;
 			else 		
-				targetFPS = 120;
+				targetFPS = 165;
 		}
 		
 		if (input.keyDown(KeyEvent.VK_W)) {

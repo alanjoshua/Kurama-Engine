@@ -521,6 +521,54 @@ public class Matrix {
 
 	}
 
+	public Matrix matMul(Vector[] v) {
+		float[][] resData = null;
+		try {
+			resData = new float[rows][v.length];
+
+			for(int i = 0;i < v.length;i++) {
+				if (cols == v[i].getNumberOfDimensions()) {
+
+					for (int rowsInA = 0; rowsInA < rows; rowsInA++) {
+						for (int colsInA = 0; colsInA < cols; colsInA++) {
+							resData[rowsInA][i] += data[rowsInA][colsInA] * v[i].getData()[colsInA];
+						}
+					}
+
+				} else {
+					throw new Exception("The number of Columns of the matrix and the rows of the vector do not match");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new Matrix(resData);
+	}
+
+	public Matrix matMul(List<Vector> v) {
+		float[][] resData = null;
+		try {
+			resData = new float[rows][v.size()];
+
+			for(int i = 0;i < v.size();i++) {
+				if (cols == v.get(i).getNumberOfDimensions()) {
+
+					for (int rowsInA = 0; rowsInA < rows; rowsInA++) {
+						for (int colsInA = 0; colsInA < cols; colsInA++) {
+							resData[rowsInA][i] += data[rowsInA][colsInA] * v.get(i).getData()[colsInA];
+						}
+					}
+
+				} else {
+					throw new Exception("The number of Columns of the matrix and the rows of the vector do not match");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new Matrix(resData);
+	}
+
 	public static Matrix matMul(Matrix a, Vector m) {
 		Matrix res = null;
 
@@ -772,7 +820,7 @@ public class Matrix {
 		return new Matrix(data);
 	}
 
-	public Vector[] convertToVectorArray() {
+	public Vector[] convertToColumnVectorArray() {
 		Vector[] v = new Vector[cols];
 
 		for (int j = 0; j < cols; j++) {
@@ -786,8 +834,8 @@ public class Matrix {
 		return v;
 	}
 
-	public List<Vector> convertToVectorList() {
-		List<Vector> v = new ArrayList<Vector>();
+	public List<Vector> convertToColumnVectorList() {
+		List<Vector> v = new ArrayList<Vector>(cols);
 
 		for (int j = 0; j < cols; j++) {
 			float[] vecData = new float[rows];

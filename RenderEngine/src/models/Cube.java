@@ -46,7 +46,7 @@ public class Cube {
 		}
 
 		List<List<Vector>> temp = new ArrayList<List<Vector>>();
-		Vector[] vertex = scaledVertexMatrix.convertToVectorArray();
+		Vector[] vertex = scaledVertexMatrix.convertToColumnVectorArray();
 
 		temp.add(RenderingEngine.lineVectorListFromVertices(vertex[0], vertex[1]));
 		temp.add(RenderingEngine.lineVectorListFromVertices(vertex[1], vertex[3]));
@@ -105,7 +105,7 @@ public class Cube {
 
 	public void render(Graphics g) {
 
-		List<Vector> vertices = dataMatrix.convertToVectorList();
+		List<Vector> vertices = dataMatrix.convertToColumnVectorList();
 
 		for (Vector v : vertices) {
 			g.drawOval((int) v.getData()[0], (int) v.getData()[1], 1, 1);

@@ -24,11 +24,10 @@ public class Main {
 	}
 	
 	public void start() {
-//		game = new Game();
-//		game.init();
-//		game.run();
 
-		game = new ESL_Game();
+		game = new Game();
+//		game = new ESL_Game(200);
+
 		game.init();
 		game.run();
 	}
