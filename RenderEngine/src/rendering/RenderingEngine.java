@@ -119,8 +119,8 @@ public class RenderingEngine {
 				rasterVectors.add(new Vector(new float[]{(int) ((temp.get(0) + 1) * 0.5 * cam.getImageWidth()),
 						(int) ((1 - (temp.get(1) + 1) * 0.5) * cam.getImageHeight()), temp.get(2)}));
 
-				if ((-1 <= temp.getData()[0] && temp.getData()[0] <= 1)
-						&& (-1 <= temp.getData()[1] && temp.getData()[1] <= 1)
+				if ((-1.5 <= temp.getData()[0] && temp.getData()[0] <= 1.5)
+						&& (-1.5 <= temp.getData()[1] && temp.getData()[1] <= 1.5)
 						&& (0 <= temp.getData()[2] && temp.getData()[2] <= 1)
 						) {
 					isVisible.add(Boolean.TRUE);
