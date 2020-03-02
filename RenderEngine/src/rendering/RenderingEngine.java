@@ -38,16 +38,21 @@ public class RenderingEngine {
 		List<Boolean> isVisible;
 		List<Vector> projectedVectors;
 		List<Vector> rasterVectors;
+		Vector p1,p2; 		//Place holder vectors to be projected on screen
+		int indOffScreen = 0;	//keeps track of whether p1 or p2 is offscreen
+		Vector diff;		//Direction of p1,p1
+		Vector finalP;  //Changed p is line is getting cut by screen
 
 		for (Model m : models) {
 
 			projectedMatrix = null;
 			camSpace = null;
 
+//			Transform and convert 3D points to camera space according to rendering mode
 			if (renderPipeline == RenderPipeline.Quat) {
 				Vector[] transformedV;
 
-				if (m.isChanged()) {
+				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
 					transformedV = new Vector[m.getVertices().length];
 					transformedV = ((m.getOrientation()
 									.rotatePoints((new Matrix(m.getVertices()).columnMul(m.getScale().addDimensionToVec(1))).convertToColumnVectorArray())));
@@ -75,7 +80,7 @@ public class RenderingEngine {
 			else if (renderPipeline == RenderPipeline.Matrix) {
 				Vector[] transformedV = null;
 
-				if (m.isChanged()) {
+				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
 					transformedV = (m.getObjectToWorldMatrix().matMul(m.getVertices()))
 							.convertToColumnVectorArray();
 					m.setChanged(false);
@@ -85,7 +90,8 @@ public class RenderingEngine {
 				}
 				camSpace = cam.getWorldToCam().matMul(transformedV);
 			}
-			
+
+//			Project model to the screen according to projection mode
 			if (projectionMode == ProjectionMode.PERSPECTIVE) {
 				projectedMatrix = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
 			} else if (projectionMode == ProjectionMode.ORTHO) {
@@ -98,6 +104,7 @@ public class RenderingEngine {
 			isVisible = new ArrayList<>(projectedVectors.size());
 			rasterVectors = new ArrayList<>(projectedVectors.size());
 
+//			Normalise projected Vectors, rasterise them, calculate whether each point is visible or not
 			for (int i = 0; i < projectedVectors.size(); i++) {
 
 				Vector v = projectedVectors.get(i);
@@ -114,11 +121,30 @@ public class RenderingEngine {
 
 				if ((-1 <= temp.getData()[0] && temp.getData()[0] <= 1)
 						&& (-1 <= temp.getData()[1] && temp.getData()[1] <= 1)
-						&& (-1 < temp.getData()[2] && temp.getData()[2] <= 1)
+						&& (0 <= temp.getData()[2] && temp.getData()[2] <= 1)
 						) {
 					isVisible.add(Boolean.TRUE);
 				} else {
 					isVisible.add(Boolean.FALSE);
+				}
+			}
+
+//			Render model to screen
+			for (int[] f : m.getFaces()) {
+
+				for (int i = 0; i < f.length; i++) {
+
+					if (i != f.length - 1) {
+						if (isVisible.get(f[i]) && isVisible.get(f[i + 1])) {
+							drawLine(g, rasterVectors.get(f[i]),
+									rasterVectors.get(f[i + 1]));
+						}
+					} else {
+						if (isVisible.get(f[i]) && isVisible.get(f[0])) {
+							drawLine(g, rasterVectors.get(f[i]),
+									rasterVectors.get(f[0]));
+						}
+					}
 				}
 			}
 
@@ -242,24 +268,6 @@ public class RenderingEngine {
 //						drawLine(g, rasterVectors.get(i),rasterVectors.get(i));
 //					}
 //			}
-			
-			for (int[] f : m.getFaces()) {
-
-				for (int i = 0; i < f.length; i++) {
-
-					if (i != f.length - 1) {
-						if (isVisible.get(f[i]) || isVisible.get(f[i + 1])) {
-							drawLine(g, rasterVectors.get(f[i]),
-									rasterVectors.get(f[i + 1]));
-						}
-					} else {
-						if (isVisible.get(f[i]) || isVisible.get(f[0])) {
-							drawLine(g, rasterVectors.get(f[i]),
-									rasterVectors.get(f[0]));
-						}
-					}
-				}
-			}
 
 		}
 	}
