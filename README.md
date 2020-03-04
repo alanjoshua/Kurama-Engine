@@ -42,6 +42,7 @@
 * Esc - Toggles the pause screen
 * R - Currenly programmed to reorient camera to the first model in the scene (deer)
 * Q - toggles between matrix and quaternion mode
+* F - toggle frame rate cap (set at 165 frames currently)
 * WASD - move camera position
 
 ### Currently known bugs
