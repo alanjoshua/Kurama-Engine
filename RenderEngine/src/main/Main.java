@@ -1,5 +1,8 @@
 package main;
 
+import java.util.LinkedList;
+import Math.Vector;
+
 public class Main {
 	
 	Game game;
@@ -11,9 +14,8 @@ public class Main {
 	}
 	
 	public void start() {
-
 		game = new Game();
-//		game = new ESL_Game(200);
+//		game = new ESL_Game(100);
 
 		game.init();
 		game.run();

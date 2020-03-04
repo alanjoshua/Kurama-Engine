@@ -9,6 +9,9 @@ import java.util.List;
 
 import Math.Utils;
 import Math.Vector;
+import models.DataStructure.Face;
+import models.DataStructure.Mesh;
+import models.DataStructure.Vertex;
 
 public class ModelBuilder {
 	
@@ -216,6 +219,34 @@ public class ModelBuilder {
 					vtArray[i] = vt.get(i);
 				}
 
+				List<Face> facesListObj = new ArrayList<>(faces.size());
+				List<Vertex> tempVertList;
+				Mesh resMesh;
+				Vector tempTex = null;
+				Vector tempNorm = null;
+
+				for(int i = 0;i < faces.size();i++) {
+					tempVertList = new ArrayList<>(faces.get(i).length);
+					tempTex = null;
+					tempNorm = null;
+					for(int j = 0;j < faces.get(i).length;j++) {
+						if(vtArray != null) {
+							if(textureFaces.get(i) != null) {
+								tempTex = vtArray[textureFaces.get(i)[j]];
+							}
+						}
+						if(vnArray != null) {
+							if(normalFaces.get(i) != null) {
+								tempNorm = vnArray[normalFaces.get(i)[j]];
+							}
+						}
+						tempVertList.add(new Vertex(vertArr[faces.get(i)[j]],tempTex,tempNorm));
+					}
+					facesListObj.add(new Face(tempVertList));
+				}
+
+				resMesh = new Mesh(facesListObj);
+//				res = new Model(resMesh);
 				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
 			} catch (IOException e) {
@@ -601,10 +632,6 @@ public class ModelBuilder {
 			}
 		}
 
-//		for (int i = 0; i < connections.length; i++) {
-//			connections[i] = new Vector(new float[] { i });
-//		}
-
 		Vector[] vertices = new Vector[verts.length * verts[0].length];
 
 		for (int i = 0; i < verts.length; i++) {
@@ -612,6 +639,21 @@ public class ModelBuilder {
 				vertices[i * w + j] = verts[i][j];
 			}
 		}
+
+		List<Face> facesListObj = new ArrayList<>(cons.size());
+		List<Vertex> tempVertList;
+		Mesh resMesh;
+
+		for(int i = 0;i < cons.size();i++) {
+			tempVertList = new ArrayList<>(cons.get(i).length);
+			for(int j = 0;j < cons.get(i).length;j++) {
+				tempVertList.add(new Vertex(vertices[cons.get(i)[j]],null,null));
+			}
+			facesListObj.add(new Face(tempVertList));
+		}
+
+		resMesh = new Mesh(facesListObj);
+//		return new Model(resMesh);
 
 		return new Model(vertices, cons, null, null, null, null);
 	}

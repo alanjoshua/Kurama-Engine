@@ -8,6 +8,8 @@ import java.util.List;
 import Math.Matrix;
 import Math.Vector;
 import main.Game;
+import models.DataStructure.Face;
+import models.DataStructure.Vertex;
 import models.Model;
 
 public class RenderingEngine {
@@ -38,10 +40,10 @@ public class RenderingEngine {
 		List<Boolean> isVisible;
 		List<Vector> projectedVectors;
 		List<Vector> rasterVectors;
-		Vector p1,p2; 		//Place holder vectors to be projected on screen
-		int indOffScreen = 0;	//keeps track of whether p1 or p2 is offscreen
-		Vector diff;		//Direction of p1,p1
-		Vector finalP;  //Changed p is line is getting cut by screen
+
+		Vector pp1 = null;
+		Vector pp2 = null;
+		int count = 0;
 
 		for (Model m : models) {
 
@@ -79,7 +81,6 @@ public class RenderingEngine {
 
 			else if (renderPipeline == RenderPipeline.Matrix) {
 				Vector[] transformedV = null;
-
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
 					transformedV = (m.getObjectToWorldMatrix().matMul(m.getVertices()))
 							.convertToColumnVectorArray();
@@ -102,7 +103,7 @@ public class RenderingEngine {
 
 //			initialise other variables
 			isVisible = new ArrayList<>(projectedVectors.size());
-			rasterVectors = new ArrayList<>(projectedVectors.size());
+//			rasterVectors = new ArrayList<>(projectedVectors.size());
 
 //			Normalise projected Vectors, rasterise them, calculate whether each point is visible or not
 			for (int i = 0; i < projectedVectors.size(); i++) {
@@ -114,9 +115,9 @@ public class RenderingEngine {
 				float w = v.get(3);
 				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
 
-				projectedVectors.set(i, temp);
+//				projectedVectors.set(i, temp);
 
-				rasterVectors.add(new Vector(new float[]{(int) ((temp.get(0) + 1) * 0.5 * cam.getImageWidth()),
+				projectedVectors.set(i,new Vector(new float[]{(int) ((temp.get(0) + 1) * 0.5 * cam.getImageWidth()),
 						(int) ((1 - (temp.get(1) + 1) * 0.5) * cam.getImageHeight()), temp.get(2)}));
 
 				if ((-1.5 <= temp.getData()[0] && temp.getData()[0] <= 1.5)
@@ -129,6 +130,31 @@ public class RenderingEngine {
 				}
 			}
 
+//			Render model using new Mesh model
+//			pp1 = null;
+//			pp2 = null;
+//			count = 0;
+//
+//			for(Face f : m.mesh.faces) {
+//				for(int i = 0;i < f.vertices.size();i++) {
+//					if (i != f.vertices.size() - 1) {
+//						if (isVisible.get(count) && isVisible.get(count+1)) {
+//							pp1 = projectedVectors.get(count);
+//							pp2 = projectedVectors.get(count + 1);
+//							drawLine(g, pp1, pp2);
+//						}
+//					} else {
+//						if (isVisible.get(count) && isVisible.get(count - f.vertices.size() + 1)) {
+//							pp1 = projectedVectors.get(count);
+//							pp2 = projectedVectors.get(count - f.vertices.size() + 1);
+//							drawLine(g, pp1,pp2);
+//						}
+//					}
+//					count++;
+//				}
+//			}
+
+
 //			Render model to screen
 			for (int[] f : m.getFaces()) {
 
@@ -136,13 +162,13 @@ public class RenderingEngine {
 
 					if (i != f.length - 1) {
 						if (isVisible.get(f[i]) && isVisible.get(f[i + 1])) {
-							drawLine(g, rasterVectors.get(f[i]),
-									rasterVectors.get(f[i + 1]));
+							drawLine(g, projectedVectors.get(f[i]),
+									projectedVectors.get(f[i + 1]));
 						}
 					} else {
 						if (isVisible.get(f[i]) && isVisible.get(f[0])) {
-							drawLine(g, rasterVectors.get(f[i]),
-									rasterVectors.get(f[0]));
+							drawLine(g, projectedVectors.get(f[i]),
+									projectedVectors.get(f[0]));
 						}
 					}
 				}

@@ -6,6 +6,9 @@ import java.util.List;
 import Math.Matrix;
 import Math.Quaternion;
 import Math.Vector;
+import models.DataStructure.Face;
+import models.DataStructure.Mesh;
+import models.DataStructure.Vertex;
 
 public class Model {
 
@@ -28,6 +31,8 @@ public class Model {
 	protected Vector[] transformedVertices;
 	protected boolean isChanged = true;
 
+	public Mesh mesh;
+
 	public Model(Vector[] vertices, List<int[]> faces, Vector[] textureCoords, List<int[]> textureFaces,
 			Vector[] normals, List<int[]> normalFaces) {
 		this.vertices = vertices;
@@ -39,6 +44,15 @@ public class Model {
 		this.normalFaces = normalFaces;
 		this.normals = normals;
 
+		rotation = new ArrayList<Vector>();
+		scale = new Vector(new float[] { 1, 1, 1 });
+		pos = new Vector(3, 0);
+		tickObj = null;
+		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+	}
+
+	public Model(Mesh mesh) {
+		this.mesh = mesh;
 		rotation = new ArrayList<Vector>();
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);

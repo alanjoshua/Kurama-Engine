@@ -90,7 +90,7 @@ public class Game {
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //		deer.setTickObj(tQuat);
-		deer.triangulate();
+//		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
@@ -119,6 +119,7 @@ public class Game {
 			if(b.isMouseInside(mp)) {
 				b.textColor = Color.RED;
 				if(isPressed) {
+					System.out.println("Exit pressed");
 					programRunning = false;
 				}
 			}
