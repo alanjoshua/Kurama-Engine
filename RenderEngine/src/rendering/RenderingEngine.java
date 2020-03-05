@@ -9,6 +9,7 @@ import Math.Matrix;
 import Math.Vector;
 import main.Game;
 import models.DataStructure.Face;
+import models.DataStructure.Mesh;
 import models.DataStructure.Vertex;
 import models.Model;
 
@@ -41,10 +42,6 @@ public class RenderingEngine {
 		List<Vector> projectedVectors;
 		List<Vector> rasterVectors;
 
-		Vector pp1 = null;
-		Vector pp2 = null;
-		int count = 0;
-
 		for (Model m : models) {
 
 			projectedMatrix = null;
@@ -55,16 +52,17 @@ public class RenderingEngine {
 				Vector[] transformedV;
 
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-					transformedV = new Vector[m.getVertices().length];
-					transformedV = ((m.getOrientation()
-									.rotatePoints((new Matrix(m.getVertices()).columnMul(m.getScale().addDimensionToVec(1))).convertToColumnVectorArray())));
 
-					for (int i = 0; i < transformedV.length; i++) {
-						transformedV[i] = transformedV[i].add(m.getPos());
+					Vector[] temp = (m.getOrientation()
+									.rotatePoints((new Matrix(m.mesh.getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+
+					for (int i = 0; i < temp.length; i++) {
+						temp[i] = temp[i].add(m.getPos());
 					}
 
-					m.setTransformedVertices(Vector.addDimensionToVec(transformedV, 1));
+					m.setTransformedVertices(Vector.addDimensionToVec(temp, 1));
 					m.setChanged(false);
+					transformedV = m.getTranformedVertices();
 
 				} else {
 					transformedV = m.getTranformedVertices();
@@ -82,8 +80,8 @@ public class RenderingEngine {
 			else if (renderPipeline == RenderPipeline.Matrix) {
 				Vector[] transformedV = null;
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-					transformedV = (m.getObjectToWorldMatrix().matMul(m.getVertices()))
-							.convertToColumnVectorArray();
+					transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices())).convertToColumnVectorArray();
+
 					m.setChanged(false);
 					m.setTransformedVertices(transformedV);
 				} else {
@@ -131,62 +129,54 @@ public class RenderingEngine {
 			}
 
 //			Render model using new Mesh model
-//			pp1 = null;
-//			pp2 = null;
-//			count = 0;
-//
-//			for(Face f : m.mesh.faces) {
-//				for(int i = 0;i < f.vertices.size();i++) {
-//					if (i != f.vertices.size() - 1) {
-//						if (isVisible.get(count) && isVisible.get(count+1)) {
-//							pp1 = projectedVectors.get(count);
-//							pp2 = projectedVectors.get(count + 1);
-//							drawLine(g, pp1, pp2);
-//						}
-//					} else {
-//						if (isVisible.get(count) && isVisible.get(count - f.vertices.size() + 1)) {
-//							pp1 = projectedVectors.get(count);
-//							pp2 = projectedVectors.get(count - f.vertices.size() + 1);
-//							drawLine(g, pp1,pp2);
-//						}
-//					}
-//					count++;
-//				}
-//			}
 
-
-//			Render model to screen
-			for (int[] f : m.getFaces()) {
-
-				for (int i = 0; i < f.length; i++) {
-
-					if (i != f.length - 1) {
-						if (isVisible.get(f[i]) && isVisible.get(f[i + 1])) {
-							drawLine(g, projectedVectors.get(f[i]),
-									projectedVectors.get(f[i + 1]));
+			for (Face f : m.mesh.faces) {
+				for (int i = 0; i < f.size(); i++) {
+					if (i != f.size() - 1) {
+						if (isVisible.get(f.get(i)) && isVisible.get(f.get(i+1))) {
+							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(i+1)));
 						}
 					} else {
-						if (isVisible.get(f[i]) && isVisible.get(f[0])) {
-							drawLine(g, projectedVectors.get(f[i]),
-									projectedVectors.get(f[0]));
+						if (isVisible.get(f.get(i)) && isVisible.get(f.get(0))) {
+							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(0)));
 						}
 					}
 				}
 			}
 
-			
+
+//			Render model to screen
+//			for (int[] f : m.getFaces()) {
+//
+//				for (int i = 0; i < f.length; i++) {
+//
+//					if (i != f.length - 1) {
+//						if (isVisible.get(f[i]) && isVisible.get(f[i + 1])) {
+//							drawLine(g, projectedVectors.get(f[i]),
+//									projectedVectors.get(f[i + 1]));
+//						}
+//					} else {
+//						if (isVisible.get(f[i]) && isVisible.get(f[0])) {
+//							drawLine(g, projectedVectors.get(f[i]),
+//									projectedVectors.get(f[0]));
+//						}
+//					}
+//				}
+//			}
+
+
 //			float[] zBuffer = new float[cam.getImageWidth() * cam.getImageHeight()];
 //			int[] frameBuffer = new int[zBuffer.length];
-//			
+//
 //			for (int i = 0; i < zBuffer.length; i++) {
 //				zBuffer[i] = cam.getFarClippingPlane();
 //				frameBuffer[i] = black;
 //			}
-//			
+//
 //			for (int index = 0;index < m.getFaces().size();index++) {
-//				
+//
 //				int[] f = m.getFaces().get(index);
-//				
+//
 ////				Get The Vertices and texture coords of polygon face
 //
 //				Vector[] verts = new Vector[f.length];
@@ -196,7 +186,7 @@ public class RenderingEngine {
 //
 ////				int[] texFace = null;
 ////				Vector[] texCoords = null;
-////				
+////
 ////				if (m.getTextureFaces() != null) {
 ////					texFace = m.getTextureFaces().get(index);
 ////					if (texFace != null) {
@@ -230,40 +220,40 @@ public class RenderingEngine {
 //				int x1 = Math.min(maxX, cam.getImageWidth());
 //				int y0 = Math.max(0, minY);
 //				int y1 = Math.min(maxY, cam.getImageHeight());
-//				
+//
 ////				assuming polygon is a triangle
 //				float area = Utils.edge(verts[0],verts[1],verts[2]);
-//				
+//
 ////				loop over pixels of the polygon bounding box
-//				
+//
 //				for (int x = x0; x < x1; x++) {
 //					for (int y = y0; y < y1; y++) {
 //
 //						Vector samplePixel = new Vector(new float[] { x + 0.5f, y + 0.5f,0 });
-//						
+//
 //						float w0 = Utils.edge(verts[1],verts[2],samplePixel);
 //		                float w1 = Utils.edge(verts[2],verts[0],samplePixel);
 //		                float w2 = Utils.edge(verts[0],verts[1],samplePixel);
-//		                
-//		                if (w0 >= 0 && w1 >= 0 && w2 >= 0) { 
-//		                    w0 /= area; 
-//		                    w1 /= area; 
-//		                    w2 /= area; 
-//		                    float oneOverZ = verts[0].get(2) * w0 + verts[1].get(2) * w1 + verts[2].get(2) * w2; 
-//		                    float z = 1 / oneOverZ; 
+//
+//		                if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+//		                    w0 /= area;
+//		                    w1 /= area;
+//		                    w2 /= area;
+//		                    float oneOverZ = verts[0].get(2) * w0 + verts[1].get(2) * w1 + verts[2].get(2) * w2;
+//		                    float z = 1 / oneOverZ;
 //
 //		                    if (z < zBuffer[y * cam.getImageWidth() + x] && z > cam.getNearClippingPlane()) {
 //		                    	g.drawLine(x,y,x,y);
-//		                        zBuffer[y * cam.getImageWidth() + x] = z; 
+//		                        zBuffer[y * cam.getImageWidth() + x] = z;
 //		                        frameBuffer[y * cam.getImageWidth() + x] = white;
 //		                    }
-//		                    
+//
 //		                }
 //					}
 //				}
 //			}
 //			BufferedImage img = new BufferedImage(cam.getImageWidth(), cam.getImageHeight(),BufferedImage.TYPE_INT_RGB);
-			
+
 //			for(int x = 0; x < cam.getImageWidth();x++) {
 //				for(int y = 0;y < cam.getImageHeight();y++) {
 ////					img.setRGB(x, y, frameBuffer[y * cam.getImageWidth() + x]);
@@ -272,7 +262,7 @@ public class RenderingEngine {
 //				}
 //			}
 //			g.drawImage(img, null, 0, 0);
-			
+
 //			System.out.println(new Color(frameBuffer[500 * 500]));
 
 //			BufferedImage img = new BufferedImage(cam.getImageWidth(), cam.getImageHeight(),BufferedImage.TYPE_INT_ARGB);
@@ -287,7 +277,7 @@ public class RenderingEngine {
 //			}
 //
 //			g.drawImage(img, null, 0, 0);
-			
+
 
 //			for (int i = 0; i < rasterVectors.size();i++) {
 //					if(isVisible.get(i)) {

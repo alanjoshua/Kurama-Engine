@@ -602,6 +602,22 @@ public class Matrix {
 		return res;
 	}
 
+	public Vector getColumn(int ind) {
+		float[] res = new float[getRows()];
+		for(int i = 0;i < getRows();i++) {
+			res[i] = data[i][ind];
+		}
+		return new Vector(res);
+	}
+
+	public Vector getRow(int ind) {
+		float[] res = new float[getCols()];
+		for(int i = 0;i < getCols();i++) {
+			res[i] = data[ind][i];
+		}
+		return new Vector(res);
+	}
+
 	public float[][] getData() {
 		return data;
 	}

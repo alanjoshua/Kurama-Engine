@@ -69,7 +69,7 @@ public class ESL_Game extends Game {
             Vector pos = new Vector(new float[]{rand.nextInt(gridWidth) - gridWidth/2,7,rand.nextInt(gridDepth) - gridDepth/2});
             deer.setPos(pos);
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-            deer.triangulate(true);
+//            deer.triangulate(true);
             int angle = (rand.nextInt(200) - 100);
 
             deer.setTickObj(

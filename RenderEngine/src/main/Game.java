@@ -74,8 +74,9 @@ public class Game {
 
 		renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
-		cam.lookAtModel(models.get(0));
+
 		cam.updateValues();
+		cam.lookAtModel(models.get(2));
 
 	}
 
@@ -262,7 +263,6 @@ public class Game {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[] {0, 0, 0}),0));
 			cam.lookAtModel(models.get(0));
 		}
 		

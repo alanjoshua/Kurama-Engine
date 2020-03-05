@@ -1,34 +1,36 @@
 package models.DataStructure;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import Math.Vector;
 
 public class Mesh {
 
-    public List<Face> faces;
-    private List<Vector> vertices;
+    public static final int POSITION = 0;
+    public static final int TEXTURE = 1;
+    public static final int NORMAL = 2;
 
-    public Mesh(List<Face> faces) {
+    public List<Face> faces;
+    public List<List<Vector>> vertAttributes;
+
+    public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
-        this.vertices = calculateVerticesFromMesh();
+        this.vertAttributes = vertAttributes;
+    }
+
+    public Vector getAttribute(int faceIndex, int vertIndex, int attributeIndex) {
+        return vertAttributes.get(attributeIndex).get(faces.get(faceIndex).vertices.get(vertIndex).vertAttributes.get(attributeIndex));
     }
 
     public List<Vector> getVertices() {
-        return vertices;
+        return vertAttributes.get(POSITION);
     }
 
-    public List<Vector> calculateVerticesFromMesh() {
-        List<Vector> verts = new ArrayList<>();
-        for(Face f: faces) {
-            for(Vertex v : f.vertices) {
-                verts.add(v.point);
-            }
-        }
-        return verts;
+    public List<Face> getFaces() {return faces;}
+
+    public List<Vector> getAttributeList(int ind) {
+        return vertAttributes.get(ind);
     }
 
 }

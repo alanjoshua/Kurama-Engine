@@ -151,7 +151,7 @@ public class Camera {
 	}
 
 	public void lookAtModel(Model m) {
-		
+
 		float[] dataMin = new float[3];
 		dataMin[0] = Float.POSITIVE_INFINITY;
 		dataMin[1] = Float.POSITIVE_INFINITY;
@@ -162,7 +162,7 @@ public class Camera {
 		dataMax[1] = Float.NEGATIVE_INFINITY;
 		dataMax[2] = Float.NEGATIVE_INFINITY;
 
-		for (Vector v : m.getVertices()) {
+		for (Vector v : m.getMesh().getVertices()) {
 			if (v.get(0) < dataMin[0]) {
 				dataMin[0] = v.get(0);
 			}
@@ -273,7 +273,7 @@ public class Camera {
 		dataMax[2] = Float.NEGATIVE_INFINITY;
 
 		for (Model m : game.getModels()) {
-			for (Vector vv : m.getVertices()) {
+			for (Vector vv : m.getMesh().getVertices()) {
 				
 				Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
 				Vector v = (temp.mul(m.getScale())).add(m.getPos());
