@@ -76,7 +76,7 @@ public class Game {
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
-		cam.lookAtModel(models.get(2));
+		cam.lookAtModel(models.get(0));
 
 	}
 
@@ -380,7 +380,14 @@ public class Game {
 			g.setBackground(Color.BLACK);
 //			g.fillRect(0, 0, display.getWidth(), display.getHeight());
 			g.setColor(Color.WHITE);
+
+//			long endTime = 0;
+//			long startTime = System.nanoTime();
+
 			renderingEngine.render(models, g, cam);
+
+//			endTime = System.nanoTime();
+//			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
 			
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
