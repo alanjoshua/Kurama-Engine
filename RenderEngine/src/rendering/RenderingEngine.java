@@ -3,6 +3,7 @@ package rendering;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import Math.Matrix;
@@ -12,6 +13,9 @@ import models.DataStructure.Face;
 import models.DataStructure.Mesh;
 import models.DataStructure.Vertex;
 import models.Model;
+
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 public class RenderingEngine {
 
@@ -46,6 +50,7 @@ public class RenderingEngine {
 
 			projectedMatrix = null;
 			camSpace = null;
+			isVisible = null;
 
 //			Transform and convert 3D points to camera space according to rendering mode
 			if (renderPipeline == RenderPipeline.Quat) {
@@ -101,7 +106,6 @@ public class RenderingEngine {
 
 //			initialise other variables
 			isVisible = new ArrayList<>(projectedVectors.size());
-//			rasterVectors = new ArrayList<>(projectedVectors.size());
 
 //			Normalise projected Vectors, rasterise them, calculate whether each point is visible or not
 			for (int i = 0; i < projectedVectors.size(); i++) {
@@ -113,8 +117,6 @@ public class RenderingEngine {
 				float w = v.get(3);
 				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
 
-//				projectedVectors.set(i, temp);
-
 				projectedVectors.set(i,new Vector(new float[]{(int) ((temp.get(0) + 1) * 0.5 * cam.getImageWidth()),
 						(int) ((1 - (temp.get(1) + 1) * 0.5) * cam.getImageHeight()), temp.get(2)}));
 
@@ -122,15 +124,15 @@ public class RenderingEngine {
 						&& (-1.5 <= temp.getData()[1] && temp.getData()[1] <= 1.5)
 						&& (0 <= temp.getData()[2] && temp.getData()[2] <= 1)
 						) {
-					isVisible.add(Boolean.TRUE);
+					isVisible.add(true);
 				} else {
-					isVisible.add(Boolean.FALSE);
+					isVisible.add(false);
 				}
 			}
 
 //			Render model using new Mesh model
 
-			for (Face f : m.mesh.faces) {
+			for(Face f : m.mesh.faces) {
 				for (int i = 0; i < f.size(); i++) {
 					if (i != f.size() - 1) {
 						if (isVisible.get(f.get(i)) && isVisible.get(f.get(i+1))) {

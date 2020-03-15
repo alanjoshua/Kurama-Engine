@@ -847,7 +847,7 @@ public class Matrix {
 	}
 
 	public List<Vector> convertToColumnVectorList() {
-		List<Vector> v = new ArrayList<Vector>(cols);
+		List<Vector> v = new ArrayList<>(cols);
 
 		for (int j = 0; j < cols; j++) {
 			float[] vecData = new float[rows];

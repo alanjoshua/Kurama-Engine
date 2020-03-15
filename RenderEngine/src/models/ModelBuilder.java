@@ -215,7 +215,7 @@ public class ModelBuilder {
 				}
 
 				List<List<Vector>> vertAttributes = new ArrayList<>(3);
-				vertAttributes.add(Mesh.POSITION, Arrays.asList(vertArr));
+				vertAttributes.add(Mesh.POSITION,Arrays.asList(vertArr));
 				vertAttributes.add(Mesh.TEXTURE, Arrays.asList(vtArray));
 				vertAttributes.add(Mesh.NORMAL, Arrays.asList(vnArray));
 
