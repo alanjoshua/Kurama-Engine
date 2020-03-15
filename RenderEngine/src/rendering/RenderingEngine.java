@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import Math.Matrix;
@@ -40,22 +41,22 @@ public class RenderingEngine {
 
 	public void render(List<Model> models, Graphics2D g, Camera cam) {
 
-		Matrix projectedMatrix;
-		Matrix camSpace;
-		List<Boolean> isVisible;
-		List<Vector> projectedVectors;
+//		Matrix projectedMatrix;
+//		Matrix camSpace;
+////		List<Boolean> isVisible = new ArrayList<>();
+//		boolean[] isVisible = new boolean[100];
+//		List<Vector> projectedVectors;
 
 		for (Model m : models) {
 
-			projectedMatrix = null;
-			 camSpace = null;
+			List<Vector> projectedVectors = null;
+			Matrix camSpace = null;
 
 //			Transform and convert 3D points to camera space according to rendering mode
 			if (renderPipeline == RenderPipeline.Quat) {
 				Matrix transformedV;
 
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-
 					Vector[] temp = (m.getOrientation()
 									.rotatePoints((new Matrix(m.mesh.getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
 
@@ -95,15 +96,18 @@ public class RenderingEngine {
 
 //			Project model to the screen according to projection mode
 			if (projectionMode == ProjectionMode.PERSPECTIVE) {
-				projectedMatrix = cam.getPerspectiveProjectionMatrix().matMul(camSpace);
+				projectedVectors = (cam.getPerspectiveProjectionMatrix().matMul(camSpace)).convertToColumnVectorList();
 			} else if (projectionMode == ProjectionMode.ORTHO) {
-				projectedMatrix = cam.getOrthographicProjectionMatrix().matMul(camSpace);
+				projectedVectors = (cam.getOrthographicProjectionMatrix().matMul(camSpace)).convertToColumnVectorList();
 			}
 
-			projectedVectors = projectedMatrix.convertToColumnVectorList();
 
 //			initialise other variables
-			isVisible = new ArrayList<>(projectedVectors.size());
+			List<Boolean> isVisible = new ArrayList<>(projectedVectors.size());
+//			if(isVisible.length < projectedVectors.size()) {
+//				isVisible = new boolean[projectedVectors.size()];
+////				isVisible = new ArrayList<>(projectedVectors.size());
+//			}
 
 //			Normalise projected Vectors, rasterise them, calculate whether each point is visible or not
 			for (int i = 0; i < projectedVectors.size(); i++) {
@@ -113,18 +117,21 @@ public class RenderingEngine {
 				float y = v.get(1);
 				float z = v.get(2);
 				float w = v.get(3);
-				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
+				float[] temp = new float[] { x / w, y / w, z / w};
+//				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
 
-				projectedVectors.set(i,new Vector(new float[]{(int) ((temp.get(0) + 1) * 0.5 * cam.getImageWidth()),
-						(int) ((1 - (temp.get(1) + 1) * 0.5) * cam.getImageHeight()), temp.get(2)}));
+				projectedVectors.set(i,new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * cam.getImageWidth()),
+						(int) ((1 - (temp[1] + 1) * 0.5) * cam.getImageHeight()), temp[2]}));
 
-				if ((-1.5 <= temp.getData()[0] && temp.getData()[0] <= 1.5)
-						&& (-1.5 <= temp.getData()[1] && temp.getData()[1] <= 1.5)
-						&& (0 <= temp.getData()[2] && temp.getData()[2] <= 1)
+				if ((-1.5 <= temp[0] && temp[0] <= 1.5)
+						&& (-1.5 <= temp[1] && temp[1] <= 1.5)
+						&& (0 <= temp[2] && temp[2] <= 1)
 						) {
 					isVisible.add(true);
+//					isVisible[i] = true;
 				} else {
 					isVisible.add(false);
+//					isVisible[i] = false;
 				}
 			}
 
@@ -133,17 +140,22 @@ public class RenderingEngine {
 			for(Face f : m.mesh.faces) {
 				for (int i = 0; i < f.size(); i++) {
 					if (i != f.size() - 1) {
+//						if (isVisible[f.get(i)] && isVisible[f.get(i+1)]) {
+//							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(i+1)));
+//						}
 						if (isVisible.get(f.get(i)) && isVisible.get(f.get(i+1))) {
 							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(i+1)));
 						}
 					} else {
+//						if (isVisible[f.get(i)] && isVisible[f.get(0)]) {
+//							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(0)));
+//						}
 						if (isVisible.get(f.get(i)) && isVisible.get(f.get(0))) {
 							drawLine(g, projectedVectors.get(f.get(i)), projectedVectors.get(f.get(0)));
 						}
 					}
 				}
 			}
-
 
 //			Render model to screen
 //			for (int[] f : m.getFaces()) {

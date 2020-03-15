@@ -116,9 +116,9 @@ public class Quaternion {
 
 	public Vector[] rotatePoints(Vector[] vList) {
 
-		Quaternion q_ = getInverse();
+//		Quaternion q_ = getInverse();
 		Vector[] res = new Vector[vList.length];
-		Vector tempV = null;
+//		Vector tempV = null;
 
 		Vector w = this.getPureVec();
 		float w2 = (float)Math.pow(w.getNorm(),2);
@@ -143,17 +143,17 @@ public class Quaternion {
 
 	public Vector[] rotatePoints(Matrix vList) {
 
-		Quaternion q_ = getInverse();
+//		Quaternion q_ = getInverse();
 		Vector[] res = new Vector[vList.getCols()];
-		Vector tempV = null;
+//		Vector tempV = null;
 
 		Vector w = this.getPureVec();
 		float w2 = (float)Math.pow(w.getNorm(),2);
 
 		Vector v;
 		for (int i = 0;i < vList.getCols();i++) {
-
 //			Old method
+//			v = vList.getColumn(i);
 //			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
 //			temp = this.multiply(temp);
 //			res[i] = temp.getPureVec();
@@ -161,9 +161,9 @@ public class Quaternion {
 
 //			New method
 			v = vList.getColumn(i);
+
 			Vector p = new Vector(new float[]{v.get(0),v.get(1),v.get(2)});
 			res[i] = p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
-			i++;
 		}
 
 		return res;
