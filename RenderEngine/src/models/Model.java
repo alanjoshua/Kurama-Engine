@@ -28,7 +28,7 @@ public class Model {
 	protected Vector pos;
 	protected Tick tickObj;
 	protected Quaternion orientation;
-	protected Vector[] transformedVertices;
+	protected Matrix transformedVertices;
 	protected boolean isChanged = true;
 
 	public Mesh mesh;
@@ -154,11 +154,11 @@ public class Model {
 //		return normalFaces;
 //	}
 
-	public Vector[] getTranformedVertices() {
+	public Matrix getTranformedVertices() {
 		return transformedVertices;
 	}
 
-	public void setTransformedVertices(Vector[] vertices) {
+	public void setTransformedVertices(Matrix vertices) {
 		this.transformedVertices = vertices;
 	}
 

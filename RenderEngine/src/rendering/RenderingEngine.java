@@ -44,17 +44,15 @@ public class RenderingEngine {
 		Matrix camSpace;
 		List<Boolean> isVisible;
 		List<Vector> projectedVectors;
-		List<Vector> rasterVectors;
 
 		for (Model m : models) {
 
 			projectedMatrix = null;
-			camSpace = null;
-			isVisible = null;
+			 camSpace = null;
 
 //			Transform and convert 3D points to camera space according to rendering mode
 			if (renderPipeline == RenderPipeline.Quat) {
-				Vector[] transformedV;
+				Matrix transformedV;
 
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
 
@@ -65,7 +63,7 @@ public class RenderingEngine {
 						temp[i] = temp[i].add(m.getPos());
 					}
 
-					m.setTransformedVertices(Vector.addDimensionToVec(temp, 1));
+					m.setTransformedVertices(new Matrix(Vector.addDimensionToVec(temp, 1)));
 					m.setChanged(false);
 					transformedV = m.getTranformedVertices();
 
@@ -83,9 +81,9 @@ public class RenderingEngine {
 			}
 
 			else if (renderPipeline == RenderPipeline.Matrix) {
-				Vector[] transformedV = null;
+				Matrix transformedV = null;
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-					transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices())).convertToColumnVectorArray();
+					transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
 
 					m.setChanged(false);
 					m.setTransformedVertices(transformedV);
