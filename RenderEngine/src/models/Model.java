@@ -1,6 +1,7 @@
 package models;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import Math.Matrix;
@@ -77,21 +78,79 @@ public class Model {
 		return transformationMatrix;
 	}
 
-//	@SuppressWarnings("unchecked")
-//	public void triangulate() {
-//		List<Object> triangulatedData = ModelBuilder.triangulate(mesh.getVertices(),, textureFaces, normalFaces, false);
-//		this.faces = (List<int[]>) triangulatedData.get(0);
-//		this.normalFaces = (List<int[]>) triangulatedData.get(2);
-//		this.textureFaces = (List<int[]>) triangulatedData.get(1);
-//	}
-//
-//	@SuppressWarnings("unchecked")
-//	public void triangulate(boolean forceUseEarClipping) {
-//		List<Object> triangulatedData = ModelBuilder.triangulate(this.vertices, faces, textureFaces, normalFaces, forceUseEarClipping);
-//		this.faces = (List<int[]>) triangulatedData.get(0);
-//		this.normalFaces = (List<int[]>) triangulatedData.get(2);
-//		this.textureFaces = (List<int[]>) triangulatedData.get(1);
-//	}
+	public void triangulate() {
+		List<Object> triangulatedData = ModelBuilder.triangulate(mesh,false);
+
+		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
+		List<int[]> textureFaces = (List<int[]>) triangulatedData.get(1);
+		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
+
+		List<Face> newFaces = new ArrayList<>(faces.size());
+
+		for(int i = 0;i < faces.size();i++) {
+
+			Face tempFace = new Face();
+
+			for(int j = 0;j < faces.get(i).length;j++) {
+				Vertex tempVert = new Vertex();
+				tempVert.setAttribute(faces.get(i)[j],Vertex.POSITION);
+
+				if(textureFaces != null && i < textureFaces.size()) {
+					if(textureFaces.get(i) != null) {
+						tempVert.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
+					}
+				}
+
+				if(normalFaces != null && i < normalFaces.size()) {
+					if(normalFaces.get(i) != null) {
+						tempVert.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
+					}
+				}
+
+				tempFace.vertices.add(tempVert);
+			}
+
+			newFaces.add(tempFace);
+		}
+		mesh.faces = newFaces;
+	}
+
+	public void triangulate(boolean forceUseEarClipping) {
+		List<Object> triangulatedData = ModelBuilder.triangulate(mesh,true);
+
+		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
+		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
+		List<int[]> textureFaces = (List<int[]>) triangulatedData.get(1);
+
+		List<Face> newFaces = new ArrayList<>(faces.size());
+
+		for(int i = 0;i < faces.size();i++) {
+
+			Face tempFace = new Face();
+
+			for(int j = 0;j < faces.get(i).length;j++) {
+				Vertex tempVert = new Vertex();
+				tempVert.setAttribute(faces.get(i)[j],Vertex.POSITION);
+
+				if(normalFaces != null && i < normalFaces.size()) {
+					if(normalFaces.get(i) != null) {
+						tempVert.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
+					}
+				}
+
+				if(textureFaces != null && i < textureFaces.size()) {
+					if(textureFaces.get(i) != null) {
+						tempVert.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
+					}
+				}
+				tempFace.vertices.add(tempVert);
+			}
+
+			newFaces.add(tempFace);
+		}
+
+		mesh.faces = newFaces;
+	}
 
 	public Mesh getMesh() {return mesh;}
 

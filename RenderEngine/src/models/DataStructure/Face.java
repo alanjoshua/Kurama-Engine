@@ -1,10 +1,15 @@
 package models.DataStructure;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Face {
 
     public List<Vertex> vertices;
+
+    public Face() {
+        vertices = new ArrayList<>(2);
+    }
 
     public Face(List<Vertex> vertices) {
         this.vertices = vertices;

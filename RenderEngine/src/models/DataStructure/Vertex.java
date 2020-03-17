@@ -16,18 +16,52 @@ public class Vertex {
 
     public Vertex(int point, int textureCoord, int normal) {
         vertAttributes = new ArrayList<>(3);
-        vertAttributes.add(POSITION,point);
-        vertAttributes.add(TEXTURE,textureCoord);
-        vertAttributes.add(NORMAL,normal);
+        setAttribute(point,POSITION);
+        setAttribute(textureCoord,TEXTURE);
+        setAttribute(normal,NORMAL);
     }
 
     public Vertex(int point) {
         vertAttributes = new ArrayList<>(1);
-        vertAttributes.add(POSITION,point);
+        setAttribute(point,POSITION);
+    }
+
+    public Vertex() {
+        vertAttributes = new ArrayList<>();
     }
 
     public Vertex(List<Integer> vertAttributes) {
         this.vertAttributes = vertAttributes;
+    }
+
+    public void setAttribute(int val, int key) {
+        if(key < vertAttributes.size()) {
+            vertAttributes.set(key,val);
+        }
+        else {
+            for(int i = vertAttributes.size();i < key+1;i++) {
+                vertAttributes.add(i,null);
+            }
+            vertAttributes.set(key, val);
+        }
+    }
+
+    public boolean isAttributePresent(int key) {
+        try {
+            vertAttributes.get(key);
+            return true;
+        }
+        catch (Exception e){
+            return false;
+        }
+    }
+
+    public void display() {
+        System.out.print("Vertex:: ");
+        for (int i = 0; i < this.vertAttributes.size(); i++) {
+            System.out.print(i+"="+vertAttributes.get(i)+" ");
+        }
+        System.out.println("]");
     }
 
 }

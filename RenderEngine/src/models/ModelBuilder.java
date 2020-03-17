@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import Math.Utils;
@@ -196,7 +197,7 @@ public class ModelBuilder {
 					tempVertList = new ArrayList<>(faces.get(i).length);
 
 					for(int j = 0;j < faces.get(i).length;j++) {
-						tempVertAttributesList = new ArrayList<>(3);
+						tempVertAttributesList = new ArrayList<>();
 						tempVertAttributesList.add(Vertex.POSITION,faces.get(i)[j]);
 						if(vtArray != null) {
 							if(textureFaces.get(i) != null) {
@@ -208,7 +209,7 @@ public class ModelBuilder {
 								tempVertAttributesList.add(Vertex.NORMAL,normalFaces.get(i)[j]);
 							}
 						}
-						((ArrayList<Integer>)tempVertAttributesList).trimToSize();	//Trims arraylist to data size
+						((ArrayList<Integer>)tempVertAttributesList).trimToSize();
 						tempVertList.add(new Vertex(tempVertAttributesList));
 					}
 					facesListObj.add(new Face(tempVertList));
@@ -233,12 +234,54 @@ public class ModelBuilder {
 		return res;
 	}
 
-	public static List<Object> triangulate(Vector[] vertices, List<int[]> faces,
-			List<int[]> textureFaces, List<int[]> normalFaces, boolean forceUseEarClipping) {
+	public static List<Object> triangulate(Mesh mesh, boolean forceUseEarClipping) {
 
 		List<int[]> facesTriangulated = new ArrayList<>();
 		List<int[]> textureFacesTriangulated = new ArrayList<>();
 		List<int[]> normalFacesTriangulated = new ArrayList<>();
+
+		List<int[]>	faces = new ArrayList<>(mesh.faces.size());
+		List<int[]> textureFaces = null;
+		List<int[]> normalFaces = null;
+
+		if(mesh.isAttributePresent(Mesh.TEXTURE)) {
+			textureFaces = new ArrayList<>();
+		}
+
+		if(mesh.isAttributePresent(Mesh.NORMAL)) {
+			normalFaces = new ArrayList<>();
+		}
+
+		Vector[] vertices = new Vector[mesh.getVertices().size()];
+		for(int i = 0;i < mesh.getVertices().size();i++) {
+			vertices[i] = mesh.getVertices().get(i);
+		}
+
+		for(Face f : mesh.faces) {
+			int[] temp = new int[f.size()];
+			int[] temp2 = new int[f.size()];
+			int[] temp3 = new int[f.size()];
+			for(int i = 0;i < f.vertices.size();i++) {
+				temp[i] = f.get(i);
+				if(f.vertices.get(i).isAttributePresent(Vertex.TEXTURE)) {
+					temp2[i] = f.get(i, Vertex.TEXTURE);
+				}
+				else {
+					temp2 = null;
+				}
+				if(f.vertices.get(i).isAttributePresent(Vertex.NORMAL)) {
+					temp3[i] = f.get(i, Vertex.NORMAL);
+				}
+				else {
+					temp3 = null;
+				}
+			}
+			faces.add(temp);
+
+			textureFaces.add(temp2);
+			normalFaces.add(temp3);
+		}
+
 
 		for (int count = 0; count < faces.size(); count++) {
 			int[] x = faces.get(count);

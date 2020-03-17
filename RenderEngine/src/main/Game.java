@@ -76,7 +76,7 @@ public class Game {
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
-		cam.lookAtModel(models.get(0));
+		cam.lookAtModel(models.get(1));
 
 	}
 
@@ -92,10 +92,17 @@ public class Game {
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //		deer.setTickObj(tQuat);
 //		deer.triangulate();
+		deer.mesh.displayMeshInformation();
+		deer.triangulate();
+		deer.mesh.displayMeshInformation();
+
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
+//		mill.mesh.displayMeshInformation();
+//		mill.triangulate();
+//		mill.mesh.displayMeshInformation();
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
@@ -263,7 +270,7 @@ public class Game {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.lookAtModel(models.get(0));
+			cam.lookAtModel(models.get(1));
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {

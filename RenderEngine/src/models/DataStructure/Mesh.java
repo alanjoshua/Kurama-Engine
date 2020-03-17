@@ -27,10 +27,43 @@ public class Mesh {
         return vertAttributes.get(POSITION);
     }
 
+    public void displayMeshInformation() {
+        HashMap<Integer, Integer> data = new HashMap<>();
+        for(Face f: faces) {
+            Integer curr = data.get(f.size());
+            if(curr == null) {curr = 0;}
+            data.put(f.size(),curr+1);
+        }
+        System.out.println("Vertex Info: ");
+        int lines = 0;
+        for(int key: data.keySet()) {
+            System.out.println("Number of "+key+" sided polygons: "+data.get(key));
+            lines += key * data.get(key);
+        }
+        System.out.println("Number of individual 3D points: "+ vertAttributes.get(0).size());
+        System.out.println("Number of individual texture Coords: "+ vertAttributes.get(1).size());
+        System.out.println("Number of individual normals: "+ vertAttributes.get(2).size());
+        System.out.println("Total number of individual lines drawn: "+lines);
+
+    }
+
     public List<Face> getFaces() {return faces;}
 
     public List<Vector> getAttributeList(int ind) {
         return vertAttributes.get(ind);
+    }
+
+    public boolean isAttributePresent(int key) {
+        try {
+            vertAttributes.get(key);
+            if(vertAttributes == null) {
+                return false;
+            }
+            return true;
+        }
+        catch (Exception e){
+            return false;
+        }
     }
 
 }

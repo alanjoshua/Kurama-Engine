@@ -300,6 +300,10 @@ public class RenderingEngine {
 		}
 	}
 
+	public void render2(List<Model> models, Graphics2D g) {
+		
+	}
+
 	public ProjectionMode getProjectionMode() {
 		return projectionMode;
 	}
