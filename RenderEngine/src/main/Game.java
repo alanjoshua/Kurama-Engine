@@ -4,8 +4,15 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.geom.*;
 import java.awt.image.BufferStrategy;
+import java.lang.instrument.ClassDefinition;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarFile;
 
 import GUI.Button;
 import Math.Quaternion;
@@ -76,7 +83,7 @@ public class Game {
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
-		cam.lookAtModel(models.get(1));
+		cam.lookAtModel(models.get(0));
 
 	}
 
@@ -92,10 +99,6 @@ public class Game {
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //		deer.setTickObj(tQuat);
 //		deer.triangulate();
-		deer.mesh.displayMeshInformation();
-		deer.triangulate();
-		deer.mesh.displayMeshInformation();
-
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
@@ -106,6 +109,7 @@ public class Game {
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
+		grid.mesh.displayMeshInformation();
 
 		models.add(deer);
 		models.add(grid);
@@ -270,7 +274,7 @@ public class Game {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.lookAtModel(models.get(1));
+			cam.lookAtModel(models.get(0));
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
@@ -388,13 +392,13 @@ public class Game {
 //			g.fillRect(0, 0, display.getWidth(), display.getHeight());
 			g.setColor(Color.WHITE);
 
-//			long endTime = 0;
-//			long startTime = System.nanoTime();
+			long endTime = 0;
+			long startTime = System.nanoTime();
 
 			renderingEngine.render(models, g, cam);
 
-//			endTime = System.nanoTime();
-//			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
+			endTime = System.nanoTime();
+			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
 			
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));

@@ -4,16 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-import Math.Utils;
 import Math.Vector;
-import models.DataStructure.Face;
-import models.DataStructure.Mesh;
-import models.DataStructure.Vertex;
+import models.DataStructure.Mesh.Face;
+import models.DataStructure.Mesh.Mesh;
+import models.DataStructure.Mesh.Vertex;
 
 public class ModelBuilder {
 
@@ -189,39 +185,40 @@ public class ModelBuilder {
 				}
 
 				List<Face> facesListObj = new ArrayList<>(faces.size());
-				List<Vertex> tempVertList;
-				List<Integer> tempVertAttributesList;
 
 				for(int i = 0;i < faces.size();i++) {
 
-					tempVertList = new ArrayList<>(faces.get(i).length);
+					Face tempFace = new Face();
 
 					for(int j = 0;j < faces.get(i).length;j++) {
-						tempVertAttributesList = new ArrayList<>();
-						tempVertAttributesList.add(Vertex.POSITION,faces.get(i)[j]);
+
+						Vertex temp = new Vertex();
+						temp.setAttribute(faces.get(i)[j],Vertex.POSITION);
+
 						if(vtArray != null) {
 							if(textureFaces.get(i) != null) {
-								tempVertAttributesList.add(Vertex.TEXTURE,textureFaces.get(i)[j]);
+								temp.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
 							}
 						}
 						if(vnArray != null) {
 							if(normalFaces.get(i) != null) {
-								tempVertAttributesList.add(Vertex.NORMAL,normalFaces.get(i)[j]);
+								temp.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
 							}
 						}
-						((ArrayList<Integer>)tempVertAttributesList).trimToSize();
-						tempVertList.add(new Vertex(tempVertAttributesList));
+//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
+						tempFace.vertices.add(temp);
 					}
-					facesListObj.add(new Face(tempVertList));
+//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
+					facesListObj.add(tempFace);
 				}
 
 				List<List<Vector>> vertAttributes = new ArrayList<>(3);
-				vertAttributes.add(Mesh.POSITION,Arrays.asList(vertArr));
-				vertAttributes.add(Mesh.TEXTURE, Arrays.asList(vtArray));
-				vertAttributes.add(Mesh.NORMAL, Arrays.asList(vnArray));
+				vertAttributes.add(Mesh.POSITION,new ArrayList<Vector>(Arrays.asList(vertArr)));
+				vertAttributes.add(Mesh.TEXTURE, new ArrayList<Vector>(Arrays.asList(vtArray)));
+				vertAttributes.add(Mesh.NORMAL, new ArrayList<Vector>(Arrays.asList(vnArray)));
 
 				Mesh resMesh = new Mesh(facesListObj,vertAttributes);
-
+				resMesh.trimEverything();
 				res = new Model(resMesh);
 //				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
@@ -234,377 +231,420 @@ public class ModelBuilder {
 		return res;
 	}
 
-	public static List<Object> triangulate(Mesh mesh, boolean forceUseEarClipping) {
+	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
+		List<Face> newFaces = new ArrayList<>();
 
-		List<int[]> facesTriangulated = new ArrayList<>();
-		List<int[]> textureFacesTriangulated = new ArrayList<>();
-		List<int[]> normalFacesTriangulated = new ArrayList<>();
-
-		List<int[]>	faces = new ArrayList<>(mesh.faces.size());
-		List<int[]> textureFaces = null;
-		List<int[]> normalFaces = null;
-
-		if(mesh.isAttributePresent(Mesh.TEXTURE)) {
-			textureFaces = new ArrayList<>();
-		}
-
-		if(mesh.isAttributePresent(Mesh.NORMAL)) {
-			normalFaces = new ArrayList<>();
-		}
-
-		Vector[] vertices = new Vector[mesh.getVertices().size()];
-		for(int i = 0;i < mesh.getVertices().size();i++) {
-			vertices[i] = mesh.getVertices().get(i);
-		}
-
-		for(Face f : mesh.faces) {
-			int[] temp = new int[f.size()];
-			int[] temp2 = new int[f.size()];
-			int[] temp3 = new int[f.size()];
-			for(int i = 0;i < f.vertices.size();i++) {
-				temp[i] = f.get(i);
-				if(f.vertices.get(i).isAttributePresent(Vertex.TEXTURE)) {
-					temp2[i] = f.get(i, Vertex.TEXTURE);
-				}
-				else {
-					temp2 = null;
-				}
-				if(f.vertices.get(i).isAttributePresent(Vertex.NORMAL)) {
-					temp3[i] = f.get(i, Vertex.NORMAL);
-				}
-				else {
-					temp3 = null;
-				}
-			}
-			faces.add(temp);
-
-			textureFaces.add(temp2);
-			normalFaces.add(temp3);
-		}
-
-
-		for (int count = 0; count < faces.size(); count++) {
-			int[] x = faces.get(count);
-			if (x != null && x.length > 3) {
-
-				if (x.length == 4 && !forceUseEarClipping) {
-					int[] t1 = new int[3];
-					int[] t2 = new int[3];
-					t1[0] = x[0];
-					t1[1] = x[1];
-					t1[2] = x[3];
-					t2[0] = x[1];
-					t2[1] = x[2];
-					t2[2] = x[3];
-					facesTriangulated.add(t1);
-					facesTriangulated.add(t2);
-
-					if (textureFaces != null) {
-						int[] y = textureFaces.get(count);
-						if (y != null) {
-							int[] tex1 = new int[3];
-							int[] tex2 = new int[3];
-
-							tex1[0] = y[0];
-							tex1[1] = y[1];
-							tex1[2] = y[3];
-							tex2[0] = y[1];
-							tex2[1] = y[2];
-							tex2[2] = y[3];
-							textureFacesTriangulated.add(tex1);
-							textureFacesTriangulated.add(tex2);
-						}
-					}
-
-					if (normalFaces != null) {
-						int[] z = normalFaces.get(count);
-						if (z != null) {
-							int[] norm1 = new int[3];
-							int[] norm2 = new int[3];
-
-							norm1[0] = z[0];
-							norm1[1] = z[1];
-							norm1[2] = z[3];
-							norm2[0] = z[1];
-							norm2[1] = z[2];
-							norm2[2] = z[3];
-							normalFacesTriangulated.add(norm1);
-							normalFacesTriangulated.add(norm2);
-						}
-					}
-				} else {
-					List<Integer> reflex = new ArrayList<>();
-					List<Integer> convex = new ArrayList<>();
-					List<Integer> ears = new ArrayList<>();
-					List<Integer> vertsLeft = new ArrayList<>();
-					List<Integer> totalVerts = new ArrayList<>();
-					List<Integer> totalTextures = new ArrayList<>();
-					List<Integer> totalNormals = new ArrayList<>();
-					
-					int countI = 0;
-					for (int t : x) {
-						totalVerts.add(t);
-						vertsLeft.add(x[countI]);
-						countI++;
-					}
-
-					if (textureFaces != null) {
-						if (textureFaces.get(count) != null) {
-							for (int t : textureFaces.get(count)) {
-								totalTextures.add(t);
-							}
-						} else {
-							totalTextures = null;
-						}
-					}
-
-					if (normalFaces != null) {
-						if (normalFaces.get(count) != null) {
-							for (int t : normalFaces.get(count)) {
-								totalNormals.add(t);
-							}
-						} else {
-							totalNormals = null;
-						}
-					}
-
-//					for (int i = 0; i < x.length; i++) {
-//						vertsLeft.add(x[i]);
-//					}
-
-//				Calculating the internal angle of each vertex and adds them to either the reflex or concave list 
-					for (int i = 0; i < x.length; i++) {
-						int v0, vi, v2;
-						int currentVert = x[i];
-						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
-						
-						if (indexInVertsLeftList == 0) {
-							v0 = vertsLeft.get(vertsLeft.size() - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(indexInVertsLeftList + 1);
-						} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
-							v0 = vertsLeft.get(indexInVertsLeftList - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(0);
-						} else {
-							v0 = vertsLeft.get(indexInVertsLeftList - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(indexInVertsLeftList + 1);
-						}
-						
-						float angle = (vertices[v0].sub(vertices[vi]))
-								.getAngleBetweenVectors(vertices[v2].sub(vertices[vi]));
-						if (angle < 0) {
-							angle = 180 - angle;
-						}
-						if (angle > 180) {
-							reflex.add(currentVert);
-						} else if (angle < 180) {
-							convex.add(currentVert);
-						}
-					}
-
-//				Calculating which convex vertices are ears
-					for (int i = 0; i < convex.size(); i++) {
-						int v0, vi, v2;
-						int currentVert = x[i];
-						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
-
-						if (indexInVertsLeftList == 0) {
-							v0 = vertsLeft.get(vertsLeft.size() - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(indexInVertsLeftList + 1);
-						} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
-							v0 = vertsLeft.get(indexInVertsLeftList - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(0);
-						} else {
-							v0 = vertsLeft.get(indexInVertsLeftList - 1);
-							vi = currentVert;
-							v2 = vertsLeft.get(indexInVertsLeftList + 1);
-						}
-
-						boolean isEar = true;
-						for (int j = 0; j < reflex.size(); j++) {
-							if (Utils.isPointInsideTriangle(vertices[v0], vertices[vi], vertices[v2],vertices[reflex.get(j)],true)) {
-								isEar = false;
-							}
-						}
-						if (isEar)
-							ears.add(convex.get(i));
-					}
-
-					for (int i = 0; i < ears.size(); i++) {
-
-						if (vertsLeft.size() == 3) {
-							int[] temp = new int[] { vertsLeft.get(0), vertsLeft.get(1), vertsLeft.get(2) };
-							facesTriangulated.add(temp);
-							break;
-						}
-
-						int earVertex = ears.get(i);
-						int v0, vi, v2;
-						int earIndexInVertsLeftList = vertsLeft.indexOf(earVertex);
-
-						if (earIndexInVertsLeftList == 0) {
-							v0 = vertsLeft.get(vertsLeft.size() - 1);
-							vi = earVertex;
-							v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
-						} else if (earIndexInVertsLeftList == vertsLeft.size() - 1) {
-							v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
-							vi = earVertex;
-							v2 = vertsLeft.get(0);
-						} else {
-							v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
-							vi = earVertex;
-							v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
-						}
-
-						int[] temp = new int[] { v0, vi, v2 };
-						facesTriangulated.add(temp);
-
-						int ind0 = totalVerts.indexOf(v0);
-						int ind1 = totalVerts.indexOf(vi);
-						int ind2 = totalVerts.indexOf(v2);
-
-						if (totalTextures != null) {
-							textureFacesTriangulated.add(new int[] { totalTextures.get(ind0), totalTextures.get(ind1),
-									totalTextures.get(ind2) });
-						}
-						if (totalNormals != null) {
-							normalFacesTriangulated.add(new int[] { totalNormals.get(ind0), totalNormals.get(ind1),
-									totalNormals.get(ind2) });
-						}
-
-						ears.remove((Integer)earVertex);
-						i--;
-						vertsLeft.remove(earIndexInVertsLeftList);
-
-						if (reflex.indexOf(v0) != -1) {
-							int indexInVertsLeftList = vertsLeft.indexOf(v0);
-							int r0, ri, r2;
-							if (indexInVertsLeftList == 0) {
-								r0 = vertsLeft.get(vertsLeft.size() - 1);
-								ri = v0;
-								r2 = vertsLeft.get(indexInVertsLeftList + 1);
-							} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
-								r0 = vertsLeft.get(indexInVertsLeftList - 1);
-								ri = v0;
-								r2 = vertsLeft.get(0);
-							} else {
-								r0 = vertsLeft.get(indexInVertsLeftList - 1);
-								ri = v0;
-								r2 = vertsLeft.get(indexInVertsLeftList + 1);
-							}
-							float angle = (vertices[r0].sub(vertices[ri]))
-									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
-							if (angle < 180) {
-								convex.add(v0);
-								reflex.remove((Integer) v0);
-							}
-
-						}
-
-						if (reflex.indexOf(v2) != -1) {
-							int indexAtVertsLeftList = vertsLeft.indexOf(v2);
-							int r0, ri, r2;
-							if (indexAtVertsLeftList == 0) {
-								r0 = vertsLeft.get(vertsLeft.size() - 1);
-								ri = v2;
-								r2 = vertsLeft.get(indexAtVertsLeftList + 1);
-							} else if (indexAtVertsLeftList == vertsLeft.size() - 1) {
-								r0 = vertsLeft.get(indexAtVertsLeftList - 1);
-								ri = v2;
-								r2 = vertsLeft.get(0);
-							} else {
-								r0 = vertsLeft.get(indexAtVertsLeftList - 1);
-								ri = v2;
-								r2 = vertsLeft.get(indexAtVertsLeftList + 1);
-							}
-							float angle = (vertices[r0].sub(vertices[ri]))
-									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
-							if (angle < 180) {
-								convex.add(v2);
-								reflex.remove((Integer) v2);
-							}
-
-						}
-
-						if (convex.indexOf(v0) != -1) {
-							int indexArVertsLeftList = vertsLeft.indexOf(v0);
-							int c0, ci, c2;
-							if (indexArVertsLeftList == 0) {
-								c0 = vertsLeft.get(vertsLeft.size() - 1);
-								ci = v0;
-								c2 = vertsLeft.get(indexArVertsLeftList + 1);
-							} else if (indexArVertsLeftList == vertsLeft.size() - 1) {
-								c0 = vertsLeft.get(indexArVertsLeftList - 1);
-								ci = v0;
-								c2 = vertsLeft.get(0);
-							} else {
-								c0 = vertsLeft.get(indexArVertsLeftList - 1);
-								ci = v0;
-								c2 = vertsLeft.get(indexArVertsLeftList + 1);
-							}
-
-							boolean isEar = true;
-							for (int k = 0; k < reflex.size(); k++) {
-//								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
-//										vertices[reflex.get(k)])) {
-								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
-									isEar = false;
-								}
-							}
-							if (isEar) {
-								ears.add(i + 1, convex.get(convex.indexOf(v0)));
-							}
-
-						}
-
-						if (convex.indexOf(v2) != -1) {
-							int indexInVertsLeftList = vertsLeft.indexOf(v2);
-							int c0, ci, c2;
-							if (indexInVertsLeftList == 0) {
-								c0 = vertsLeft.get(vertsLeft.size() - 1);
-								ci = v2;
-								c2 = vertsLeft.get(indexInVertsLeftList + 1);
-							} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
-								c0 = vertsLeft.get(indexInVertsLeftList - 1);
-								ci = v2;
-								c2 = vertsLeft.get(0);
-							} else {
-								c0 = vertsLeft.get(indexInVertsLeftList - 1);
-								ci = v2;
-								c2 = vertsLeft.get(indexInVertsLeftList + 1);
-							}
-
-							boolean isEar = true;
-							for (int k = 0; k < reflex.size(); k++) {
-								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
-									isEar = false;
-								}
-							}
-							if (isEar)
-								ears.add(i + 1, convex.get(convex.indexOf(v2)));
-						}
-
-					}
-				}
-
-			} else {
-				facesTriangulated.add(x);
-				textureFacesTriangulated.add(textureFaces.get(count));
-				normalFacesTriangulated.add(normalFaces.get(count));
-			}
-		}
-
-		List<Object> res = new ArrayList<>();
-		res.add(facesTriangulated);
-		res.add(textureFacesTriangulated);
-		res.add(normalFacesTriangulated);
-		return res;
-
+		return null;
 	}
+
+	public static List<Face> performEarClipping(Face currFace, List<Vector> vertices) {
+		LinkedList<Vertex> verts = new LinkedList<>(currFace.vertices);
+		verts.getFirst();
+
+		return null;
+	}
+
+//	public static Mesh triangulate(Mesh mesh, boolean forceUseEarClipping) {
+//
+//		List<int[]> facesTriangulated = new ArrayList<>();
+//		List<int[]> textureFacesTriangulated = new ArrayList<>();
+//		List<int[]> normalFacesTriangulated = new ArrayList<>();
+//
+//		List<int[]>	faces = new ArrayList<>(mesh.faces.size());
+//		List<int[]> textureFaces = new ArrayList<>();
+//		List<int[]> normalFaces = new ArrayList<>();
+//
+////		if(mesh.isAttributePresent(Mesh.TEXTURE)) {
+////			textureFaces = new ArrayList<>();
+////		}
+////
+////		if(mesh.isAttributePresent(Mesh.NORMAL)) {
+////			normalFaces = new ArrayList<>();
+////		}
+//
+//		Vector[] vertices = new Vector[mesh.getVertices().size()];
+//		for(int i = 0;i < mesh.getVertices().size();i++) {
+//			vertices[i] = mesh.getVertices().get(i);
+//		}
+//
+//		for(Face f : mesh.faces) {
+//			int[] temp = new int[f.size()];
+//			int[] temp2 = new int[f.size()];
+//			int[] temp3 = new int[f.size()];
+//			for(int i = 0;i < f.vertices.size();i++) {
+//				temp[i] = f.get(i);
+//				if(f.vertices.get(i).isAttributePresent(Vertex.TEXTURE)) {
+//					temp2[i] = f.get(i, Vertex.TEXTURE);
+//				}
+//				else {
+//					temp2 = null;
+//				}
+//				if(f.vertices.get(i).isAttributePresent(Vertex.NORMAL)) {
+//					temp3[i] = f.get(i, Vertex.NORMAL);
+//				}
+//				else {
+//					temp3 = null;
+//				}
+//			}
+//			faces.add(temp);
+//
+//			textureFaces.add(temp2);
+//			normalFaces.add(temp3);
+//		}
+//
+//
+//		for (int count = 0; count < faces.size(); count++) {
+//			int[] x = faces.get(count);
+//			if (x != null && x.length > 3) {
+//
+//				if (x.length == 4 && !forceUseEarClipping) {
+//					int[] t1 = new int[3];
+//					int[] t2 = new int[3];
+//					t1[0] = x[0];
+//					t1[1] = x[1];
+//					t1[2] = x[3];
+//					t2[0] = x[1];
+//					t2[1] = x[2];
+//					t2[2] = x[3];
+//					facesTriangulated.add(t1);
+//					facesTriangulated.add(t2);
+//
+//					if (textureFaces != null) {
+//						int[] y = textureFaces.get(count);
+//						if (y != null) {
+//							int[] tex1 = new int[3];
+//							int[] tex2 = new int[3];
+//
+//							tex1[0] = y[0];
+//							tex1[1] = y[1];
+//							tex1[2] = y[3];
+//							tex2[0] = y[1];
+//							tex2[1] = y[2];
+//							tex2[2] = y[3];
+//							textureFacesTriangulated.add(tex1);
+//							textureFacesTriangulated.add(tex2);
+//						}
+//					}
+//
+//					if (normalFaces != null) {
+//						int[] z = normalFaces.get(count);
+//						if (z != null) {
+//							int[] norm1 = new int[3];
+//							int[] norm2 = new int[3];
+//
+//							norm1[0] = z[0];
+//							norm1[1] = z[1];
+//							norm1[2] = z[3];
+//							norm2[0] = z[1];
+//							norm2[1] = z[2];
+//							norm2[2] = z[3];
+//							normalFacesTriangulated.add(norm1);
+//							normalFacesTriangulated.add(norm2);
+//						}
+//					}
+//				} else {
+//					List<Integer> reflex = new ArrayList<>();
+//					List<Integer> convex = new ArrayList<>();
+//					List<Integer> ears = new ArrayList<>();
+//					List<Integer> vertsLeft = new ArrayList<>();
+//					List<Integer> totalVerts = new ArrayList<>();
+//					List<Integer> totalTextures = new ArrayList<>();
+//					List<Integer> totalNormals = new ArrayList<>();
+//
+//					int countI = 0;
+//					for (int t : x) {
+//						totalVerts.add(t);
+//						vertsLeft.add(x[countI]);
+//						countI++;
+//					}
+//
+//					if (textureFaces != null) {
+//						if (textureFaces.get(count) != null) {
+//							for (int t : textureFaces.get(count)) {
+//								totalTextures.add(t);
+//							}
+//						} else {
+//							totalTextures = null;
+//						}
+//					}
+//
+//					if (normalFaces != null) {
+//						if (normalFaces.get(count) != null) {
+//							for (int t : normalFaces.get(count)) {
+//								totalNormals.add(t);
+//							}
+//						} else {
+//							totalNormals = null;
+//						}
+//					}
+//
+////					for (int i = 0; i < x.length; i++) {
+////						vertsLeft.add(x[i]);
+////					}
+//
+////				Calculating the internal angle of each vertex and adds them to either the reflex or concave list
+//					for (int i = 0; i < x.length; i++) {
+//						int v0, vi, v2;
+//						int currentVert = x[i];
+//						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
+//
+//						if (indexInVertsLeftList == 0) {
+//							v0 = vertsLeft.get(vertsLeft.size() - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(indexInVertsLeftList + 1);
+//						} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
+//							v0 = vertsLeft.get(indexInVertsLeftList - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(0);
+//						} else {
+//							v0 = vertsLeft.get(indexInVertsLeftList - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(indexInVertsLeftList + 1);
+//						}
+//
+//						float angle = (vertices[v0].sub(vertices[vi]))
+//								.getAngleBetweenVectors(vertices[v2].sub(vertices[vi]));
+//						if (angle < 0) {
+//							angle = 180 - angle;
+//						}
+//						if (angle > 180) {
+//							reflex.add(currentVert);
+//						} else if (angle < 180) {
+//							convex.add(currentVert);
+//						}
+//					}
+//
+////				Calculating which convex vertices are ears
+//					for (int i = 0; i < convex.size(); i++) {
+//						int v0, vi, v2;
+//						int currentVert = x[i];
+//						int indexInVertsLeftList = vertsLeft.indexOf(currentVert);
+//
+//						if (indexInVertsLeftList == 0) {
+//							v0 = vertsLeft.get(vertsLeft.size() - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(indexInVertsLeftList + 1);
+//						} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
+//							v0 = vertsLeft.get(indexInVertsLeftList - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(0);
+//						} else {
+//							v0 = vertsLeft.get(indexInVertsLeftList - 1);
+//							vi = currentVert;
+//							v2 = vertsLeft.get(indexInVertsLeftList + 1);
+//						}
+//
+//						boolean isEar = true;
+//						for (int j = 0; j < reflex.size(); j++) {
+//							if (Utils.isPointInsideTriangle(vertices[v0], vertices[vi], vertices[v2],vertices[reflex.get(j)],true)) {
+//								isEar = false;
+//							}
+//						}
+//						if (isEar)
+//							ears.add(convex.get(i));
+//					}
+//
+//					for (int i = 0; i < ears.size(); i++) {
+//
+//						if (vertsLeft.size() == 3) {
+//							int[] temp = new int[] { vertsLeft.get(0), vertsLeft.get(1), vertsLeft.get(2) };
+//							facesTriangulated.add(temp);
+//							break;
+//						}
+//
+//						int earVertex = ears.get(i);
+//						int v0, vi, v2;
+//						int earIndexInVertsLeftList = vertsLeft.indexOf(earVertex);
+//
+//						if (earIndexInVertsLeftList == 0) {
+//							v0 = vertsLeft.get(vertsLeft.size() - 1);
+//							vi = earVertex;
+//							v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
+//						} else if (earIndexInVertsLeftList == vertsLeft.size() - 1) {
+//							v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
+//							vi = earVertex;
+//							v2 = vertsLeft.get(0);
+//						} else {
+//							v0 = vertsLeft.get(earIndexInVertsLeftList - 1);
+//							vi = earVertex;
+//							v2 = vertsLeft.get(earIndexInVertsLeftList + 1);
+//						}
+//
+//						int[] temp = new int[] { v0, vi, v2 };
+//						facesTriangulated.add(temp);
+//
+//						int ind0 = totalVerts.indexOf(v0);
+//						int ind1 = totalVerts.indexOf(vi);
+//						int ind2 = totalVerts.indexOf(v2);
+//
+//						if (totalTextures != null) {
+//							textureFacesTriangulated.add(new int[] { totalTextures.get(ind0), totalTextures.get(ind1),
+//									totalTextures.get(ind2) });
+//						}
+//						if (totalNormals != null) {
+//							normalFacesTriangulated.add(new int[] { totalNormals.get(ind0), totalNormals.get(ind1),
+//									totalNormals.get(ind2) });
+//						}
+//
+//						ears.remove((Integer)earVertex);
+//						i--;
+//						vertsLeft.remove(earIndexInVertsLeftList);
+//
+//						if (reflex.indexOf(v0) != -1) {
+//							int indexInVertsLeftList = vertsLeft.indexOf(v0);
+//							int r0, ri, r2;
+//							if (indexInVertsLeftList == 0) {
+//								r0 = vertsLeft.get(vertsLeft.size() - 1);
+//								ri = v0;
+//								r2 = vertsLeft.get(indexInVertsLeftList + 1);
+//							} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
+//								r0 = vertsLeft.get(indexInVertsLeftList - 1);
+//								ri = v0;
+//								r2 = vertsLeft.get(0);
+//							} else {
+//								r0 = vertsLeft.get(indexInVertsLeftList - 1);
+//								ri = v0;
+//								r2 = vertsLeft.get(indexInVertsLeftList + 1);
+//							}
+//							float angle = (vertices[r0].sub(vertices[ri]))
+//									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
+//							if (angle < 180) {
+//								convex.add(v0);
+//								reflex.remove((Integer) v0);
+//							}
+//
+//						}
+//
+//						if (reflex.indexOf(v2) != -1) {
+//							int indexAtVertsLeftList = vertsLeft.indexOf(v2);
+//							int r0, ri, r2;
+//							if (indexAtVertsLeftList == 0) {
+//								r0 = vertsLeft.get(vertsLeft.size() - 1);
+//								ri = v2;
+//								r2 = vertsLeft.get(indexAtVertsLeftList + 1);
+//							} else if (indexAtVertsLeftList == vertsLeft.size() - 1) {
+//								r0 = vertsLeft.get(indexAtVertsLeftList - 1);
+//								ri = v2;
+//								r2 = vertsLeft.get(0);
+//							} else {
+//								r0 = vertsLeft.get(indexAtVertsLeftList - 1);
+//								ri = v2;
+//								r2 = vertsLeft.get(indexAtVertsLeftList + 1);
+//							}
+//							float angle = (vertices[r0].sub(vertices[ri]))
+//									.getAngleBetweenVectors(vertices[r2].sub(vertices[ri]));
+//							if (angle < 180) {
+//								convex.add(v2);
+//								reflex.remove((Integer) v2);
+//							}
+//
+//						}
+//
+//						if (convex.indexOf(v0) != -1) {
+//							int indexArVertsLeftList = vertsLeft.indexOf(v0);
+//							int c0, ci, c2;
+//							if (indexArVertsLeftList == 0) {
+//								c0 = vertsLeft.get(vertsLeft.size() - 1);
+//								ci = v0;
+//								c2 = vertsLeft.get(indexArVertsLeftList + 1);
+//							} else if (indexArVertsLeftList == vertsLeft.size() - 1) {
+//								c0 = vertsLeft.get(indexArVertsLeftList - 1);
+//								ci = v0;
+//								c2 = vertsLeft.get(0);
+//							} else {
+//								c0 = vertsLeft.get(indexArVertsLeftList - 1);
+//								ci = v0;
+//								c2 = vertsLeft.get(indexArVertsLeftList + 1);
+//							}
+//
+//							boolean isEar = true;
+//							for (int k = 0; k < reflex.size(); k++) {
+////								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],
+////										vertices[reflex.get(k)])) {
+//								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
+//									isEar = false;
+//								}
+//							}
+//							if (isEar) {
+//								ears.add(i + 1, convex.get(convex.indexOf(v0)));
+//							}
+//
+//						}
+//
+//						if (convex.indexOf(v2) != -1) {
+//							int indexInVertsLeftList = vertsLeft.indexOf(v2);
+//							int c0, ci, c2;
+//							if (indexInVertsLeftList == 0) {
+//								c0 = vertsLeft.get(vertsLeft.size() - 1);
+//								ci = v2;
+//								c2 = vertsLeft.get(indexInVertsLeftList + 1);
+//							} else if (indexInVertsLeftList == vertsLeft.size() - 1) {
+//								c0 = vertsLeft.get(indexInVertsLeftList - 1);
+//								ci = v2;
+//								c2 = vertsLeft.get(0);
+//							} else {
+//								c0 = vertsLeft.get(indexInVertsLeftList - 1);
+//								ci = v2;
+//								c2 = vertsLeft.get(indexInVertsLeftList + 1);
+//							}
+//
+//							boolean isEar = true;
+//							for (int k = 0; k < reflex.size(); k++) {
+//								if (Utils.isPointInsideTriangle(vertices[c0], vertices[ci], vertices[c2],vertices[reflex.get(k)],true)) {
+//									isEar = false;
+//								}
+//							}
+//							if (isEar)
+//								ears.add(i + 1, convex.get(convex.indexOf(v2)));
+//						}
+//
+//					}
+//				}
+//
+//			} else {
+//				facesTriangulated.add(x);
+//				textureFacesTriangulated.add(textureFaces.get(count));
+//				normalFacesTriangulated.add(normalFaces.get(count));
+//			}
+//		}
+//
+//		List<Face> newFaces = new ArrayList<>(facesTriangulated.size());
+//
+//		for(int i = 0;i < facesTriangulated.size();i++) {
+//			Face tempFace = new Face();
+//
+//			for(int j = 0;j < facesTriangulated.get(i).length;j++) {
+//
+//				Vertex tempVert = new Vertex();
+//				tempVert.setAttribute(facesTriangulated.get(i)[j],Vertex.POSITION);
+//
+//				if(textureFacesTriangulated != null && i < textureFacesTriangulated.size()) {
+//					if(textureFacesTriangulated.get(i) != null) {
+//						tempVert.setAttribute(textureFacesTriangulated.get(i)[j],Vertex.TEXTURE);
+//					}
+//				}
+//
+//				if(normalFacesTriangulated != null && i < normalFacesTriangulated.size()) {
+//					if(normalFacesTriangulated.get(i) != null) {
+//						tempVert.setAttribute(normalFacesTriangulated.get(i)[j],Vertex.NORMAL);
+//					}
+//				}
+//				tempFace.vertices.add(tempVert);
+//			}
+//			newFaces.add(tempFace);
+//		}
+//
+//		Mesh retMesh = new Mesh(newFaces,mesh.vertAttributes);
+//		retMesh.trimEverything();
+//		return retMesh;
+//
+////		List<Object> res = new ArrayList<>();
+////		res.add(facesTriangulated);
+////		res.add(textureFacesTriangulated);
+////		res.add(normalFacesTriangulated);
+////		return res;
+//
+//	}
 
 	public static boolean isPointInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
 		Vector e1 = v0.sub(v1);

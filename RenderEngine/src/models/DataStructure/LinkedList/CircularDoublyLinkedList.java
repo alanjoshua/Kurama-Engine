@@ -1,0 +1,200 @@
+package models.DataStructure.LinkedList;
+
+public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
+
+    public CircularDoublyLinkedList(Node<T> initNode) {
+        this.head = initNode;
+        this.tail = head;
+        this.head.next = tail;
+        this.head.previous = tail;
+        this.tail.previous = head;
+        this.tail.next = head;
+
+        current = head;
+        prev = current.previous;
+        next = current.next;
+        size++;
+    }
+
+    public CircularDoublyLinkedList() {}
+
+    public T peekNext() {
+        if(current == null) {
+            return null;
+        }
+        T ret = current.data;
+        current = current.next;
+
+        return ret;
+    }
+
+    public T peekPrevious() {
+        if(current == null) {
+            return null;
+        }
+        current = current.previous;
+        return current.data;
+    }
+
+    public void resetLoc() {
+        current = head;
+    }
+
+    public T popHead() {
+        if(head == null) {
+            return null;
+        }
+        T ret = head.data;
+        Node<T> temp = head.next;
+        temp.previous = tail;
+        tail.next = temp;
+        head = temp;
+        size--;
+        return ret;
+    }
+
+    public T popTail() {
+        if(tail == null) {
+            return null;
+        }
+        T ret = tail.data;
+        Node<T> temp = tail.previous;
+        temp.next = head;
+        head.previous = temp;
+        tail = temp;
+        size--;
+        return ret;
+    }
+
+    public T pop(int index) {
+        if(index < 0 && index > size - 1) {
+            throw new IndexOutOfBoundsException(index);
+        }
+
+        Node<T> temp = head;
+        for(int i = 0;i < index;i++) {
+            temp = temp.next;
+        }
+        T ret = temp.data;
+
+        if(temp == head) {
+            head.next.previous = tail;
+            tail.next = head.next;
+            head = head.next;
+            size--;
+            return ret;
+        }
+
+        if(temp == tail) {
+            tail.previous.next = head;
+            head.previous = tail.previous;
+            tail = tail.previous;
+            size--;
+            return ret;
+        }
+
+        temp.previous.next = temp.next;
+        temp.next.previous = temp.previous;
+        temp = null;
+        size--;
+        return ret;
+    }
+
+    public void pushTail(T data) {
+        Node<T> newNode = new Node(data);
+        if(tail == null) {
+            head = newNode;
+            tail = head;
+            head.next = tail;
+            head.previous = tail;
+            tail.previous = head;
+            tail.next = head;
+            size++;
+            return;
+        }
+        tail.next = newNode;
+        newNode.previous = tail;
+        head.previous = newNode;
+        newNode.next = head;
+        tail = newNode;
+        size++;
+    }
+
+    public void pushHead(T data) {
+        Node<T> newNode = new Node(data);
+        if(head == null) {
+            head = newNode;
+            tail = head;
+            head.next = tail;
+            head.previous = tail;
+            tail.previous = head;
+            tail.next = head;
+            size++;
+            current = head;
+            return;
+        }
+
+        head.previous = newNode;
+        newNode.next = head;
+        newNode.previous = tail;
+        tail.next = newNode;
+        head = newNode;
+        size++;
+    }
+
+    public void push(T data, int index) {
+        if(index < 0 && index > size - 1) {
+            throw new IndexOutOfBoundsException(index);
+        }
+
+        Node<T> temp = head;
+        for(int i = 0;i < index;i++) {
+            temp = temp.next;
+        }
+
+        if(temp == head) {
+            if(head == null) {
+                Node<T> newNode = new Node(data);
+                head = newNode;
+                tail = head;
+                head.next = tail;
+                head.previous = tail;
+                tail.next = head;
+                tail.previous = head;
+            }
+            Node<T> newNode = new Node(data,tail,head);
+            head.previous = newNode;
+            tail.next = newNode;
+            head = newNode;
+            size++;
+            return;
+        }
+
+        Node<T> newNode = new Node(data,temp.previous,temp);
+        temp.previous.next = newNode;
+        temp.previous = newNode;
+        size++;
+    }
+
+    public void display() {
+
+        Node<T> temp = head;
+
+        System.out.print("|| ");
+        if(size > 0) {
+            System.out.print(temp.data + " || ");
+            temp = temp.next;
+        }
+        else {
+            System.out.println(" || ");
+            return;
+        }
+
+        while(temp != head) {
+            System.out.print(temp.data + " || ");
+            temp = temp.next;
+        }
+        System.out.println();
+    }
+
+}

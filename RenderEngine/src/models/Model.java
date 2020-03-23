@@ -1,15 +1,12 @@
 package models;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import Math.Matrix;
 import Math.Quaternion;
 import Math.Vector;
-import models.DataStructure.Face;
-import models.DataStructure.Mesh;
-import models.DataStructure.Vertex;
+import models.DataStructure.Mesh.Mesh;
 
 public class Model {
 
@@ -79,77 +76,44 @@ public class Model {
 	}
 
 	public void triangulate() {
-		List<Object> triangulatedData = ModelBuilder.triangulate(mesh,false);
+		mesh = ModelBuilder.triangulate(mesh,false);
 
-		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
-		List<int[]> textureFaces = (List<int[]>) triangulatedData.get(1);
-		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
-
-		List<Face> newFaces = new ArrayList<>(faces.size());
-
-		for(int i = 0;i < faces.size();i++) {
-
-			Face tempFace = new Face();
-
-			for(int j = 0;j < faces.get(i).length;j++) {
-				Vertex tempVert = new Vertex();
-				tempVert.setAttribute(faces.get(i)[j],Vertex.POSITION);
-
-				if(textureFaces != null && i < textureFaces.size()) {
-					if(textureFaces.get(i) != null) {
-						tempVert.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
-					}
-				}
-
-				if(normalFaces != null && i < normalFaces.size()) {
-					if(normalFaces.get(i) != null) {
-						tempVert.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
-					}
-				}
-
-				tempFace.vertices.add(tempVert);
-			}
-
-			newFaces.add(tempFace);
-		}
-		mesh.faces = newFaces;
+//		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
+//		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
+//		List<int[]> textureFaces = (List<int[]>) triangulatedData.get(1);
+//
+//		List<Face> newFaces = new ArrayList<>(faces.size());
+//
+//		for(int i = 0;i < faces.size();i++) {
+//			Face tempFace = new Face();
+//
+//			for(int j = 0;j < faces.get(i).length;j++) {
+//
+//				Vertex tempVert = new Vertex();
+//				tempVert.setAttribute(faces.get(i)[j],Vertex.POSITION);
+//
+//				if(textureFaces != null && i < textureFaces.size()) {
+//					if(textureFaces.get(i) != null) {
+//						tempVert.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
+//					}
+//				}
+//
+//				if(normalFaces != null && i < normalFaces.size()) {
+//					if(normalFaces.get(i) != null) {
+//						tempVert.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
+//					}
+//				}
+//				tempFace.vertices.add(tempVert);
+//			}
+//			newFaces.add(tempFace);
+//		}
+//
+//		mesh.faces = newFaces;
+//		mesh.trimEverything();
 	}
 
 	public void triangulate(boolean forceUseEarClipping) {
-		List<Object> triangulatedData = ModelBuilder.triangulate(mesh,true);
-
-		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
-		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
-		List<int[]> textureFaces = (List<int[]>) triangulatedData.get(1);
-
-		List<Face> newFaces = new ArrayList<>(faces.size());
-
-		for(int i = 0;i < faces.size();i++) {
-
-			Face tempFace = new Face();
-
-			for(int j = 0;j < faces.get(i).length;j++) {
-				Vertex tempVert = new Vertex();
-				tempVert.setAttribute(faces.get(i)[j],Vertex.POSITION);
-
-				if(normalFaces != null && i < normalFaces.size()) {
-					if(normalFaces.get(i) != null) {
-						tempVert.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
-					}
-				}
-
-				if(textureFaces != null && i < textureFaces.size()) {
-					if(textureFaces.get(i) != null) {
-						tempVert.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
-					}
-				}
-				tempFace.vertices.add(tempVert);
-			}
-
-			newFaces.add(tempFace);
-		}
-
-		mesh.faces = newFaces;
+		mesh = ModelBuilder.triangulate(mesh,forceUseEarClipping);
 	}
 
 	public Mesh getMesh() {return mesh;}

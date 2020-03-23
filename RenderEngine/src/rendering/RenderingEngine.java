@@ -3,24 +3,18 @@ package rendering;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import Math.Matrix;
 import Math.Vector;
 import main.Game;
-import models.DataStructure.Face;
-import models.DataStructure.Mesh;
-import models.DataStructure.Vertex;
+import models.DataStructure.Mesh.Face;
 import models.Model;
-
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 
 public class RenderingEngine {
 
 	Game game;
+	private static float viewingTolerance = 1.5f;
 
 	public enum ProjectionMode {
 		ORTHO, PERSPECTIVE
@@ -40,7 +34,7 @@ public class RenderingEngine {
 	}
 
 	public void render(List<Model> models, Graphics2D g, Camera cam) {
-
+//		System.out.println("inside");
 //		Matrix projectedMatrix;
 //		Matrix camSpace;
 ////		List<Boolean> isVisible = new ArrayList<>();
@@ -53,6 +47,7 @@ public class RenderingEngine {
 			Matrix camSpace = null;
 
 //			Transform and convert 3D points to camera space according to rendering mode
+
 			if (renderPipeline == RenderPipeline.Quat) {
 				Matrix transformedV;
 
@@ -85,13 +80,16 @@ public class RenderingEngine {
 				Matrix transformedV = null;
 				if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
 					transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
-
 					m.setChanged(false);
 					m.setTransformedVertices(transformedV);
 				} else {
 					transformedV = m.getTranformedVertices();
 				}
+//				long endTime = 0;
+//				long startTime = System.nanoTime();
 				camSpace = cam.getWorldToCam().matMul(transformedV);
+//				endTime = System.nanoTime();
+//				System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
 			}
 
 //			Project model to the screen according to projection mode
@@ -100,7 +98,6 @@ public class RenderingEngine {
 			} else if (projectionMode == ProjectionMode.ORTHO) {
 				projectedVectors = (cam.getOrthographicProjectionMatrix().matMul(camSpace)).convertToColumnVectorList();
 			}
-
 
 //			initialise other variables
 			List<Boolean> isVisible = new ArrayList<>(projectedVectors.size());
@@ -123,8 +120,8 @@ public class RenderingEngine {
 				projectedVectors.set(i,new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * cam.getImageWidth()),
 						(int) ((1 - (temp[1] + 1) * 0.5) * cam.getImageHeight()), temp[2]}));
 
-				if ((-1.5 <= temp[0] && temp[0] <= 1.5)
-						&& (-1.5 <= temp[1] && temp[1] <= 1.5)
+				if ((-viewingTolerance <= temp[0] && temp[0] <= viewingTolerance)
+						&& (-viewingTolerance <= temp[1] && temp[1] <= viewingTolerance)
 						&& (0 <= temp[2] && temp[2] <= 1)
 						) {
 					isVisible.add(true);
@@ -136,7 +133,6 @@ public class RenderingEngine {
 			}
 
 //			Render model using new Mesh model
-
 			for(Face f : m.mesh.faces) {
 				for (int i = 0; i < f.size(); i++) {
 					if (i != f.size() - 1) {
