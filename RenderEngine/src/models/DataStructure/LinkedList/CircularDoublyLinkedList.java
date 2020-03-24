@@ -2,6 +2,8 @@ package models.DataStructure.LinkedList;
 
 public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
 
+    private boolean shouldStart = true;
+
     public CircularDoublyLinkedList(Node<T> initNode) {
         this.head = initNode;
         this.tail = head;
@@ -22,10 +24,14 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         if(current == null) {
             return null;
         }
-        T ret = current.data;
-        current = current.next;
-
-        return ret;
+        if(shouldStart) {
+            current = head;
+            shouldStart = false;
+        }
+        else {
+            current = current.next;
+        }
+        return current.data;
     }
 
     public T peekPrevious() {
@@ -38,6 +44,7 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
 
     public void resetLoc() {
         current = head;
+        shouldStart = true;
     }
 
     public T popHead() {

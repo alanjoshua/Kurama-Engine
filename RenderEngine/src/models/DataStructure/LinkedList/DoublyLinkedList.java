@@ -7,6 +7,10 @@ public class DoublyLinkedList<T> {
     protected Node<T> prev = null;
     protected Node<T> current = null;
     protected Node<T> next = null;
+    protected boolean isOverRightEnd = false;
+    protected  boolean isAtRightEnd = false;
+    protected boolean isOverLeftEnd = false;
+    protected boolean isAtLeftEnd = false;
 
     public Node<T> head = null;
     public Node<T> tail = null;
@@ -44,39 +48,63 @@ public class DoublyLinkedList<T> {
     }
 
     public T peekNext() {
-        if(current == null) {
-            if(next != null) {
-                current = next;
-                next = current.next;
+        if(next == null) {
+            if (isAtRightEnd) {
+                isOverRightEnd = true;
+                return null;
             }
-            return null;
         }
-        prev = current;
-        next = current.next;
-        current = current.next;
+        else if(isOverLeftEnd) {
+            isOverLeftEnd = false;
+            return current.data;
+        }
 
-        return prev.data;
+
+        isAtLeftEnd = false;
+        prev = current;
+        current = current.next;
+        next = current.next;
+
+        if(next == null) {
+            isAtRightEnd = true;
+        }
+
+        return current.data;
     }
 
     public T peekPrevious() {
-        if(current == null) {
-            if(prev != null) {
-                current = prev;
-                prev = current.previous;
-            }
-            return null;
-        }
-        next = current;
-        prev = current.previous;
-        current = current.previous;
 
-        return next.data;
+        if(prev == null) {
+            if(isAtLeftEnd) {
+                isOverLeftEnd = true;
+                return null;
+            }
+        }
+        else if(isOverRightEnd) {
+            isOverRightEnd = false;
+            return current.data;
+        }
+
+        isAtRightEnd = false;
+        next = current;
+        current = current.previous;
+        prev = current.previous;
+
+        if(prev == null) {
+            isAtLeftEnd = true;
+        }
+
+        return current.data;
     }
 
     public void resetLoc() {
         current = head;
         next = current.next;
         prev = current.previous;
+        isAtRightEnd = false;
+        isAtLeftEnd = true;
+        isOverLeftEnd = true;
+        isOverRightEnd = false;
     }
 
     public T popHead() {

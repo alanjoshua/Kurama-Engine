@@ -17,7 +17,7 @@ public class Main {
 	
 	public void start() {
 
-		DoublyLinkedList<Integer> l = new DoublyLinkedList<>();
+		DoublyLinkedList<Integer> l = new CircularDoublyLinkedList<>();
 		l.pushHead(1);
 		l.pushTail(2);
 		l.pushTail(-1);
@@ -25,19 +25,15 @@ public class Main {
 //		System.out.println(l.peek());
 		l.push(3,0);
 		l.display();
-		System.out.println(l.pop(1));
-		l.display();
-		System.out.println(l.pop(3));
-		l.display();
-
+		System.out.println();
 		l.resetLoc();
-		System.out.println(l.peekNext());
-		System.out.println(l.peekNext());
-		System.out.println(l.peekNext());
-		System.out.println(l.peekPrevious());
-		System.out.println(l.peekPrevious());
-		System.out.println(l.peekPrevious());
-		System.out.println(l.peekPrevious());
+		for(int i = 0;i < 10;i++) {
+			System.out.print(l.peekNext() + " || ");
+		}
+		System.out.println();
+		for(int i = 0;i < 10;i++) {
+			System.out.print(l.peekPrevious() + " || ");
+		}
 
 //		game = new Game();
 //		game.init();
