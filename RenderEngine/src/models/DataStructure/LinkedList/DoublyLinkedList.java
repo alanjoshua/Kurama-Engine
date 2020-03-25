@@ -76,22 +76,28 @@ public class DoublyLinkedList<T> {
     }
 
     public T peekNext() {
+
+        if(isOverLeftEnd) {
+            isOverLeftEnd = false;
+            return current.data;
+        }
+
         if(next == null) {
             if (isAtRightEnd) {
                 isOverRightEnd = true;
                 return null;
             }
         }
-        else if(isOverLeftEnd) {
-            isOverLeftEnd = false;
-            return current.data;
-        }
-
 
         isAtLeftEnd = false;
         prev = current;
         current = current.next;
-        next = current.next;
+        if(current!= null) {
+            next = current.next;
+        }
+        else {
+            next = null;
+        }
 
         if(next == null) {
             isAtRightEnd = true;
@@ -165,7 +171,7 @@ public class DoublyLinkedList<T> {
                 return null;
             }
         }
-        else if(isOverLeftEnd) {
+        if(isOverLeftEnd) {
             isOverLeftEnd = false;
             return current;
         }
@@ -174,7 +180,12 @@ public class DoublyLinkedList<T> {
         isAtLeftEnd = false;
         prev = current;
         current = current.next;
-        next = current.next;
+        if(current != null) {
+            next = current.next;
+        }
+        else {
+            next = null;
+        }
 
         if(next == null) {
             isAtRightEnd = true;
@@ -221,8 +232,14 @@ public class DoublyLinkedList<T> {
 
     public void resetLoc() {
         current = head;
-        next = current.next;
-        prev = current.previous;
+        if(current != null) {
+            next = current.next;
+            prev = current.previous;
+        }
+        else {
+            next = null;
+            prev = null;
+        }
         isAtRightEnd = false;
         isAtLeftEnd = true;
         isOverLeftEnd = true;
@@ -460,14 +477,17 @@ public class DoublyLinkedList<T> {
                 size--;
             }
 
-            if(ret == tail) {
+            else if(ret == tail) {
                 tail.previous.next = null;
                 tail = tail.previous;
                 size--;
             }
 
-            ret.previous.next = ret.next;
-            ret.next.previous = ret.previous;
+           else {
+                ret.previous.next = ret.next;
+                ret.next.previous = ret.previous;
+                size--;
+            }
         }
 
         this.isOverRightEnd = isOverRightEnd;

@@ -97,15 +97,12 @@ public class Game {
 		Model deer = ModelBuilder.buildModelFromFile("deer.obj");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-//		deer.setTickObj(tQuat);
 //		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-//		mill.mesh.displayMeshInformation();
 		mill.triangulate();
-//		mill.mesh.displayMeshInformation();
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));

@@ -236,8 +236,39 @@ public class ModelBuilder {
 
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
-		performEarClipping(inMesh.faces.get(0),inMesh.getVertices());
-		return null;
+		for(Face f: inMesh.faces) {
+			if(f.vertices.size() > 4 || forceEarClipping) {
+				newFaces.addAll(performEarClipping(f, inMesh.getVertices()));
+			}
+			else {
+				if(f.vertices.size() == 4) {
+					newFaces.addAll(performSimpleQuadTriangulation(f,inMesh.getVertices()));
+				}
+				else {
+					newFaces.add(f);
+				}
+			}
+		}
+		return new Mesh(newFaces,inMesh.vertAttributes);
+	}
+
+	public static List<Face> performSimpleQuadTriangulation(Face currFace,List<Vector> vertList) {
+		List<Face> retFaces = new ArrayList<>();
+
+		Face f1 = new Face();
+		f1.addVertex(currFace.getVertex(0));
+		f1.addVertex(currFace.getVertex(1));
+		f1.addVertex(currFace.getVertex(3));
+
+		Face f2 = new Face();
+		f2.addVertex(currFace.getVertex(3));
+		f2.addVertex(currFace.getVertex(1));
+		f2.addVertex(currFace.getVertex(2));
+
+		retFaces.add(f1);
+		retFaces.add(f2);
+
+		return retFaces;
 	}
 
 	public static List<Face> performEarClipping(Face currFace, List<Vector> vertList) {
@@ -264,7 +295,7 @@ public class ModelBuilder {
 //		Construction of ears list
 		for(int i = 0;i < verts.getSize();i++) {
 			Node<Vertex> curr = verts.peekNextNode();
-			if(isEar(curr,reflex,vertList)) {
+			if(isEar(curr.previous.data,curr.data,curr.next.data,reflex,vertList)) {
 				earTips.pushTail(curr.data);
 			}
 		}
@@ -272,36 +303,70 @@ public class ModelBuilder {
 		earTips.resetLoc();
 		while(earTips.hasNext()) {
 
+			if(verts.getSize() <=3) {
+				Face newFace = new Face();
+				newFace.addVertex(verts.popHead());
+				newFace.addVertex(verts.popHead());
+				newFace.addVertex(verts.popHead());
+				retFaces.add(newFace);
+				break;
+			}
+			else {
 //			Remove one ear from top of list and create a new triangular Face object
-			Node<Vertex> currNode = verts.searchAndRemoveNode(earTips.popHead());
-			Face newFace = new Face();
-			newFace.addVertex(currNode.previous.data);
-			newFace.addVertex(currNode.data);
-			newFace.addVertex(currNode.next.data);
-			retFaces.add(newFace);
+				Node<Vertex> currNode = verts.searchAndRemoveNode(earTips.popHead());
+				Face newFace = new Face();
+				newFace.addVertex(currNode.previous.data);
+				newFace.addVertex(currNode.data);
+				newFace.addVertex(currNode.next.data);
+				retFaces.add(newFace);
 
-//			Node<Vertex> v0 = currNode;
-//			if(isVertexConvex(v0.previous.data,v0.data,v0.next.data,vertList)) {		//Logic to handle if v0 is a convex vertex
-//				if(isEar(v0,reflex,vertList)) {  // Logic to check if it is an ear or not
-//					earTips.pushHead(v0.data);
-//				}
-//			}
-//			else {
-//				if(isVertexConvex(v0.previous.data,v0.data,v0.next.data,vertList)) {
-//					reflex.pushTail(reflex.searchAndRemoveNode(v0.data).data);
-//				}
-//			}
+				Node<Vertex> v0 = currNode.previous;
+				if (reflex.isPresent(v0.data)) {
+					if (isVertexConvex(v0.previous.data, v0.data, currNode.data, vertList)) {
+						reflex.searchAndRemoveNode(v0.data);
+						convex.pushHead(v0.data);
+						if (isEar(v0.previous.data, v0.data, currNode.data, reflex, vertList)) {
+							earTips.pushHead(v0.data);
+						}
+					}
+				} else {
+					if (earTips.isPresent(v0.data)) {
+						if (!isEar(v0.previous.data, v0.data, currNode.data, reflex, vertList)) {
+							earTips.searchAndRemoveNode(v0.data);
+						}
+					}
+					if (isEar(v0.previous.data, v0.data, currNode.data, reflex, vertList)) {
+						earTips.pushHead(v0.data);
+					}
+				}
+
+				Node<Vertex> v2 = currNode.next;
+				if (reflex.isPresent(v2.data)) {
+					if (isVertexConvex(currNode.data, v2.data, v2.next.data, vertList)) {
+						reflex.searchAndRemoveNode(v2.data);
+						convex.pushHead(v2.data);
+						if (isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
+							earTips.pushHead(v2.data);
+						}
+					}
+				} else {
+					if (earTips.isPresent(v2.data)) {
+						if (!isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
+							earTips.searchAndRemoveNode(v2.data);
+						}
+					}
+					if (isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
+						earTips.pushHead(v2.data);
+					}
+				}
+			}
 
 		}
 
-		return null;
+		return retFaces;
 	}
 
-	public static boolean isEar(Node<Vertex> curr, DoublyLinkedList<Vertex> reflex,List<Vector> vertList) {
-		Vertex v0 = curr.previous.data;
-		Vertex v1 = curr.data;
-		Vertex v2 = curr.next.data;
-
+	public static boolean isEar(Vertex v0, Vertex v1, Vertex v2, DoublyLinkedList<Vertex> reflex,List<Vector> vertList) {
 		boolean isEar = true;
 		reflex.resetLoc();
 		for(int j = 0;j < reflex.getSize();j++) {

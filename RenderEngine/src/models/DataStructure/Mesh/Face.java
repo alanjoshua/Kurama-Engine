@@ -28,4 +28,8 @@ public class Face {
     public int get(int vertInd) {
         return vertices.get(vertInd).vertAttributes.get(Vertex.POSITION);
     }
+
+    public Vertex getVertex(int ind) {
+        return vertices.get(ind);
+    }
 }
