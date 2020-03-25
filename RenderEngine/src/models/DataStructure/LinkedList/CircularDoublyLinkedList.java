@@ -1,5 +1,7 @@
 package models.DataStructure.LinkedList;
 
+import java.util.List;
+
 public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
 
     private boolean shouldStart = true;
@@ -16,9 +18,33 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         prev = current.previous;
         next = current.next;
         size++;
+        resetLoc();
     }
 
-    public CircularDoublyLinkedList() {}
+    public CircularDoublyLinkedList(List list) {
+        super(list);
+    }
+
+    public CircularDoublyLinkedList() {
+        super();
+    }
+
+    public T peek(int index) {
+
+        while(index < 0) {
+            index = size + index;
+        }
+        while(index > (size-1)) {
+            index = index - (size - 1);
+        }
+
+        Node<T> temp = head;
+        for(int i = 0;i < index;i++) {
+            temp = temp.next;
+        }
+
+        return temp.data;
+    }
 
     public T peekNext() {
         if(current == null) {
@@ -42,6 +68,45 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         return current.data;
     }
 
+    public Node<T> peekNode(int index) {
+
+        while(index < 0) {
+            index = size + index;
+        }
+        while(index > (size-1)) {
+            index = index - (size - 1);
+        }
+
+        Node<T> temp = head;
+        for(int i = 0;i < index;i++) {
+            temp = temp.next;
+        }
+
+        return temp;
+    }
+
+    public Node<T> peekNextNode() {
+        if(current == null) {
+            return null;
+        }
+        if(shouldStart) {
+            current = head;
+            shouldStart = false;
+        }
+        else {
+            current = current.next;
+        }
+        return current;
+    }
+
+    public Node<T> peekPreviousNode() {
+        if(current == null) {
+            return null;
+        }
+        current = current.previous;
+        return current;
+    }
+
     public void resetLoc() {
         current = head;
         shouldStart = true;
@@ -52,6 +117,19 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
             return null;
         }
         T ret = head.data;
+        Node<T> temp = head.next;
+        temp.previous = tail;
+        tail.next = temp;
+        head = temp;
+        size--;
+        return ret;
+    }
+
+    public Node<T> popHeadNode() {
+        if(head == null) {
+            return null;
+        }
+        Node<T> ret = head;
         Node<T> temp = head.next;
         temp.previous = tail;
         tail.next = temp;
@@ -73,9 +151,25 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         return ret;
     }
 
+    public Node<T> popTailNode() {
+        if(tail == null) {
+            return null;
+        }
+        Node<T> ret = tail;
+        Node<T> temp = tail.previous;
+        temp.next = head;
+        head.previous = temp;
+        tail = temp;
+        size--;
+        return ret;
+    }
+
     public T pop(int index) {
-        if(index < 0 && index > size - 1) {
-            throw new IndexOutOfBoundsException(index);
+        while(index < 0) {
+            index = size + index;
+        }
+        while(index > (size-1)) {
+            index = index - (size - 1);
         }
 
         Node<T> temp = head;
@@ -83,6 +177,43 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
             temp = temp.next;
         }
         T ret = temp.data;
+
+        if(temp == head) {
+            head.next.previous = tail;
+            tail.next = head.next;
+            head = head.next;
+            size--;
+            return ret;
+        }
+
+        if(temp == tail) {
+            tail.previous.next = head;
+            head.previous = tail.previous;
+            tail = tail.previous;
+            size--;
+            return ret;
+        }
+
+        temp.previous.next = temp.next;
+        temp.next.previous = temp.previous;
+        temp = null;
+        size--;
+        return ret;
+    }
+
+    public Node<T> popNode(int index) {
+        while(index < 0) {
+            index = size + index;
+        }
+        while(index > (size-1)) {
+            index = index - (size - 1);
+        }
+
+        Node<T> temp = head;
+        for(int i = 0;i < index;i++) {
+            temp = temp.next;
+        }
+        Node<T> ret = temp;
 
         if(temp == head) {
             head.next.previous = tail;
@@ -150,8 +281,11 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
     }
 
     public void push(T data, int index) {
-        if(index < 0 && index > size - 1) {
-            throw new IndexOutOfBoundsException(index);
+        while(index < 0) {
+            index = size + index;
+        }
+        while(index > (size-1)) {
+            index = index - (size - 1);
         }
 
         Node<T> temp = head;
@@ -183,13 +317,91 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         size++;
     }
 
+    public Node<T> searchForNode(T element) {
+        Node<T> currPos = current;
+        boolean shouldStart = this.shouldStart;
+        resetLoc();
+
+        Node<T> ret = null;
+        for(int i = 0;i < size;i++) {
+            Node<T> temp = peekNextNode();
+            if(temp.data.equals(element)) {
+                ret = temp;
+                break;
+            }
+        }
+
+        this.shouldStart = shouldStart;
+        this.current = currPos;
+
+        return ret;
+    }
+
+    public Node<T> searchAndRemoveNode(T element) {
+        Node<T> currPos = current;
+        boolean shouldStart = this.shouldStart;
+        resetLoc();
+
+        Node<T> ret = null;
+        for(int i = 0;i < size;i++) {
+            Node<T> temp = peekNextNode();
+            if(temp.data.equals(element)) {
+                ret = temp;
+                break;
+            }
+        }
+
+        if(ret != null) {
+            if(ret == head) {
+                head.next.previous = tail;
+                tail.next = head.next;
+                head = head.next;
+                size--;
+            }
+
+            if(ret == tail) {
+                tail.previous.next = head;
+                head.previous = tail.previous;
+                tail = tail.previous;
+                size--;
+            }
+
+            ret.previous.next = ret.next;
+            ret.next.previous = ret.previous;
+            size--;
+        }
+
+        this.shouldStart = shouldStart;
+        this.current = currPos;
+
+        return ret;
+    }
+
+    public boolean isPresent(T element) {
+        Node<T> currPos = current;
+        boolean shouldStart = this.shouldStart;
+        resetLoc();
+
+        for(int i = 0;i < size;i++) {
+            Node<T> temp = peekNextNode();
+            if(temp.data.equals(element)) {
+                return true;
+            }
+        }
+
+        this.shouldStart = shouldStart;
+        this.current = currPos;
+
+        return false;
+    }
+
     public void display() {
 
         Node<T> temp = head;
 
         System.out.print("|| ");
         if(size > 0) {
-            System.out.print(temp.data + " || ");
+            System.out.print(temp.data.toString() + " || ");
             temp = temp.next;
         }
         else {
@@ -198,7 +410,7 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         }
 
         while(temp != head) {
-            System.out.print(temp.data + " || ");
+            System.out.print(temp.data.toString() + " || ");
             temp = temp.next;
         }
         System.out.println();

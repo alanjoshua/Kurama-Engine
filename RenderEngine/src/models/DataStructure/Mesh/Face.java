@@ -17,6 +17,10 @@ public class Face {
 
     public int size() {return vertices.size();}
 
+    public void addVertex(Vertex v) {
+        vertices.add(v);
+    }
+
     public int get(int vertInd, int attribute) {
         return vertices.get(vertInd).vertAttributes.get(attribute);
     }

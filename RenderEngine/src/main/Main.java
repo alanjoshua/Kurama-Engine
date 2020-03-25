@@ -1,6 +1,10 @@
 package main;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
+
 import Math.Vector;
 import models.DataStructure.LinkedList.CircularDoublyLinkedList;
 import models.DataStructure.LinkedList.DoublyLinkedList;
@@ -16,27 +20,8 @@ public class Main {
 	}
 	
 	public void start() {
-
-		DoublyLinkedList<Integer> l = new CircularDoublyLinkedList<>();
-		l.pushHead(1);
-		l.pushTail(2);
-		l.pushTail(-1);
-		l.pushHead(-100);
-//		System.out.println(l.peek());
-		l.push(3,0);
-		l.display();
-		System.out.println();
-		l.resetLoc();
-		for(int i = 0;i < 10;i++) {
-			System.out.print(l.peekNext() + " || ");
-		}
-		System.out.println();
-		for(int i = 0;i < 10;i++) {
-			System.out.print(l.peekPrevious() + " || ");
-		}
-
-//		game = new Game();
-//		game.init();
-//		game.run();
+		game = new Game();
+		game.init();
+		game.run();
 	}
 }

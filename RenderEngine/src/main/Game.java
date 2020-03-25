@@ -104,12 +104,11 @@ public class Game {
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 //		mill.mesh.displayMeshInformation();
-//		mill.triangulate();
+		mill.triangulate();
 //		mill.mesh.displayMeshInformation();
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
-		grid.mesh.displayMeshInformation();
 
 		models.add(deer);
 		models.add(grid);
@@ -392,13 +391,13 @@ public class Game {
 //			g.fillRect(0, 0, display.getWidth(), display.getHeight());
 			g.setColor(Color.WHITE);
 
-			long endTime = 0;
-			long startTime = System.nanoTime();
+//			long endTime = 0;
+//			long startTime = System.nanoTime();
 
 			renderingEngine.render(models, g, cam);
 
-			endTime = System.nanoTime();
-			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
+//			endTime = System.nanoTime();
+//			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
 			
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));

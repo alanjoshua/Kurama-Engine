@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 import Math.Vector;
+import models.DataStructure.LinkedList.CircularDoublyLinkedList;
+import models.DataStructure.LinkedList.DoublyLinkedList;
+import models.DataStructure.LinkedList.Node;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Mesh;
 import models.DataStructure.Mesh.Vertex;
@@ -233,15 +236,147 @@ public class ModelBuilder {
 
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
+		performEarClipping(inMesh.faces.get(0),inMesh.getVertices());
+		return null;
+	}
+
+	public static List<Face> performEarClipping(Face currFace, List<Vector> vertList) {
+
+		List<Face> retFaces = new ArrayList<>();
+
+		CircularDoublyLinkedList<Vertex> verts = new CircularDoublyLinkedList<>(currFace.vertices);
+		CircularDoublyLinkedList<Vertex> earTips = new CircularDoublyLinkedList<>();
+		DoublyLinkedList<Vertex> convex = new DoublyLinkedList<>();
+		DoublyLinkedList<Vertex> reflex = new DoublyLinkedList<>();
+
+//		Construction of reflex and convex vertices lists
+		for(int i = 0;i < verts.getSize();i++) {
+			Node<Vertex> curr = verts.peekNextNode();
+			if(isVertexConvex(curr.previous.data,curr.data,curr.next.data,vertList)) {
+				convex.pushTail(curr.data);
+			}
+			else {
+				reflex.pushTail(curr.data);
+			}
+		}
+		verts.resetLoc();
+
+//		Construction of ears list
+		for(int i = 0;i < verts.getSize();i++) {
+			Node<Vertex> curr = verts.peekNextNode();
+			if(isEar(curr,reflex,vertList)) {
+				earTips.pushTail(curr.data);
+			}
+		}
+
+		earTips.resetLoc();
+		while(earTips.hasNext()) {
+
+//			Remove one ear from top of list and create a new triangular Face object
+			Node<Vertex> currNode = verts.searchAndRemoveNode(earTips.popHead());
+			Face newFace = new Face();
+			newFace.addVertex(currNode.previous.data);
+			newFace.addVertex(currNode.data);
+			newFace.addVertex(currNode.next.data);
+			retFaces.add(newFace);
+
+//			Node<Vertex> v0 = currNode;
+//			if(isVertexConvex(v0.previous.data,v0.data,v0.next.data,vertList)) {		//Logic to handle if v0 is a convex vertex
+//				if(isEar(v0,reflex,vertList)) {  // Logic to check if it is an ear or not
+//					earTips.pushHead(v0.data);
+//				}
+//			}
+//			else {
+//				if(isVertexConvex(v0.previous.data,v0.data,v0.next.data,vertList)) {
+//					reflex.pushTail(reflex.searchAndRemoveNode(v0.data).data);
+//				}
+//			}
+
+		}
 
 		return null;
 	}
 
-	public static List<Face> performEarClipping(Face currFace, List<Vector> vertices) {
-		LinkedList<Vertex> verts = new LinkedList<>(currFace.vertices);
-		verts.getFirst();
+	public static boolean isEar(Node<Vertex> curr, DoublyLinkedList<Vertex> reflex,List<Vector> vertList) {
+		Vertex v0 = curr.previous.data;
+		Vertex v1 = curr.data;
+		Vertex v2 = curr.next.data;
 
-		return null;
+		boolean isEar = true;
+		reflex.resetLoc();
+		for(int j = 0;j < reflex.getSize();j++) {
+			Vertex p = reflex.peekNext();
+			if(isPointInsideTriangle(v0,v1,v2,p,vertList)) {
+				isEar = false;
+				break;
+			}
+		}
+		return isEar;
+	}
+
+	public static boolean isVertexConvex(Vertex v0, Vertex v1, Vertex v2, List<Vector> vertList) {
+		Vector vert0 = vertList.get(v0.getAttribute(Vertex.POSITION));
+		Vector vert1 = vertList.get(v1.getAttribute(Vertex.POSITION));
+		Vector vert2 = vertList.get(v2.getAttribute(Vertex.POSITION));
+
+		float angle = (vert0.sub(vert1)).getAngleBetweenVectors(vert2.sub(vert1));
+		if (angle < 0) {
+			angle = 180 - angle;
+		}
+
+		if(angle <= 180) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	public static boolean isPointInsideTriangle(Vertex v00, Vertex v11, Vertex v22, Vertex pp,List<Vector> vertices) {
+		Vector v0 = vertices.get(v00.getAttribute(Vertex.POSITION));
+		Vector v1 = vertices.get(v11.getAttribute(Vertex.POSITION));
+		Vector v2 = vertices.get(v22.getAttribute(Vertex.POSITION));
+		Vector p = vertices.get(pp.getAttribute(Vertex.POSITION));
+
+		Vector e1 = v0.sub(v1);
+		Vector e2 = v2.sub(v1);
+
+		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
+		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
+		Vector p_ = proj1.add(proj2);
+
+		float pa = (v0.sub(p_)).getNorm();
+		float pb = (v1.sub(p_)).getNorm();
+		float pc = (v2.sub(p_)).getNorm();
+		float totalArea = e1.getNorm() * e2.getNorm() / 2.0f;
+
+		float alpha = pa * pb / (2.0f * totalArea);
+		float beta = pb * pc / (2.0f * totalArea);
+		float gamma = 1 - alpha - beta;
+
+		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
+
+	}
+
+	public static boolean isPointInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
+		Vector e1 = v0.sub(v1);
+		Vector e2 = v2.sub(v1);
+
+		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
+		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
+		Vector p_ = proj1.add(proj2);
+
+		float pa = (v0.sub(p_)).getNorm();
+		float pb = (v1.sub(p_)).getNorm();
+		float pc = (v2.sub(p_)).getNorm();
+		float totalArea = e1.getNorm() * e2.getNorm() / 2.0f;
+
+		float alpha = pa * pb / (2.0f * totalArea);
+		float beta = pb * pc / (2.0f * totalArea);
+		float gamma = 1 - alpha - beta;
+
+		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
+
 	}
 
 //	public static Mesh triangulate(Mesh mesh, boolean forceUseEarClipping) {
@@ -645,27 +780,6 @@ public class ModelBuilder {
 ////		return res;
 //
 //	}
-
-	public static boolean isPointInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
-		Vector e1 = v0.sub(v1);
-		Vector e2 = v2.sub(v1);
-
-		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
-		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
-		Vector p_ = proj1.add(proj2);
-
-		float pa = (v0.sub(p_)).getNorm();
-		float pb = (v1.sub(p_)).getNorm();
-		float pc = (v2.sub(p_)).getNorm();
-		float totalArea = e1.getNorm() * e2.getNorm() / 2.0f;
-
-		float alpha = pa * pb / (2.0f * totalArea);
-		float beta = pb * pc / (2.0f * totalArea);
-		float gamma = 1 - alpha - beta;
-
-		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
-
-	}
 
 	public static Model buildGrid(int w, int d) {
 

@@ -46,6 +46,10 @@ public class Vertex {
         }
     }
 
+    public int getAttribute(int key) {
+        return vertAttributes.get(key);
+    }
+
     public boolean isAttributePresent(int key) {
         try {
             vertAttributes.get(key);
@@ -67,6 +71,26 @@ public class Vertex {
             System.out.print(i+"="+vertAttributes.get(i)+" ");
         }
         System.out.println("]");
+    }
+
+    public String toString() {
+        String ret = "";
+        for(int i = 0;i<vertAttributes.size();i++) {
+            ret += vertAttributes.get(i);
+            if(i != vertAttributes.size() - 1) {
+                ret += "::";
+            }
+        }
+        return ret;
+    }
+
+    public boolean equals(Vertex v) {
+        if(v.vertAttributes.get(POSITION).equals(this.vertAttributes.get(POSITION))) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
 }

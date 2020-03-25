@@ -76,7 +76,7 @@ public class Model {
 	}
 
 	public void triangulate() {
-		mesh = ModelBuilder.triangulate(mesh,false);
+		ModelBuilder.triangulate(mesh,false);
 
 //		List<int[]> faces = (List<int[]>) triangulatedData.get(0);
 //		List<int[]> normalFaces = (List<int[]>) triangulatedData.get(2);
