@@ -2,14 +2,19 @@ package main;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferStrategy;
+import java.awt.image.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import GUI.Button;
 import Math.Quaternion;
 import Math.Vector;
+import Math.Utils;
 import inputs.Input;
+import models.DataStructure.Mesh.Face;
+import models.DataStructure.Mesh.Vertex;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -17,6 +22,8 @@ import rendering.Camera;
 import rendering.RenderingEngine;
 import rendering.RenderingEngine.RenderPipeline;
 import rendering.RenderingEngine.ProjectionMode;
+
+import javax.imageio.ImageIO;
 
 public class Game {
 
@@ -43,6 +50,8 @@ public class Game {
 	protected Button WINDOWED;
 
 	protected RenderingEngine renderingEngine;
+	public BufferedImage frameBuffer;
+	public int[] frameBufferPixels;
 	
 	public Game(int width, int height) {
 		display = new Display(width, height, this);
@@ -68,6 +77,8 @@ public class Game {
 		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
 				display.getWidth(), display.getHeight());
 
+		renderingEngine.resetBuffers();
+		resetBuffers();
 		initModels();
 		initPauseScreen();
 
@@ -77,6 +88,15 @@ public class Game {
 		cam.updateValues();
 		cam.lookAtModel(models.get(0));
 
+	}
+
+	public void resetBuffers() {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+		frameBuffer = gc.createCompatibleImage(cam.getImageWidth(), cam.getImageHeight(),BufferedImage.TYPE_INT_ARGB);
+		frameBuffer.setAccelerationPriority(1);
+
+//		frameBufferPixels = ((DataBufferInt)frameBuffer.getRaster().getDataBuffer()).getData();
 	}
 
 	public void initModels() {
@@ -102,8 +122,8 @@ public class Game {
 		pot.setTickObj(tempRot);
 
 		models.add(deer);
-		models.add(grid);
-		models.add(mill);
+//		models.add(grid);
+//		models.add(mill);
 //		models.add(pot);
 
 	}
@@ -369,6 +389,10 @@ public class Game {
 		do {
 			Graphics2D g = (Graphics2D) bs.getDrawGraphics();
 
+			Graphics2D temp = frameBuffer.createGraphics();
+			temp.clearRect(0,0,cam.getImageWidth(),cam.getImageHeight());
+			temp.dispose();
+
 			g.setRenderingHint(
 					RenderingHints.KEY_TEXT_ANTIALIASING,
 					RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
@@ -380,18 +404,17 @@ public class Game {
 
 			g.clearRect(0, 0,display.getWidth(), display.getHeight());
 			g.setBackground(Color.BLACK);
-//			g.fillRect(0, 0, display.getWidth(), display.getHeight());
 			g.setColor(Color.WHITE);
 
 //			long endTime = 0;
 //			long startTime = System.nanoTime();
 
 			renderingEngine.render(models, g,cam);
-//			renderingEngine.render2(models,g);
+//			renderingEngine.render2(models,frameBuffer);
 
 //			endTime = System.nanoTime();
 //			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
-			
+
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
@@ -406,11 +429,20 @@ public class Game {
 					b.render(g);
 				}
 			}
-
+//			g.drawImage(frameBuffer,cam.getImageWidth(),cam.getImageHeight(),null);
 			g.dispose();
 
 		} while (bs.contentsLost());
 		bs.show();
+//		try {
+//			if(frameBuffer!=null) {
+//				ImageIO.write(frameBuffer, "jpg", new File("temp.jpg"));
+//				System.out.println("done");
+//				System.exit(0);
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	public List<Model> getModels() {

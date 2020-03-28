@@ -17,7 +17,7 @@ public class Utils {
 	}
 	
 	public static float edge(Vector v1, Vector v2, Vector p) {
-		return (p.get(0) - v1.get(0)) * (v2.get(1) - v1.get(1)) - (p.get(0) - v1.get(0)) * (v2.get(0) - v1.get(0));
+		return (p.get(0) - v1.get(0)) * (v2.get(1) - v1.get(1)) - (p.get(1) - v1.get(1)) * (v2.get(0) - v1.get(0));
 	}
 
 	public static boolean isEar(Vertex v0, Vertex v1, Vertex v2, DoublyLinkedList<Vertex> reflex, List<Vector> vertList) {
