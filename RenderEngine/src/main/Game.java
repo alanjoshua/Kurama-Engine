@@ -88,7 +88,7 @@ public class Game {
 	}
 
 	public void initModels() {
-		Tick tQuat = (m -> {
+		Tick tempRot = (m -> {
 			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50*speedConstant);
 			Quaternion newQ = rot.multiply(m.getOrientation());
 			m.setOrientation(newQ);
@@ -97,19 +97,22 @@ public class Game {
 		Model deer = ModelBuilder.buildModelFromFile("deer.obj");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-//		deer.triangulate();
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-		mill.triangulate();
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
+		Model pot = ModelBuilder.buildModelFromFile("TeapotHex.obj");
+		pot.setPos(new Vector(new float[]{0,10,0}));
+		pot.setTickObj(tempRot);
+
 		models.add(deer);
 		models.add(grid);
-		models.add(mill);
+//		models.add(mill);
+		models.add(pot);
 
 	}
 

@@ -1,5 +1,6 @@
 package models;
 
+import java.awt.font.LineMetrics;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -234,6 +235,37 @@ public class ModelBuilder {
 		return res;
 	}
 
+//	public static Mesh cleanMesh(Mesh inMesh) {
+//		Mesh retMesh = new Mesh(inMesh.vertAttributes);
+//
+//		for(int i = 0;i < inMesh.faces.size();i++) {
+//			retMesh.addFace(cleanFace(inMesh.faces.get(i)));
+//		}
+//
+//		return retMesh;
+//	}
+//
+//	public static Face cleanFace(Face inFace) {
+//		Face retFace = new Face();
+//		Vertex curr = null;
+//		Vertex prev = null;
+//		for(int i = 0;i < inFace.vertices.size();i++) {
+//			curr = inFace.getVertex(i);
+//
+//			if(i > 0) {
+//				if (!prev.equals(curr)) {
+//					retFace.addVertex(curr);
+//				}
+//			}
+//			else {
+//				retFace.addVertex(curr);
+//			}
+//			prev = curr;
+//		}
+//
+//		return retFace;
+//	}
+
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
 		for(Face f: inMesh.faces) {
@@ -313,7 +345,9 @@ public class ModelBuilder {
 			}
 			else {
 //			Remove one ear from top of list and create a new triangular Face object
-				Node<Vertex> currNode = verts.searchAndRemoveNode(earTips.popHead());
+				Vertex poppedEar = earTips.popHead();
+				Node<Vertex> currNode = verts.searchAndRemoveNode(poppedEar);
+
 				Face newFace = new Face();
 				newFace.addVertex(currNode.previous.data);
 				newFace.addVertex(currNode.data);
@@ -330,13 +364,13 @@ public class ModelBuilder {
 						}
 					}
 				} else {
-					if (earTips.isPresent(v0.data)) {
-						if (!isEar(v0.previous.data, v0.data, currNode.data, reflex, vertList)) {
-							earTips.searchAndRemoveNode(v0.data);
-						}
-					}
 					if (isEar(v0.previous.data, v0.data, currNode.data, reflex, vertList)) {
-						earTips.pushHead(v0.data);
+						if(!earTips.isPresent(v0.data)) {
+							earTips.pushHead(v0.data);
+						}
+						else {
+							// Do nothing since its already present
+						}
 					}
 				}
 
@@ -350,13 +384,13 @@ public class ModelBuilder {
 						}
 					}
 				} else {
-					if (earTips.isPresent(v2.data)) {
-						if (!isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
-							earTips.searchAndRemoveNode(v2.data);
-						}
-					}
 					if (isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
-						earTips.pushHead(v2.data);
+						if(!earTips.isPresent(v2.data)) {
+							earTips.pushHead(v2.data);
+						}
+						else {
+							// Do nothing since its already present
+						}
 					}
 				}
 			}

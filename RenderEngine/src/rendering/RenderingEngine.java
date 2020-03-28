@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Math.Matrix;
+import Math.Quaternion;
 import Math.Vector;
 import main.Game;
 import models.DataStructure.Mesh.Face;
@@ -34,12 +35,9 @@ public class RenderingEngine {
 	}
 
 	public void render(List<Model> models, Graphics2D g, Camera cam) {
-//		System.out.println("inside");
-//		Matrix projectedMatrix;
-//		Matrix camSpace;
-////		List<Boolean> isVisible = new ArrayList<>();
-//		boolean[] isVisible = new boolean[100];
-//		List<Vector> projectedVectors;
+
+		Matrix worldToCam = cam.getWorldToCam();
+		Quaternion camInverseQuat = cam.getOrientation().getInverse();
 
 		for (Model m : models) {
 
@@ -67,8 +65,8 @@ public class RenderingEngine {
 					transformedV = m.getTranformedVertices();
 				}
 
-				Vector[] camSpaceV = cam.getOrientation().getInverse().rotatePoints(transformedV);
-				Vector pos_ = cam.getOrientation().getInverse().rotatePoint(cam.getPos());
+				Vector[] camSpaceV = camInverseQuat.rotatePoints(transformedV);
+				Vector pos_ = camInverseQuat.rotatePoint(cam.getPos());
 
 				for (int i = 0; i < camSpaceV.length; i++) {
 					camSpaceV[i] = camSpaceV[i].sub(pos_);
@@ -85,11 +83,9 @@ public class RenderingEngine {
 				} else {
 					transformedV = m.getTranformedVertices();
 				}
-//				long endTime = 0;
-//				long startTime = System.nanoTime();
-				camSpace = cam.getWorldToCam().matMul(transformedV);
-//				endTime = System.nanoTime();
-//				System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");
+
+				camSpace = worldToCam.matMul(transformedV);
+
 			}
 
 //			Project model to the screen according to projection mode

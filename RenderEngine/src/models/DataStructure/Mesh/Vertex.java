@@ -85,12 +85,18 @@ public class Vertex {
     }
 
     public boolean equals(Vertex v) {
-        if(v.vertAttributes.get(POSITION).equals(this.vertAttributes.get(POSITION))) {
-            return true;
-        }
-        else {
+        if(vertAttributes.size() != v.vertAttributes.size()) {
             return false;
         }
+
+        boolean isEquals = true;
+        for(int i = 0;i < vertAttributes.size();i++) {
+            if(!this.vertAttributes.get(i).equals(v.vertAttributes.get(i))) {
+                isEquals = false;
+                break;
+            }
+        }
+        return isEquals;
     }
 
 }

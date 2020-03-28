@@ -18,8 +18,16 @@ public class Mesh {
         this.vertAttributes = vertAttributes;
     }
 
+    public Mesh(List<List<Vector>> vertAttributes) {
+        faces = new ArrayList<>(3);
+    }
+
     public Vector getAttribute(int faceIndex, int vertIndex, int attributeIndex) {
         return vertAttributes.get(attributeIndex).get(faces.get(faceIndex).vertices.get(vertIndex).vertAttributes.get(attributeIndex));
+    }
+
+    public void addFace(Face f) {
+        this.faces.add(f);
     }
 
     public List<Vector> getVertices() {

@@ -356,14 +356,12 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
                 head.next.previous = tail;
                 tail.next = head.next;
                 head = head.next;
-                size--;
             }
 
-            if(ret == tail) {
+            else if(ret == tail) {
                 tail.previous.next = head;
                 head.previous = tail.previous;
                 tail = tail.previous;
-                size--;
             }
 
             ret.previous.next = ret.next;

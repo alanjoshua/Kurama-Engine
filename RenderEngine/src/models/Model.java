@@ -75,6 +75,10 @@ public class Model {
 		return transformationMatrix;
 	}
 
+	public void displayMeshInformation() {
+		mesh.displayMeshInformation();
+	}
+
 	public void triangulate() {
 		this.mesh = ModelBuilder.triangulate(mesh,false);
 
