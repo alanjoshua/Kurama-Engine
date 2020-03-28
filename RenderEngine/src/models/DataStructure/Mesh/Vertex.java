@@ -1,9 +1,6 @@
 package models.DataStructure.Mesh;
 
-import Math.Vector;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class Vertex {
@@ -35,15 +32,12 @@ public class Vertex {
     }
 
     public void setAttribute(int val, int key) {
-        if(key < vertAttributes.size()) {
-            vertAttributes.set(key,val);
-        }
-        else {
-            for(int i = vertAttributes.size();i < key+1;i++) {
-                vertAttributes.add(i,null);
+        if (key >= vertAttributes.size()) {
+            for (int i = vertAttributes.size(); i < key + 1; i++) {
+                vertAttributes.add(i, null);
             }
-            vertAttributes.set(key, val);
         }
+        vertAttributes.set(key,val);
     }
 
     public int getAttribute(int key) {
@@ -53,12 +47,7 @@ public class Vertex {
     public boolean isAttributePresent(int key) {
         try {
             vertAttributes.get(key);
-            if(vertAttributes.get(key) != null) {
-                return true;
-            }
-            else {
-                return false;
-            }
+            return vertAttributes.get(key) != null;
         }
         catch (Exception e){
             return false;

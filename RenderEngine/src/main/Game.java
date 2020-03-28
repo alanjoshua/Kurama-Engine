@@ -2,17 +2,9 @@ package main;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.awt.geom.*;
 import java.awt.image.BufferStrategy;
-import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
-import java.lang.instrument.UnmodifiableClassException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarFile;
 
 import GUI.Button;
 import Math.Quaternion;

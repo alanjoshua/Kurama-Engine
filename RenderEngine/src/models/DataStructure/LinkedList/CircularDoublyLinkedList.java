@@ -21,7 +21,7 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         resetLoc();
     }
 
-    public CircularDoublyLinkedList(List list) {
+    public CircularDoublyLinkedList(List<T> list) {
         super(list);
     }
 
@@ -295,8 +295,7 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
 
         if(temp == head) {
             if(head == null) {
-                Node<T> newNode = new Node(data);
-                head = newNode;
+                head = (Node<T>) new Node(data);
                 tail = head;
                 head.next = tail;
                 head.previous = tail;

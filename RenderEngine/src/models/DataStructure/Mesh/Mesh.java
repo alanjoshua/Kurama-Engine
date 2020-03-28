@@ -108,10 +108,7 @@ public class Mesh {
     public boolean isAttributePresent(int key) {
         try {
             vertAttributes.get(key);
-            if(vertAttributes == null) {
-                return false;
-            }
-            return true;
+            return vertAttributes != null;
         }
         catch (Exception e){
             return false;

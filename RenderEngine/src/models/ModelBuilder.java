@@ -1,6 +1,5 @@
 package models;
 
-import java.awt.font.LineMetrics;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -217,9 +216,9 @@ public class ModelBuilder {
 				}
 
 				List<List<Vector>> vertAttributes = new ArrayList<>(3);
-				vertAttributes.add(Mesh.POSITION,new ArrayList<Vector>(Arrays.asList(vertArr)));
-				vertAttributes.add(Mesh.TEXTURE, new ArrayList<Vector>(Arrays.asList(vtArray)));
-				vertAttributes.add(Mesh.NORMAL, new ArrayList<Vector>(Arrays.asList(vnArray)));
+				vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
+				vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
+				vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
 				Mesh resMesh = new Mesh(facesListObj,vertAttributes);
 				resMesh.trimEverything();
@@ -423,12 +422,7 @@ public class ModelBuilder {
 			angle = 180 - angle;
 		}
 
-		if(angle <= 180) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return angle <= 180;
 	}
 
 	public static boolean isPointInsideTriangle(Vertex v00, Vertex v11, Vertex v22, Vertex pp,List<Vector> vertices) {
@@ -906,19 +900,17 @@ public class ModelBuilder {
 		Vector[] vertices = new Vector[verts.length * verts[0].length];
 
 		for (int i = 0; i < verts.length; i++) {
-			for (int j = 0; j < verts[i].length; j++) {
-				vertices[i * w + j] = verts[i][j];
-			}
+			System.arraycopy(verts[i], 0, vertices, i * w + 0, verts[i].length);
 		}
 
 		List<Face> facesListObj = new ArrayList<>(cons.size());
 		List<Vertex> tempVertList;
 		Mesh resMesh;
 
-		for(int i = 0;i < cons.size();i++) {
-			tempVertList = new ArrayList<>(cons.get(i).length);
-			for(int j = 0;j < cons.get(i).length;j++) {
-				tempVertList.add(new Vertex(cons.get(i)[j]));
+		for (int[] con : cons) {
+			tempVertList = new ArrayList<>(con.length);
+			for (int j = 0; j < con.length; j++) {
+				tempVertList.add(new Vertex(con[j]));
 			}
 			facesListObj.add(new Face(tempVertList));
 		}

@@ -612,9 +612,7 @@ public class Matrix {
 
 	public Vector getRow(int ind) {
 		float[] res = new float[getCols()];
-		for(int i = 0;i < getCols();i++) {
-			res[i] = data[ind][i];
-		}
+		if (getCols() >= 0) System.arraycopy(data[ind], 0, res, 0, getCols());
 		return new Vector(res);
 	}
 
@@ -982,6 +980,7 @@ public class Matrix {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		res = new Matrix(dat);
 		return res;
 	}
 

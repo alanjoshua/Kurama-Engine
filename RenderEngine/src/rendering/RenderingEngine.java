@@ -59,11 +59,9 @@ public class RenderingEngine {
 
 					m.setTransformedVertices(new Matrix(Vector.addDimensionToVec(temp, 1)));
 					m.setChanged(false);
-					transformedV = m.getTranformedVertices();
 
-				} else {
-					transformedV = m.getTranformedVertices();
 				}
+				transformedV = m.getTranformedVertices();
 
 				Vector[] camSpaceV = camInverseQuat.rotatePoints(transformedV);
 				Vector pos_ = camInverseQuat.rotatePoint(cam.getPos());

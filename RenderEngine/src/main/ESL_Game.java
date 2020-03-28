@@ -1,6 +1,5 @@
 package main;
 
-import GUI.Button;
 import inputs.Input;
 import models.Model;
 import models.ModelBuilder;
