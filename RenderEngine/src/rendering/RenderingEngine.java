@@ -6,11 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Math.Matrix;
+import Math.Utils;
 import Math.Quaternion;
 import Math.Vector;
 import main.Game;
+import models.DataStructure.LinkedList.CircularDoublyLinkedList;
+import models.DataStructure.LinkedList.Node;
 import models.DataStructure.Mesh.Face;
+import models.DataStructure.Mesh.Vertex;
 import models.Model;
+import models.ModelBuilder;
 
 public class RenderingEngine {
 
@@ -291,7 +296,179 @@ public class RenderingEngine {
 	}
 
 	public void render2(List<Model> models, Graphics2D g) {
-		
+
+		Matrix worldToCam = game.getCamera().getWorldToCam();
+		Quaternion camInverseQuat = game.getCamera().getOrientation().getInverse();
+		Color[][] frameBuffer = new Color[game.getCamera().getImageWidth()][game.getCamera().getImageHeight()];
+		float[][] depthBuffer = new float[game.getCamera().getImageWidth()][game.getCamera().getImageHeight()];
+
+//		Initialize the depth buffer
+		for(int i = 0;i < depthBuffer.length;i++) {
+			for(int j = 0;j < depthBuffer[0].length;j++) {
+				depthBuffer[i][j] = Float.POSITIVE_INFINITY;
+			}
+		}
+
+		for (Model m : models) {
+
+			List<Vector> projectedVectors = getRasterizedVectors(m,worldToCam,camInverseQuat);
+
+			for(Face f: m.mesh.faces) {
+
+//				Calculate the bounding box of each polygon
+				List<Vector> bounds = Utils.getBoundingBox(f,projectedVectors,game);
+				int xMin = (int)bounds.get(0).get(0);
+				int yMin = (int)bounds.get(0).get(1);
+				int xMax = (int)bounds.get(1).get(0);
+				int yMax = (int)bounds.get(1).get(1);
+
+				float area = 0;
+
+//				// Logic to calculate area when polygon is a triangle (different algorithm for n-gons)
+				if(f.vertices.size() == 3) {
+					Vector v0 = projectedVectors.get(f.getVertex(0).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);
+					Vector v1 = projectedVectors.get(f.getVertex(1).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);
+					Vector v2 = projectedVectors.get(f.getVertex(2).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);
+					area += Utils.edge(v0,v1,v2);
+				}
+
+				for(int i = xMin; i <= xMax;i++) {
+					for(int j = yMin;j <= yMax;j++) {
+
+//						Calculate lambda values
+						Vector p = new Vector(new float[]{i+0.5f,j+0.5f});
+						float[] lambda = new float[f.vertices.size()];
+
+//						Calculating lambda values for a triangle
+						if(f.vertices.size() == 3) {
+							Vector v0 = projectedVectors.get(f.getVertex(0).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+							Vector v1 = projectedVectors.get(f.getVertex(1).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+							Vector v2 = projectedVectors.get(f.getVertex(2).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+
+							lambda[0] = Utils.edge(v1,v2,p) / area;
+							lambda[1] = Utils.edge(v2,v0,p) / area;
+							lambda[2] = Utils.edge(v0,v1,p) / area;
+						}
+						else {   //	Calculating lambda values for n-gons (algorithm from the paper "Generalized Barycentric Coordinates on Irregular Polygons")
+
+							for(int t = 0;t < lambda.length;t++) {
+
+								int prev = (t + lambda.length - 1) % lambda.length;
+								int next = (t + 1) % lambda.length;
+								Vector qt = projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+								Vector qNext = projectedVectors.get(f.getVertex(next).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+								Vector qPrev = projectedVectors.get(f.getVertex(prev).getAttribute(Vertex.POSITION)).removeDimensionFromVec(2);;
+
+								lambda[t] = (float) (Utils.cotangent(p,qt,qPrev) + Utils.cotangent(p,qt,qNext) / Math.pow(p.sub(qt).getNorm(),2));
+								area += lambda[t];
+							}
+
+							// Normalize lambda values
+							for(int t = 0;t < lambda.length;t++) {
+								lambda[t] /= area;
+							}
+
+						}
+
+//						Calculate z using perspective projection corrected interpolation
+						float z = 0;
+						for(int t = 0; t < lambda.length;t++) {
+							float z_ = projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION)).get(2);
+							z += (1.0f/z) * lambda[t];
+						}
+						z = 1f/z;
+
+//							Update depth buffer
+						if(z < depthBuffer[i][j]) {
+							depthBuffer[i][j] = z;
+							frameBuffer[i][j] = Color.WHITE;
+						}
+
+
+					}
+				}
+//				End of nested for loop
+
+			}
+//			End of polygon loop
+
+		}
+//		End of models list loop
+		//	Render to screen
+		for(int i = 0;i < frameBuffer.length;i++) {
+			for(int j = 0;j < frameBuffer[0].length;j++) {
+				g.setColor(frameBuffer[i][j]);
+				g.drawLine(i,j,i,j);
+			}
+		}
+	}
+
+	public List<Vector> getRasterizedVectors(Model m, Matrix worldToCam, Quaternion camInverseQuat) {
+
+		List<Vector> projectedVectors = null;
+		Matrix camSpace = null;
+
+//			Transform and convert 3D points to camera space according to rendering mode
+		if (renderPipeline == RenderPipeline.Quat) {
+			Matrix transformedV;
+
+			if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
+				Vector[] temp = (m.getOrientation()
+						.rotatePoints((new Matrix(m.mesh.getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+
+				for (int i = 0; i < temp.length; i++) {
+					temp[i] = temp[i].add(m.getPos());
+				}
+
+				m.setTransformedVertices(new Matrix(Vector.addDimensionToVec(temp, 1)));
+				m.setChanged(false);
+
+			}
+			transformedV = m.getTranformedVertices();
+
+			Vector[] camSpaceV = camInverseQuat.rotatePoints(transformedV);
+			Vector pos_ = camInverseQuat.rotatePoint(game.getCamera().getPos());
+
+			for (int i = 0; i < camSpaceV.length; i++) {
+				camSpaceV[i] = camSpaceV[i].sub(pos_);
+			}
+			camSpace = new Matrix(Vector.addDimensionToVec(camSpaceV, 1));
+		} else if (renderPipeline == RenderPipeline.Matrix) {
+			Matrix transformedV = null;
+			if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
+				transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
+				m.setChanged(false);
+				m.setTransformedVertices(transformedV);
+			} else {
+				transformedV = m.getTranformedVertices();
+			}
+
+			camSpace = worldToCam.matMul(transformedV);
+
+		}
+
+//			Project model to the screen according to projection mode
+		if (projectionMode == ProjectionMode.PERSPECTIVE) {
+			projectedVectors = (game.getCamera().getPerspectiveProjectionMatrix().matMul(camSpace)).convertToColumnVectorList();
+		} else if (projectionMode == ProjectionMode.ORTHO) {
+			projectedVectors = (game.getCamera().getOrthographicProjectionMatrix().matMul(camSpace)).convertToColumnVectorList();
+		}
+
+//			Normalise and rasterize projected Vectors
+		for (int i = 0; i < projectedVectors.size(); i++) {
+
+			Vector v = projectedVectors.get(i);
+			float x = v.get(0);
+			float y = v.get(1);
+			float z = v.get(2);
+			float w = v.get(3);
+			float[] temp = new float[]{x / w, y / w, z / w};
+
+			projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * game.getCamera().getImageWidth()),
+					(int) ((1 - (temp[1] + 1) * 0.5) * game.getCamera().getImageHeight()), temp[2]}));
+		}
+
+		return projectedVectors;
 	}
 
 	public ProjectionMode getProjectionMode() {

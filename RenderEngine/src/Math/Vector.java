@@ -1,5 +1,6 @@
 package Math;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Vector {
@@ -14,6 +15,14 @@ public class Vector {
 	public Vector(float[] data) {
 		this.data = data;
 		this.numberOfDimensions = data.length;
+	}
+
+	public Vector(List<Float> data) {
+		this.data = new float[data.size()];
+		for(int i = 0;i < data.size();i++) {
+			this.data[i] = data.get(i);
+		}
+		this.numberOfDimensions = this.data.length;
 	}
 
 	public Vector(int size) {
@@ -123,18 +132,15 @@ public class Vector {
 	public Vector sub(Vector v) {
 		float[] res = null;
 
-		try {
-			if (getNumberOfDimensions() == v.getNumberOfDimensions()) {
-				res = new float[getNumberOfDimensions()];
-				for (int i = 0; i < v.getNumberOfDimensions(); i++) {
-					res[i] = this.getData()[i] - v.getData()[i];
-				}
-			} else {
-				throw new Exception("The vectors dont match in size");
+		if (getNumberOfDimensions() == v.getNumberOfDimensions()) {
+			res = new float[getNumberOfDimensions()];
+			for (int i = 0; i < v.getNumberOfDimensions(); i++) {
+				res[i] = this.getData()[i] - v.getData()[i];
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		} else {
+			throw new IllegalArgumentException("The vectors dont match in size: Vec 1 is of size "+this.getNumberOfDimensions()+" whereas input vector is of size "+v.getNumberOfDimensions());
 		}
+
 		return new Vector(res);
 	}
 
@@ -295,14 +301,33 @@ public class Vector {
 	}
 
 	public Vector cross(Vector v) {
+		Vector u = this;
+		if(u.getNumberOfDimensions() != v.getNumberOfDimensions()) {
+			throw new IllegalArgumentException("Vectors do not match in size");
+		}
+
+		if(u.getNumberOfDimensions() == 2) {
+			u = u.addDimensionToVec(0);
+			v = v.addDimensionToVec(1);
+		}
+
 		float[] res = new float[3];
-		res[0] = (this.get(1) * v.get(2)) - (this.get(2) * v.get(1));
-		res[1] = -((this.get(0) * v.get(2)) - (this.get(2) * v.get(0)));
-		res[2] = (this.get(0) * v.get(1)) - (this.get(1) * v.get(0));
+		res[0] = (u.get(1) * v.get(2)) - (u.get(2) * v.get(1));
+		res[1] = -((u.get(0) * v.get(2)) - (u.get(2) * v.get(0)));
+		res[2] = (u.get(0) * v.get(1)) - (u.get(1) * v.get(0));
 		return new Vector(res);
 	}
 
 	public static Vector cross(Vector u, Vector v) {
+		if(u.getNumberOfDimensions() != v.getNumberOfDimensions()) {
+			throw new IllegalArgumentException("Vectors do not match in size");
+		}
+
+		if(u.getNumberOfDimensions() == 2) {
+			u = u.addDimensionToVec(0);
+			v = v.addDimensionToVec(1);
+		}
+
 		float[] res = new float[3];
 		res[0] = (u.get(1) * v.get(2)) - (u.get(2) * v.get(1));
 		res[1] = -((u.get(0) * v.get(2)) - (u.get(2) * v.get(0)));
@@ -403,6 +428,18 @@ public class Vector {
 		}
 		tempDat[this.getNumberOfDimensions()] = val;
 
+		return new Vector(tempDat);
+	}
+
+	public Vector removeDimensionFromVec(int ind) {
+
+		List<Float> tempDat = new ArrayList<>();
+
+		for (int j = 0; j < this.getNumberOfDimensions(); j++) {
+			if(j != ind) {
+				tempDat.add(this.get(j));
+			}
+		}
 		return new Vector(tempDat);
 	}
 

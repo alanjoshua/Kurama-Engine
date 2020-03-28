@@ -103,8 +103,8 @@ public class Game {
 
 		models.add(deer);
 		models.add(grid);
-//		models.add(mill);
-		models.add(pot);
+		models.add(mill);
+//		models.add(pot);
 
 	}
 
@@ -386,7 +386,8 @@ public class Game {
 //			long endTime = 0;
 //			long startTime = System.nanoTime();
 
-			renderingEngine.render(models, g, cam);
+			renderingEngine.render(models, g,cam);
+//			renderingEngine.render2(models,g);
 
 //			endTime = System.nanoTime();
 //			System.out.println("Difference: " + (endTime - startTime) * 0.000000001 + "seconds");

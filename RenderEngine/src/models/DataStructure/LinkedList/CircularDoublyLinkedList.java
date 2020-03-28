@@ -112,6 +112,13 @@ public class CircularDoublyLinkedList<T> extends DoublyLinkedList<T> {
         shouldStart = true;
     }
 
+    public void setLoc(int index) {
+        resetLoc();
+        for(int i = 0;i<index;i++) {
+            peekNext();
+        }
+    }
+
     public T popHead() {
         if(head == null) {
             return null;
