@@ -7,6 +7,7 @@ import java.awt.image.renderable.RenderContext;
 import java.awt.image.renderable.RenderableImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import Math.Matrix;
 import Math.Utils;
@@ -166,6 +167,8 @@ public class RenderingEngine {
 
 	public void render2(List<Model> models, Graphics2D g) {
 
+		Random rand = new Random();
+		List<Vector> colors = new ArrayList<>();
 		Matrix worldToCam = game.getCamera().getWorldToCam();
 		Quaternion camInverseQuat = game.getCamera().getOrientation().getInverse();
 
@@ -188,6 +191,23 @@ public class RenderingEngine {
 			List<Vector> projectedVectors = getRasterizedVectors(m,worldToCam,camInverseQuat);
 			for(Face f: m.mesh.faces) {
 
+//				Temp code: sets a random color for every vertex
+				colors = new ArrayList<>(f.vertices.size());
+				for(int t = 0; t < f.vertices.size();t++) {
+//					float[] vals = new float[]{rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
+//					float[] vals = new float[]{1f,0f,0f};
+					Color c = Color.WHITE;
+					float[] vals = new float[]{c.getRed()/255,c.getGreen()/255,c.getBlue()/255};
+
+					colors.add(new Vector(vals));
+				}
+//				float[] c1 = new float[]{1,0,0,1};
+//				float[] c2 = new float[]{0,1,0,1};
+//				float[] c3 = new float[]{0,0,1,1};
+//				colors.add(new Vector(c1));
+//				colors.add(new Vector(c2));
+//				colors.add(new Vector(c3));
+
 //				Calculate the bounding box of each polygon
 				List<Vector> bounds = Utils.getBoundingBox(f,projectedVectors,game);
 				int xMin = (int)bounds.get(0).get(0);
@@ -206,61 +226,87 @@ public class RenderingEngine {
 					area += Utils.edge(v0,v1,v2);
 				}
 
-				for(int i = yMin;i <= yMax;i++) {
-					for(int j = xMin; j <= xMax;j++) {
+				if((xMax - xMin > 0) && (yMax - yMin >0)) {
+					for (int i = yMin; i <= yMax; i++) {
+						for (int j = xMin; j <= xMax; j++) {
 
 //						Calculate lambda values
-						Vector p = new Vector(new float[]{j+0.5f,i+0.5f,0});
-						float[] lambda = new float[f.vertices.size()];
+							Vector p = new Vector(new float[]{j + 0.5f, i + 0.5f, 0});
+							float[] lambda = new float[f.vertices.size()];
 
 //						Calculating lambda values for a triangle
-						if(f.vertices.size() == 3) {
-							lambda[0] = Utils.edge(v1,v2,p) / area;
-							lambda[1] = Utils.edge(v2,v0,p) / area;
-							lambda[2] = Utils.edge(v0,v1,p) / area;
-						}
-						else {   //	Calculating lambda values for n-gons (algorithm from the paper "Generalized Barycentric Coordinates on Irregular Polygons")
-							for(int t = 0;t < lambda.length;t++) {
+							if (f.vertices.size() == 3) {
+								lambda[0] = Utils.edge(v1, v2, p) / area;
+								lambda[1] = Utils.edge(v2, v0, p) / area;
+								lambda[2] = Utils.edge(v0, v1, p) / area;
+							} else if(f.vertices.size() > 3) {   //	Calculating lambda values for n-gons (algorithm from the paper "Generalized Barycentric Coordinates on Irregular Polygons")
 
-								int prev = (t + lambda.length - 1) % lambda.length;
-								int next = (t + 1) % lambda.length;
-								Vector qt = projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION));
-								Vector qNext = projectedVectors.get(f.getVertex(next).getAttribute(Vertex.POSITION));
-								Vector qPrev = projectedVectors.get(f.getVertex(prev).getAttribute(Vertex.POSITION));
+								for (int t = 0; t < lambda.length; t++) {
 
-								lambda[t] = (float) (Utils.cotangent(p,qt,qPrev) + Utils.cotangent(p,qt,qNext) / Math.pow(p.sub(qt).getNorm(),2));
-								area += lambda[t];
+									int prev = (t + lambda.length - 1) % lambda.length;
+									int next = (t + 1) % lambda.length;
+									Vector qt = projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION));
+									Vector qNext = projectedVectors.get(f.getVertex(next).getAttribute(Vertex.POSITION));
+									Vector qPrev = projectedVectors.get(f.getVertex(prev).getAttribute(Vertex.POSITION));
+
+									lambda[t] = (float) ((Utils.cotangent(p, qt, qPrev) + Utils.cotangent(p, qt, qNext)) / Math.pow(p.sub(qt).getNorm(), 2));
+									area += lambda[t];
+								}
+
+								// Normalize lambda values
+								for (int t = 0; t < lambda.length; t++) {
+									lambda[t] /= area;
+//									System.out.println(lambda[t]);
+								}
+
 							}
 
-							// Normalize lambda values
-							for(int t = 0;t < lambda.length;t++) {
-								lambda[t] /= area;
+							else {
+								throw new IllegalArgumentException("This method cannot yet render polygons of n < 3");
 							}
-
-						}
 
 //						Check whether point is inside polygon
-						boolean isOverlap = true;
-						for(float val: lambda) {
-							if(val < 0 || val > 1) {
-								isOverlap = false;
-								break;
+							boolean isOverlap = true;
+							for (float val : lambda) {
+								if (val < 0) {
+									isOverlap = false;
+									break;
+								}
 							}
-						}
 
-						if(isOverlap) {
+							if (isOverlap) {
 //							Calculate z using perspective projection corrected interpolation
-							float z = 0;
-							for (int t = 0; t < lambda.length; t++) {
-								float z_ = projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION)).get(2);
-								z += ((1.0f / -z_) * lambda[t]);
-							}
-							z = 1f / z;
+								float z = 0;
+								float tempR = 0,tempG = 0,tempB = 0;
+								Vector finColor = new Vector(new float[]{0,0,0});
+
+								for (int t = 0; t < lambda.length; t++) {
+									float z_ = 1.0f/projectedVectors.get(f.getVertex(t).getAttribute(Vertex.POSITION)).get(2);   // z is already reciprocated in getProjectedVectors()
+									z += ((z_) * lambda[t]);
+
+									Vector color = colors.get(t);
+									for(int k = 0;k < color.getNumberOfDimensions();k++) {
+										finColor.getData()[k] += (color.get(k) * z_) * lambda[t];
+									}
+
+								}
+
+								z = 1f / z;
+								for(int k = 0;k < finColor.getNumberOfDimensions();k++) {
+									finColor.getData()[k] *= (z + 255);
+								}
 
 //							Update depth buffer
-							if (z < depthBuffer[i][j] && z >=1) {
-								depthBuffer[i][j] = z;
-								frameBuffer[i][j] = Color.LIGHT_GRAY;
+								if (z < depthBuffer[i][j] && z >= 1) {
+									depthBuffer[i][j] = z;
+									Color c = null;
+									try {
+										c = new Color((int) finColor.get(0), (int) finColor.get(1), (int) finColor.get(2), 200);
+									}catch(Exception e) {
+										finColor.display();
+									}
+									frameBuffer[i][j] = c;
+								}
 							}
 						}
 					}
@@ -346,7 +392,7 @@ public class RenderingEngine {
 			float[] temp = new float[]{x / w, y / w, z / w};
 
 			projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * game.getCamera().getImageWidth()),
-					(int) ((1 - (temp[1] + 1) * 0.5) * game.getCamera().getImageHeight()),camSpace.getColumn(i).get(2)}));
+					(int) ((1 - (temp[1] + 1) * 0.5) * game.getCamera().getImageHeight()),-camSpace.getColumn(i).get(2)}));
 		}
 
 		return projectedVectors;

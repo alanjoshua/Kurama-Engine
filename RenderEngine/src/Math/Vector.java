@@ -308,7 +308,7 @@ public class Vector {
 
 		if(u.getNumberOfDimensions() == 2) {
 			u = u.addDimensionToVec(0);
-			v = v.addDimensionToVec(1);
+			v = v.addDimensionToVec(0);
 		}
 
 		float[] res = new float[3];

@@ -105,17 +105,19 @@ public class Utils {
 
 		for(Vertex v: f.vertices) {
 			Vector curr = projectedVectors.get(v.getAttribute(Vertex.POSITION));
-			if(curr.get(0) < bbMin.get(0)) {
-				bbMin.setDataElement(0,curr.get(0));
-			}
-			if(curr.get(1) < bbMin.get(1)) {
-				bbMin.setDataElement(1,curr.get(1));
-			}
-			if(curr.get(0) > bbMax.get(0)) {
-				bbMax.setDataElement(0,curr.get(0));
-			}
-			if(curr.get(1) > bbMax.get(1)) {
-				bbMax.setDataElement(1,curr.get(1));
+			if(curr.get(2) > 0) {
+				if (curr.get(0) < bbMin.get(0)) {
+					bbMin.setDataElement(0, curr.get(0));
+				}
+				if (curr.get(1) < bbMin.get(1)) {
+					bbMin.setDataElement(1, curr.get(1));
+				}
+				if (curr.get(0) > bbMax.get(0)) {
+					bbMax.setDataElement(0, curr.get(0));
+				}
+				if (curr.get(1) > bbMax.get(1)) {
+					bbMax.setDataElement(1, curr.get(1));
+				}
 			}
 		}
 

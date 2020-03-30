@@ -3,18 +3,13 @@ package main;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import GUI.Button;
 import Math.Quaternion;
 import Math.Vector;
-import Math.Utils;
 import inputs.Input;
-import models.DataStructure.Mesh.Face;
-import models.DataStructure.Mesh.Vertex;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -22,8 +17,6 @@ import rendering.Camera;
 import rendering.RenderingEngine;
 import rendering.RenderingEngine.RenderPipeline;
 import rendering.RenderingEngine.ProjectionMode;
-
-import javax.imageio.ImageIO;
 
 public class Game {
 
@@ -44,12 +37,14 @@ public class Game {
 	protected float speedMultiplier = 1;
 	protected float speedIncreaseMultiplier = 2;
 	protected float speedConstant;
+	protected int lookAtIndex = 0;
 
 	protected Button EXIT;
 	protected Button FULLSCREEN;
 	protected Button WINDOWED;
 
 	protected RenderingEngine renderingEngine;
+	protected List<Model> modelsOldRenderMethod;
 	
 	public Game(int width, int height) {
 		display = new Display(width, height, this);
@@ -71,8 +66,9 @@ public class Game {
 
 		pauseButtons = new ArrayList<>();
 		models = new ArrayList<>();
+		modelsOldRenderMethod = new ArrayList<>();
 
-		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 1f, 100,
+		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 100,
 				display.getWidth(), display.getHeight());
 
 		renderingEngine.resetBuffers();
@@ -83,7 +79,7 @@ public class Game {
 		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
-		cam.lookAtModel(models.get(1));
+		cam.lookAtModel(models.get(lookAtIndex));
 
 	}
 
@@ -108,12 +104,16 @@ public class Game {
 
 		Model pot = ModelBuilder.buildModelFromFile("TeapotHex.obj");
 		pot.setPos(new Vector(new float[]{0,10,0}));
+		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 		pot.setTickObj(tempRot);
+		pot.triangulate();
 
-		models.add(deer);
-//		models.add(grid);
-		models.add(mill);
-//		models.add(pot);
+//		models.add(deer);
+//		models.add(mill);
+		models.add(pot);
+
+		modelsOldRenderMethod.add(grid);
+//		modelsOldRenderMethod.add(pot);
 
 	}
 
@@ -257,6 +257,7 @@ public class Game {
 			display.enableCursor();
 
 		models.forEach(Model::tick);
+		modelsOldRenderMethod.forEach(Model::tick);
 
 		if(!isGameRunning) {
 			pauseButtons.forEach((b) -> b.tick(input.getPosition(),input.buttonDown(1)));
@@ -274,7 +275,7 @@ public class Game {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.lookAtModel(models.get(1));
+			cam.lookAtModel(models.get(lookAtIndex));
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
@@ -387,11 +388,14 @@ public class Game {
 			f = f.deriveFont(f.getSize() * display.getScalingRelativeToDPI());
 			g.setFont(f);
 
-			g.clearRect(0, 0,display.getWidth(), display.getHeight());
-			g.setBackground(Color.BLACK);
-			g.setColor(Color.WHITE);
+//			Color bg = new Color(100,100,100);
+			Color bg = new Color(10,10,10);
+			g.setColor(bg);
+			g.fillRect(0, 0,display.getWidth(), display.getHeight());
+			g.setBackground(bg);
 
-//			renderingEngine.render(models, g,cam);
+			g.setColor(Color.LIGHT_GRAY);
+			renderingEngine.render(modelsOldRenderMethod, g,cam);
 			renderingEngine.render2(models,g);
 
 			g.setColor(Color.white);
@@ -413,15 +417,6 @@ public class Game {
 
 		} while (bs.contentsLost());
 		bs.show();
-//		try {
-//			if(frameBuffer!=null) {
-//				ImageIO.write(frameBuffer, "JPEG", new File("C:\\Users\\temp.jpg"));
-//				System.out.println("done");
-//				System.exit(0);
-//			}
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 	}
 
 	public List<Model> getModels() {
