@@ -40,14 +40,12 @@ public class RenderingEngine {
 	private RenderPipeline renderPipeline = RenderPipeline.Quat;
 
 	public RenderingEngine(Game game) {
-		int black = Color.BLACK.getRGB();
-		int white = Color.WHITE.getRGB();
 		this.game = game;
 	}
 
 	public void resetBuffers() {
-		depthBuffer = new float[game.getCamera().getImageWidth()][game.getCamera().getImageHeight()];
-		frameBuffer = new Color[game.getCamera().getImageWidth()][game.getCamera().getImageHeight()];
+		depthBuffer = new float[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
+		frameBuffer = new Color[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
 	}
 
 	public void render(List<Model> models, Graphics2D g, Camera cam) {
@@ -166,27 +164,30 @@ public class RenderingEngine {
 		}
 	}
 
-	public void render2(List<Model> models, BufferedImage frameBuffer) {
+	public void render2(List<Model> models, Graphics2D g) {
 
 		Matrix worldToCam = game.getCamera().getWorldToCam();
 		Quaternion camInverseQuat = game.getCamera().getOrientation().getInverse();
 
-		float[][] depthBuffer = new float[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
-//		Color[][] frameBuffer = new Color[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
-
-//		Initialize the depth buffer
+//		reset the depth buffer
 		for(int i = 0;i < depthBuffer.length;i++) {
-			for(int j = 0;j < depthBuffer[0].length;j++) {
+			for(int j = 0;j < depthBuffer[i].length;j++) {
 				depthBuffer[i][j] = Float.POSITIVE_INFINITY;
+			}
+		}
+
+//		reset the Color buffer
+		for(int i = 0;i < frameBuffer.length;i++) {
+			for(int j = 0;j < frameBuffer[i].length;j++) {
+				frameBuffer[i][j] = null;
 			}
 		}
 
 		for (Model m : models) {
 
 			List<Vector> projectedVectors = getRasterizedVectors(m,worldToCam,camInverseQuat);
-
 			for(Face f: m.mesh.faces) {
-//				System.out.println("Inside face loop");
+
 //				Calculate the bounding box of each polygon
 				List<Vector> bounds = Utils.getBoundingBox(f,projectedVectors,game);
 				int xMin = (int)bounds.get(0).get(0);
@@ -194,41 +195,31 @@ public class RenderingEngine {
 				int xMax = (int)bounds.get(1).get(0);
 				int yMax = (int)bounds.get(1).get(1);
 
-//				System.out.println("MIN:: " + xMin + " : " + yMin);
-//				System.out.println("MAX::" + xMax + " : " + yMax);
-
-//				System.out.println("Finished calculating bounds");
 				float area = 0;
 
-//				// Logic to precalculate area and vertices when polygon is a triangle (different algorithm for n-gons)
+// 				Logic to precalculate area and vertices when polygon is a triangle (different algorithm for n-gons)
 				Vector v0 = null,v1 = null,v2 = null;
 				if(f.vertices.size() == 3) {
-//					System.out.println("precalculating traingle area and vertices");
 					v0 = projectedVectors.get(f.getVertex(0).getAttribute(Vertex.POSITION));
 					v1 = projectedVectors.get(f.getVertex(1).getAttribute(Vertex.POSITION));
 					v2 = projectedVectors.get(f.getVertex(2).getAttribute(Vertex.POSITION));
 					area += Utils.edge(v0,v1,v2);
 				}
-//				System.out.println("Finished precalculations for triangle");
 
-				for(int i = xMin; i <= xMax;i++) {
-					for(int j = yMin;j <= yMax;j++) {
-//						System.out.println("inside nested inner loop");
+				for(int i = yMin;i <= yMax;i++) {
+					for(int j = xMin; j <= xMax;j++) {
 
 //						Calculate lambda values
-						Vector p = new Vector(new float[]{i+0.5f,j+0.5f,0});
+						Vector p = new Vector(new float[]{j+0.5f,i+0.5f,0});
 						float[] lambda = new float[f.vertices.size()];
 
 //						Calculating lambda values for a triangle
 						if(f.vertices.size() == 3) {
-//							System.out.println("Calculating lambda for triangle");
 							lambda[0] = Utils.edge(v1,v2,p) / area;
 							lambda[1] = Utils.edge(v2,v0,p) / area;
 							lambda[2] = Utils.edge(v0,v1,p) / area;
-//							System.out.println("Finished calculating lambda for triangle");
 						}
 						else {   //	Calculating lambda values for n-gons (algorithm from the paper "Generalized Barycentric Coordinates on Irregular Polygons")
-//							System.out.println("Calculating lambda values for other n-gons");
 							for(int t = 0;t < lambda.length;t++) {
 
 								int prev = (t + lambda.length - 1) % lambda.length;
@@ -240,13 +231,11 @@ public class RenderingEngine {
 								lambda[t] = (float) (Utils.cotangent(p,qt,qPrev) + Utils.cotangent(p,qt,qNext) / Math.pow(p.sub(qt).getNorm(),2));
 								area += lambda[t];
 							}
-//							System.out.println("Finished calculating lambda values for n-gons ");
 
 							// Normalize lambda values
 							for(int t = 0;t < lambda.length;t++) {
 								lambda[t] /= area;
 							}
-//							System.out.println("Finished normalizing lambda values for n-gons");
 
 						}
 
@@ -260,7 +249,6 @@ public class RenderingEngine {
 						}
 
 						if(isOverlap) {
-//							System.out.println("Calculating z value");
 //							Calculate z using perspective projection corrected interpolation
 							float z = 0;
 							for (int t = 0; t < lambda.length; t++) {
@@ -268,40 +256,32 @@ public class RenderingEngine {
 								z += ((1.0f / -z_) * lambda[t]);
 							}
 							z = 1f / z;
-//						System.out.println("Finished calculating z value");
 
 //							Update depth buffer
-//							System.out.println(z);
-							if (z < depthBuffer[j][i] && z >=1) {
-								depthBuffer[j][i] = z;
-//								int ind = (j * game.getCamera().getImageWidth()) + i;
-								frameBuffer.setRGB(i,j,Color.LIGHT_GRAY.getRGB());
-//								pixels[ind] = Color.LIGHT_GRAY.getRGB();
+							if (z < depthBuffer[i][j] && z >=1) {
+								depthBuffer[i][j] = z;
+								frameBuffer[i][j] = Color.LIGHT_GRAY;
 							}
-//						System.out.println("Updated depth buffer");
 						}
 					}
 				}
 //				End of nested for loop
-
 			}
 //			End of polygon loop
-//			System.out.println("Finished looping through all faces for given model");
 		}
 //		End of models list loop
-//		System.out.println("Finished looping through all models");
 
 		//	Render to screen
-//		System.out.println("starting render");
-//		for(int i = 0;i < frameBuffer.length;i++) {
-//			for(int j = 0;j < frameBuffer[i].length;j++) {
-//				if(frameBuffer[i][j] != null) {
-//					g.setColor(frameBuffer[i][j]);
-//					g.drawLine(i, j, i, j);
-//				}
-//			}
-//		}
-//		System.out.println("Finished render loop");
+		for(int i = 0;i < frameBuffer.length;i++) {
+			for(int j = 0;j < frameBuffer[i].length;j++) {
+				if(frameBuffer[i][j] != null) {
+					g.setColor(frameBuffer[i][j]);
+					g.drawLine(j, i, j, i);
+				}
+			}
+		}
+//		End of render loop
+
 	}
 
 	public List<Vector> getRasterizedVectors(Model m, Matrix worldToCam, Quaternion camInverseQuat) {

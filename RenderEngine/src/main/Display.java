@@ -75,7 +75,6 @@ public class Display extends Canvas {
                     game.getCamera().setImageHeight(getHeight());
                     game.getCamera().setShouldUpdateValues(true);
                     game.renderingEngine.resetBuffers();
-                    game.resetBuffers();
                 } catch (Exception ex) {
                 }
             }
