@@ -269,22 +269,28 @@ public class ModelBuilder {
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
 		for(Face f: inMesh.faces) {
-			if(f.vertices.size() > 4 || forceEarClipping) {
-				newFaces.addAll(performEarClipping(f, inMesh.getVertices()));
-			}
-			else {
-				if(f.vertices.size() == 4) {
-					newFaces.addAll(performSimpleQuadTriangulation(f,inMesh.getVertices()));
-				}
-				else {
-					newFaces.add(f);
-				}
-			}
+			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
 		return new Mesh(newFaces,inMesh.vertAttributes);
 	}
 
-	public static List<Face> performSimpleQuadTriangulation(Face currFace,List<Vector> vertList) {
+	public static List<Face> triangulate(Face f, List<Vector> vertices,boolean forceEarClipping) {
+		if(f.vertices.size() > 4 || forceEarClipping) {
+			return performEarClipping(f, vertices);
+		}
+		else {
+			if(f.vertices.size() == 4) {
+				return performSimpleQuadTriangulation(f);
+			}
+			else {
+				List<Face> list = new ArrayList<>();
+				list.add(f);
+				return list;
+			}
+		}
+	}
+
+	public static List<Face> performSimpleQuadTriangulation(Face currFace) {
 		List<Face> retFaces = new ArrayList<>();
 
 		Face f1 = new Face();

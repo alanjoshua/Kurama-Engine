@@ -102,15 +102,16 @@ public class Game {
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = ModelBuilder.buildModelFromFile("TeapotHex.obj");
+		Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj");
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 		pot.setTickObj(tempRot);
-		pot.triangulate();
+//		pot.triangulate();
 
 //		models.add(deer);
 //		models.add(mill);
 		models.add(pot);
+//		models.add(grid);
 
 		modelsOldRenderMethod.add(grid);
 //		modelsOldRenderMethod.add(pot);
