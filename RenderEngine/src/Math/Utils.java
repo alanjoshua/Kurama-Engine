@@ -1,6 +1,7 @@
 package Math;
 
 import main.Game;
+import main.GameLWJGL;
 import models.DataStructure.LinkedList.DoublyLinkedList;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Vertex;
@@ -99,6 +100,44 @@ public class Utils {
 	}
 	
 	public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, Game game) {
+
+		Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+		Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+
+		for(Vertex v: f.vertices) {
+			Vector curr = projectedVectors.get(v.getAttribute(Vertex.POSITION));
+			if(curr.get(2) > 0) {
+				if (curr.get(0) < bbMin.get(0)) {
+					bbMin.setDataElement(0, curr.get(0));
+				}
+				if (curr.get(1) < bbMin.get(1)) {
+					bbMin.setDataElement(1, curr.get(1));
+				}
+				if (curr.get(0) > bbMax.get(0)) {
+					bbMax.setDataElement(0, curr.get(0));
+				}
+				if (curr.get(1) > bbMax.get(1)) {
+					bbMax.setDataElement(1, curr.get(1));
+				}
+			}
+		}
+
+		int xMin = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMin.get(0))));
+		int yMin = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMin.get(1))));
+		int xMax = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMax.get(0))));
+		int yMax = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMax.get(1))));
+
+		Vector min = new Vector(new float[]{xMin,yMin});
+		Vector max = new Vector(new float[]{xMax,yMax});
+		List<Vector> res = new ArrayList<>();
+		res.add(min);
+		res.add(max);
+
+		return res;
+
+	}
+
+	public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, GameLWJGL game) {
 
 		Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
 		Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});

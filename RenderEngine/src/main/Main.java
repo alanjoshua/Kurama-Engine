@@ -11,8 +11,15 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new Game();
-		game.init();
-		game.run();
+//		game = new Game();
+//		game.init();
+//		game.run();
+		GameLWJGL g = null;
+		DisplayLWJGL test = new DisplayLWJGL(g);
+		test.startGLFW();
+		test.startScreen();
+		test.loop();
+		test.removeWindow();
+		test.removeGLFW();
 	}
 }

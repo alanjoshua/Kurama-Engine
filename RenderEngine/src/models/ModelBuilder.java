@@ -224,6 +224,7 @@ public class ModelBuilder {
 				Mesh resMesh = new Mesh(facesListObj,vertAttributes);
 				resMesh.trimEverything();
 				res = new Model(resMesh);
+				res.triangulate();
 //				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
 			} catch (IOException e) {

@@ -96,8 +96,8 @@ public class Game {
 
 		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
-		mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-		mill.triangulate();
+		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
+//		mill.triangulate();
 
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
@@ -109,8 +109,8 @@ public class Game {
 //		pot.triangulate();
 
 //		models.add(deer);
-//		models.add(mill);
-		models.add(pot);
+		models.add(mill);
+//		models.add(pot);
 //		models.add(grid);
 
 		modelsOldRenderMethod.add(grid);
