@@ -4,13 +4,12 @@ import java.awt.*;
 
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
+import rendering.CameraLWJGL;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
-
-import inputs.Input;
 
 public class DisplayLWJGL {
 
@@ -34,6 +33,7 @@ public class DisplayLWJGL {
         this.game = game;
         this.defaultWindowedWidth = defaultWindowedWidth;
         this.defaultWindowedHeight = defaultWindowedHeight;
+        startGLFW();
     }
 
     public DisplayLWJGL(GameLWJGL game) {
@@ -80,15 +80,19 @@ public class DisplayLWJGL {
             throw new RuntimeException("Failed to create the GLFW window");
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE ) {
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-            }
+//        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+//            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE ) {
+//                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+//            }
+//
+//            if(key == GLFW_KEY_T && action == GLFW_RELEASE) {
+//                toggleWindowModes();
+//            }
+//        });
 
-            if(key == GLFW_KEY_T && action == GLFW_RELEASE) {
-                toggleWindowModes();
-            }
-        });
+        if(glfwRawMouseMotionSupported()) {
+            glfwSetInputMode(window,GLFW_RAW_MOUSE_MOTION,GLFW_TRUE);
+        }
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
@@ -101,10 +105,15 @@ public class DisplayLWJGL {
 
         glfwSetWindowSizeCallback(window,(window,w,h) -> {
             if(game !=null) {
-                game.getCamera().setImageWidth(w);
-                game.getCamera().setImageHeight(h);
-                game.getCamera().setShouldUpdateValues(true);
-                game.renderingEngine.resetBuffers();
+                CameraLWJGL cam = game.getCamera();
+                if(cam != null) {
+                    game.getCamera().setImageWidth(w);
+                    game.getCamera().setImageHeight(h);
+                    game.getCamera().setShouldUpdateValues(true);
+                }
+                if(game.renderingEngine != null) {
+                    game.renderingEngine.resetBuffers();
+                }
             }
         });
 
@@ -148,7 +157,7 @@ public class DisplayLWJGL {
     private void setFullScreen() {
         GLFWVidMode vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(),0,0,vid.width(),vid.height(),vid.refreshRate());
-        glfwShowWindow(window);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
     }
 
@@ -161,6 +170,7 @@ public class DisplayLWJGL {
                 (vidmode.width() - defaultWindowedWidth) / 2,
                 (vidmode.height() - defaultWindowedHeight) / 2
         );
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
     }
 
@@ -174,6 +184,7 @@ public class DisplayLWJGL {
                     (vidmode.height() - height) / 2
             );
 
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
     }
 
@@ -206,10 +217,11 @@ public class DisplayLWJGL {
     }
 
     public void disableCursor() {
+        glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
     }
 
     public void enableCursor() {
-
+        glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
     }
 
 }

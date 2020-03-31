@@ -14,12 +14,15 @@ public class Main {
 //		game = new Game();
 //		game.init();
 //		game.run();
-		GameLWJGL g = null;
-		DisplayLWJGL test = new DisplayLWJGL(g);
-		test.startGLFW();
-		test.startScreen();
-		test.loop();
-		test.removeWindow();
-		test.removeGLFW();
+
+		GameLWJGL g = new GameLWJGL();
+		g.init();
+		g.run();
+
+//		DisplayLWJGL test = new DisplayLWJGL(null);
+//		test.startScreen();
+//		test.loop();
+//		test.removeWindow();
+//		test.removeGLFW();
 	}
 }

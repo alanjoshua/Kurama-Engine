@@ -46,8 +46,8 @@ public class RenderingEngineLWJGL {
     }
 
     public void resetBuffers() {
-        depthBuffer = new float[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
-        frameBuffer = new Color[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
+        depthBuffer = new float[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
+        frameBuffer = new Color[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
     }
 
     public void render(List<Model> models, Graphics2D g, Camera cam) {

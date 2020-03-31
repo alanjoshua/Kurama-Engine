@@ -2,25 +2,25 @@ package main;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.awt.image.*;
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import GUI.Button;
 import GUI.ButtonLWJGL;
 import Math.Quaternion;
 import Math.Vector;
-import inputs.Input;
-import inputs.InputLWJGL;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
-import rendering.Camera;
+import org.lwjgl.BufferUtils;
 import rendering.CameraLWJGL;
-import rendering.RenderingEngine;
 import rendering.RenderingEngineLWJGL.RenderPipeline;
 import rendering.RenderingEngineLWJGL.ProjectionMode;
 import rendering.RenderingEngineLWJGL;
+
+import org.lwjgl.glfw.*;
+
+import static org.lwjgl.glfw.GLFW.*;
 
 public class GameLWJGL {
 
@@ -31,8 +31,8 @@ public class GameLWJGL {
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     protected CameraLWJGL cam;
-    protected InputLWJGL input;
     protected boolean isGameRunning = true;
+    protected boolean prevGameState = false;
     protected float fps;
     protected float displayFPS;
     protected float mouseXSensitivity = 20f;
@@ -50,22 +50,24 @@ public class GameLWJGL {
     protected RenderingEngineLWJGL renderingEngine;
     protected List<Model> modelsOldRenderMethod;
 
+    protected boolean isLeftMouseButtonPressed;
+    protected boolean isRightMouseButtonPressed;
+    protected Vector mousePos;
+
     public GameLWJGL(int width, int height) {
         display = new DisplayLWJGL(width, height, this);
-        input = new InputLWJGL(this);
         renderingEngine = new RenderingEngineLWJGL(this);
     }
 
     public GameLWJGL() {
         display = new DisplayLWJGL(this);
-        input = new InputLWJGL(this);
         renderingEngine = new RenderingEngineLWJGL(this);
     }
 
     public void init() {
 
+        display.startGLFW();
         display.startScreen();
-
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
         modelsOldRenderMethod = new ArrayList<>();
@@ -76,6 +78,8 @@ public class GameLWJGL {
         renderingEngine.resetBuffers();
         initModels();
         initPauseScreen();
+
+        initInputControls();
 
         renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
         renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
@@ -201,6 +205,121 @@ public class GameLWJGL {
         pauseButtons.add(WINDOWED);
     }
 
+    public void initInputControls() {
+        GLFWKeyCallback keyCallBack = new GLFWKeyCallback() {
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+
+                if(key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+                    isGameRunning = !isGameRunning;
+                }
+
+                if(isGameRunning) {
+                    if(key == GLFW_KEY_R && action == GLFW_RELEASE) {
+                        cam.lookAtModel(models.get(lookAtIndex));
+                    }
+
+                    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
+                        if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
+                        else speedMultiplier = 1;
+                    }
+
+                    if(key == GLFW_KEY_F && action == GLFW_RELEASE) {
+                        if(targetFPS == 165)
+                            targetFPS = 1000;
+                        else
+                            targetFPS = 165;
+                    }
+
+                    if(key == GLFW_KEY_W && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+                        Vector x = rotationMatrix[0];
+                        Vector y = new Vector(new float[] {0,1,0});
+                        Vector z = x.cross(y);
+                        cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_S && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+                        Vector x = rotationMatrix[0];
+                        Vector y = new Vector(new float[] {0,1,0});
+                        Vector z = x.cross(y);
+                        cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_A && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+                        Vector v = rotationMatrix[0];
+                        cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_D && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+                        Vector v = rotationMatrix[0];
+                        cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+
+                        Vector v = new Vector(new float[] {0,1,0});
+                        cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE) {
+                        float cameraSpeed = speed * speedConstant * speedMultiplier;
+
+                        Vector v = new Vector(new float[] {0,1,0});
+                        cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+                    }
+
+                    if(key == GLFW_KEY_Q && action == GLFW_RELEASE) {
+                        if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
+                        else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
+                    }
+
+                }
+
+            }
+        };
+
+        glfwSetKeyCallback(display.getWindow(),keyCallBack);
+
+        GLFWMouseButtonCallback mouseCallBack = new GLFWMouseButtonCallback() {
+            @Override
+            public void invoke(long window, int button, int action, int mods) {
+
+                if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                    isLeftMouseButtonPressed = true;
+                }
+
+                if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+                    isLeftMouseButtonPressed = false;
+                }
+
+                if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+                    isRightMouseButtonPressed = true;
+                }
+
+                if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+                    isRightMouseButtonPressed = false;
+                }
+
+            }
+        };
+
+        glfwSetMouseButtonCallback(display.getWindow(),mouseCallBack);
+
+    }
+
     public void run() {
 
         double dt = 0.0;
@@ -239,105 +358,50 @@ public class GameLWJGL {
         }
 
         display.removeWindow();
+        display.removeGLFW();
 
     }
 
     public void tick() {
 
-        if (input.keyDownOnce(KeyEvent.VK_ESCAPE)) {
-
-            //				getDisplay().removeFullScreen();
-            //				getDisplay().setFullScreen();
-            isGameRunning = !isGameRunning;
+        if(glfwWindowShouldClose(display.getWindow())) {
+            programRunning = false;
         }
 
-        input.setRelative(isGameRunning);
-        input.poll();
+        DoubleBuffer xPos = BufferUtils.createDoubleBuffer(1);
+        DoubleBuffer yPos = BufferUtils.createDoubleBuffer(1);;
 
-        if (isGameRunning)
-            display.disableCursor();
-        else
-            display.enableCursor();
+        glfwGetCursorPos(display.getWindow(),xPos,yPos);
+        mousePos = new Vector(new float[] {(float)xPos.get(0),(float)yPos.get(0)});
+
+        if(isGameRunning != prevGameState) {
+            if (isGameRunning)
+                display.disableCursor();
+            else
+                display.enableCursor();
+            prevGameState = isGameRunning;
+        }
 
         models.forEach(Model::tick);
         modelsOldRenderMethod.forEach(Model::tick);
 
         if(!isGameRunning) {
-            pauseButtons.forEach((b) -> b.tick(input.getPosition(),input.buttonDown(1)));
+            pauseButtons.forEach((b) -> b.tick(mousePos,isLeftMouseButtonPressed));
         }
         else {
-            inputTick();
+            calculate3DCamMovement();
             cam.tick();
         }
 
     }
 
-    public void inputTick() {
+    public void calculate3DCamMovement() {
 
-        float cameraSpeed = speed * speedConstant * speedMultiplier;
-        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
-        if (input.keyDownOnce(KeyEvent.VK_R)) {
-            cam.lookAtModel(models.get(lookAtIndex));
-        }
+        if (mousePos.getNorm() != 0 && isGameRunning) {
 
-        if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
-            if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
-            else speedMultiplier = 1;
-        }
-
-        if (input.keyDownOnce(KeyEvent.VK_F)) {
-            if(targetFPS == 165)
-                targetFPS = 1000;
-            else
-                targetFPS = 165;
-        }
-
-        if (input.keyDown(KeyEvent.VK_W)) {
-            Vector x = rotationMatrix[0];
-            Vector y = new Vector(new float[] {0,1,0});
-            Vector z = x.cross(y);
-            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDown(KeyEvent.VK_S)) {
-            Vector x = rotationMatrix[0];
-            Vector y = new Vector(new float[] {0,1,0});
-            Vector z = x.cross(y);
-            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDown(KeyEvent.VK_A)) {
-            Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDown(KeyEvent.VK_D)) {
-            Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDown(KeyEvent.VK_SPACE)) {
-            Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDown(KeyEvent.VK_SHIFT)) {
-            Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-        }
-
-        if (input.keyDownOnce(KeyEvent.VK_Q)) {
-            if(renderingEngine.getRenderPipeline() == RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
-            else renderingEngine.setRenderPipeline(RenderPipeline.Quat);
-        }
-
-        if (input.getPosition().getNorm() != 0 && isGameRunning) {
-
-//			input.getPosition().display();
-
-            float yawIncrease   = mouseXSensitivity * speedConstant * -input.getPosition().get(0);
-            float pitchIncrease = mouseYSensitivity * speedConstant * input.getPosition().get(1);
+            float yawIncrease   = mouseXSensitivity * speedConstant * -mousePos.get(0);
+            float pitchIncrease = mouseYSensitivity * speedConstant * mousePos.get(1);
 
             Vector currentAngle = cam.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
@@ -357,12 +421,6 @@ public class GameLWJGL {
             q = q.multiply(pitch);
             q = yaw.multiply(q);
             cam.setOrientation(q);
-
-//			Quaternion temp = Quaternion.eulerToQuaternion(new Vector(new float[] {pitchIncrease,yawIncrease,rollIncrease}));
-//			m.setQuaternion(new Quaternion(temp.rotatePoint(m.getQuaternion().getPureVec())));
-//			cam.rotate(temp);
-//			cam.setQuaternion(temp.multiply(cam.getQuaternion()));
-//			m.rotate(temp);
         }
 
     }
@@ -372,7 +430,9 @@ public class GameLWJGL {
     }
 
     public void render() {
-
+//        display.loop();
+        glfwSwapBuffers(display.getWindow());
+        glfwPollEvents();
     }
 
     public List<Model> getModels() {
@@ -415,7 +475,4 @@ public class GameLWJGL {
         return cam;
     }
 
-    public InputLWJGL getInput() {
-        return input;
-    }
 }
