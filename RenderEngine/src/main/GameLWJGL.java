@@ -13,6 +13,7 @@ import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL;
 import rendering.CameraLWJGL;
 import rendering.RenderingEngineLWJGL.RenderPipeline;
 import rendering.RenderingEngineLWJGL.ProjectionMode;
@@ -21,6 +22,8 @@ import rendering.RenderingEngineLWJGL;
 import org.lwjgl.glfw.*;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
 public class GameLWJGL {
 
@@ -66,8 +69,8 @@ public class GameLWJGL {
 
     public void init() {
 
-        display.startGLFW();
         display.startScreen();
+
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
         modelsOldRenderMethod = new ArrayList<>();
@@ -430,7 +433,8 @@ public class GameLWJGL {
     }
 
     public void render() {
-//        display.loop();
+        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
     }
