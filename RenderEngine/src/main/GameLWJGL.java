@@ -73,14 +73,22 @@ public class GameLWJGL implements Runnable {
     }
 
     public void run() {
-        init();
+        try {
+            init();
+        } catch (Exception e) {
+            System.err.println("Could not init");
+            e.printStackTrace();
+        }
         runGame();
     }
 
-    public void init() {
+    public void init() throws Exception {
         display = new DisplayLWJGL(this);
         renderingEngine = new RenderingEngineLWJGL(this);
+
         display.startScreen();
+        renderingEngine.init();
+
         input = new MouseInput(display.getWindow());
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
@@ -89,7 +97,6 @@ public class GameLWJGL implements Runnable {
         cam = new CameraLWJGL(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 100,
                 display.getWidth(), display.getHeight());
 
-        renderingEngine.resetBuffers();
         initModels();
         initPauseScreen();
 
@@ -101,7 +108,7 @@ public class GameLWJGL implements Runnable {
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
 
-        glClearColor(0.5f,0.5f,0.5f,0f);
+        display.setClearColor(0f,0f,0f,0f);
 
     }
 
@@ -347,9 +354,13 @@ public class GameLWJGL implements Runnable {
             }
         }
 
-        display.removeWindow();
-        display.removeGLFW();
+        cleanUp();
 
+    }
+
+    public void cleanUp() {
+        display.cleanUp();
+        renderingEngine.cleanUp();
     }
 
     public void tick() {
@@ -417,7 +428,8 @@ public class GameLWJGL implements Runnable {
     }
 
     public void render() {
-        renderingEngine.clear();
+        renderingEngine.render3(models);
+
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
     }

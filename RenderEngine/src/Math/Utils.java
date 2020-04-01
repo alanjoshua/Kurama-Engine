@@ -6,6 +6,9 @@ import models.DataStructure.LinkedList.DoublyLinkedList;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Vertex;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +18,25 @@ public class Utils {
 		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
 		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
 		return proj1.add(proj2);
+	}
+
+	public static String loadResourceAsString(String filename) {
+		StringBuilder temp = new StringBuilder();
+
+		Utils u = new Utils();
+		InputStream url = u.getClass().getResourceAsStream(filename);
+
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
+			String line;
+			while((line = br.readLine()) != null) {
+				temp.append(line);
+				temp.append("\n");
+			}
+		}catch (Exception e) {
+			System.err.println("Couldn't load file: "+filename);
+		}
+
+		return temp.toString();
 	}
 	
 	public static float edge(Vector v1, Vector v2, Vector p) {

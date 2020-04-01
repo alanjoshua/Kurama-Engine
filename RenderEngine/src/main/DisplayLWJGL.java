@@ -68,6 +68,15 @@ public class DisplayLWJGL {
         return vid.height();
     }
 
+    public void cleanUp() {
+        removeWindow();
+        removeGLFW();
+    }
+
+    public void setClearColor(float r, float g, float b, float a) {
+        glClearColor(r,g,b,a);
+    }
+
     public void initWindow() {
 
         // Configure GLFW
@@ -103,9 +112,6 @@ public class DisplayLWJGL {
                     game.getCamera().setImageWidth(width);
                     game.getCamera().setImageHeight(height);
                     game.getCamera().setShouldUpdateValues(true);
-                }
-                if(game.renderingEngine != null) {
-                    game.renderingEngine.resetBuffers();
                 }
             }
         });

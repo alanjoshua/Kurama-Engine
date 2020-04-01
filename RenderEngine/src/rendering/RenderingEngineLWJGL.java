@@ -4,25 +4,34 @@ import Math.Matrix;
 import Math.Quaternion;
 import Math.Utils;
 import Math.Vector;
+import Shaders.ShaderProgram;
 import main.GameLWJGL;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Vertex;
 import models.Model;
 import models.ModelBuilder;
+import org.lwjgl.system.MemoryUtil;
 
 import java.awt.*;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 public class RenderingEngineLWJGL {
 
     GameLWJGL game;
     private static float viewingTolerance = 1.5f;
-    public float[][] depthBuffer;
-    public Color[][] frameBuffer;
+    public float[][] depthBuffer;   //Should be removed
+    public Color[][] frameBuffer;  //Should be removed
+    public ShaderProgram shaderProgram;
+    public int vaoId;
+    public int vboId;
 
     public enum ProjectionMode {
         ORTHO, PERSPECTIVE
@@ -32,6 +41,39 @@ public class RenderingEngineLWJGL {
         Matrix, Quat
     }
 
+    public void init() throws Exception {
+        shaderProgram = new ShaderProgram();
+        shaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
+        shaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/FragmentShader.fs"));
+        shaderProgram.link();
+
+        float[] vertices = new float[]{
+                0.0f,  0.5f, 0.0f,
+                -0.5f, -0.5f, 0.0f,
+                0.5f, -0.5f, 0.0f
+        };
+
+        FloatBuffer verticesBuffer = MemoryUtil.memAllocFloat(vertices.length);
+        verticesBuffer.put(vertices).flip();
+
+        vaoId = glGenVertexArrays();
+        glBindVertexArray(vaoId);
+
+        vboId = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER,vboId);
+        glBufferData(GL_ARRAY_BUFFER,verticesBuffer,GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
+
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+        glBindVertexArray(0);
+
+        if (verticesBuffer != null) {
+            MemoryUtil.memFree(verticesBuffer);
+        }
+
+    }
+
     private ProjectionMode projectionMode = ProjectionMode.PERSPECTIVE;
     private RenderPipeline renderPipeline = RenderPipeline.Quat;
 
@@ -39,13 +81,23 @@ public class RenderingEngineLWJGL {
         this.game = game;
     }
 
-    public void resetBuffers() {
-        depthBuffer = new float[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
-        frameBuffer = new Color[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
-    }
-
     public void clear() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    public void render3(List<Model> models) {
+        clear();
+        shaderProgram.bind();
+
+        glBindVertexArray(vaoId);
+        glEnableVertexAttribArray(0);
+
+        glDrawArrays(GL_TRIANGLES,0,3);
+
+        glDisableVertexAttribArray(0);
+        glBindVertexArray(0);
+
+        shaderProgram.unbind();
     }
 
     public void render(List<Model> models, Graphics2D g, Camera cam) {
@@ -372,6 +424,20 @@ public class RenderingEngineLWJGL {
         }
 
         return projectedVectors;
+    }
+
+    public void cleanUp() {
+        if(shaderProgram != null) {
+            shaderProgram.cleanUp();
+        }
+
+        glDisableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+        glDeleteBuffers(vboId);
+
+        glBindVertexArray(0);
+        glDeleteVertexArrays(vaoId);
     }
 
     public ProjectionMode getProjectionMode() {

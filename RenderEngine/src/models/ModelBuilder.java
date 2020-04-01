@@ -33,9 +33,9 @@ public class ModelBuilder {
 		// noinspection StringOperationCanBeSimplified
 		if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
 
-			try {
-				String line = "";
-				BufferedReader br = new BufferedReader(new InputStreamReader(url));
+			try(BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
+				String line;
+//				BufferedReader br = new BufferedReader(new InputStreamReader(url));
 
 				while ((line = br.readLine()) != null) {
 
@@ -375,9 +375,6 @@ public class ModelBuilder {
 						if(!earTips.isPresent(v0.data)) {
 							earTips.pushHead(v0.data);
 						}
-						else {
-							// Do nothing since its already present
-						}
 					}
 				}
 
@@ -394,9 +391,6 @@ public class ModelBuilder {
 					if (Utils.isEar(currNode.data, v2.data, v2.next.data, reflex, vertList)) {
 						if(!earTips.isPresent(v2.data)) {
 							earTips.pushHead(v2.data);
-						}
-						else {
-							// Do nothing since its already present
 						}
 					}
 				}
@@ -433,7 +427,7 @@ public class ModelBuilder {
 		Vector[] vertices = new Vector[verts.length * verts[0].length];
 
 		for (int i = 0; i < verts.length; i++) {
-			System.arraycopy(verts[i], 0, vertices, i * w + 0, verts[i].length);
+			System.arraycopy(verts[i], 0, vertices, i * w, verts[i].length);
 		}
 
 		List<Face> facesListObj = new ArrayList<>(cons.size());
