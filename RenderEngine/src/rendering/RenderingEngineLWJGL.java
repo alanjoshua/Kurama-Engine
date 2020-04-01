@@ -1,27 +1,21 @@
 package rendering;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
-import java.awt.image.renderable.RenderContext;
-import java.awt.image.renderable.RenderableImage;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 import Math.Matrix;
-import Math.Utils;
 import Math.Quaternion;
+import Math.Utils;
 import Math.Vector;
-import jdk.swing.interop.SwingInterOpUtils;
-import main.Game;
 import main.GameLWJGL;
-import models.DataStructure.LinkedList.CircularDoublyLinkedList;
-import models.DataStructure.LinkedList.Node;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Vertex;
 import models.Model;
 import models.ModelBuilder;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import static org.lwjgl.opengl.GL11.*;
 
 public class RenderingEngineLWJGL {
 
@@ -48,6 +42,10 @@ public class RenderingEngineLWJGL {
     public void resetBuffers() {
         depthBuffer = new float[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
         frameBuffer = new Color[game.getDisplay().getHeight()][game.getDisplay().getWidth()];
+    }
+
+    public void clear() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     public void render(List<Model> models, Graphics2D g, Camera cam) {

@@ -18,7 +18,7 @@ import rendering.RenderingEngine;
 import rendering.RenderingEngine.RenderPipeline;
 import rendering.RenderingEngine.ProjectionMode;
 
-public class Game {
+public class Game implements Runnable {
 
 	protected Display display;
 	protected List<Model> models;
@@ -45,23 +45,27 @@ public class Game {
 
 	protected RenderingEngine renderingEngine;
 	protected List<Model> modelsOldRenderMethod;
-	
-	public Game(int width, int height) {
-		display = new Display(width, height, this);
-		input = new Input(this);
-		display.setInput(input);
-		renderingEngine = new RenderingEngine(this);
-	}
+
+	private Thread gameLoopThread;
 
 	public Game() {
+		gameLoopThread = new Thread(this,"Game Thread");
+	}
+
+	public void start() {
+		gameLoopThread.start();
+	}
+
+	public void run() {
+		init();
+		runGame();
+	}
+
+	public void init() {
 		display = new Display(this);
 		input = new Input(this);
 		display.setInput(input);
 		renderingEngine = new RenderingEngine(this);
-	}
-
-	public void init() {
-
 		display.startScreen();
 
 		pauseButtons = new ArrayList<>();
@@ -199,7 +203,7 @@ public class Game {
 		pauseButtons.add(WINDOWED);
 	}
 
-	public void run() {
+	public void runGame() {
 
 		double dt = 0.0;
 		double startTime = System.nanoTime();

@@ -12,17 +12,9 @@ public class Main {
 	
 	public void start() {
 //		game = new Game();
-//		game.init();
-//		game.run();
+//		game.start();
 
 		GameLWJGL g = new GameLWJGL();
-		g.init();
-		g.run();
-
-//		DisplayLWJGL test = new DisplayLWJGL(null);
-//		test.startScreen();
-//		test.loop();
-//		test.removeWindow();
-//		test.removeGLFW();
+		g.start();
 	}
 }

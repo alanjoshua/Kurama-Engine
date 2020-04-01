@@ -1,19 +1,16 @@
 package main;
 
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import GUI.ButtonLWJGL;
 import Math.Quaternion;
 import Math.Vector;
+import inputs.MouseInput;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL;
 import rendering.CameraLWJGL;
 import rendering.RenderingEngineLWJGL.RenderPipeline;
 import rendering.RenderingEngineLWJGL.ProjectionMode;
@@ -23,9 +20,8 @@ import org.lwjgl.glfw.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
-public class GameLWJGL {
+public class GameLWJGL implements Runnable {
 
     protected DisplayLWJGL display;
     protected List<Model> models;
@@ -34,6 +30,7 @@ public class GameLWJGL {
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     protected CameraLWJGL cam;
+    protected MouseInput input;
     protected boolean isGameRunning = true;
     protected boolean prevGameState = false;
     protected float fps;
@@ -53,24 +50,38 @@ public class GameLWJGL {
     protected RenderingEngineLWJGL renderingEngine;
     protected List<Model> modelsOldRenderMethod;
 
-    protected boolean isLeftMouseButtonPressed;
-    protected boolean isRightMouseButtonPressed;
+    protected Vector mouseDelta;
     protected Vector mousePos;
 
+    private Thread gameLoopThread;
+
     public GameLWJGL(int width, int height) {
-        display = new DisplayLWJGL(width, height, this);
-        renderingEngine = new RenderingEngineLWJGL(this);
+        gameLoopThread = new Thread(this,"Game Thread");
     }
 
     public GameLWJGL() {
-        display = new DisplayLWJGL(this);
-        renderingEngine = new RenderingEngineLWJGL(this);
+        gameLoopThread = new Thread(this,"Game Thread");
+    }
+
+    public void start() {
+        String osName = System.getProperty("os.name");
+        if ( osName.contains("Mac") ) {
+            gameLoopThread.run();   //To make this program compatible with macs
+        } else {
+            gameLoopThread.start();
+        }
+    }
+
+    public void run() {
+        init();
+        runGame();
     }
 
     public void init() {
-
+        display = new DisplayLWJGL(this);
+        renderingEngine = new RenderingEngineLWJGL(this);
         display.startScreen();
-
+        input = new MouseInput(display.getWindow());
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
         modelsOldRenderMethod = new ArrayList<>();
@@ -89,6 +100,8 @@ public class GameLWJGL {
 
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
+
+        glClearColor(0.5f,0.5f,0.5f,0f);
 
     }
 
@@ -295,35 +308,9 @@ public class GameLWJGL {
         };
 
         glfwSetKeyCallback(display.getWindow(),keyCallBack);
-
-        GLFWMouseButtonCallback mouseCallBack = new GLFWMouseButtonCallback() {
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-
-                if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-                    isLeftMouseButtonPressed = true;
-                }
-
-                if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-                    isLeftMouseButtonPressed = false;
-                }
-
-                if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-                    isRightMouseButtonPressed = true;
-                }
-
-                if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-                    isRightMouseButtonPressed = false;
-                }
-
-            }
-        };
-
-        glfwSetMouseButtonCallback(display.getWindow(),mouseCallBack);
-
     }
 
-    public void run() {
+    public void runGame() {
 
         double dt = 0.0;
         double startTime = System.nanoTime();
@@ -371,11 +358,8 @@ public class GameLWJGL {
             programRunning = false;
         }
 
-        DoubleBuffer xPos = BufferUtils.createDoubleBuffer(1);
-        DoubleBuffer yPos = BufferUtils.createDoubleBuffer(1);;
-
-        glfwGetCursorPos(display.getWindow(),xPos,yPos);
-        mousePos = new Vector(new float[] {(float)xPos.get(0),(float)yPos.get(0)});
+        mouseDelta = input.getDelta();
+        mousePos = input.getPos();
 
         if(isGameRunning != prevGameState) {
             if (isGameRunning)
@@ -389,7 +373,7 @@ public class GameLWJGL {
         modelsOldRenderMethod.forEach(Model::tick);
 
         if(!isGameRunning) {
-            pauseButtons.forEach((b) -> b.tick(mousePos,isLeftMouseButtonPressed));
+            pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));
         }
         else {
             calculate3DCamMovement();
@@ -401,10 +385,10 @@ public class GameLWJGL {
     public void calculate3DCamMovement() {
 
 
-        if (mousePos.getNorm() != 0 && isGameRunning) {
+        if (mouseDelta.getNorm() != 0 && isGameRunning) {
 
-            float yawIncrease   = mouseXSensitivity * speedConstant * -mousePos.get(0);
-            float pitchIncrease = mouseYSensitivity * speedConstant * mousePos.get(1);
+            float yawIncrease   = mouseXSensitivity * speedConstant * -mouseDelta.get(0);
+            float pitchIncrease = mouseYSensitivity * speedConstant * mouseDelta.get(1);
 
             Vector currentAngle = cam.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
@@ -433,8 +417,7 @@ public class GameLWJGL {
     }
 
     public void render() {
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        renderingEngine.clear();
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
     }

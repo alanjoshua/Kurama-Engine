@@ -74,21 +74,15 @@ public class DisplayLWJGL {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
 
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
         // Create the window
         window = glfwCreateWindow(defaultWindowedWidth, defaultWindowedHeight, "Hello World!", NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
-
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-//        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-//            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE ) {
-//                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-//            }
-//
-//            if(key == GLFW_KEY_T && action == GLFW_RELEASE) {
-//                toggleWindowModes();
-//            }
-//        });
 
         if(glfwRawMouseMotionSupported()) {
             glfwSetInputMode(window,GLFW_RAW_MOUSE_MOTION,GLFW_TRUE);
@@ -100,16 +94,14 @@ public class DisplayLWJGL {
         // Enable v-sync
         glfwSwapInterval(1);
 
-//        glfwSetFramebufferSizeCallback(window, (window,w,h) -> {
-//            glViewport(0,0,w,h);
-//        });
 
-        glfwSetWindowSizeCallback(window,(window,w,h) -> {
+        glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
+            glViewport(0,0,width,height);
             if(game !=null) {
                 CameraLWJGL cam = game.getCamera();
                 if(cam != null) {
-                    game.getCamera().setImageWidth(w);
-                    game.getCamera().setImageHeight(h);
+                    game.getCamera().setImageWidth(width);
+                    game.getCamera().setImageHeight(height);
                     game.getCamera().setShouldUpdateValues(true);
                 }
                 if(game.renderingEngine != null) {
