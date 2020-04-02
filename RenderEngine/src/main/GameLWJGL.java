@@ -7,7 +7,7 @@ import java.util.List;
 import GUI.ButtonLWJGL;
 import Math.Quaternion;
 import Math.Vector;
-import inputs.MouseInput;
+import inputs.InputLWJGL;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -19,7 +19,6 @@ import rendering.RenderingEngineLWJGL;
 import org.lwjgl.glfw.*;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
 
 public class GameLWJGL implements Runnable {
 
@@ -30,7 +29,7 @@ public class GameLWJGL implements Runnable {
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     protected CameraLWJGL cam;
-    protected MouseInput input;
+    protected InputLWJGL input;
     protected boolean isGameRunning = true;
     protected boolean prevGameState = false;
     protected float fps;
@@ -89,7 +88,7 @@ public class GameLWJGL implements Runnable {
         display.startScreen();
         renderingEngine.init();
 
-        input = new MouseInput(display.getWindow());
+        input = new InputLWJGL(display.getWindow());
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
         modelsOldRenderMethod = new ArrayList<>();

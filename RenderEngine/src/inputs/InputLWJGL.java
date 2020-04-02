@@ -8,13 +8,13 @@ import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
 
 import Math.Vector;
 
-public class MouseInput {
+public class InputLWJGL {
 
     public float mouseX,mouseY,mouseDx,mouseDy;
     private long window;
     public boolean isLeftMouseButtonPressed,isRightMouseButtonPressed;
 
-    public MouseInput(long window) {
+    public InputLWJGL(long window) {
         this.window = window;
         init();
     }
