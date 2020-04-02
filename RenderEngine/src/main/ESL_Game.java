@@ -64,7 +64,7 @@ public class ESL_Game extends Game {
 
         for(int i = 0;i < N;i++) {
 
-            Model deer = ModelBuilder.buildModelFromFile("deer.obj");
+            Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
             Vector pos = new Vector(new float[]{rand.nextInt(gridWidth) - gridWidth/2,7,rand.nextInt(gridDepth) - gridDepth/2});
             deer.setPos(pos);
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));

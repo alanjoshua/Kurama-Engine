@@ -2,12 +2,15 @@ package main;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import GUI.ButtonLWJGL;
 import Math.Quaternion;
 import Math.Vector;
 import inputs.InputLWJGL;
+import models.DataStructure.Mesh.Mesh;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -54,6 +57,8 @@ public class GameLWJGL implements Runnable {
 
     private Thread gameLoopThread;
 
+    Map<String, Mesh> meshInstances;
+
     public GameLWJGL(int width, int height) {
         gameLoopThread = new Thread(this,"Game Thread");
     }
@@ -82,6 +87,7 @@ public class GameLWJGL implements Runnable {
     }
 
     public void init() throws Exception {
+        meshInstances = new HashMap<>();
         display = new DisplayLWJGL(this);
         renderingEngine = new RenderingEngineLWJGL(this);
 
@@ -93,7 +99,7 @@ public class GameLWJGL implements Runnable {
         models = new ArrayList<>();
         modelsOldRenderMethod = new ArrayList<>();
 
-        cam = new CameraLWJGL(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 100,
+        cam = new CameraLWJGL(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
 
         initModels();
@@ -107,6 +113,8 @@ public class GameLWJGL implements Runnable {
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
 
+//        cam.setPos(models.get(lookAtIndex).getCentre());
+
     }
 
     public void initModels() {
@@ -116,13 +124,19 @@ public class GameLWJGL implements Runnable {
             m.setOrientation(newQ);
         });
 
-        Model deer = ModelBuilder.buildModelFromFile("deer.obj");
+        Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
         deer.setPos(new Vector(new float[] {-10,18,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
         deer.mesh.initOpenGLMeshData();
         deer.setTickObj(tempRot);
 
-        Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
+        Model deer2 = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
+        deer2.setPos(new Vector(new float[] {0,18,0}));
+        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
+        deer2.mesh.initOpenGLMeshData();
+        deer2.setTickObj(tempRot);
+
+        Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances);
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
         mill.mesh.initOpenGLMeshData();
@@ -130,17 +144,22 @@ public class GameLWJGL implements Runnable {
         Model grid = ModelBuilder.buildGrid(100, 100);
         grid.setPos(new Vector(new float[] {0,0,0}));
 
-        Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj");
+        Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj",meshInstances);
         pot.setPos(new Vector(new float[]{0,10,10}));
         pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
         pot.setTickObj(tempRot);
         pot.mesh.initOpenGLMeshData();
 
 
-		models.add(deer);
+//        Model city = ModelBuilder.buildModelFromFile("desertCity.obj",meshInstances);
+//        city.setScale(1f,1f,1f);
+//        city.mesh.displayMeshInformation();
+//        city.mesh.initOpenGLMeshData();
+
+//        models.add(city);
+        models.add(deer);
         models.add(mill);
-//		models.add(pot);
-//		models.add(grid);
+        models.add(deer2);
 
         modelsOldRenderMethod.add(grid);
 //		modelsOldRenderMethod.add(pot);
@@ -239,6 +258,7 @@ public class GameLWJGL implements Runnable {
 
                 if(isGameRunning) {
                     if(key == GLFW_KEY_R && action == GLFW_RELEASE) {
+//                        cam.setPos(models.get(lookAtIndex).getCentre());
                         cam.lookAtModel(models.get(lookAtIndex));
                     }
 

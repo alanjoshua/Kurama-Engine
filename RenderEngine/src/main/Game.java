@@ -4,12 +4,15 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import GUI.Button;
 import Math.Quaternion;
 import Math.Vector;
 import inputs.Input;
+import models.DataStructure.Mesh.Mesh;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -47,6 +50,7 @@ public class Game implements Runnable {
 	protected List<Model> modelsOldRenderMethod;
 
 	private Thread gameLoopThread;
+	Map<String, Mesh> meshInstances;
 
 	public Game() {
 		gameLoopThread = new Thread(this,"Game Thread");
@@ -62,6 +66,7 @@ public class Game implements Runnable {
 	}
 
 	public void init() {
+		meshInstances = new HashMap<>();
 		display = new Display(this);
 		input = new Input(this);
 		display.setInput(input);
@@ -94,11 +99,11 @@ public class Game implements Runnable {
 			m.setOrientation(newQ);
 		});
 
-		Model deer = ModelBuilder.buildModelFromFile("deer.obj");
+		Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
-		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
+		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances);
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
 //		mill.triangulate();
@@ -106,7 +111,7 @@ public class Game implements Runnable {
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj");
+		Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj",meshInstances);
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 		pot.setTickObj(tempRot);

@@ -21,14 +21,17 @@ public class Model {
 	protected Matrix transformedVertices;
 	protected boolean isChanged = true;
 
+	public String identifier;
+
 	public Mesh mesh;
 
-	public Model(Mesh mesh) {
+	public Model(Mesh mesh,String identifier) {
 		this.mesh = mesh;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
 		tickObj = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+		this.identifier = identifier;
 	}
 
 	public void tick() {
@@ -86,6 +89,29 @@ public class Model {
 	public void setScale(Vector scale) {
 		this.scale = scale;
 		isChanged = true;
+	}
+
+	public void setScale(float v) {
+		Vector scale = new Vector(new float[]{v,v,v});
+		this.scale = scale;
+		isChanged = true;
+	}
+
+	public void setScale(float x, float y, float z) {
+		Vector scale = new Vector(new float[]{x,y,z});
+		this.scale = scale;
+		isChanged = true;
+	}
+
+	public Vector getCentre() {
+		Vector res = new Vector(new float[]{0,0,0});
+		for(Vector v: mesh.getVertices()) {
+			res = res.add(v.removeDimensionFromVec(3).mul(scale));
+		}
+		res = res.scalarMul(1f/mesh.getVertices().size());
+		res = res.add(pos);
+
+		return res;
 	}
 
 	public Quaternion getOrientation() {

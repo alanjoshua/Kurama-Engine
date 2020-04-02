@@ -17,223 +17,232 @@ import models.DataStructure.Mesh.Vertex;
 
 public class ModelBuilder {
 
-	public static Model buildModelFromFile(String loc) {
+	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances) {
 
 		ModelBuilder m = new ModelBuilder();
-		InputStream url = m.getClass().getResourceAsStream("/models/resources/"+loc);
 
-		Model res = null;
-		List<Vector> vertex = new ArrayList<Vector>();
-		List<Vector> vn = new ArrayList<Vector>();
-		List<Vector> vt = new ArrayList<Vector>();
-		List<int[]> faces = new ArrayList<>();
-		List<int[]> textureFaces = new ArrayList<>();
-		List<int[]> normalFaces = new ArrayList<>();
+		if(meshInstances.containsKey(loc)) {
+			return new Model(meshInstances.get(loc),loc);
+		}
 
-		// noinspection StringOperationCanBeSimplified
-		if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
+		else {
 
-			try(BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
-				String line;
+			InputStream url = m.getClass().getResourceAsStream("/models/resources/" + loc);
+
+			Model res = null;
+			List<Vector> vertex = new ArrayList<Vector>();
+			List<Vector> vn = new ArrayList<Vector>();
+			List<Vector> vt = new ArrayList<Vector>();
+			List<int[]> faces = new ArrayList<>();
+			List<int[]> textureFaces = new ArrayList<>();
+			List<int[]> normalFaces = new ArrayList<>();
+
+			// noinspection StringOperationCanBeSimplified
+			if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
+
+				try (BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
+					String line;
 //				BufferedReader br = new BufferedReader(new InputStreamReader(url));
 
-				while ((line = br.readLine()) != null) {
+					while ((line = br.readLine()) != null) {
 
-					String[] split = line.split("\\s+");
+						String[] split = line.split("\\s+");
 
-					if (split.length > 1) {
+						if (split.length > 1) {
 
 //						Reads lines which start with "v" and stores the vertex data in the vertex list. 
 //						If the fourth coordinate "w" is not given, it is given a default value of 1.0
 
-						if (split[0].equalsIgnoreCase("v")) {
-							float[] data = new float[4];
-							for (int i = 0; i < 3; i++) {
-								data[i] = Float.parseFloat(split[i + 1]);
-							}
-							if (split.length == 4) {
-								data[3] = 1.0f;
-							} else if (split.length == 5) {
-								data[3] = Float.parseFloat(split[4]);
-							}
-							vertex.add(new Vector(data));
-						}
-
-						if (split[0].equalsIgnoreCase("vn")) {
-							float[] data = new float[4];
-							for (int i = 0; i < 3; i++) {
-								data[i] = Float.parseFloat(split[i + 1]);
-							}
-							if (split.length == 4) {
-								data[3] = 1.0f;
-							} else if (split.length == 5) {
-								data[3] = Float.parseFloat(split[4]);
-							}
-							vn.add(new Vector(data));
-						}
-
-						if (split[0].equalsIgnoreCase("vt")) {
-							float[] data = new float[3];
-							data[0] = Float.parseFloat(split[1]);
-							if (split.length == 2) {
-								data[1] = 0f;
-								data[2] = 0f;
-							} else if (split.length == 3) {
-								data[1] = Float.parseFloat(split[2]);
-								data[2] = 0f;
-							} else if (split.length == 4) {
-								data[1] = Float.parseFloat(split[2]);
-								data[2] = Float.parseFloat(split[3]);
-							}
-
-							vt.add(new Vector(data));
-						}
-
-						if (split[0].equalsIgnoreCase("f")) {
-
-							int[] fdata = new int[split.length - 1];
-							int[] tdata = new int[split.length - 1];
-							int[] ndata = new int[split.length - 1];
-
-							String[] doubleSplitTest = split[1].split("/");
-
-							if (doubleSplitTest.length == 1) {
-								tdata = null;
-								ndata = null;
-								for (int i = 1; i < split.length; i++) {
-									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
+							if (split[0].equalsIgnoreCase("v")) {
+								float[] data = new float[4];
+								for (int i = 0; i < 3; i++) {
+									data[i] = Float.parseFloat(split[i + 1]);
 								}
-							} else if (doubleSplitTest.length == 2) {
-								ndata = null;
-								for (int i = 1; i < split.length; i++) {
-									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+								if (split.length == 4) {
+									data[3] = 1.0f;
+								} else if (split.length == 5) {
+									data[3] = Float.parseFloat(split[4]);
 								}
-							} else if (doubleSplitTest.length == 3) {
+								vertex.add(new Vector(data));
+							}
 
-								if (doubleSplitTest[1].equalsIgnoreCase("")) {
+							if (split[0].equalsIgnoreCase("vn")) {
+								float[] data = new float[4];
+								for (int i = 0; i < 3; i++) {
+									data[i] = Float.parseFloat(split[i + 1]);
+								}
+								if (split.length == 4) {
+									data[3] = 1.0f;
+								} else if (split.length == 5) {
+									data[3] = Float.parseFloat(split[4]);
+								}
+								vn.add(new Vector(data));
+							}
+
+							if (split[0].equalsIgnoreCase("vt")) {
+								float[] data = new float[3];
+								data[0] = Float.parseFloat(split[1]);
+								if (split.length == 2) {
+									data[1] = 0f;
+									data[2] = 0f;
+								} else if (split.length == 3) {
+									data[1] = Float.parseFloat(split[2]);
+									data[2] = 0f;
+								} else if (split.length == 4) {
+									data[1] = Float.parseFloat(split[2]);
+									data[2] = Float.parseFloat(split[3]);
+								}
+
+								vt.add(new Vector(data));
+							}
+
+							if (split[0].equalsIgnoreCase("f")) {
+
+								int[] fdata = new int[split.length - 1];
+								int[] tdata = new int[split.length - 1];
+								int[] ndata = new int[split.length - 1];
+
+								String[] doubleSplitTest = split[1].split("/");
+
+								if (doubleSplitTest.length == 1) {
 									tdata = null;
+									ndata = null;
 									for (int i = 1; i < split.length; i++) {
-										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+										fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
 									}
-								} else {
+								} else if (doubleSplitTest.length == 2) {
+									ndata = null;
 									for (int i = 1; i < split.length; i++) {
 										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
 										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+									}
+								} else if (doubleSplitTest.length == 3) {
+
+									if (doubleSplitTest[1].equalsIgnoreCase("")) {
+										tdata = null;
+										for (int i = 1; i < split.length; i++) {
+											fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+											ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+										}
+									} else {
+										for (int i = 1; i < split.length; i++) {
+											fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+											tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+											ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+										}
 									}
 								}
+
+								faces.add(fdata);
+								textureFaces.add(tdata);
+								normalFaces.add(ndata);
 							}
 
-							faces.add(fdata);
-							textureFaces.add(tdata);
-							normalFaces.add(ndata);
+						}
+					}
+
+					float[] dataMin = new float[4];
+					dataMin[0] = Float.POSITIVE_INFINITY;
+					dataMin[1] = Float.POSITIVE_INFINITY;
+					dataMin[2] = Float.POSITIVE_INFINITY;
+					dataMin[3] = 0;
+
+					float[] dataMax = new float[4];
+					dataMax[0] = Float.NEGATIVE_INFINITY;
+					dataMax[1] = Float.NEGATIVE_INFINITY;
+					dataMax[2] = Float.NEGATIVE_INFINITY;
+					dataMax[3] = 0;
+
+					for (Vector v : vertex) {
+						if (v.get(0) < dataMin[0]) {
+							dataMin[0] = v.get(0);
+						}
+						if (v.get(1) < dataMin[1]) {
+							dataMin[1] = v.get(1);
+						}
+						if (v.get(2) < dataMin[2]) {
+							dataMin[2] = v.get(2);
 						}
 
-					}
-				}
-
-				float[] dataMin = new float[4];
-				dataMin[0] = Float.POSITIVE_INFINITY;
-				dataMin[1] = Float.POSITIVE_INFINITY;
-				dataMin[2] = Float.POSITIVE_INFINITY;
-				dataMin[3] = 0;
-
-				float[] dataMax = new float[4];
-				dataMax[0] = Float.NEGATIVE_INFINITY;
-				dataMax[1] = Float.NEGATIVE_INFINITY;
-				dataMax[2] = Float.NEGATIVE_INFINITY;
-				dataMax[3] = 0;
-
-				for (Vector v : vertex) {
-					if (v.get(0) < dataMin[0]) {
-						dataMin[0] = v.get(0);
-					}
-					if (v.get(1) < dataMin[1]) {
-						dataMin[1] = v.get(1);
-					}
-					if (v.get(2) < dataMin[2]) {
-						dataMin[2] = v.get(2);
+						if (v.get(0) > dataMax[0]) {
+							dataMax[0] = v.get(0);
+						}
+						if (v.get(1) > dataMax[1]) {
+							dataMax[1] = v.get(1);
+						}
+						if (v.get(2) > dataMax[2]) {
+							dataMax[2] = v.get(2);
+						}
 					}
 
-					if (v.get(0) > dataMax[0]) {
-						dataMax[0] = v.get(0);
+					Vector min = new Vector(dataMin);
+					Vector max = new Vector(dataMax);
+
+					Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
+
+					Vector[] vertArr = new Vector[vertex.size()];
+					for (int i = 0; i < vertArr.length; i++) {
+						vertArr[i] = vertex.get(i).sub(change);
 					}
-					if (v.get(1) > dataMax[1]) {
-						dataMax[1] = v.get(1);
+
+					Vector[] vnArray = new Vector[vn.size()];
+					for (int i = 0; i < vnArray.length; i++) {
+						vnArray[i] = vn.get(i);
 					}
-					if (v.get(2) > dataMax[2]) {
-						dataMax[2] = v.get(2);
+
+					Vector[] vtArray = new Vector[vt.size()];
+					for (int i = 0; i < vtArray.length; i++) {
+						vtArray[i] = vt.get(i);
 					}
-				}
 
-				Vector min = new Vector(dataMin);
-				Vector max = new Vector(dataMax);
+					List<Face> facesListObj = new ArrayList<>(faces.size());
 
-				Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
+					for (int i = 0; i < faces.size(); i++) {
 
-				Vector[] vertArr = new Vector[vertex.size()];
-				for (int i = 0; i < vertArr.length; i++) {
-					vertArr[i] = vertex.get(i).sub(change);
-				}
+						Face tempFace = new Face();
 
-				Vector[] vnArray = new Vector[vn.size()];
-				for (int i = 0; i < vnArray.length; i++) {
-					vnArray[i] = vn.get(i);
-				}
+						for (int j = 0; j < faces.get(i).length; j++) {
 
-				Vector[] vtArray = new Vector[vt.size()];
-				for (int i = 0; i < vtArray.length; i++) {
-					vtArray[i] = vt.get(i);
-				}
+							Vertex temp = new Vertex();
+							temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
 
-				List<Face> facesListObj = new ArrayList<>(faces.size());
-
-				for(int i = 0;i < faces.size();i++) {
-
-					Face tempFace = new Face();
-
-					for(int j = 0;j < faces.get(i).length;j++) {
-
-						Vertex temp = new Vertex();
-						temp.setAttribute(faces.get(i)[j],Vertex.POSITION);
-
-						if(vtArray != null) {
-							if(textureFaces.get(i) != null) {
-								temp.setAttribute(textureFaces.get(i)[j],Vertex.TEXTURE);
+							if (vtArray != null) {
+								if (textureFaces.get(i) != null) {
+									temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
+								}
 							}
-						}
-						if(vnArray != null) {
-							if(normalFaces.get(i) != null) {
-								temp.setAttribute(normalFaces.get(i)[j],Vertex.NORMAL);
+							if (vnArray != null) {
+								if (normalFaces.get(i) != null) {
+									temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
+								}
 							}
-						}
 //						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
-						tempFace.vertices.add(temp);
-					}
+							tempFace.vertices.add(temp);
+						}
 //					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
-					facesListObj.add(tempFace);
-				}
+						facesListObj.add(tempFace);
+					}
 
-				List<List<Vector>> vertAttributes = new ArrayList<>(3);
-				vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
-				vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
-				vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
+					List<List<Vector>> vertAttributes = new ArrayList<>(3);
+					vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
+					vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
+					vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
-				Mesh resMesh = new Mesh(facesListObj,vertAttributes);
-				resMesh.trimEverything();
-				res = new Model(resMesh);
-				res.triangulate();
+					Mesh resMesh = new Mesh(facesListObj, vertAttributes);
+					resMesh.trimEverything();
+					res = new Model(resMesh,loc);
+					res.triangulate();
+					meshInstances.put(loc,resMesh);
 //				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
 
-			} catch (IOException e) {
-				e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
 			}
 
+			return res;
 		}
-
-		return res;
 	}
 
 //	public static Mesh cleanMesh(Mesh inMesh) {
@@ -436,8 +445,8 @@ public class ModelBuilder {
 
 		for (int[] con : cons) {
 			tempVertList = new ArrayList<>(con.length);
-			for (int j = 0; j < con.length; j++) {
-				tempVertList.add(new Vertex(con[j]));
+			for (int i : con) {
+				tempVertList.add(new Vertex(i));
 			}
 			facesListObj.add(new Face(tempVertList));
 		}
@@ -446,7 +455,7 @@ public class ModelBuilder {
 		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
 
 		resMesh = new Mesh(facesListObj, vertAttributes);
-		return new Model(resMesh);
+		return new Model(resMesh,"grid");
 
 //		return new Model(vertices, cons, null, null, null, null);
 	}
