@@ -25,7 +25,7 @@ public class GameLWJGL implements Runnable {
     protected DisplayLWJGL display;
     protected List<Model> models;
     protected List<GUI.ButtonLWJGL> pauseButtons;
-    protected double targetFPS = 1000;
+    protected double targetFPS = 100000;
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     protected CameraLWJGL cam;
@@ -106,8 +106,6 @@ public class GameLWJGL implements Runnable {
 
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
-
-        display.setClearColor(0f,0f,0f,0f);
 
     }
 
@@ -250,10 +248,12 @@ public class GameLWJGL implements Runnable {
                     }
 
                     if(key == GLFW_KEY_F && action == GLFW_RELEASE) {
-                        if(targetFPS == 165)
-                            targetFPS = 1000;
-                        else
-                            targetFPS = 165;
+                        if(targetFPS == display.getRefreshRate()) {
+                            targetFPS = 10000;
+                        }
+                        else {
+                            targetFPS = display.getRefreshRate();
+                        }
                     }
 
                     if(key == GLFW_KEY_Q && action == GLFW_RELEASE) {

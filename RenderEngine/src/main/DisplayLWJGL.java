@@ -73,6 +73,13 @@ public class DisplayLWJGL {
         removeGLFW();
     }
 
+    public int getRefreshRate() {
+        GLFWVidMode vid = glfwGetVideoMode(window);
+        System.out.println(vid.refreshRate());
+//        return vid.refreshRate();
+        return 165;
+    }
+
     public void setClearColor(float r, float g, float b, float a) {
         glClearColor(r,g,b,a);
     }
