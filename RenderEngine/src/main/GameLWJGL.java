@@ -119,9 +119,10 @@ public class GameLWJGL implements Runnable {
         });
 
         Model deer = ModelBuilder.buildModelFromFile("deer.obj");
-        deer.setPos(new Vector(new float[] {-20,7,-20}));
+        deer.setPos(new Vector(new float[] {-10,18,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
         deer.mesh.initOpenGLMeshData();
+        deer.setTickObj(tempRot);
 
         Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
         mill.setPos(new Vector(new float[] {10,5,0}));

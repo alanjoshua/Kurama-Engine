@@ -62,9 +62,12 @@ public class Mesh {
             }
             indicesBuffer.flip();
 
+            Random rand = new Random();
+
             colorBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 3);
             for(Vector v: getVertices()) {
-                float[] color = new float[] {1f,0.5f,1f};
+                float[] color = new float[] {rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
+//                float[] color = new float[] {1f,1f,1f};
                 for(float val:color) {
                     colorBuffer.put(val);
                 }
