@@ -1,5 +1,6 @@
 package Math;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -982,6 +983,15 @@ public class Matrix {
 		}
 		res = new Matrix(dat);
 		return res;
+	}
+
+	public void setValuesToFloatBuffer(FloatBuffer fb) {
+		for(Vector c:this.convertToColumnVectorArray()) {
+			for(float val: c.getData()) {
+				fb.put(val);
+			}
+		}
+		fb.flip();
 	}
 
 }

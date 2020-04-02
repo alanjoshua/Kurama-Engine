@@ -1,5 +1,11 @@
 package Shaders;
 
+import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import Math.Matrix;
+import org.lwjgl.system.MemoryStack;
+
 import static org.lwjgl.opengl.GL20.*;
 
 // This class was blatantly copied from lwjglgamedev gitbook
@@ -9,11 +15,29 @@ public class ShaderProgram {
     private final int programID;
     private int vertexShaderID;
     private int fragmentShaderID;
+    private final Map<String,Integer> uniforms;
 
     public ShaderProgram() throws Exception {
         programID = glCreateProgram();
         if(programID == 0) {
             throw new Exception("Could not create Shader");
+        }
+        uniforms = new HashMap<>();
+    }
+
+    public void createUniform(String uniformName) throws Exception {
+        int uniformLocation = glGetUniformLocation(programID, uniformName);
+        if(uniformLocation < 0) {
+            throw new Exception("Could not find uniform: " + uniformName);
+        }
+        uniforms.put(uniformName,uniformLocation);
+    }
+
+    public void setUniforms(String uniformName, Matrix value) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer fb = stack.mallocFloat(16);
+            value.setValuesToFloatBuffer(fb);
+            glUniformMatrix4fv(uniforms.get(uniformName),false,fb);
         }
     }
 

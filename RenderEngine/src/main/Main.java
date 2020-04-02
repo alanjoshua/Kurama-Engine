@@ -13,10 +13,10 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new Game();
-		game.start();
+//		game = new Game();
+//		game.start();
 
-//		GameLWJGL g = new GameLWJGL();
-//		g.start();
+		GameLWJGL g = new GameLWJGL();
+		g.start();
 	}
 }

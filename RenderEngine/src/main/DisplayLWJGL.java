@@ -17,6 +17,8 @@ public class DisplayLWJGL {
     private GameLWJGL game;
     private int defaultWindowedWidth = 1280;
     private int defaultWindowedHeight = 720;
+    private int WIDTH = defaultWindowedWidth;
+    private int HEIGHT = defaultWindowedHeight;
 
     public static String OS = System.getProperty("os.name").toLowerCase();
     public static final double winDPI = 96;
@@ -27,7 +29,7 @@ public class DisplayLWJGL {
         FULLSCREEN, WINDOWED
     }
 
-    public DisplayMode displayMode = DisplayMode.WINDOWED;
+    public DisplayMode displayMode = DisplayMode.FULLSCREEN;
 
     public DisplayLWJGL(int defaultWindowedWidth, int defaultWindowedHeight, GameLWJGL game) {
         this.game = game;
@@ -59,13 +61,11 @@ public class DisplayLWJGL {
     }
 
     public int getWidth() {
-        GLFWVidMode vid = glfwGetVideoMode(window);
-        return vid.width();
+        return WIDTH;
     }
 
     public int getHeight() {
-        GLFWVidMode vid = glfwGetVideoMode(window);
-        return vid.height();
+        return HEIGHT;
     }
 
     public void cleanUp() {
@@ -103,12 +103,13 @@ public class DisplayLWJGL {
         // Enable v-sync
         glfwSwapInterval(1);
 
-
         glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
             glViewport(0,0,width,height);
             if(game !=null) {
                 CameraLWJGL cam = game.getCamera();
                 if(cam != null) {
+                    WIDTH = width;
+                    HEIGHT = height;
                     game.getCamera().setImageWidth(width);
                     game.getCamera().setImageHeight(height);
                     game.getCamera().setShouldUpdateValues(true);
@@ -139,6 +140,8 @@ public class DisplayLWJGL {
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(),0,0,vid.width(),vid.height(),vid.refreshRate());
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
+        WIDTH = vid.width();
+        HEIGHT = vid.height();
     }
 
     private void setWindowedMode() {
@@ -152,6 +155,9 @@ public class DisplayLWJGL {
         );
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
+
+        WIDTH = defaultWindowedWidth;
+        HEIGHT = defaultWindowedHeight;
     }
 
     public void setWindowedMode(int width, int height) {
@@ -166,6 +172,9 @@ public class DisplayLWJGL {
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
+
+        WIDTH = defaultWindowedWidth;
+        HEIGHT = defaultWindowedHeight;
     }
 
     public void removeWindow() {
@@ -173,6 +182,9 @@ public class DisplayLWJGL {
             glfwFreeCallbacks(window);
             glfwDestroyWindow(window);
         }
+
+        WIDTH = defaultWindowedWidth;
+        HEIGHT = defaultWindowedHeight;
     }
 
     public void startGLFW() {

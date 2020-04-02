@@ -1,8 +1,16 @@
 package models.DataStructure.Mesh;
 
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
 
 import Math.Vector;
+import org.lwjgl.system.MemoryUtil;
+
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
+import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
+import static org.lwjgl.opengl.GL30.*;
 
 public class Mesh {
 
@@ -13,9 +21,91 @@ public class Mesh {
     public List<Face> faces;
     public List<List<Vector>> vertAttributes;
 
+    public int vaoId;
+    public int coordVboId;
+    public int indexVboId;
+    public int vertexCount;
+
     public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
+    }
+
+    public void initOpenGLMeshData() {
+        FloatBuffer verticesBuffer = null;
+        IntBuffer indicesBuffer = null;
+
+        try {
+//          Calculate vertice Buffer
+            verticesBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 4);
+            for(Vector v: getVertices()) {
+                for(float val: v.getData()) {
+                    verticesBuffer.put(val);
+                }
+            }
+            verticesBuffer.flip();
+
+//            Calculate index Buffer
+            vertexCount = 0;
+            for(Face f:faces) {
+                for(Vertex v: f.vertices) {
+                    vertexCount++;
+                }
+            }
+            indicesBuffer = MemoryUtil.memAllocInt(vertexCount);
+            for(Face f:faces) {
+                for(Vertex v: f.vertices) {
+                   indicesBuffer.put(v.getAttribute(Vertex.POSITION));
+                }
+            }
+            indicesBuffer.flip();
+
+
+             vaoId = glGenVertexArrays();
+             glBindVertexArray(vaoId);
+
+             indexVboId = glGenBuffers();
+             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,indexVboId);
+             glBufferData(GL_ELEMENT_ARRAY_BUFFER,indicesBuffer,GL_STATIC_DRAW);
+
+             coordVboId = glGenBuffers();
+             glBindBuffer(GL_ARRAY_BUFFER, coordVboId);
+             glBufferData(GL_ARRAY_BUFFER,verticesBuffer,GL_STATIC_DRAW);
+             glVertexAttribPointer(0,4,GL_FLOAT,false,0,0);
+             glBindBuffer(GL_ARRAY_BUFFER,0);
+
+             glBindVertexArray(0);
+
+        }finally  {
+            if(verticesBuffer != null) {
+                MemoryUtil.memFree((verticesBuffer));
+            }
+            if(indicesBuffer != null) {
+                MemoryUtil.memFree((indicesBuffer));
+            }
+        }
+
+    }
+
+    public void cleanUp() {
+        glDisableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+        glDeleteBuffers(coordVboId);
+        glDeleteBuffers(indexVboId);
+
+        glBindVertexArray(0);
+        glDeleteVertexArrays(vaoId);
+    }
+
+    public void render() {
+        glBindVertexArray(vaoId);
+        glEnableVertexAttribArray(0);
+
+        glDrawElements(GL_TRIANGLES,vertexCount,GL_UNSIGNED_INT,0);
+
+        glDisableVertexAttribArray(0);
+        glBindVertexArray(0);
     }
 
     public Mesh(List<List<Vector>> vertAttributes) {
@@ -35,13 +125,6 @@ public class Mesh {
     }
 
     public void displayMeshInformation() {
-
-//        for(List<Vector> l: vertAttributes) {
-//            System.out.println(l.getClass());
-//        }
-//
-//        System.out.println();
-//        System.out.println(faces.getClass());
 
         HashMap<Integer, Integer> data = new HashMap<>();
         for(Face f: faces) {

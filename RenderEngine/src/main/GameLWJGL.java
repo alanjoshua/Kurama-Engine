@@ -122,22 +122,24 @@ public class GameLWJGL implements Runnable {
         Model deer = ModelBuilder.buildModelFromFile("deer.obj");
         deer.setPos(new Vector(new float[] {-20,7,-20}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
+        deer.mesh.initOpenGLMeshData();
 
         Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj");
-        mill.setPos(new Vector(new float[] {10,5,-10}));
-        mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
-//		mill.triangulate();
+        mill.setPos(new Vector(new float[] {10,5,0}));
+        mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
+        mill.mesh.initOpenGLMeshData();
 
         Model grid = ModelBuilder.buildGrid(100, 100);
         grid.setPos(new Vector(new float[] {0,0,0}));
 
         Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj");
-        pot.setPos(new Vector(new float[]{0,10,0}));
+        pot.setPos(new Vector(new float[]{0,10,10}));
         pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
         pot.setTickObj(tempRot);
-//		pot.triangulate();
+        pot.mesh.initOpenGLMeshData();
 
-//		models.add(deer);
+
+		models.add(deer);
         models.add(mill);
 //		models.add(pot);
 //		models.add(grid);
@@ -254,59 +256,13 @@ public class GameLWJGL implements Runnable {
                             targetFPS = 165;
                     }
 
-                    if(key == GLFW_KEY_W && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-                        Vector x = rotationMatrix[0];
-                        Vector y = new Vector(new float[] {0,1,0});
-                        Vector z = x.cross(y);
-                        cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
-                    }
-
-                    if(key == GLFW_KEY_S && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-                        Vector x = rotationMatrix[0];
-                        Vector y = new Vector(new float[] {0,1,0});
-                        Vector z = x.cross(y);
-                        cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
-                    }
-
-                    if(key == GLFW_KEY_A && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-                        Vector v = rotationMatrix[0];
-                        cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-                    }
-
-                    if(key == GLFW_KEY_D && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-                        Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-                        Vector v = rotationMatrix[0];
-                        cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-                    }
-
-                    if(key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-
-                        Vector v = new Vector(new float[] {0,1,0});
-                        cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-                    }
-
-                    if(key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE) {
-                        float cameraSpeed = speed * speedConstant * speedMultiplier;
-
-                        Vector v = new Vector(new float[] {0,1,0});
-                        cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-                    }
-
                     if(key == GLFW_KEY_Q && action == GLFW_RELEASE) {
                         if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
                         else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
+                    }
+
+                    if(key == GLFW_KEY_V && action == GLFW_RELEASE) {
+                        display.toggleWindowModes();
                     }
 
                 }
@@ -355,16 +311,20 @@ public class GameLWJGL implements Runnable {
         }
 
         cleanUp();
+        System.out.println("cleaned up");
 
     }
 
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
+        for(Model m:models) {
+            m.mesh.cleanUp();
+        }
     }
 
     public void tick() {
-
+        tickInput();
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
         }
@@ -393,13 +353,63 @@ public class GameLWJGL implements Runnable {
 
     }
 
+    public void tickInput() {
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_W) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector x = rotationMatrix[0];
+            Vector y = new Vector(new float[] {0,1,0});
+            Vector z = x.cross(y);
+            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+        }
+
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_S) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector x = rotationMatrix[0];
+            Vector y = new Vector(new float[] {0,1,0});
+            Vector z = x.cross(y);
+            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
+        }
+
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_A) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector v = rotationMatrix[0];
+            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+        }
+
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_D) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector v = rotationMatrix[0];
+            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+        }
+
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_SPACE) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+
+            Vector v = new Vector(new float[] {0,1,0});
+            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+        }
+
+        if(glfwGetKey(display.getWindow(),GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+            float cameraSpeed = speed * speedConstant * speedMultiplier;
+
+            Vector v = new Vector(new float[] {0,1,0});
+            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+        }
+    }
+
     public void calculate3DCamMovement() {
-
-
         if (mouseDelta.getNorm() != 0 && isGameRunning) {
 
             float yawIncrease   = mouseXSensitivity * speedConstant * -mouseDelta.get(0);
-            float pitchIncrease = mouseYSensitivity * speedConstant * mouseDelta.get(1);
+            float pitchIncrease = mouseYSensitivity * speedConstant * -mouseDelta.get(1);
 
             Vector currentAngle = cam.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
