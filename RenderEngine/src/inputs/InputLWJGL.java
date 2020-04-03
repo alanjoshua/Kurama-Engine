@@ -107,7 +107,7 @@ public class InputLWJGL {
 
         for (int i = 0; i < KEY_COUNT; ++i) {
             // Set the key state
-            if (currentKeys[i] == GLFW_PRESS) {
+            if (currentKeys[i] == GLFW_PRESS || currentKeys[i] == GLFW_REPEAT) {
                 if (keys.get(i) == KeyState.RELEASED)
                     keys.set(i,KeyState.ONCE);
                 else

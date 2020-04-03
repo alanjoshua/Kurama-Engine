@@ -43,14 +43,13 @@ public class GameLWJGL implements Runnable {
     protected float speedMultiplier = 1;
     protected float speedIncreaseMultiplier = 2;
     protected float speedConstant;
-    protected int lookAtIndex = 0;
+    protected int lookAtIndex = 2;
 
     protected ButtonLWJGL EXIT;
     protected ButtonLWJGL FULLSCREEN;
     protected ButtonLWJGL WINDOWED;
 
     protected RenderingEngineLWJGL renderingEngine;
-    protected List<Model> modelsOldRenderMethod;
 
     protected Vector mouseDelta;
     protected Vector mousePos;
@@ -97,7 +96,6 @@ public class GameLWJGL implements Runnable {
         input = new InputLWJGL(display.getWindow());
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
-        modelsOldRenderMethod = new ArrayList<>();
 
         cam = new CameraLWJGL(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
@@ -113,7 +111,7 @@ public class GameLWJGL implements Runnable {
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
 
-//        cam.setPos(models.get(lookAtIndex).getCentre());
+        targetFPS = display.getRefreshRate();
 
     }
 
@@ -125,16 +123,14 @@ public class GameLWJGL implements Runnable {
         });
 
         Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
-        deer.setPos(new Vector(new float[] {-10,18,-15}));
+        deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
         deer.mesh.initOpenGLMeshData();
-        deer.setTickObj(tempRot);
 
         Model deer2 = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
         deer2.setPos(new Vector(new float[] {0,18,0}));
         deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
         deer2.mesh.initOpenGLMeshData();
-        deer2.setTickObj(tempRot);
 
         Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances);
         mill.setPos(new Vector(new float[] {10,5,0}));
@@ -151,18 +147,21 @@ public class GameLWJGL implements Runnable {
         pot.mesh.initOpenGLMeshData();
 
 
-//        Model city = ModelBuilder.buildModelFromFile("desertCity.obj",meshInstances);
-//        city.setScale(1f,1f,1f);
-//        city.mesh.displayMeshInformation();
-//        city.mesh.initOpenGLMeshData();
+        Model ironMan = ModelBuilder.buildModelFromFile("IronMan.obj",meshInstances);
+        ironMan.setScale(1f,1f,1f);
+        ironMan.setTickObj(tempRot);
+        ironMan.mesh.initOpenGLMeshData();
 
-//        models.add(city);
+        Model sasuke = ModelBuilder.buildModelFromFile("Sasuke.obj",meshInstances);
+        sasuke.setScale(0.1f);
+        sasuke.setPos(0,17,0);
+        sasuke.mesh.initOpenGLMeshData();
+        sasuke.setTickObj(tempRot);
+
+//        models.add(ironMan);
+        models.add(sasuke);
         models.add(deer);
         models.add(mill);
-        models.add(deer2);
-
-        modelsOldRenderMethod.add(grid);
-//		modelsOldRenderMethod.add(pot);
 
     }
 
@@ -318,7 +317,6 @@ public class GameLWJGL implements Runnable {
         }
 
         models.forEach(Model::tick);
-        modelsOldRenderMethod.forEach(Model::tick);
 
         if(!isGameRunning) {
             pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));

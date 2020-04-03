@@ -49,26 +49,6 @@ public class CameraLWJGL {
 
     private Quaternion orientation;
 
-//	public Camera(Game game, float[][] data, float focalLength, float filmApertureWidth, float filmApertureHeight,
-//			float nearClippingPlane, float farClippingPlane, int imageWidht, int imageHeight, int cameraMode) {
-//		this.camMatrix = new Matrix(data);
-//		this.game = game;
-//		this.filmApertureWidth = filmApertureWidth;
-//		this.filmApertureHeight = filmApertureHeight;
-//		this.focalLength = focalLength;
-//		this.nearClippingPlane = nearClippingPlane;
-//		this.farClippingPlane = farClippingPlane;
-//		this.imageWidth = imageWidht;
-//		this.imageHeight = imageHeight;
-//		this.cameraMode = cameraMode;
-//
-//		canvasWidth = 0;
-//		canvasHeight = 0;
-//
-//		computeInverse();
-//		updateValues();
-//	}
-
     public CameraLWJGL(GameLWJGL game, Quaternion quaternion, Quaternion forward,Quaternion up, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
                   int imageWidht, int imageHeight) {
         this.game = game;
@@ -213,6 +193,11 @@ public class CameraLWJGL {
 
         Vector from = new Vector(fromData);
         lookAtPoint(from, to);
+
+        Vector centre = m.getCentre();
+        if(pos.sub(centre).getNorm() > 200) {
+            pos = centre;
+        }
     }
 
     public void lookAtPoint(Vector from, Vector to) {

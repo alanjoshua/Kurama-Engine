@@ -82,6 +82,12 @@ public class Model {
 		isChanged = true;
 	}
 
+	public void setPos(float x, float y, float z) {
+		Vector pos = new Vector(new float[]{x,y,z});
+		this.pos = pos;
+		isChanged = true;
+	}
+
 	public Vector getScale() {
 		return scale;
 	}

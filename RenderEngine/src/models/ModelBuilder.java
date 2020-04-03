@@ -241,6 +241,9 @@ public class ModelBuilder {
 				}
 
 			}
+			else {
+				throw new IllegalArgumentException("This file type cannot be opened ot could not be found. Only .obj files can be opened. The file you tried to open was: "+loc);
+			}
 
 			return res;
 		}
