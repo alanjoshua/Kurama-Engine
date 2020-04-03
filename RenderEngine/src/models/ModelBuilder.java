@@ -21,8 +21,9 @@ public class ModelBuilder {
 
 		ModelBuilder m = new ModelBuilder();
 
-		if(meshInstances.containsKey(loc)) {
-			return new Model(meshInstances.get(loc),loc);
+		Mesh resMesh = meshInstances.get(loc);
+		if(resMesh != null) {
+			return new Model(resMesh,loc);
 		}
 
 		else {
@@ -228,7 +229,7 @@ public class ModelBuilder {
 					vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 					vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
-					Mesh resMesh = new Mesh(facesListObj, vertAttributes);
+					resMesh = new Mesh(facesListObj, vertAttributes);
 					resMesh.trimEverything();
 					res = new Model(resMesh,loc);
 					res.triangulate();

@@ -248,49 +248,7 @@ public class GameLWJGL implements Runnable {
     }
 
     public void initInputControls() {
-        GLFWKeyCallback keyCallBack = new GLFWKeyCallback() {
-            @Override
-            public void invoke(long window, int key, int scancode, int action, int mods) {
 
-                if(key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                    isGameRunning = !isGameRunning;
-                }
-
-                if(isGameRunning) {
-                    if(key == GLFW_KEY_R && action == GLFW_RELEASE) {
-//                        cam.setPos(models.get(lookAtIndex).getCentre());
-                        cam.lookAtModel(models.get(lookAtIndex));
-                    }
-
-                    if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
-                        if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
-                        else speedMultiplier = 1;
-                    }
-
-                    if(key == GLFW_KEY_F && action == GLFW_RELEASE) {
-                        if(targetFPS == display.getRefreshRate()) {
-                            targetFPS = 10000;
-                        }
-                        else {
-                            targetFPS = display.getRefreshRate();
-                        }
-                    }
-
-                    if(key == GLFW_KEY_Q && action == GLFW_RELEASE) {
-                        if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
-                        else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
-                    }
-
-                    if(key == GLFW_KEY_V && action == GLFW_RELEASE) {
-                        display.toggleWindowModes();
-                    }
-
-                }
-
-            }
-        };
-
-        glfwSetKeyCallback(display.getWindow(),keyCallBack);
     }
 
     public void runGame() {
@@ -331,8 +289,6 @@ public class GameLWJGL implements Runnable {
         }
 
         cleanUp();
-        System.out.println("cleaned up");
-
     }
 
     public void cleanUp() {
@@ -345,6 +301,7 @@ public class GameLWJGL implements Runnable {
 
     public void tick() {
         tickInput();
+
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
         }
@@ -374,7 +331,8 @@ public class GameLWJGL implements Runnable {
     }
 
     public void tickInput() {
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_W) == GLFW_PRESS) {
+
+        if(input.keyDown(GLFW_KEY_W)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -384,7 +342,7 @@ public class GameLWJGL implements Runnable {
             cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_S) == GLFW_PRESS) {
+        if(input.keyDown(GLFW_KEY_S)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -394,7 +352,7 @@ public class GameLWJGL implements Runnable {
             cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_A) == GLFW_PRESS) {
+        if(input.keyDown(GLFW_KEY_A)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -402,7 +360,7 @@ public class GameLWJGL implements Runnable {
             cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_D) == GLFW_PRESS) {
+        if(input.keyDown(GLFW_KEY_D)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -410,18 +368,52 @@ public class GameLWJGL implements Runnable {
             cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if(input.keyDown(GLFW_KEY_SPACE)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
-        if(glfwGetKey(display.getWindow(),GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        if(input.keyDown(GLFW_KEY_LEFT_SHIFT)) {
             float cameraSpeed = speed * speedConstant * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDownOnce(GLFW_KEY_ESCAPE)) {
+            isGameRunning = !isGameRunning;
+        }
+
+        if(isGameRunning) {
+            if(input.keyDownOnce(GLFW_KEY_R)) {
+//              cam.setPos(models.get(lookAtIndex).getCentre());
+                cam.lookAtModel(models.get(lookAtIndex));
+            }
+
+            if(input.keyDownOnce(GLFW_KEY_LEFT_CONTROL)) {
+                if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
+                else speedMultiplier = 1;
+            }
+
+            if(input.keyDownOnce(GLFW_KEY_F)) {
+                if(targetFPS == display.getRefreshRate()) {
+                    targetFPS = 10000;
+                }
+                else {
+                    targetFPS = display.getRefreshRate();
+                }
+            }
+
+            if(input.keyDownOnce(GLFW_KEY_Q)) {
+                if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
+                else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
+            }
+
+            if(input.keyDownOnce(GLFW_KEY_V)) {
+                display.toggleWindowModes();
+            }
         }
     }
 
@@ -462,6 +454,7 @@ public class GameLWJGL implements Runnable {
 
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
+        input.poll();
     }
 
     public List<Model> getModels() {
