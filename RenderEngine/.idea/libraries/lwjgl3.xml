@@ -4,18 +4,22 @@
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl" />
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-glfw" />
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-opengl" />
+      <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-stb" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl" />
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-glfw" />
       <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-opengl" />
+      <root url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-stb" />
     </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-glfw" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-opengl" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-stb" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-glfw" recursive="false" type="SOURCES" />
     <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-opengl" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl-stb" recursive="false" type="SOURCES" />
   </library>
 </component>

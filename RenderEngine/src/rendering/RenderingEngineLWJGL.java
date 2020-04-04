@@ -1,37 +1,19 @@
 package rendering;
 
 import Math.Matrix;
-import Math.Quaternion;
 import Math.Utils;
-import Math.Vector;
 import Shaders.ShaderProgram;
 import main.GameLWJGL;
-import models.DataStructure.Mesh.Face;
-import models.DataStructure.Mesh.Vertex;
-import models.Model;
-import models.ModelBuilder;
-import org.lwjgl.system.MemoryUtil;
+import models.ModelLWJGL;
 
-import java.awt.*;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
 
 public class RenderingEngineLWJGL {
 
     GameLWJGL game;
-    private static float viewingTolerance = 1.5f;
-    public float[][] depthBuffer;   //Should be removed
-    public Color[][] frameBuffer;  //Should be removed
     public ShaderProgram shaderProgram;
-    public int vaoId;
-    public int vboId;
 
     public enum ProjectionMode {
         ORTHO, PERSPECTIVE
@@ -52,6 +34,7 @@ public class RenderingEngineLWJGL {
 
         shaderProgram.createUniform("projectionMatrix");
         shaderProgram.createUniform("worldMatrix");
+       // shaderProgram.createUniform("texture_sampler");
 
         enableModelFill();
 
@@ -76,7 +59,7 @@ public class RenderingEngineLWJGL {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render3(List<Model> models) {
+    public void render3(List<ModelLWJGL> models) {
         clear();
         shaderProgram.bind();
 
@@ -84,10 +67,10 @@ public class RenderingEngineLWJGL {
         Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
 
 
-        shaderProgram.setUniforms("projectionMatrix",projectionMatrix);
+        shaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
-        for(Model model: models) {
-            shaderProgram.setUniforms("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+        for(ModelLWJGL model: models) {
+            shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
             model.mesh.render();
         }
 

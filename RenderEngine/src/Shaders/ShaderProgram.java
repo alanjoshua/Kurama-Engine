@@ -33,12 +33,16 @@ public class ShaderProgram {
         uniforms.put(uniformName,uniformLocation);
     }
 
-    public void setUniforms(String uniformName, Matrix value) {
+    public void setUniform(String uniformName, Matrix value) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
             value.setValuesToFloatBuffer(fb);
             glUniformMatrix4fv(uniforms.get(uniformName),false,fb);
         }
+    }
+
+    public void setUniform(String uniformName,int value) {
+        glUniform1i(uniforms.get(uniformName), value);
     }
 
     public void createVertexShader(String shaderCode) throws Exception {

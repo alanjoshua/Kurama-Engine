@@ -40,8 +40,14 @@ public class Vertex {
         vertAttributes.set(key,val);
     }
 
-    public int getAttribute(int key) {
-        return vertAttributes.get(key);
+    public Integer getAttribute(int key) {
+        try {
+            Integer val = vertAttributes.get(key);
+            return val;
+        }
+        catch(Exception e) {
+            return null;
+        }
     }
 
     public boolean isAttributePresent(int key) {
@@ -80,9 +86,13 @@ public class Vertex {
 
         boolean isEquals = true;
         for(int i = 0;i < vertAttributes.size();i++) {
-            if(!this.vertAttributes.get(i).equals(v.vertAttributes.get(i))) {
-                isEquals = false;
-                break;
+            try {
+                if (!this.vertAttributes.get(i).equals(v.vertAttributes.get(i))) {
+                    isEquals = false;
+                    break;
+                }
+            }catch(Exception e) {
+                return false;
             }
         }
         return isEquals;

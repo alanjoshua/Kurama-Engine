@@ -13,272 +13,334 @@ import models.DataStructure.LinkedList.DoublyLinkedList;
 import models.DataStructure.LinkedList.Node;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Mesh;
+import models.DataStructure.Mesh.MeshLWJGL;
 import models.DataStructure.Mesh.Vertex;
 
 public class ModelBuilder {
 
 	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances) {
-
-		ModelBuilder m = new ModelBuilder();
-
+		Model res;
 		Mesh resMesh = meshInstances.get(loc);
+
 		if(resMesh != null) {
-			return new Model(resMesh,loc);
+			return new models.Model(resMesh,loc);
 		}
-
 		else {
+			resMesh = loadRawData(loc);
+			resMesh = triangulate(resMesh,false);
 
-			InputStream url = m.getClass().getResourceAsStream("/models/resources/" + loc);
+			meshInstances.put(loc,resMesh);
 
-			Model res = null;
-			List<Vector> vertex = new ArrayList<Vector>();
-			List<Vector> vn = new ArrayList<Vector>();
-			List<Vector> vt = new ArrayList<Vector>();
-			List<int[]> faces = new ArrayList<>();
-			List<int[]> textureFaces = new ArrayList<>();
-			List<int[]> normalFaces = new ArrayList<>();
-
-			// noinspection StringOperationCanBeSimplified
-			if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
-
-				try (BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
-					String line;
-//				BufferedReader br = new BufferedReader(new InputStreamReader(url));
-
-					while ((line = br.readLine()) != null) {
-
-						String[] split = line.split("\\s+");
-
-						if (split.length > 1) {
-
-//						Reads lines which start with "v" and stores the vertex data in the vertex list. 
-//						If the fourth coordinate "w" is not given, it is given a default value of 1.0
-
-							if (split[0].equalsIgnoreCase("v")) {
-								float[] data = new float[4];
-								for (int i = 0; i < 3; i++) {
-									data[i] = Float.parseFloat(split[i + 1]);
-								}
-								if (split.length == 4) {
-									data[3] = 1.0f;
-								} else if (split.length == 5) {
-									data[3] = Float.parseFloat(split[4]);
-								}
-								vertex.add(new Vector(data));
-							}
-
-							if (split[0].equalsIgnoreCase("vn")) {
-								float[] data = new float[4];
-								for (int i = 0; i < 3; i++) {
-									data[i] = Float.parseFloat(split[i + 1]);
-								}
-								if (split.length == 4) {
-									data[3] = 1.0f;
-								} else if (split.length == 5) {
-									data[3] = Float.parseFloat(split[4]);
-								}
-								vn.add(new Vector(data));
-							}
-
-							if (split[0].equalsIgnoreCase("vt")) {
-								float[] data = new float[3];
-								data[0] = Float.parseFloat(split[1]);
-								if (split.length == 2) {
-									data[1] = 0f;
-									data[2] = 0f;
-								} else if (split.length == 3) {
-									data[1] = Float.parseFloat(split[2]);
-									data[2] = 0f;
-								} else if (split.length == 4) {
-									data[1] = Float.parseFloat(split[2]);
-									data[2] = Float.parseFloat(split[3]);
-								}
-
-								vt.add(new Vector(data));
-							}
-
-							if (split[0].equalsIgnoreCase("f")) {
-
-								int[] fdata = new int[split.length - 1];
-								int[] tdata = new int[split.length - 1];
-								int[] ndata = new int[split.length - 1];
-
-								String[] doubleSplitTest = split[1].split("/");
-
-								if (doubleSplitTest.length == 1) {
-									tdata = null;
-									ndata = null;
-									for (int i = 1; i < split.length; i++) {
-										fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
-									}
-								} else if (doubleSplitTest.length == 2) {
-									ndata = null;
-									for (int i = 1; i < split.length; i++) {
-										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-									}
-								} else if (doubleSplitTest.length == 3) {
-
-									if (doubleSplitTest[1].equalsIgnoreCase("")) {
-										tdata = null;
-										for (int i = 1; i < split.length; i++) {
-											fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-											ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
-										}
-									} else {
-										for (int i = 1; i < split.length; i++) {
-											fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-											tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-											ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
-										}
-									}
-								}
-
-								faces.add(fdata);
-								textureFaces.add(tdata);
-								normalFaces.add(ndata);
-							}
-
-						}
-					}
-
-					float[] dataMin = new float[4];
-					dataMin[0] = Float.POSITIVE_INFINITY;
-					dataMin[1] = Float.POSITIVE_INFINITY;
-					dataMin[2] = Float.POSITIVE_INFINITY;
-					dataMin[3] = 0;
-
-					float[] dataMax = new float[4];
-					dataMax[0] = Float.NEGATIVE_INFINITY;
-					dataMax[1] = Float.NEGATIVE_INFINITY;
-					dataMax[2] = Float.NEGATIVE_INFINITY;
-					dataMax[3] = 0;
-
-					for (Vector v : vertex) {
-						if (v.get(0) < dataMin[0]) {
-							dataMin[0] = v.get(0);
-						}
-						if (v.get(1) < dataMin[1]) {
-							dataMin[1] = v.get(1);
-						}
-						if (v.get(2) < dataMin[2]) {
-							dataMin[2] = v.get(2);
-						}
-
-						if (v.get(0) > dataMax[0]) {
-							dataMax[0] = v.get(0);
-						}
-						if (v.get(1) > dataMax[1]) {
-							dataMax[1] = v.get(1);
-						}
-						if (v.get(2) > dataMax[2]) {
-							dataMax[2] = v.get(2);
-						}
-					}
-
-					Vector min = new Vector(dataMin);
-					Vector max = new Vector(dataMax);
-
-					Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
-
-					Vector[] vertArr = new Vector[vertex.size()];
-					for (int i = 0; i < vertArr.length; i++) {
-						vertArr[i] = vertex.get(i).sub(change);
-					}
-
-					Vector[] vnArray = new Vector[vn.size()];
-					for (int i = 0; i < vnArray.length; i++) {
-						vnArray[i] = vn.get(i);
-					}
-
-					Vector[] vtArray = new Vector[vt.size()];
-					for (int i = 0; i < vtArray.length; i++) {
-						vtArray[i] = vt.get(i);
-					}
-
-					List<Face> facesListObj = new ArrayList<>(faces.size());
-
-					for (int i = 0; i < faces.size(); i++) {
-
-						Face tempFace = new Face();
-
-						for (int j = 0; j < faces.get(i).length; j++) {
-
-							Vertex temp = new Vertex();
-							temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
-
-							if (vtArray != null) {
-								if (textureFaces.get(i) != null) {
-									temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
-								}
-							}
-							if (vnArray != null) {
-								if (normalFaces.get(i) != null) {
-									temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
-								}
-							}
-//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
-							tempFace.vertices.add(temp);
-						}
-//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
-						facesListObj.add(tempFace);
-					}
-
-					List<List<Vector>> vertAttributes = new ArrayList<>(3);
-					vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
-					vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
-					vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
-
-					resMesh = new Mesh(facesListObj, vertAttributes);
-					resMesh.trimEverything();
-					res = new Model(resMesh,loc);
-					res.triangulate();
-					meshInstances.put(loc,resMesh);
-//				res = new Model(vertArr, faces, vtArray, textureFaces, vnArray, normalFaces);
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-			}
-			else {
-				throw new IllegalArgumentException("This file type cannot be opened ot could not be found. Only .obj files can be opened. The file you tried to open was: "+loc);
-			}
-
+			res = new Model(resMesh,loc);
 			return res;
 		}
 	}
 
-//	public static Mesh cleanMesh(Mesh inMesh) {
-//		Mesh retMesh = new Mesh(inMesh.vertAttributes);
+	public static models.ModelLWJGL buildModelLWJGLFromFile(String loc, Map<String,MeshLWJGL> meshInstances) {
+
+		models.ModelLWJGL res;
+		MeshLWJGL resMesh = meshInstances.get(loc);
+
+		if(resMesh != null) {
+			return new models.ModelLWJGL(resMesh,loc);
+		}
+		else {
+			Mesh temp = loadRawData(loc);
+			temp = triangulate(temp,false);
+			resMesh = restructureMeshToSingleIndexList(temp);
+
+			resMesh.initOpenGLMeshData();
+			meshInstances.put(loc,resMesh);
+
+			res = new models.ModelLWJGL(resMesh,loc);
+			return res;
+		}
+	}
+
+	public static MeshLWJGL restructureMeshToSingleIndexList(Mesh mesh) {
+
+		List<Integer> indexList = new ArrayList<>();
+		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
+		List<Vertex> uniqueVertices = new ArrayList<>();
+//		int totalVerts = 0;
+
+		for(int i = 0;i < mesh.vertAttributes.size();i++) {
+			newVertAttribs.add(new ArrayList<>());
+		}
+
+		for(Face f:mesh.faces) {
+			for(Vertex v: f.vertices) {
+//				totalVerts++;
+				int vInd = uniqueVertices.indexOf(v);
+//				uniqueVertices.add(v);
+				if(uniqueVertices.size() == 0 || vInd < 0) {
+					uniqueVertices.add(v);
+					indexList.add(uniqueVertices.size() - 1);
+					for(int i =0;i < newVertAttribs.size();i++) {
+						Integer ind = v.getAttribute(i);
+						if(ind!=null) {
+							newVertAttribs.get(i).add(mesh.getAttributeList(i).get(ind));
+						}
+						else {
+							newVertAttribs.get(i).add(null);
+						}
+					}
+
+				}
+				else {
+					indexList.add(vInd);
+				}
+			}
+		}
+
+//		Integer[] tempIndices = new Integer[totalVerts];
 //
-//		for(int i = 0;i < inMesh.faces.size();i++) {
-//			retMesh.addFace(cleanFace(inMesh.faces.get(i)));
-//		}
-//
-//		return retMesh;
-//	}
-//
-//	public static Face cleanFace(Face inFace) {
-//		Face retFace = new Face();
-//		Vertex curr = null;
-//		Vertex prev = null;
-//		for(int i = 0;i < inFace.vertices.size();i++) {
-//			curr = inFace.getVertex(i);
-//
-//			if(i > 0) {
-//				if (!prev.equals(curr)) {
-//					retFace.addVertex(curr);
+//		List<Vertex> uniqueList = new ArrayList<Vertex>(uniqueVertices);
+//		int uvCounter = 0;
+//		for(Vertex uv:uniqueList) {
+//			int vertCounter = 0;
+//			for(Face f: mesh.faces) {
+//				for(Vertex v:f.vertices) {
+//					if(uv.equals(v)) {
+//						tempIndices[vertCounter] = uvCounter;
+//					}
+//					vertCounter++;
 //				}
 //			}
-//			else {
-//				retFace.addVertex(curr);
-//			}
-//			prev = curr;
+//			uvCounter++;
 //		}
 //
-//		return retFace;
-//	}
+//		indexList = new ArrayList<Integer>(Arrays.asList(tempIndices));
+
+		for(Face f:mesh.faces) {
+			for(Vertex v: f.vertices) {
+//				int ind = temp.get(v.toString());
+				indexList.add(uniqueVertices.indexOf(v));
+//				System.out.println(v.toString());
+			}
+		}
+
+		return new MeshLWJGL(indexList,newVertAttribs);
+	}
+
+	public static Mesh loadRawData(String loc) {
+
+		ModelBuilder m = new ModelBuilder();
+		InputStream url = m.getClass().getResourceAsStream("/models/resources/" + loc);
+
+		Mesh resMesh = null;
+
+		List<Vector> vertex = new ArrayList<Vector>();
+		List<Vector> vn = new ArrayList<Vector>();
+		List<Vector> vt = new ArrayList<Vector>();
+		List<int[]> faces = new ArrayList<>();
+		List<int[]> textureFaces = new ArrayList<>();
+		List<int[]> normalFaces = new ArrayList<>();
+
+		// noinspection StringOperationCanBeSimplified
+		if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
+
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
+				String line;
+//				BufferedReader br = new BufferedReader(new InputStreamReader(url));
+
+				while ((line = br.readLine()) != null) {
+
+					String[] split = line.split("\\s+");
+
+					if (split.length > 1) {
+
+//						Reads lines which start with "v" and stores the vertex data in the vertex list.
+//						If the fourth coordinate "w" is not given, it is given a default value of 1.0
+
+						if (split[0].equalsIgnoreCase("v")) {
+							float[] data = new float[4];
+							for (int i = 0; i < 3; i++) {
+								data[i] = Float.parseFloat(split[i + 1]);
+							}
+							if (split.length == 4) {
+								data[3] = 1.0f;
+							} else if (split.length == 5) {
+								data[3] = Float.parseFloat(split[4]);
+							}
+							vertex.add(new Vector(data));
+						}
+
+						if (split[0].equalsIgnoreCase("vn")) {
+							float[] data = new float[4];
+							for (int i = 0; i < 3; i++) {
+								data[i] = Float.parseFloat(split[i + 1]);
+							}
+							if (split.length == 4) {
+								data[3] = 1.0f;
+							} else if (split.length == 5) {
+								data[3] = Float.parseFloat(split[4]);
+							}
+							vn.add(new Vector(data));
+						}
+
+						if (split[0].equalsIgnoreCase("vt")) {
+							float[] data = new float[3];
+							data[0] = Float.parseFloat(split[1]);
+							if (split.length == 2) {
+								data[1] = 0f;
+								data[2] = 0f;
+							} else if (split.length == 3) {
+								data[1] = Float.parseFloat(split[2]);
+								data[2] = 0f;
+							} else if (split.length == 4) {
+								data[1] = Float.parseFloat(split[2]);
+								data[2] = Float.parseFloat(split[3]);
+							}
+
+							vt.add(new Vector(data));
+						}
+
+						if (split[0].equalsIgnoreCase("f")) {
+
+							int[] fdata = new int[split.length - 1];
+							int[] tdata = new int[split.length - 1];
+							int[] ndata = new int[split.length - 1];
+
+							String[] doubleSplitTest = split[1].split("/");
+
+							if (doubleSplitTest.length == 1) {
+								tdata = null;
+								ndata = null;
+								for (int i = 1; i < split.length; i++) {
+									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
+								}
+							} else if (doubleSplitTest.length == 2) {
+								ndata = null;
+								for (int i = 1; i < split.length; i++) {
+									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+								}
+							} else if (doubleSplitTest.length == 3) {
+
+								if (doubleSplitTest[1].equalsIgnoreCase("")) {
+									tdata = null;
+									for (int i = 1; i < split.length; i++) {
+										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+									}
+								} else {
+									for (int i = 1; i < split.length; i++) {
+										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+									}
+								}
+							}
+
+							faces.add(fdata);
+							textureFaces.add(tdata);
+							normalFaces.add(ndata);
+						}
+
+					}
+				}
+
+				float[] dataMin = new float[4];
+				dataMin[0] = Float.POSITIVE_INFINITY;
+				dataMin[1] = Float.POSITIVE_INFINITY;
+				dataMin[2] = Float.POSITIVE_INFINITY;
+				dataMin[3] = 0;
+
+				float[] dataMax = new float[4];
+				dataMax[0] = Float.NEGATIVE_INFINITY;
+				dataMax[1] = Float.NEGATIVE_INFINITY;
+				dataMax[2] = Float.NEGATIVE_INFINITY;
+				dataMax[3] = 0;
+
+				for (Vector v : vertex) {
+					if (v.get(0) < dataMin[0]) {
+						dataMin[0] = v.get(0);
+					}
+					if (v.get(1) < dataMin[1]) {
+						dataMin[1] = v.get(1);
+					}
+					if (v.get(2) < dataMin[2]) {
+						dataMin[2] = v.get(2);
+					}
+
+					if (v.get(0) > dataMax[0]) {
+						dataMax[0] = v.get(0);
+					}
+					if (v.get(1) > dataMax[1]) {
+						dataMax[1] = v.get(1);
+					}
+					if (v.get(2) > dataMax[2]) {
+						dataMax[2] = v.get(2);
+					}
+				}
+
+				Vector min = new Vector(dataMin);
+				Vector max = new Vector(dataMax);
+
+				Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
+
+				Vector[] vertArr = new Vector[vertex.size()];
+				for (int i = 0; i < vertArr.length; i++) {
+					vertArr[i] = vertex.get(i).sub(change);
+				}
+
+				Vector[] vnArray = new Vector[vn.size()];
+				for (int i = 0; i < vnArray.length; i++) {
+					vnArray[i] = vn.get(i);
+				}
+
+				Vector[] vtArray = new Vector[vt.size()];
+				for (int i = 0; i < vtArray.length; i++) {
+					vtArray[i] = vt.get(i);
+				}
+
+				List<Face> facesListObj = new ArrayList<>(faces.size());
+
+				for (int i = 0; i < faces.size(); i++) {
+
+					Face tempFace = new Face();
+
+					for (int j = 0; j < faces.get(i).length; j++) {
+
+						Vertex temp = new Vertex();
+						temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
+
+						if (vtArray != null) {
+							if (textureFaces.get(i) != null) {
+								temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
+							}
+						}
+						if (vnArray != null) {
+							if (normalFaces.get(i) != null) {
+								temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
+							}
+						}
+//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
+						tempFace.vertices.add(temp);
+					}
+//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
+					facesListObj.add(tempFace);
+				}
+
+				List<List<Vector>> vertAttributes = new ArrayList<>(3);
+				vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
+				vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
+				vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
+
+				resMesh = new Mesh(facesListObj, vertAttributes);
+				resMesh.trimEverything();
+				return resMesh;
+
+			} catch (IOException e) {
+				throw new IllegalArgumentException("The file could not be opened. The file you tried to open was: "+loc);
+			}
+
+		}
+		else {
+			throw new IllegalArgumentException("This file type cannot be opened. Only .obj files can be opened. The file you tried to open was: "+loc);
+		}
+	}
 
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
@@ -287,6 +349,14 @@ public class ModelBuilder {
 		}
 		return new Mesh(newFaces,inMesh.vertAttributes);
 	}
+
+//	public static MeshLWJGL triangulate(MeshLWJGL inMesh, boolean forceEarClipping) {
+//		List<Face> newFaces = new ArrayList<>();
+//		for(Face f: inMesh.faces) {
+//			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
+//		}
+//		return new MeshLWJGL(newFaces,inMesh.vertAttributes);
+//	}
 
 	public static List<Face> triangulate(Face f, List<Vector> vertices,boolean forceEarClipping) {
 		if(f.vertices.size() > 4 || forceEarClipping) {

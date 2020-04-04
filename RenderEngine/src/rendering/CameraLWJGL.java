@@ -6,6 +6,7 @@ import Math.Vector;
 import main.Game;
 import main.GameLWJGL;
 import models.Model;
+import models.ModelLWJGL;
 import rendering.RenderingEngineLWJGL.ProjectionMode;
 
 public class CameraLWJGL {
@@ -131,7 +132,7 @@ public class CameraLWJGL {
         }
     }
 
-    public void lookAtModel(Model m) {
+    public void lookAtModel(ModelLWJGL m) {
 
         float[] dataMin = new float[3];
         dataMin[0] = Float.POSITIVE_INFINITY;
@@ -258,7 +259,7 @@ public class CameraLWJGL {
         dataMax[1] = Float.NEGATIVE_INFINITY;
         dataMax[2] = Float.NEGATIVE_INFINITY;
 
-        for (Model m : game.getModels()) {
+        for (ModelLWJGL m : game.getModels()) {
             for (Vector vv : m.getMesh().getVertices()) {
 
                 Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
