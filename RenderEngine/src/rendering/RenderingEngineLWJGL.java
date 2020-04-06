@@ -3,48 +3,42 @@ package rendering;
 import Math.Matrix;
 import Math.Utils;
 import Shaders.ShaderProgram;
-import main.GameLWJGL;
+import main.DisplayLWJGL;
+import main.Game;
+import main.GameSR;
+import models.DataStructure.Mesh.MeshLWJGL;
+import models.Model;
 import models.ModelLWJGL;
 
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class RenderingEngineLWJGL {
+public class RenderingEngineLWJGL extends RenderingEngine {
 
-    GameLWJGL game;
     public ShaderProgram shaderProgram;
 
-    public enum ProjectionMode {
-        ORTHO, PERSPECTIVE
-    }
-
-    public enum RenderPipeline {
-        Matrix, Quat
-    }
-
-    public void init() throws Exception {
+    public void init() {
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
-        game.getDisplay().setClearColor(0,0,0,1);
 
-        shaderProgram = new ShaderProgram();
-        shaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
-        shaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/FragmentShader.fs"));
-        shaderProgram.link();
+        try {
+            shaderProgram = new ShaderProgram();
+            shaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
+            shaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/FragmentShader.fs"));
+            shaderProgram.link();
 
-        shaderProgram.createUniform("projectionMatrix");
-        shaderProgram.createUniform("worldMatrix");
-       // shaderProgram.createUniform("texture_sampler");
+            shaderProgram.createUniform("projectionMatrix");
+            shaderProgram.createUniform("worldMatrix");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        enableModelFill();
+        //enableModelFill();
 
     }
 
-    private ProjectionMode projectionMode = ProjectionMode.PERSPECTIVE;
-    private RenderPipeline renderPipeline = RenderPipeline.Quat;
-
-    public RenderingEngineLWJGL(GameLWJGL game) {
-        this.game = game;
+    public RenderingEngineLWJGL(Game game) {
+        super(game);
     }
 
     public void enableModelOutline() {
@@ -59,7 +53,7 @@ public class RenderingEngineLWJGL {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render3(List<ModelLWJGL> models) {
+    public void render(List<Model> models) {
         clear();
         shaderProgram.bind();
 
@@ -69,9 +63,9 @@ public class RenderingEngineLWJGL {
 
         shaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
-        for(ModelLWJGL model: models) {
+        for(Model model: models) {
             shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-            model.mesh.render();
+            ((MeshLWJGL)model.mesh).render();
         }
 
         shaderProgram.unbind();
@@ -81,22 +75,6 @@ public class RenderingEngineLWJGL {
         if(shaderProgram != null) {
             shaderProgram.cleanUp();
         }
-    }
-
-    public ProjectionMode getProjectionMode() {
-        return projectionMode;
-    }
-
-    public void setProjectionMode(ProjectionMode projectionMode) {
-        this.projectionMode = projectionMode;
-    }
-
-    public RenderPipeline getRenderPipeline() {
-        return renderPipeline;
-    }
-
-    public void setRenderPipeline(RenderPipeline renderPipeline) {
-        this.renderPipeline = renderPipeline;
     }
 
 }

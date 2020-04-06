@@ -4,47 +4,35 @@ import java.awt.*;
 
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-import rendering.CameraLWJGL;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-public class DisplayLWJGL {
+public class DisplayLWJGL extends Display {
 
     private long window;
-    private GameLWJGL game;
-    private int defaultWindowedWidth = 1280;
-    private int defaultWindowedHeight = 720;
     private int WIDTH = defaultWindowedWidth;
     private int HEIGHT = defaultWindowedHeight;
+    private GLCapabilities capabilities;
 
-    public static String OS = System.getProperty("os.name").toLowerCase();
-    public static final double winDPI = 96;
-    public static final double macDPI = 72;
-    public int maxFPS = 120;
-
-    public enum DisplayMode {
-        FULLSCREEN, WINDOWED
+    public DisplayLWJGL(int defaultWindowedWidth, int defaultWindowedHeight, Game game) {
+        super(defaultWindowedWidth,defaultWindowedHeight,game);
     }
 
-    public DisplayMode displayMode = DisplayMode.FULLSCREEN;
-
-    public DisplayLWJGL(int defaultWindowedWidth, int defaultWindowedHeight, GameLWJGL game) {
-        this.game = game;
-        this.defaultWindowedWidth = defaultWindowedWidth;
-        this.defaultWindowedHeight = defaultWindowedHeight;
-        startGLFW();
+    public DisplayLWJGL(Game game) {
+        super(game);
     }
 
-    public DisplayLWJGL(GameLWJGL game) {
-        this.game = game;
+    @Override
+    public void init() {
         startGLFW();
+        initWindow();
     }
 
     public void startScreen() {
-        initWindow();
+        //initWindow();
         if (displayMode == DisplayMode.FULLSCREEN) setFullScreen();
         else setWindowedMode();
     }
@@ -83,11 +71,12 @@ public class DisplayLWJGL {
     }
 
     public void initWindow() {
-
+        System.out.println("initing window");
         // Configure GLFW
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
 
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -103,16 +92,18 @@ public class DisplayLWJGL {
         }
 
         // Make the OpenGL context current
+
         glfwMakeContextCurrent(window);
-        GL.createCapabilities();
+        capabilities = GL.createCapabilities();
+
+        GLUtil.setupDebugMessageCallback();
         // Enable v-sync
         glfwSwapInterval(1);
 
         glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
             glViewport(0,0,width,height);
             if(game !=null) {
-                CameraLWJGL cam = game.getCamera();
-                if(cam != null) {
+                if(game.getCamera() != null) {
                     WIDTH = width;
                     HEIGHT = height;
                     game.getCamera().setImageWidth(width);
@@ -140,7 +131,11 @@ public class DisplayLWJGL {
         }
     }
 
-    private void setFullScreen() {
+    public void setCapabilities() {
+        GL.setCapabilities(capabilities);
+    }
+
+    public void setFullScreen() {
         GLFWVidMode vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(),0,0,vid.width(),vid.height(),vid.refreshRate());
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
@@ -149,7 +144,7 @@ public class DisplayLWJGL {
         HEIGHT = vid.height();
     }
 
-    private void setWindowedMode() {
+    public void setWindowedMode() {
         GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         glfwSetWindowMonitor(window, NULL,0,0,defaultWindowedWidth,defaultWindowedHeight,vidmode.refreshRate());
 
@@ -182,7 +177,7 @@ public class DisplayLWJGL {
         HEIGHT = defaultWindowedHeight;
     }
 
-    public void removeWindow() {
+    protected void removeWindow() {
         if(window != NULL) {
             glfwFreeCallbacks(window);
             glfwDestroyWindow(window);
@@ -192,9 +187,10 @@ public class DisplayLWJGL {
         HEIGHT = defaultWindowedHeight;
     }
 
-    public void startGLFW() {
+    protected void startGLFW() {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
+        System.out.println("started GLFW");
         GLFWErrorCallback.createPrint(System.err).set();
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.
@@ -203,7 +199,7 @@ public class DisplayLWJGL {
 
     }
 
-    public void removeGLFW() {
+    protected void removeGLFW() {
         // Terminate GLFW and free the error callback
         glfwTerminate();
         glfwSetErrorCallback(null).free();

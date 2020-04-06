@@ -12,59 +12,35 @@ import Math.Vector;
 import inputs.InputLWJGL;
 import models.DataStructure.Mesh.Mesh;
 import models.DataStructure.Mesh.MeshLWJGL;
+import models.Model;
 import models.ModelLWJGL;
-import models.ModelLWJGL.Tick;
+import models.Model.Tick;
 import models.ModelBuilder;
-import rendering.CameraLWJGL;
-import rendering.RenderingEngineLWJGL.RenderPipeline;
-import rendering.RenderingEngineLWJGL.ProjectionMode;
+import rendering.Camera;
 import rendering.RenderingEngineLWJGL;
 
 import org.lwjgl.glfw.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class GameLWJGL implements Runnable {
+import org.lwjgl.opengl.*;
 
-    protected DisplayLWJGL display;
-    protected List<ModelLWJGL> models;
+public class GameLWJGL extends Game implements Runnable {
+
     protected List<GUI.ButtonLWJGL> pauseButtons;
-    protected double targetFPS = 100000;
-    protected boolean shouldDisplayFPS = false;
-    protected boolean programRunning = true;
-    protected CameraLWJGL cam;
-    protected InputLWJGL input;
-    protected boolean isGameRunning = true;
-    protected boolean prevGameState = false;
-    protected float fps;
-    protected float displayFPS;
-    protected float mouseXSensitivity = 20f;
-    protected float mouseYSensitivity = 20f;
-    protected float speed = 15f;
-    protected float speedMultiplier = 1;
-    protected float speedIncreaseMultiplier = 2;
-    protected float speedConstant;
-    protected int lookAtIndex = 0;
-
     protected ButtonLWJGL EXIT;
     protected ButtonLWJGL FULLSCREEN;
     protected ButtonLWJGL WINDOWED;
 
-    protected RenderingEngineLWJGL renderingEngine;
-
     protected Vector mouseDelta;
     protected Vector mousePos;
 
-    private Thread gameLoopThread;
+    protected boolean prevGameState = false;
 
     Map<String, MeshLWJGL> meshInstances;
 
-    public GameLWJGL(int width, int height) {
-        gameLoopThread = new Thread(this,"Game Thread");
-    }
-
-    public GameLWJGL() {
-        gameLoopThread = new Thread(this,"Game Thread");
+    public GameLWJGL(String threadName) {
+        super(threadName);
     }
 
     public void start() {
@@ -72,47 +48,33 @@ public class GameLWJGL implements Runnable {
         if ( osName.contains("Mac") ) {
             gameLoopThread.run();   //To make this program compatible with macs
         } else {
+            System.out.println("start called");
             gameLoopThread.start();
         }
     }
 
-    public void run() {
-        try {
-            init();
-        } catch (Exception e) {
-            System.err.println("Could not init");
-            e.printStackTrace();
-        }
-        runGame();
-    }
-
-    public void init() throws Exception {
+    public void init() {
         meshInstances = new HashMap<>();
-        display = new DisplayLWJGL(this);
         renderingEngine = new RenderingEngineLWJGL(this);
-
+        display = new DisplayLWJGL(this);
         display.startScreen();
         renderingEngine.init();
 
-        input = new InputLWJGL(display.getWindow());
+        input = new InputLWJGL(((DisplayLWJGL)display).getWindow());
+
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
 
-        cam = new CameraLWJGL(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
 
         initModels();
         initPauseScreen();
 
-        initInputControls();
-
-        renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
-        renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
-
         cam.updateValues();
         cam.lookAtModel(models.get(lookAtIndex));
 
-        targetFPS = display.getRefreshRate();
+        targetFPS = ((DisplayLWJGL)display).getRefreshRate();
 
     }
 
@@ -123,7 +85,7 @@ public class GameLWJGL implements Runnable {
             m.setOrientation(newQ);
         });
 
-        ModelLWJGL deer = ModelBuilder.buildModelLWJGLFromFile("deer.obj",meshInstances);
+        Model deer = ModelBuilder.buildModelLWJGLFromFile("deer.obj",meshInstances);
         deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
@@ -131,7 +93,7 @@ public class GameLWJGL implements Runnable {
 //        deer2.setPos(new Vector(new float[] {0,18,0}));
 //        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        ModelLWJGL mill = ModelBuilder.buildModelLWJGLFromFile("low-poly-mill.obj",meshInstances);
+        Model mill = ModelBuilder.buildModelLWJGLFromFile("low-poly-mill.obj",meshInstances);
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 ////
@@ -145,7 +107,7 @@ public class GameLWJGL implements Runnable {
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
-        ModelLWJGL sasuke = ModelBuilder.buildModelLWJGLFromFile("Sasuke.obj",meshInstances);
+        Model sasuke = ModelBuilder.buildModelLWJGLFromFile("Sasuke.obj",meshInstances);
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
         sasuke.setTickObj(tempRot);
@@ -196,8 +158,8 @@ public class GameLWJGL implements Runnable {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
-                if(isPressed && getDisplay().displayMode != DisplayLWJGL.DisplayMode.FULLSCREEN) {
-                    getDisplay().displayMode = DisplayLWJGL.DisplayMode.FULLSCREEN;
+                if(isPressed && getDisplay().displayMode != Display.DisplayMode.FULLSCREEN) {
+                    getDisplay().displayMode = Display.DisplayMode.FULLSCREEN;
                     getDisplay().startScreen();
                 }
             }
@@ -239,54 +201,10 @@ public class GameLWJGL implements Runnable {
         pauseButtons.add(WINDOWED);
     }
 
-    public void initInputControls() {
-
-    }
-
-    public void runGame() {
-
-        double dt = 0.0;
-        double startTime = System.nanoTime();
-        double currentTime = System.nanoTime();
-        double timerStartTime = System.nanoTime();
-        double timer = 0.0;
-        double tempDt = 0;
-        float tickInterval = 0;
-
-        while (programRunning) {
-
-            double timeU = ((1000000000.0 / targetFPS));
-            currentTime = System.nanoTime();
-            tempDt = (currentTime - startTime);
-            dt += tempDt/timeU;
-            tickInterval += tempDt;
-            startTime = currentTime;
-            timer = (currentTime - timerStartTime);
-
-            if (dt >= 1) {
-                speedConstant = (float) (tickInterval /1000000000.0);
-                tickInterval = 0;
-                tick();
-                render();
-                fps++;
-                dt = 0;
-            }
-
-            if (timer >= 1000000000.0) {
-                displayFPS = fps;
-                fps = 0;
-                timer = 0;
-                timerStartTime = System.nanoTime();
-            }
-        }
-
-        cleanUp();
-    }
-
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(ModelLWJGL m:models) {
+        for(Model m:models) {
             m.mesh.cleanUp();
         }
     }
@@ -294,7 +212,7 @@ public class GameLWJGL implements Runnable {
     public void tick() {
         tickInput();
 
-        if(glfwWindowShouldClose(display.getWindow())) {
+        if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
         }
 
@@ -309,10 +227,10 @@ public class GameLWJGL implements Runnable {
             prevGameState = isGameRunning;
         }
 
-        models.forEach(ModelLWJGL::tick);
+        models.forEach(Model::tick);
 
         if(!isGameRunning) {
-            pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));
+            pauseButtons.forEach((b) -> b.tick(mousePos,((InputLWJGL)input).isLeftMouseButtonPressed));
         }
         else {
             calculate3DCamMovement();
@@ -389,18 +307,18 @@ public class GameLWJGL implements Runnable {
             }
 
             if(input.keyDownOnce(GLFW_KEY_F)) {
-                if(targetFPS == display.getRefreshRate()) {
+                if(targetFPS == ((DisplayLWJGL)display).getRefreshRate()) {
                     targetFPS = 10000;
                 }
                 else {
-                    targetFPS = display.getRefreshRate();
+                    targetFPS = ((DisplayLWJGL)display).getRefreshRate();
                 }
             }
 
-            if(input.keyDownOnce(GLFW_KEY_Q)) {
-                if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
-                else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
-            }
+//            if(input.keyDownOnce(GLFW_KEY_Q)) {
+//                if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
+//                else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
+//            }
 
             if(input.keyDownOnce(GLFW_KEY_V)) {
                 display.toggleWindowModes();
@@ -436,56 +354,12 @@ public class GameLWJGL implements Runnable {
 
     }
 
-    public RenderingEngineLWJGL getRenderingEngine() {
-        return renderingEngine;
-    }
-
     public void render() {
-        renderingEngine.render3(models);
+        ((RenderingEngineLWJGL)renderingEngine).render(models);
 
-        glfwSwapBuffers(display.getWindow());
+        glfwSwapBuffers(((DisplayLWJGL)display).getWindow());
         glfwPollEvents();
         input.poll();
-    }
-
-    public List<ModelLWJGL> getModels() {
-        return models;
-    }
-
-    public void setModels(List<ModelLWJGL> models) {
-        this.models = models;
-    }
-
-    public double getTargetFPS() {
-        return targetFPS;
-    }
-
-    public void setTargetFPS(double targetFPS) {
-        this.targetFPS = targetFPS;
-    }
-
-    public boolean isShouldFPS() {
-        return shouldDisplayFPS;
-    }
-
-    public void setShouldFPS(boolean shouldFPS) {
-        this.shouldDisplayFPS = shouldFPS;
-    }
-
-    public boolean isProgramRunning() {
-        return programRunning;
-    }
-
-    public void setProgramRunning(boolean programRunning) {
-        this.programRunning = programRunning;
-    }
-
-    public DisplayLWJGL getDisplay() {
-        return display;
-    }
-
-    public CameraLWJGL getCamera() {
-        return cam;
     }
 
 }

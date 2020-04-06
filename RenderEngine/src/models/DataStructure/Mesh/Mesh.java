@@ -27,6 +27,14 @@ public class Mesh {
         this.vertAttributes = vertAttributes;
     }
 
+    public void cleanUp() {
+
+    }
+
+    public void render() {
+
+    }
+
     public Mesh(List<List<Vector>> vertAttributes) {
         faces = new ArrayList<>(3);
     }

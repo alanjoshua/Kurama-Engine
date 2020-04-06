@@ -1,7 +1,6 @@
 package GUI;
 
 import Math.Vector;
-import main.Game;
 import main.GameLWJGL;
 
 import java.awt.*;

@@ -4,6 +4,7 @@ import Math.Matrix;
 import Math.Quaternion;
 import Math.Vector;
 import main.Game;
+import Math.Utils;
 import models.Model;
 import rendering.RenderingEngine.ProjectionMode;
 
@@ -68,8 +69,8 @@ public class Camera {
 //		updateValues();
 //	}
 
-	public Camera(Game game, Quaternion quaternion, Quaternion forward,Quaternion up, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
-			int imageWidht, int imageHeight) {
+	public Camera(Game game, Quaternion quaternion, Quaternion forward, Quaternion up, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
+				  int imageWidht, int imageHeight) {
 		this.game = game;
 		this.filmApertureWidth = 0;
 		this.filmApertureHeight = 0;
@@ -129,7 +130,7 @@ public class Camera {
 			}
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
-				Vector[] bounds = getWorldBoundingBox();
+				Vector[] bounds = Utils.getWorldBoundingBox(game.getModels());
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
 				Vector maxCam = (getWorldToCam().matMul(bounds[1].addDimensionToVec(1))).toVector();
 //				maxCam.display();
@@ -257,53 +258,6 @@ public class Camera {
 		res[1] = y;
 		res[2] = z;
 		
-		return res;
-	}
-
-	public Vector[] getWorldBoundingBox() {
-
-		float[] dataMin = new float[3];
-		dataMin[0] = Float.POSITIVE_INFINITY;
-		dataMin[1] = Float.POSITIVE_INFINITY;
-		dataMin[2] = Float.POSITIVE_INFINITY;
-
-		float[] dataMax = new float[3];
-		dataMax[0] = Float.NEGATIVE_INFINITY;
-		dataMax[1] = Float.NEGATIVE_INFINITY;
-		dataMax[2] = Float.NEGATIVE_INFINITY;
-
-		for (Model m : game.getModels()) {
-			for (Vector vv : m.getMesh().getVertices()) {
-				
-				Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
-				Vector v = (temp.mul(m.getScale())).add(m.getPos());
-				
-				if (v.get(0) < dataMin[0]) {
-					dataMin[0] = v.get(0);
-				}
-				if (v.get(1) < dataMin[1]) {
-					dataMin[1] = v.get(1);
-				}
-				if (v.get(2) < dataMin[2]) {
-					dataMin[2] = v.get(2);
-				}
-
-				if (v.get(0) > dataMax[0]) {
-					dataMax[0] = v.get(0);
-				}
-				if (v.get(1) > dataMax[1]) {
-					dataMax[1] = v.get(1);
-				}
-				if (v.get(2) > dataMax[2]) {
-					dataMax[2] = v.get(2);
-				}
-			}
-		}
-		Vector min = new Vector(dataMin);
-		Vector max = new Vector(dataMax);
-		Vector[] res = new Vector[2];
-		res[0] = min;
-		res[1] = max;
 		return res;
 	}
 

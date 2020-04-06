@@ -1,10 +1,12 @@
 package Math;
 
 import main.Game;
+import main.GameSR;
 import main.GameLWJGL;
 import models.DataStructure.LinkedList.DoublyLinkedList;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Vertex;
+import models.Model;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -159,42 +161,88 @@ public class Utils {
 
 	}
 
-	public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, GameLWJGL game) {
+	public static Vector[] getWorldBoundingBox(List<Model> models) {
+		float[] dataMin = new float[3];
+		dataMin[0] = Float.POSITIVE_INFINITY;
+		dataMin[1] = Float.POSITIVE_INFINITY;
+		dataMin[2] = Float.POSITIVE_INFINITY;
 
-		Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
-		Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+		float[] dataMax = new float[3];
+		dataMax[0] = Float.NEGATIVE_INFINITY;
+		dataMax[1] = Float.NEGATIVE_INFINITY;
+		dataMax[2] = Float.NEGATIVE_INFINITY;
 
-		for(Vertex v: f.vertices) {
-			Vector curr = projectedVectors.get(v.getAttribute(Vertex.POSITION));
-			if(curr.get(2) > 0) {
-				if (curr.get(0) < bbMin.get(0)) {
-					bbMin.setDataElement(0, curr.get(0));
+		for (Model m : models) {
+			for (Vector vv : m.getMesh().getVertices()) {
+
+				Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
+				Vector v = (temp.mul(m.getScale())).add(m.getPos());
+
+				if (v.get(0) < dataMin[0]) {
+					dataMin[0] = v.get(0);
 				}
-				if (curr.get(1) < bbMin.get(1)) {
-					bbMin.setDataElement(1, curr.get(1));
+				if (v.get(1) < dataMin[1]) {
+					dataMin[1] = v.get(1);
 				}
-				if (curr.get(0) > bbMax.get(0)) {
-					bbMax.setDataElement(0, curr.get(0));
+				if (v.get(2) < dataMin[2]) {
+					dataMin[2] = v.get(2);
 				}
-				if (curr.get(1) > bbMax.get(1)) {
-					bbMax.setDataElement(1, curr.get(1));
+
+				if (v.get(0) > dataMax[0]) {
+					dataMax[0] = v.get(0);
+				}
+				if (v.get(1) > dataMax[1]) {
+					dataMax[1] = v.get(1);
+				}
+				if (v.get(2) > dataMax[2]) {
+					dataMax[2] = v.get(2);
 				}
 			}
 		}
-
-		int xMin = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMin.get(0))));
-		int yMin = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMin.get(1))));
-		int xMax = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMax.get(0))));
-		int yMax = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMax.get(1))));
-
-		Vector min = new Vector(new float[]{xMin,yMin});
-		Vector max = new Vector(new float[]{xMax,yMax});
-		List<Vector> res = new ArrayList<>();
-		res.add(min);
-		res.add(max);
-
+		Vector min = new Vector(dataMin);
+		Vector max = new Vector(dataMax);
+		Vector[] res = new Vector[2];
+		res[0] = min;
+		res[1] = max;
 		return res;
-
 	}
+
+//	public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, GameLWJGL game) {
+//
+//		Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+//		Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+//
+//		for(Vertex v: f.vertices) {
+//			Vector curr = projectedVectors.get(v.getAttribute(Vertex.POSITION));
+//			if(curr.get(2) > 0) {
+//				if (curr.get(0) < bbMin.get(0)) {
+//					bbMin.setDataElement(0, curr.get(0));
+//				}
+//				if (curr.get(1) < bbMin.get(1)) {
+//					bbMin.setDataElement(1, curr.get(1));
+//				}
+//				if (curr.get(0) > bbMax.get(0)) {
+//					bbMax.setDataElement(0, curr.get(0));
+//				}
+//				if (curr.get(1) > bbMax.get(1)) {
+//					bbMax.setDataElement(1, curr.get(1));
+//				}
+//			}
+//		}
+//
+//		int xMin = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMin.get(0))));
+//		int yMin = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMin.get(1))));
+//		int xMax = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMax.get(0))));
+//		int yMax = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMax.get(1))));
+//
+//		Vector min = new Vector(new float[]{xMin,yMin});
+//		Vector max = new Vector(new float[]{xMax,yMax});
+//		List<Vector> res = new ArrayList<>();
+//		res.add(min);
+//		res.add(max);
+//
+//		return res;
+//
+//	}
 	
 }

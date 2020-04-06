@@ -13,26 +13,28 @@ import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class MeshLWJGL {
-
-    public static final int POSITION = 0;
-    public static final int TEXTURE = 1;
-    public static final int NORMAL = 2;
+public class MeshLWJGL extends Mesh {
 
     public List<Integer> indices;
-    public List<List<Vector>> vertAttributes;
 
     public int vaoId;
     public List<Integer> vboIdList;
     public int vertexCount;
 
-    public MeshLWJGL(List<Integer> indices, List<List<Vector>> vertAttributes) {
+    public MeshLWJGL(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
+        super(faces, vertAttributes);
         vboIdList = new ArrayList<>();
         this.indices = indices;
-        this.vertAttributes = vertAttributes;
+    }
+
+    public MeshLWJGL(List<Face> faces, List<List<Vector>> vertAttributes) {
+        super(faces, vertAttributes);
+        this.indices = null;
+        System.out.println("this called ");
     }
 
     public void initOpenGLMeshData() {
+
         FloatBuffer verticesBuffer = null;
         IntBuffer indicesBuffer = null;
         FloatBuffer colorBuffer = null;
@@ -125,7 +127,7 @@ public class MeshLWJGL {
     public void render() {
         glBindVertexArray(vaoId);
 
-        glDrawElements(GL_TRIANGLES,vertexCount,GL_UNSIGNED_INT,0);
+        glDrawElements(GL_TRIANGLES,indices.size(),GL_UNSIGNED_INT,0);
 
         glBindVertexArray(0);
     }
@@ -135,37 +137,6 @@ public class MeshLWJGL {
     }
 
     public void displayMeshInformation() {
-
-//        HashMap<Integer, Integer> data = new HashMap<>();
-//        for(Face f: faces) {
-//            Integer curr = data.get(f.size());
-//            if(curr == null) {curr = 0;}
-//            data.put(f.size(),curr+1);
-//        }
-//        System.out.println("Vertex Info: ");
-//        int lines = 0;
-//        for(int key: data.keySet()) {
-//            System.out.println("Number of "+key+" sided polygons: "+data.get(key));
-//            lines += key * data.get(key);
-//        }
-//        System.out.println("Number of individual 3D points: "+ vertAttributes.get(0).size());
-//
-//        if(isAttributePresent(Mesh.TEXTURE)) {
-//            System.out.println("Number of individual texture Coords: " + vertAttributes.get(1).size());
-//        }
-//        else {
-//            System.out.println("Number of individual texture Coords: 0");
-//        }
-//
-//        if(isAttributePresent(Mesh.NORMAL)) {
-//            System.out.println("Number of individual normals: "+ vertAttributes.get(2).size());
-//        }
-//        else {
-//            System.out.println("Number of individual normals: 0");
-//        }
-//
-//        System.out.println("Total number of individual lines drawn: "+lines);
-
     }
 
 }

@@ -1,7 +1,7 @@
 package GUI;
 
 import Math.Vector;
-import main.Game;
+import main.GameSR;
 
 import java.awt.*;
 
@@ -25,9 +25,9 @@ public class Button {
     public Color bgColor = Color.BLACK;
     public Font textFont;
     public float scale = 1.0f;
-    private Game game;
+    private GameSR game;
 
-    public Button(Game game, Vector position, double width, double height) {
+    public Button(GameSR game, Vector position, double width, double height) {
         this.position = position;
         this.width = width;
         this.height = height;

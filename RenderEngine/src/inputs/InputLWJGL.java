@@ -12,32 +12,24 @@ import Math.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InputLWJGL {
+public class InputLWJGL extends Input {
 
-    private enum KeyState {
-        JUST_RELEASED, // was just released
-        RELEASED, // Not pressed
-        ONCE,
-        PRESSED, // key pressed
-    }
-
-    public float mouseX,mouseY,mouseDx,mouseDy;
     private long window;
-    public boolean isLeftMouseButtonPressed,isRightMouseButtonPressed;
-    private List<KeyState> keys;
-    private int[] currentKeys;
-    private static final int KEY_COUNT = 349;
 
     public InputLWJGL(long window) {
+        super();
         this.window = window;
         init();
     }
 
+    @Override
     public void init() {
+        KEY_COUNT = 349;
         keys = new ArrayList<>();
         currentKeys = new int[KEY_COUNT];
         initKeyCallBacks();
         initMouseCallBacks();
+        System.out.println("input initted");
     }
 
     public void initKeyCallBacks() {
@@ -60,6 +52,26 @@ public class InputLWJGL {
         };
 
         glfwSetKeyCallback(window,keyCallback);
+    }
+
+    public void poll() {
+        for (int i = 0; i < KEY_COUNT; ++i) {
+            // Set the key state
+            if (currentKeys[i] == GLFW_PRESS || currentKeys[i] == GLFW_REPEAT) {
+                if (keys.get(i) == KeyState.RELEASED)
+                    keys.set(i, KeyState.ONCE);
+                else
+                    keys.set(i, KeyState.PRESSED);
+            } else {
+                if(keys.get(i) == KeyState.PRESSED) {
+                    keys.set(i, KeyState.JUST_RELEASED);
+                }
+                else {
+                    keys.set(i, KeyState.RELEASED);
+                }
+            }
+        }
+
     }
 
     public void initMouseCallBacks() {
@@ -102,53 +114,5 @@ public class InputLWJGL {
 
         glfwSetCursorPosCallback(window,cursor);
     }
-
-    public void poll() {
-
-        for (int i = 0; i < KEY_COUNT; ++i) {
-            // Set the key state
-            if (currentKeys[i] == GLFW_PRESS || currentKeys[i] == GLFW_REPEAT) {
-                if (keys.get(i) == KeyState.RELEASED)
-                    keys.set(i,KeyState.ONCE);
-                else
-                   keys.set(i,KeyState.PRESSED);
-            } else {
-                if(keys.get(i) == KeyState.PRESSED) {
-                    keys.set(i, KeyState.JUST_RELEASED);
-                }
-                else {
-                    keys.set(i, KeyState.RELEASED);
-                }
-            }
-        }
-
-    }
-
-    public boolean keyDown(int keyCode) {
-        return keys.get(keyCode) == KeyState.PRESSED;
-    }
-
-    public boolean keyJustReleased(int key) {
-        return keys.get(key) == KeyState.JUST_RELEASED;
-    }
-
-    public boolean keyDownOnce(int keyCode) {
-        return keys.get(keyCode) == KeyState.ONCE;
-    }
-
-    public Vector getPos() {
-        Vector ret = new Vector(new float[]{mouseX,mouseY});
-        return ret;
-    }
-
-    public Vector getDelta() {
-        Vector ret = new Vector(new float[]{mouseDx,mouseDy});
-        mouseDx = 0;
-        mouseDy = 0;
-        return ret;
-    }
-
-    public boolean isLeftMouseButtonPressed() {return isLeftMouseButtonPressed;}
-    public boolean isRightMouseButtonPressed() {return isRightMouseButtonPressed;}
 
 }

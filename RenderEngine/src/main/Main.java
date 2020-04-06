@@ -1,7 +1,5 @@
 package main;
 
-import Math.Utils;
-
 public class Main {
 	
 	Game game;
@@ -13,10 +11,10 @@ public class Main {
 	}
 	
 	public void start() {
-		//game = new Game();
-		//game.start();
+//		game = new GameSR("Software renderer");
+//		game.start();
 
-		GameLWJGL g = new GameLWJGL();
-		g.start();
+		game = new GameLWJGL("OpenGL Rendered");
+		game.start();
 	}
 }

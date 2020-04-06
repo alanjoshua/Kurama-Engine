@@ -36,13 +36,13 @@ public class ModelBuilder {
 		}
 	}
 
-	public static models.ModelLWJGL buildModelLWJGLFromFile(String loc, Map<String,MeshLWJGL> meshInstances) {
+	public static Model buildModelLWJGLFromFile(String loc, Map<String,MeshLWJGL> meshInstances) {
 
-		models.ModelLWJGL res;
+		Model res;
 		MeshLWJGL resMesh = meshInstances.get(loc);
 
 		if(resMesh != null) {
-			return new models.ModelLWJGL(resMesh,loc);
+			return new models.Model(resMesh,loc);
 		}
 		else {
 			Mesh temp = loadRawData(loc);
@@ -52,7 +52,7 @@ public class ModelBuilder {
 			resMesh.initOpenGLMeshData();
 			meshInstances.put(loc,resMesh);
 
-			res = new models.ModelLWJGL(resMesh,loc);
+			res = new Model(resMesh,loc);
 			return res;
 		}
 	}
@@ -72,6 +72,7 @@ public class ModelBuilder {
 			for(Vertex v: f.vertices) {
 //				totalVerts++;
 				int vInd = uniqueVertices.indexOf(v);
+//				boolean isUnique = uniqueVertices.add(v);
 //				uniqueVertices.add(v);
 				if(uniqueVertices.size() == 0 || vInd < 0) {
 					uniqueVertices.add(v);
@@ -85,7 +86,6 @@ public class ModelBuilder {
 							newVertAttribs.get(i).add(null);
 						}
 					}
-
 				}
 				else {
 					indexList.add(vInd);
@@ -112,6 +112,18 @@ public class ModelBuilder {
 //
 //		indexList = new ArrayList<Integer>(Arrays.asList(tempIndices));
 
+//		for(Vertex v: uniqueList) {
+//			for(int i = 0 ;i < newVertAttribs.size();i++) {
+//				Integer ind = v.getAttribute(i);
+//				if(ind!=null) {
+//					newVertAttribs.get(i).add(mesh.getAttributeList(i).get(ind));
+//				}
+//				else {
+//					newVertAttribs.get(i).add(null);
+//				}
+//			}
+//		}
+
 		for(Face f:mesh.faces) {
 			for(Vertex v: f.vertices) {
 //				int ind = temp.get(v.toString());
@@ -120,7 +132,7 @@ public class ModelBuilder {
 			}
 		}
 
-		return new MeshLWJGL(indexList,newVertAttribs);
+		return new MeshLWJGL(indexList,null,newVertAttribs);
 	}
 
 	public static Mesh loadRawData(String loc) {
