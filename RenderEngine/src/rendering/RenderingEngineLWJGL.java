@@ -3,12 +3,8 @@ package rendering;
 import Math.Matrix;
 import Math.Utils;
 import Shaders.ShaderProgram;
-import main.DisplayLWJGL;
 import main.Game;
-import main.GameSR;
-import models.DataStructure.Mesh.MeshLWJGL;
 import models.Model;
-import models.ModelLWJGL;
 
 import java.util.List;
 
@@ -65,7 +61,7 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
         for(Model model: models) {
             shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-            ((MeshLWJGL)model.mesh).render();
+            model.mesh.render();
         }
 
         shaderProgram.unbind();

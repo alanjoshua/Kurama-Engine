@@ -13,10 +13,16 @@ import models.DataStructure.LinkedList.DoublyLinkedList;
 import models.DataStructure.LinkedList.Node;
 import models.DataStructure.Mesh.Face;
 import models.DataStructure.Mesh.Mesh;
-import models.DataStructure.Mesh.MeshLWJGL;
 import models.DataStructure.Mesh.Vertex;
 
 public class ModelBuilder {
+
+	public static class ModelBuilderHints {
+		public boolean shouldBakeVertexAttributes = false;
+		public boolean shouldTriangulate = true;
+		public boolean forceEarClipping = false;
+		public boolean initLWJGLAttribs = false;
+	}
 
 	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances) {
 		Model res;
@@ -36,33 +42,77 @@ public class ModelBuilder {
 		}
 	}
 
-	public static Model buildModelLWJGLFromFile(String loc, Map<String,MeshLWJGL> meshInstances) {
+	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances,ModelBuilderHints hints) {
+		Model res = null;
+		Mesh resMesh = null;
 
-		Model res;
-		MeshLWJGL resMesh = meshInstances.get(loc);
+		if(meshInstances != null) {
+			resMesh = meshInstances.get(loc);
+		}
 
 		if(resMesh != null) {
-			return new models.Model(resMesh,loc);
+			return new Model(resMesh,loc);
 		}
 		else {
-			Mesh temp = loadRawData(loc);
-			temp = triangulate(temp,false);
-			resMesh = restructureMeshToSingleIndexList(temp);
+			resMesh = loadRawData(loc);
 
-			resMesh.initOpenGLMeshData();
+			if(hints == null) {
+				resMesh = triangulate(resMesh, false);
+				meshInstances.put(loc, resMesh);
+			}
+			else {
+				if(hints.shouldTriangulate) {
+					resMesh = triangulate(resMesh, hints.forceEarClipping);
+				}
+
+				if(hints.shouldBakeVertexAttributes) {
+					resMesh = bakeMesh(resMesh,hints);
+				}
+				else {
+					resMesh = hardCopy(resMesh,hints);
+				}
+
+				if(hints.initLWJGLAttribs) {
+					resMesh.initOpenGLMeshData();
+				}
+			}
+
 			meshInstances.put(loc,resMesh);
-
 			res = new Model(resMesh,loc);
 			return res;
 		}
 	}
 
-	public static MeshLWJGL restructureMeshToSingleIndexList(Mesh mesh) {
+	public static Mesh hardCopy(Mesh mesh,ModelBuilderHints hints) {
+		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
+
+		for(int i = 0;i < mesh.vertAttributes.size();i++) {
+			newVertAttribs.add(new ArrayList<Vector>());
+		}
+
+		for(Face f: mesh.faces) {
+			for(Vertex v: f.vertices) {
+				for(int i = 0;i < v.vertAttributes.size();i++) {
+					Integer at = v.getAttribute(i);
+					if(at != null) {
+						newVertAttribs.get(i).add(mesh.getAttributeList(i).get(at));
+					}
+					else {
+						newVertAttribs.get(i).add(null);
+					}
+				}
+			}
+		}
+
+		return new Mesh(null,null,newVertAttribs);
+
+	}
+
+	public static Mesh bakeMesh(Mesh mesh,ModelBuilderHints hints) {
 
 		List<Integer> indexList = new ArrayList<>();
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
 		List<Vertex> uniqueVertices = new ArrayList<>();
-//		int totalVerts = 0;
 
 		for(int i = 0;i < mesh.vertAttributes.size();i++) {
 			newVertAttribs.add(new ArrayList<>());
@@ -70,10 +120,7 @@ public class ModelBuilder {
 
 		for(Face f:mesh.faces) {
 			for(Vertex v: f.vertices) {
-//				totalVerts++;
 				int vInd = uniqueVertices.indexOf(v);
-//				boolean isUnique = uniqueVertices.add(v);
-//				uniqueVertices.add(v);
 				if(uniqueVertices.size() == 0 || vInd < 0) {
 					uniqueVertices.add(v);
 					indexList.add(uniqueVertices.size() - 1);
@@ -93,46 +140,13 @@ public class ModelBuilder {
 			}
 		}
 
-//		Integer[] tempIndices = new Integer[totalVerts];
-//
-//		List<Vertex> uniqueList = new ArrayList<Vertex>(uniqueVertices);
-//		int uvCounter = 0;
-//		for(Vertex uv:uniqueList) {
-//			int vertCounter = 0;
-//			for(Face f: mesh.faces) {
-//				for(Vertex v:f.vertices) {
-//					if(uv.equals(v)) {
-//						tempIndices[vertCounter] = uvCounter;
-//					}
-//					vertCounter++;
-//				}
-//			}
-//			uvCounter++;
-//		}
-//
-//		indexList = new ArrayList<Integer>(Arrays.asList(tempIndices));
-
-//		for(Vertex v: uniqueList) {
-//			for(int i = 0 ;i < newVertAttribs.size();i++) {
-//				Integer ind = v.getAttribute(i);
-//				if(ind!=null) {
-//					newVertAttribs.get(i).add(mesh.getAttributeList(i).get(ind));
-//				}
-//				else {
-//					newVertAttribs.get(i).add(null);
-//				}
-//			}
-//		}
-
 		for(Face f:mesh.faces) {
 			for(Vertex v: f.vertices) {
-//				int ind = temp.get(v.toString());
 				indexList.add(uniqueVertices.indexOf(v));
-//				System.out.println(v.toString());
 			}
 		}
 
-		return new MeshLWJGL(indexList,null,newVertAttribs);
+		return new Mesh(indexList,null,newVertAttribs);
 	}
 
 	public static Mesh loadRawData(String loc) {

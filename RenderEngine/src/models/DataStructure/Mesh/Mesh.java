@@ -21,17 +21,244 @@ public class Mesh {
 
     public List<Face> faces;
     public List<List<Vector>> vertAttributes;
+    public List<Integer> indices;
+
+    public int vaoId;
+    public List<Integer> vboIdList;
+    public int vertexCount;
+
+    public int interVBO;
 
     public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
     }
 
-    public void cleanUp() {
+    public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
+        this.faces = faces;
+        this.vertAttributes = vertAttributes;
+        vboIdList = new ArrayList<>();
+        this.indices = indices;
+    }
 
+    public void cleanUp() {
+        try {
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            for (Integer vbo : vboIdList) {
+                glDeleteBuffers(vbo);
+            }
+
+            glBindVertexArray(0);
+            glDeleteVertexArrays(vaoId);
+        }catch(Exception e) {
+            System.err.println("Couldn't clean mesh. OpenGL bindings might be missing");
+        }
     }
 
     public void render() {
+        try {
+            glBindVertexArray(vaoId);
+
+            if(indices != null) {
+                glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+            }
+            else {
+                glDrawArrays(GL_TRIANGLES, 0, getVertices().size());
+            }
+
+            glBindVertexArray(0);
+        }catch(Exception e) {
+            System.err.println("Couldn't render mesh. OpenGL bindings might be missing");
+        }
+    }
+
+    public void initOpenGLMeshData() {
+
+        IntBuffer indicesBuffer = null;
+        List<Integer> offsets = new ArrayList<>(vertAttributes.size());
+        List<Integer> sizePerAttrib = new ArrayList<>(vertAttributes.size());
+        int stride = 0;
+
+        final int sizeOfFloat = Float.SIZE / Byte.SIZE;
+
+//        Calculate stride and offset
+        offsets.add(0);
+        for(int i = 0;i < vertAttributes.size();i++) {
+            Vector curr = null;
+            int numberOfElements = 0;
+
+            if(curr == null) {
+//                break;
+                for(int j = 0;j < vertAttributes.get(i).size();j++) {
+                    curr = vertAttributes.get(i).get(j);
+                    if(curr != null) {
+                        break;
+                    }
+                }
+            }
+
+            if(curr == null) {
+                numberOfElements = 4;  //Assume a default of 4 if all positions are empty
+            }
+            else {
+                numberOfElements = curr.getNumberOfDimensions();
+            }
+
+            int size = numberOfElements * sizeOfFloat;
+            stride += size;
+            sizePerAttrib.add(size);
+            offsets.add(stride);
+        }
+        offsets.remove(offsets.size() - 1);
+
+        FloatBuffer verticesBuffer = null;
+        FloatBuffer colorBuffer = null;
+
+        int vboId;
+
+        try {
+
+            vaoId = glGenVertexArrays();
+            glBindVertexArray(vaoId);
+
+            for(int i = 0;i < sizePerAttrib.size();i++) {
+                FloatBuffer tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * vertAttributes.get(i).size());
+                for(Vector v: vertAttributes.get(i)) {
+                    if(v != null) {
+                        tempBuffer.put(v.getData());
+                    }
+                    else {    //Hack to handle nulls
+                        for(int j = 0;j < sizePerAttrib.get(i)/sizeOfFloat;j++) {
+                            tempBuffer.put(0);
+                        }
+                    }
+                }
+                tempBuffer.flip();
+
+                vboId = glGenBuffers();
+                vboIdList.add(vboId);
+                glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ARRAY_BUFFER,tempBuffer,GL_STATIC_DRAW);
+                glEnableVertexAttribArray(i);
+                glVertexAttribPointer(i,sizePerAttrib.get(i)/sizeOfFloat,GL_FLOAT,false,0,0);
+
+                MemoryUtil.memFree(tempBuffer);   //Free buffer
+
+            }
+
+            if(indices != null) {
+                indicesBuffer = MemoryUtil.memAllocInt(indices.size());
+                for(int i:indices) {
+                    indicesBuffer.put(i);
+                }
+                indicesBuffer.flip();
+
+                vboId = glGenBuffers();
+                vboIdList.add(vboId);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
+
+                MemoryUtil.memFree(indicesBuffer);  //Free buffer
+            }
+
+//            glBindBuffer(GL_ARRAY_BUFFER,0);
+//            glBindVertexArray(0);
+
+            Random rand = new Random();
+
+            colorBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 3);
+            for(Vector v: getVertices()) {
+                float[] color = new float[] {rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
+//                float[] color = new float[] {0.2f,0.2f,0.2f};
+                for(float val:color) {
+                    colorBuffer.put(val);
+                }
+            }
+            colorBuffer.flip();
+
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            glBindBuffer(GL_ARRAY_BUFFER,vboId);
+            glBufferData(GL_ARRAY_BUFFER,colorBuffer,GL_STATIC_DRAW);
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3,3,GL_FLOAT,false,0,0);
+
+            glBindBuffer(GL_ARRAY_BUFFER,0);
+            glBindVertexArray(0);
+
+            MemoryUtil.memFree(colorBuffer);
+
+
+////          Calculate vertice Buffer
+//            verticesBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 4);
+//            for(Vector v: getVertices()) {
+//                for(float val: v.getData()) {
+//                    verticesBuffer.put(val);
+//                }
+//            }
+//            verticesBuffer.flip();
+//
+////            Calculate index Buffer
+//            vertexCount = indices.size();
+//
+//            indicesBuffer = MemoryUtil.memAllocInt(vertexCount);
+//            for(int i:indices) {
+//                indicesBuffer.put(i);
+//            }
+//            indicesBuffer.flip();
+//
+//            Random rand = new Random();
+//
+//            colorBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 3);
+//            for(Vector v: getVertices()) {
+//                float[] color = new float[] {rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
+////                float[] color = new float[] {0.2f,0.2f,0.2f};
+//                for(float val:color) {
+//                    colorBuffer.put(val);
+//                }
+//            }
+//            colorBuffer.flip();
+//
+//            vaoId = glGenVertexArrays();
+//            glBindVertexArray(vaoId);
+//
+//            vboId = glGenBuffers();
+//            vboIdList.add(vboId);
+//            glBindBuffer(GL_ARRAY_BUFFER, vboId);
+//            glBufferData(GL_ARRAY_BUFFER,verticesBuffer,GL_STATIC_DRAW);
+//            glEnableVertexAttribArray(0);
+//            glVertexAttribPointer(0,4,GL_FLOAT,false,0,0);
+//
+//            vboId = glGenBuffers();
+//            vboIdList.add(vboId);
+//            glBindBuffer(GL_ARRAY_BUFFER,vboId);
+//            glBufferData(GL_ARRAY_BUFFER,colorBuffer,GL_STATIC_DRAW);
+//            glEnableVertexAttribArray(1);
+//            glVertexAttribPointer(1,3,GL_FLOAT,false,0,0);
+//
+//            vboId = glGenBuffers();
+//            vboIdList.add(vboId);
+//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,vboId);
+//            glBufferData(GL_ELEMENT_ARRAY_BUFFER,indicesBuffer,GL_STATIC_DRAW);
+//
+//            glBindBuffer(GL_ARRAY_BUFFER,0);
+//            glBindVertexArray(0);
+
+        }finally  {
+//            if(verticesBuffer != null) {
+//                MemoryUtil.memFree((verticesBuffer));
+//            }
+//            if(indicesBuffer != null) {
+//                MemoryUtil.memFree((indicesBuffer));
+//            }
+//            if(colorBuffer != null) {
+//                MemoryUtil.memFree((colorBuffer));
+//            }
+
+        }
 
     }
 

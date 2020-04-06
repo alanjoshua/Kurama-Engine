@@ -11,19 +11,13 @@ import Math.Quaternion;
 import Math.Vector;
 import inputs.InputLWJGL;
 import models.DataStructure.Mesh.Mesh;
-import models.DataStructure.Mesh.MeshLWJGL;
 import models.Model;
-import models.ModelLWJGL;
 import models.Model.Tick;
 import models.ModelBuilder;
 import rendering.Camera;
 import rendering.RenderingEngineLWJGL;
 
-import org.lwjgl.glfw.*;
-
 import static org.lwjgl.glfw.GLFW.*;
-
-import org.lwjgl.opengl.*;
 
 public class GameLWJGL extends Game implements Runnable {
 
@@ -37,7 +31,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     protected boolean prevGameState = false;
 
-    Map<String, MeshLWJGL> meshInstances;
+    Map<String, Mesh> meshInstances;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -85,7 +79,11 @@ public class GameLWJGL extends Game implements Runnable {
             m.setOrientation(newQ);
         });
 
-        Model deer = ModelBuilder.buildModelLWJGLFromFile("deer.obj",meshInstances);
+        ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
+        hints.shouldBakeVertexAttributes = false;
+        hints.initLWJGLAttribs = true;
+
+        Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances,hints);
         deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
@@ -93,7 +91,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        deer2.setPos(new Vector(new float[] {0,18,0}));
 //        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        Model mill = ModelBuilder.buildModelLWJGLFromFile("low-poly-mill.obj",meshInstances);
+        Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances,hints);
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 ////
@@ -103,11 +101,11 @@ public class GameLWJGL extends Game implements Runnable {
 //        pot.setTickObj(tempRot);
 //
 //
-//        ModelLWJGL ironMan = ModelBuilder.buildModelLWJGLFromFile("IronMan.obj",meshInstances);
+//        Model ironMan = ModelBuilder.buildModelFromFile("IronMan.obj",meshInstances,hints);
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
-        Model sasuke = ModelBuilder.buildModelLWJGLFromFile("Sasuke.obj",meshInstances);
+        Model sasuke = ModelBuilder.buildModelFromFile("Sasuke.obj",meshInstances,hints);
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
         sasuke.setTickObj(tempRot);
