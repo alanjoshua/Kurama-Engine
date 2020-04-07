@@ -37,6 +37,7 @@ public class Texture {
     }
 
     public static int loadTexture(String fileName) throws Exception {
+
         int width;
         int height;
         ByteBuffer buff;
@@ -47,7 +48,9 @@ public class Texture {
             IntBuffer channels = stack.mallocInt(1);
 
             buff = stbi_load(fileName,w,h,channels,4);
+
             if(buff == null) {
+                System.out.println(fileName);
                 throw new Exception("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
             }
 
@@ -66,7 +69,7 @@ public class Texture {
 
         stbi_image_free(buff);
 
-        return 0;
+        return textureId;
     }
 
 }

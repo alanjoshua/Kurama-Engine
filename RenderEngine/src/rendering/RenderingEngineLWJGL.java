@@ -16,6 +16,9 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
     public void init() {
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
+        
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         try {
             shaderProgram = new ShaderProgram();
@@ -25,6 +28,9 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
             shaderProgram.createUniform("projectionMatrix");
             shaderProgram.createUniform("worldMatrix");
+            shaderProgram.createUniform("texture_sampler");
+            shaderProgram.createUniform("shouldUseTexture");
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,15 +62,18 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         Matrix worldToCam = game.getCamera().getWorldToCam();
         Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
 
-
+        shaderProgram.setUniform("texture_sampler",0);
         shaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
         for(Model model: models) {
             shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+            shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
+
             model.mesh.render();
         }
 
         shaderProgram.unbind();
+
     }
 
     public void cleanUp() {

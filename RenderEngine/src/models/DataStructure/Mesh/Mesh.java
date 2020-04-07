@@ -5,6 +5,7 @@ import java.nio.IntBuffer;
 import java.util.*;
 
 import Math.Vector;
+import models.DataStructure.Texture;
 import models.ModelBuilder;
 import org.lwjgl.system.MemoryUtil;
 
@@ -25,9 +26,8 @@ public class Mesh {
 
     public int vaoId;
     public List<Integer> vboIdList;
-    public int vertexCount;
 
-    public int interVBO;
+    public Texture texture;
 
     public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
@@ -51,6 +51,8 @@ public class Mesh {
                 glDeleteBuffers(vbo);
             }
 
+            texture.cleanUp();
+
             glBindVertexArray(0);
             glDeleteVertexArrays(vaoId);
         }catch(Exception e) {
@@ -60,6 +62,14 @@ public class Mesh {
 
     public void render() {
         try {
+
+            if(texture != null) {
+//              Activate first texture
+                glActiveTexture(GL_TEXTURE0);
+//                Bind texture
+                glBindTexture(GL_TEXTURE_2D, texture.getId());
+            }
+
             glBindVertexArray(vaoId);
 
             if(indices != null) {
@@ -189,74 +199,10 @@ public class Mesh {
             glBindBuffer(GL_ARRAY_BUFFER,0);
             glBindVertexArray(0);
 
-            MemoryUtil.memFree(colorBuffer);
-
-
-////          Calculate vertice Buffer
-//            verticesBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 4);
-//            for(Vector v: getVertices()) {
-//                for(float val: v.getData()) {
-//                    verticesBuffer.put(val);
-//                }
-//            }
-//            verticesBuffer.flip();
-//
-////            Calculate index Buffer
-//            vertexCount = indices.size();
-//
-//            indicesBuffer = MemoryUtil.memAllocInt(vertexCount);
-//            for(int i:indices) {
-//                indicesBuffer.put(i);
-//            }
-//            indicesBuffer.flip();
-//
-//            Random rand = new Random();
-//
-//            colorBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 3);
-//            for(Vector v: getVertices()) {
-//                float[] color = new float[] {rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
-////                float[] color = new float[] {0.2f,0.2f,0.2f};
-//                for(float val:color) {
-//                    colorBuffer.put(val);
-//                }
-//            }
-//            colorBuffer.flip();
-//
-//            vaoId = glGenVertexArrays();
-//            glBindVertexArray(vaoId);
-//
-//            vboId = glGenBuffers();
-//            vboIdList.add(vboId);
-//            glBindBuffer(GL_ARRAY_BUFFER, vboId);
-//            glBufferData(GL_ARRAY_BUFFER,verticesBuffer,GL_STATIC_DRAW);
-//            glEnableVertexAttribArray(0);
-//            glVertexAttribPointer(0,4,GL_FLOAT,false,0,0);
-//
-//            vboId = glGenBuffers();
-//            vboIdList.add(vboId);
-//            glBindBuffer(GL_ARRAY_BUFFER,vboId);
-//            glBufferData(GL_ARRAY_BUFFER,colorBuffer,GL_STATIC_DRAW);
-//            glEnableVertexAttribArray(1);
-//            glVertexAttribPointer(1,3,GL_FLOAT,false,0,0);
-//
-//            vboId = glGenBuffers();
-//            vboIdList.add(vboId);
-//            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,vboId);
-//            glBufferData(GL_ELEMENT_ARRAY_BUFFER,indicesBuffer,GL_STATIC_DRAW);
-//
-//            glBindBuffer(GL_ARRAY_BUFFER,0);
-//            glBindVertexArray(0);
-
         }finally  {
-//            if(verticesBuffer != null) {
-//                MemoryUtil.memFree((verticesBuffer));
-//            }
-//            if(indicesBuffer != null) {
-//                MemoryUtil.memFree((indicesBuffer));
-//            }
-//            if(colorBuffer != null) {
-//                MemoryUtil.memFree((colorBuffer));
-//            }
+            if(colorBuffer != null) {
+                MemoryUtil.memFree((colorBuffer));
+            }
 
         }
 

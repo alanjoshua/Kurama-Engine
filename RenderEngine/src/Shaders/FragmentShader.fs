@@ -1,12 +1,19 @@
 #version 330
 
-in vec3 outTexCoord;
+in vec3 exColor;
+in vec2 outTex;
+
 out vec4 fragColor;
 
-//uniform sampler2D texture_sampler;
+uniform sampler2D texture_sampler;
+uniform int shouldUseTexture;
 
 void main() {
-    //fragColor = texture(texture_sampler,outTexCoord);
-    fragColor = vec4(outTexCoord,1);
-    //fragColor = vec4(1,1,1,1);
+      if(shouldUseTexture == 1) {
+          fragColor = texture(texture_sampler,outTex);
+      }
+      else {
+          fragColor = vec4(exColor,1);
+      }
+
 }

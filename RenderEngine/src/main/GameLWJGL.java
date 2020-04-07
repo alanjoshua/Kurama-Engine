@@ -11,6 +11,7 @@ import Math.Quaternion;
 import Math.Vector;
 import inputs.InputLWJGL;
 import models.DataStructure.Mesh.Mesh;
+import models.DataStructure.Texture;
 import models.Model;
 import models.Model.Tick;
 import models.ModelBuilder;
@@ -66,7 +67,7 @@ public class GameLWJGL extends Game implements Runnable {
         initPauseScreen();
 
         cam.updateValues();
-        cam.lookAtModel(models.get(lookAtIndex));
+        //cam.lookAtModel(models.get(lookAtIndex));
 
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
 
@@ -105,15 +106,35 @@ public class GameLWJGL extends Game implements Runnable {
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
+        Model clock = ModelBuilder.buildModelFromFile("cube.obj",meshInstances,hints);
+        clock.setScale(1);
+        clock.setPos(-5,15,-5);
+
+        Texture tex = null;
+        try {
+            tex = new Texture("grassblock.png");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        clock.mesh.texture = tex;
+
         Model sasuke = ModelBuilder.buildModelFromFile("Sasuke.obj",meshInstances,hints);
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
-        sasuke.setTickObj(tempRot);
+        // sasuke.setTickObj(tempRot);
+
+        try {
+            tex = new Texture("PocketClockTex.png");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        sasuke.mesh.texture = tex;
 
 //        models.add(ironMan);
         models.add(sasuke);
         models.add(deer);
         models.add(mill);
+        models.add(clock);
 //        models.add(pot);
 
     }
@@ -295,7 +316,6 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(isGameRunning) {
             if(input.keyDownOnce(GLFW_KEY_R)) {
-//              cam.setPos(models.get(lookAtIndex).getCentre());
                 cam.lookAtModel(models.get(lookAtIndex));
             }
 

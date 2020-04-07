@@ -86,6 +86,8 @@ public class ModelBuilder {
 	public static Mesh hardCopy(Mesh mesh,ModelBuilderHints hints) {
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
 
+		mesh.displayMeshInformation();
+
 		for(int i = 0;i < mesh.vertAttributes.size();i++) {
 			newVertAttribs.add(new ArrayList<Vector>());
 		}
@@ -95,7 +97,12 @@ public class ModelBuilder {
 				for(int i = 0;i < v.vertAttributes.size();i++) {
 					Integer at = v.getAttribute(i);
 					if(at != null) {
-						newVertAttribs.get(i).add(mesh.getAttributeList(i).get(at));
+						try {
+							newVertAttribs.get(i).add(mesh.getAttributeList(i).get(at));
+						}catch(Exception e) {
+							newVertAttribs.get(i).add(null);
+							//System.out.println(i);
+						}
 					}
 					else {
 						newVertAttribs.get(i).add(null);
@@ -212,10 +219,10 @@ public class ModelBuilder {
 								data[1] = 0f;
 								data[2] = 0f;
 							} else if (split.length == 3) {
-								data[1] = Float.parseFloat(split[2]);
+								data[1] = 1 - Float.parseFloat(split[2]);
 								data[2] = 0f;
 							} else if (split.length == 4) {
-								data[1] = Float.parseFloat(split[2]);
+								data[1] = 1 - Float.parseFloat(split[2]);
 								data[2] = Float.parseFloat(split[3]);
 							}
 
@@ -234,27 +241,68 @@ public class ModelBuilder {
 								tdata = null;
 								ndata = null;
 								for (int i = 1; i < split.length; i++) {
-									fdata[i - 1] = (Integer.parseInt(split[i]) - 1);
+									int ind = Integer.parseInt(split[i]) - 1;
+									if(ind < -1) {
+										ind = vertex.size() - ind + 1;
+									}
+									fdata[i - 1] = ind;
 								}
 							} else if (doubleSplitTest.length == 2) {
 								ndata = null;
 								for (int i = 1; i < split.length; i++) {
-									fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-									tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
+
+									int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
+									int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
+
+									if(fInd < -1) {
+										fInd = vertex.size() - fInd + 1;
+									}
+									if(tInd < -1) {
+										tInd = vt.size() - tInd + 1;
+									}
+
+									fdata[i - 1] = fInd;
+									tdata[i - 1] = tInd;
 								}
 							} else if (doubleSplitTest.length == 3) {
 
 								if (doubleSplitTest[1].equalsIgnoreCase("")) {
 									tdata = null;
 									for (int i = 1; i < split.length; i++) {
-										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+
+										int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
+
+										if(fInd < -1) {
+											fInd = vertex.size() - fInd + 1;
+										}
+										if(nInd < -1) {
+											nInd = vn.size() - nInd + 1;
+										}
+
+										fdata[i - 1] = fInd;
+										ndata[i - 1] = nInd;
 									}
 								} else {
 									for (int i = 1; i < split.length; i++) {
-										fdata[i - 1] = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										tdata[i - 1] = (Integer.parseInt(split[i].split("/")[1]) - 1);
-										ndata[i - 1] = (Integer.parseInt(split[i].split("/")[2]) - 1);
+
+										int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
+										int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
+										int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
+
+										if(fInd < -1) {
+											fInd = vertex.size() - fInd + 1;
+										}
+										if(tInd < -1) {
+											tInd = vt.size() - tInd + 1;
+										}
+										if(nInd < -1) {
+											nInd = vn.size() - nInd + 1;
+										}
+
+										fdata[i - 1] = fInd;
+										tdata[i - 1] = tInd;
+										ndata[i - 1] = nInd;
 									}
 								}
 							}

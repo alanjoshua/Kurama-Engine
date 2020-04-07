@@ -14,7 +14,7 @@ public class Main {
 //		game = new GameSR("Software renderer");
 //		game.start();
 
-		game = new GameLWJGL("OpenGL Rendered");
+		game = new GameLWJGL("OpenGL Renderer");
 		game.start();
 	}
 }
