@@ -1,16 +1,12 @@
 package main;
 
-import inputs.InputSR;
-import models.Model;
-import models.ModelBuilder;
-import Math.Vector;
-import Math.Quaternion;
-import rendering.Camera;
-import rendering.RenderingEngine;
-import rendering.RenderingEngineSR;
+import engine.model.Model;
+import engine.model.ModelBuilder;
+import engine.Math.Vector;
+import engine.Math.Quaternion;
+import engine.renderingEngine.RenderingEngine;
+import engine.renderingEngine.RenderingEngineSR;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Random;
 
 public class GameSR_ESL extends GameSR {
@@ -19,7 +15,7 @@ public class GameSR_ESL extends GameSR {
     public long seed = 123456789;
     public int gridWidth = 100;
     public int gridDepth = 100;
-    public String testModel = "deer.obj";
+    public String testModel = "/Resources/deer.obj";
     public int angleMax = 200;
 
     public GameSR_ESL(String threadName) {
@@ -64,7 +60,7 @@ public class GameSR_ESL extends GameSR {
             float angle = (random.nextInt(angleMax) - angleMax/2 );
 
             Model.Tick tempRot = (m -> {
-                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), angle * speedConstant);
+                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), angle * timeDelta);
                 Quaternion newQ = rot.multiply(m.getOrientation());
                 m.setOrientation(newQ);
             });

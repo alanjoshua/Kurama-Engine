@@ -1,6 +1,8 @@
 package main;
 
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.*;
 import java.util.ArrayList;
@@ -8,23 +10,43 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import GUI.Button;
-import Math.Quaternion;
-import Math.Vector;
-import inputs.InputSR;
-import models.DataStructure.Mesh.Mesh;
-import models.Model;
-import models.Model.Tick;
-import models.ModelBuilder;
-import rendering.Camera;
-import rendering.RenderingEngineSR;
-import rendering.RenderingEngine.RenderPipeline;
-import rendering.RenderingEngine.ProjectionMode;
+import engine.GUI.Button;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.display.Display;
+import engine.display.DisplaySR;
+import engine.game.Game;
+import engine.inputs.Input;
+import engine.inputs.InputSR;
+import engine.DataStructure.Mesh.Mesh;
+import engine.model.Model;
+import engine.model.Model.Tick;
+import engine.model.ModelBuilder;
+import engine.camera.Camera;
+import engine.renderingEngine.RenderingEngine;
+import engine.renderingEngine.RenderingEngineSR;
+import engine.renderingEngine.RenderingEngine.RenderPipeline;
+import engine.renderingEngine.RenderingEngine.ProjectionMode;
 
 public class GameSR extends Game implements Runnable {
 
+	protected DisplaySR display;
+	protected Camera cam;
+	protected InputSR input;
+	protected RenderingEngineSR renderingEngine;
+	protected List<Model> models;
+
+	protected float mouseXSensitivity = 20f;
+	protected float mouseYSensitivity = 20f;
+	protected float speed = 15f;
+	protected float speedMultiplier = 1;
+	protected float speedIncreaseMultiplier = 2;
+
+	protected int lookAtIndex = 0;
+	protected boolean isGameRunning = true;
+
 	protected List<Model> modelsOnlyOutline;
-	protected List<GUI.Button> pauseButtons;
+	protected List<engine.GUI.Button> pauseButtons;
 
 	protected Button EXIT;
 	protected Button FULLSCREEN;
@@ -44,9 +66,24 @@ public class GameSR extends Game implements Runnable {
 		meshInstances = new HashMap<>();
 		display = new DisplaySR(this);
 		input = new InputSR(this);
-		((DisplaySR)(display)).setInput((InputSR) input);
-		renderingEngine = new RenderingEngineSR(this);
+
+		display.setInput(input);
 		display.startScreen();
+
+		display.addComponentListenerToFrame(
+				new ComponentAdapter() {
+				public void componentResized(ComponentEvent e) {
+					try {
+						getCamera().setImageWidth(display.getWidth());
+						getCamera().setImageHeight(display.getHeight());
+						getCamera().setShouldUpdateValues(true);
+						renderingEngine.resetBuffers();
+					} catch (Exception ex) {
+						}
+				}
+		});
+
+		renderingEngine = new RenderingEngineSR(this);
 
 		pauseButtons = new ArrayList<>();
 		models = new ArrayList<>();
@@ -55,10 +92,10 @@ public class GameSR extends Game implements Runnable {
 		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
 				display.getWidth(), display.getHeight());
 
-		((RenderingEngineSR)renderingEngine).resetBuffers();
+		renderingEngine.resetBuffers();
 
-		((RenderingEngineSR)renderingEngine).setProjectionMode(ProjectionMode.PERSPECTIVE);
-		((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Matrix);
+		renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
+		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
 
@@ -71,7 +108,11 @@ public class GameSR extends Game implements Runnable {
 
 	@Override
 	public void cleanUp() {
-
+		display.cleanUp();
+		renderingEngine.cleanUp();
+		for(Model m:models) {
+			m.mesh.cleanUp();
+		}
 	}
 
 	public void refocusOnModel() {
@@ -90,16 +131,16 @@ public class GameSR extends Game implements Runnable {
 
 	public void initModels() {
 		Tick tempRot = (m -> {
-			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50*speedConstant);
+			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
 			Quaternion newQ = rot.multiply(m.getOrientation());
 			m.setOrientation(newQ);
 		});
 
-		Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances);
+		Model deer = ModelBuilder.buildModelFromFile("/Resources/deer.obj",meshInstances);
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
-		Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances);
+		Model mill = ModelBuilder.buildModelFromFile("/Resources/low-poly-mill.obj",meshInstances);
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
 //		mill.triangulate();
@@ -107,7 +148,7 @@ public class GameSR extends Game implements Runnable {
 		Model grid = ModelBuilder.buildGrid(100, 100);
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = ModelBuilder.buildModelFromFile("TeapotHex3.obj",meshInstances);
+		Model pot = ModelBuilder.buildModelFromFile("/Resources/TeapotHex3.obj",meshInstances);
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 		pot.setTickObj(tempRot);
@@ -129,7 +170,7 @@ public class GameSR extends Game implements Runnable {
 		int height = 100;
 
 //		Making Exit button
-		EXIT = new GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+		EXIT = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
 		EXIT.text = "EXIT";
 
 		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
@@ -152,7 +193,7 @@ public class GameSR extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-		FULLSCREEN = new GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+		FULLSCREEN = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
 		FULLSCREEN.text = "FULLSCREEN";
 
 		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
@@ -175,7 +216,7 @@ public class GameSR extends Game implements Runnable {
 		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-		WINDOWED = new GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+		WINDOWED = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
 		WINDOWED.text = "WINDOWED MODE";
 
 		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
@@ -231,7 +272,7 @@ public class GameSR extends Game implements Runnable {
 
 	public void inputTick() {
 		
-		float cameraSpeed = speed * speedConstant * speedMultiplier;
+		float cameraSpeed = speed * timeDelta * speedMultiplier;
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
@@ -294,8 +335,8 @@ public class GameSR extends Game implements Runnable {
 
 //			input.getPosition().display();
 
-			float yawIncrease   = mouseXSensitivity * speedConstant * -((InputSR)input).getPosition().get(0);
-			float pitchIncrease = mouseYSensitivity * speedConstant * ((InputSR)input).getPosition().get(1);
+			float yawIncrease   = mouseXSensitivity * timeDelta * -((InputSR)input).getPosition().get(0);
+			float pitchIncrease = mouseYSensitivity * timeDelta * ((InputSR)input).getPosition().get(1);
 			
 			Vector currentAngle = cam.getOrientation().getPitchYawRoll();
 			float currentPitch = currentAngle.get(0) + pitchIncrease;
@@ -363,7 +404,7 @@ public class GameSR extends Game implements Runnable {
 			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
 
 			if(!this.isGameRunning) {
-				for(GUI.Button b:pauseButtons) {
+				for(engine.GUI.Button b:pauseButtons) {
 					b.render(g);
 				}
 			}
@@ -372,6 +413,30 @@ public class GameSR extends Game implements Runnable {
 
 		} while (bs.contentsLost());
 		bs.show();
+	}
+
+	public RenderingEngine getRenderingEngine() {
+		return renderingEngine;
+	}
+
+	public Display getDisplay() {
+		return display;
+	}
+
+	public Camera getCamera() {
+		return cam;
+	}
+
+	public Input getInput() {
+		return input;
+	}
+
+	public List<Model> getModels() {
+		return models;
+	}
+
+	public void setModels(List<Model> models) {
+		this.models = models;
 	}
 
 }

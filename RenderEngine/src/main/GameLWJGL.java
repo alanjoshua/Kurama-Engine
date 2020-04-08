@@ -6,26 +6,46 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import GUI.ButtonLWJGL;
-import Math.Quaternion;
-import Math.Vector;
-import inputs.InputLWJGL;
-import models.DataStructure.Mesh.Mesh;
-import models.DataStructure.Texture;
-import models.Model;
-import models.Model.Tick;
-import models.ModelBuilder;
-import rendering.Camera;
-import rendering.RenderingEngineLWJGL;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.display.Display;
+import engine.display.DisplayLWJGL;
+import engine.game.Game;
+import engine.inputs.Input;
+import engine.inputs.InputLWJGL;
+import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Texture;
+import engine.model.Model;
+import engine.model.Model.Tick;
+import engine.model.ModelBuilder;
+import engine.camera.Camera;
+import engine.renderingEngine.RenderingEngine;
+import engine.renderingEngine.RenderingEngineLWJGL;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.glViewport;
 
 public class GameLWJGL extends Game implements Runnable {
 
-    protected List<GUI.ButtonLWJGL> pauseButtons;
-    protected ButtonLWJGL EXIT;
-    protected ButtonLWJGL FULLSCREEN;
-    protected ButtonLWJGL WINDOWED;
+    protected DisplayLWJGL display;
+    protected Camera cam;
+    protected InputLWJGL input;
+    protected RenderingEngineLWJGL renderingEngine;
+    protected List<Model> models;
+
+    protected float mouseXSensitivity = 20f;
+    protected float mouseYSensitivity = 20f;
+    protected float speed = 15f;
+    protected float speedMultiplier = 1;
+    protected float speedIncreaseMultiplier = 2;
+
+    protected int lookAtIndex = 0;
+    protected boolean isGameRunning = true;
+
+    protected List<engine.GUI.Button> pauseButtons;
+    protected engine.GUI.Button EXIT;
+    protected engine.GUI.Button FULLSCREEN;
+    protected engine.GUI.Button WINDOWED;
 
     protected Vector mouseDelta;
     protected Vector mousePos;
@@ -51,17 +71,30 @@ public class GameLWJGL extends Game implements Runnable {
     public void init() {
         meshInstances = new HashMap<>();
         renderingEngine = new RenderingEngineLWJGL(this);
+
         display = new DisplayLWJGL(this);
         display.startScreen();
-        renderingEngine.init();
-
-        input = new InputLWJGL(((DisplayLWJGL)display).getWindow());
-
-        pauseButtons = new ArrayList<>();
-        models = new ArrayList<>();
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
+
+        glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
+            glViewport(0,0,width,height);
+                if(getCamera() != null) {
+                    display.setWIDTH(width);
+                    display.setHEIGHT(height);
+                    getCamera().setImageWidth(width);
+                    getCamera().setImageHeight(height);
+                    getCamera().setShouldUpdateValues(true);
+                }
+        });
+
+        renderingEngine.init();
+
+        input = new InputLWJGL(this);
+
+        pauseButtons = new ArrayList<>();
+        models = new ArrayList<>();
 
         initModels();
         initPauseScreen();
@@ -75,7 +108,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void initModels() {
         Tick tempRot = (m -> {
-            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50*speedConstant);
+            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
             Quaternion newQ = rot.multiply(m.getOrientation());
             m.setOrientation(newQ);
         });
@@ -84,7 +117,7 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 
-        Model deer = ModelBuilder.buildModelFromFileGL("deer.obj",meshInstances,hints);
+        Model deer = ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints);
         deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
@@ -92,39 +125,39 @@ public class GameLWJGL extends Game implements Runnable {
 //        deer2.setPos(new Vector(new float[] {0,18,0}));
 //        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        Model mill = ModelBuilder.buildModelFromFileGL("low-poly-mill.obj",meshInstances,hints);
+        Model mill = ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints);
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 ////
-//        ModelLWJGL pot = ModelBuilder.buildModelLWJGLFromFile("TeapotHex3.obj",meshInstances);
+//        ModelLWJGL pot = ModelBuilder.buildModelLWJGLFromFile("/Resources/TeapotHex3.obj",meshInstances);
 //        pot.setPos(new Vector(new float[]{0,10,10}));
 //        pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 //        pot.setTickObj(tempRot);
 //
 //
-//        Model ironMan = ModelBuilder.buildModelFromFile("IronMan.obj",meshInstances,hints);
+//        Model ironMan = ModelBuilder.buildModelFromFile("/Resources/IronMan.obj",meshInstances,hints);
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
-        Model clock = ModelBuilder.buildModelFromFileGL("cube.obj",meshInstances,hints);
-        clock.setScale(1);
-        clock.setPos(-5,15,-5);
+        Model cube = ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints);
+        cube.setScale(1);
+        cube.setPos(-5,15,-5);
 
         Texture tex = null;
         try {
-            tex = new Texture("grassblock.png");
+            tex = new Texture("textures/grassblock.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
-        clock.mesh.texture = tex;
+        cube.mesh.texture = tex;
 
-        Model sasuke = ModelBuilder.buildModelFromFileGL("Sasuke.obj",meshInstances,hints);
+        Model sasuke = ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints);
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
         // sasuke.setTickObj(tempRot);
 
         try {
-            tex = new Texture("PocketClockTex.png");
+            tex = new Texture("textures/PocketClockTex.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -134,7 +167,7 @@ public class GameLWJGL extends Game implements Runnable {
         models.add(sasuke);
         models.add(deer);
         models.add(mill);
-        models.add(clock);
+        models.add(cube);
 //        models.add(pot);
 
     }
@@ -145,10 +178,10 @@ public class GameLWJGL extends Game implements Runnable {
         int height = 100;
 
         //		Making Exit button
-        EXIT = new GUI.ButtonLWJGL(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+        EXIT = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
         EXIT.text = "EXIT";
 
-        ButtonLWJGL.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
+        engine.GUI.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -170,10 +203,10 @@ public class GameLWJGL extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-        FULLSCREEN = new GUI.ButtonLWJGL(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+        FULLSCREEN = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
         FULLSCREEN.text = "FULLSCREEN";
 
-        ButtonLWJGL.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
+        engine.GUI.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -193,10 +226,10 @@ public class GameLWJGL extends Game implements Runnable {
         FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-        WINDOWED = new GUI.ButtonLWJGL(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+        WINDOWED = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
         WINDOWED.text = "WINDOWED MODE";
 
-        ButtonLWJGL.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
+        engine.GUI.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -221,7 +254,11 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void cleanUp() {
-
+        display.cleanUp();
+        renderingEngine.cleanUp();
+        for(Model m:models) {
+            m.mesh.cleanUp();
+        }
     }
 
     public void tick() {
@@ -257,7 +294,7 @@ public class GameLWJGL extends Game implements Runnable {
     public void tickInput() {
 
         if(input.keyDown(GLFW_KEY_W)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
@@ -267,7 +304,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(GLFW_KEY_S)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
@@ -277,7 +314,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(GLFW_KEY_A)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
@@ -285,7 +322,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(GLFW_KEY_D)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
@@ -293,14 +330,14 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(GLFW_KEY_SPACE)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_LEFT_SHIFT)) {
-            float cameraSpeed = speed * speedConstant * speedMultiplier;
+            float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
@@ -343,8 +380,8 @@ public class GameLWJGL extends Game implements Runnable {
     public void calculate3DCamMovement() {
         if (mouseDelta.getNorm() != 0 && isGameRunning) {
 
-            float yawIncrease   = mouseXSensitivity * speedConstant * -mouseDelta.get(0);
-            float pitchIncrease = mouseYSensitivity * speedConstant * -mouseDelta.get(1);
+            float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
+            float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
 
             Vector currentAngle = cam.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
@@ -374,6 +411,30 @@ public class GameLWJGL extends Game implements Runnable {
         glfwSwapBuffers(((DisplayLWJGL)display).getWindow());
         glfwPollEvents();
         input.poll();
+    }
+
+    public RenderingEngine getRenderingEngine() {
+        return renderingEngine;
+    }
+
+    public Display getDisplay() {
+        return display;
+    }
+
+    public Camera getCamera() {
+        return cam;
+    }
+
+    public Input getInput() {
+        return input;
+    }
+
+    public List<Model> getModels() {
+        return models;
+    }
+
+    public void setModels(List<Model> models) {
+        this.models = models;
     }
 
 }
