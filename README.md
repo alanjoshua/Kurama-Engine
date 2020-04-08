@@ -18,7 +18,8 @@
 <p> This program currently does not have a properly functioning API as it embedded with my test program. I am working on making the graphics engine separate 
 
 ## Features
-
+* OpenGL support
+* software rendering mode if the user does not want to use openGL
 * Reading .OBJ files and rendering the models as a mesh
 * Capable of triangulating n-gons (polygons with number of sides greater than 3)
 * Switching between Matrix and Quaternion rotation mode
@@ -30,11 +31,7 @@
 * Proper fullscreen support and UI elements scale with windows scaling, so things look good even in high DPI monitors
 
 ## Test Program
-* The repository includes a test program named "RenderingEngine.jar" in the root folder. Download and run it to test it.
-* The program has been tested on several windows 10 machines and one macbook air.  
-* This program has a simple control scheme to control the camera using the keyboard and mouse.
-* This program renders three 3D models on a grid.
-* The purpose for creating this test program was for me to be able to test the features of my rendering engine.
+* Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases
 
 ### GUI controls
 <p> The program takes control of the mouse to control the camera so press the escape key to toggle the pause screen and get access to normal mouse controls </p>
