@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="RenderEngine:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/RenderEngine_jar</output-path>
+    <output-path>$PROJECT_DIR$</output-path>
     <root id="archive" name="RenderEngine.jar">
       <element id="module-output" name="RenderEngine" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/lwjgl-3.2.3/lwjgl/lwjgl.jar" path-in-jar="/" />
