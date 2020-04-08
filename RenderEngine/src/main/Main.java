@@ -14,7 +14,10 @@ public class Main {
 //		game = new GameSR("Software renderer");
 //		game.start();
 
-		game = new GameLWJGL("OpenGL Renderer");
+		game = new GameSR_ESL("ESL Software renderer",false);
 		game.start();
+
+//		game = new GameLWJGL("OpenGL Renderer");
+//		game.start();
 	}
 }

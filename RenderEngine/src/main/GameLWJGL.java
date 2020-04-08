@@ -84,7 +84,7 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 
-        Model deer = ModelBuilder.buildModelFromFile("deer.obj",meshInstances,hints);
+        Model deer = ModelBuilder.buildModelFromFileGL("deer.obj",meshInstances,hints);
         deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
@@ -92,7 +92,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        deer2.setPos(new Vector(new float[] {0,18,0}));
 //        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        Model mill = ModelBuilder.buildModelFromFile("low-poly-mill.obj",meshInstances,hints);
+        Model mill = ModelBuilder.buildModelFromFileGL("low-poly-mill.obj",meshInstances,hints);
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 ////
@@ -106,7 +106,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
-        Model clock = ModelBuilder.buildModelFromFile("cube.obj",meshInstances,hints);
+        Model clock = ModelBuilder.buildModelFromFileGL("cube.obj",meshInstances,hints);
         clock.setScale(1);
         clock.setPos(-5,15,-5);
 
@@ -118,7 +118,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
         clock.mesh.texture = tex;
 
-        Model sasuke = ModelBuilder.buildModelFromFile("Sasuke.obj",meshInstances,hints);
+        Model sasuke = ModelBuilder.buildModelFromFileGL("Sasuke.obj",meshInstances,hints);
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
         // sasuke.setTickObj(tempRot);
@@ -221,11 +221,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void cleanUp() {
-        display.cleanUp();
-        renderingEngine.cleanUp();
-        for(Model m:models) {
-            m.mesh.cleanUp();
-        }
+
     }
 
     public void tick() {

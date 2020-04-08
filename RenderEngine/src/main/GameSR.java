@@ -23,7 +23,7 @@ import rendering.RenderingEngine.ProjectionMode;
 
 public class GameSR extends Game implements Runnable {
 
-	protected List<Model> modelsOldRenderMethod;
+	protected List<Model> modelsOnlyOutline;
 	protected List<GUI.Button> pauseButtons;
 
 	protected Button EXIT;
@@ -35,6 +35,10 @@ public class GameSR extends Game implements Runnable {
 	public GameSR(String threadName) {
 		super(threadName);
 	}
+	public GameSR(String threadName,boolean shouldBenchmark) {
+		super(threadName,shouldBenchmark);
+	}
+
 
 	public void init() {
 		meshInstances = new HashMap<>();
@@ -46,26 +50,42 @@ public class GameSR extends Game implements Runnable {
 
 		pauseButtons = new ArrayList<>();
 		models = new ArrayList<>();
-		modelsOldRenderMethod = new ArrayList<>();
+		modelsOnlyOutline = new ArrayList<>();
 
-		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 100,
+		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
 				display.getWidth(), display.getHeight());
 
 		((RenderingEngineSR)renderingEngine).resetBuffers();
-		initModels();
-		initPauseScreen();
 
 		((RenderingEngineSR)renderingEngine).setProjectionMode(ProjectionMode.PERSPECTIVE);
 		((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Matrix);
 
 		cam.updateValues();
-		cam.lookAtModel(models.get(lookAtIndex));
+
+		initModels();
+		initPauseScreen();
+
+		refocusOnModel();
 
 	}
 
 	@Override
 	public void cleanUp() {
-		display.removeWindow();
+
+	}
+
+	public void refocusOnModel() {
+		try {
+			if (models.size() > 0) {
+				cam.lookAtModel(models.get(lookAtIndex));
+			} else {
+				if (modelsOnlyOutline.size() > 0) {
+					cam.lookAtModel(modelsOnlyOutline.get(lookAtIndex));
+				}
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void initModels() {
@@ -98,7 +118,7 @@ public class GameSR extends Game implements Runnable {
 //		models.add(pot);
 //		models.add(grid);
 
-		modelsOldRenderMethod.add(grid);
+		modelsOnlyOutline.add(grid);
 //		modelsOldRenderMethod.add(pot);
 
 	}
@@ -197,7 +217,7 @@ public class GameSR extends Game implements Runnable {
 			display.enableCursor();
 
 		models.forEach(Model::tick);
-		modelsOldRenderMethod.forEach(Model::tick);
+		modelsOnlyOutline.forEach(Model::tick);
 
 		if(!isGameRunning) {
 			pauseButtons.forEach((b) -> b.tick(((InputSR)input).getPosition(),((InputSR)input).buttonDown(1)));
@@ -215,7 +235,8 @@ public class GameSR extends Game implements Runnable {
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
 		if (input.keyDownOnce(KeyEvent.VK_R)) {
-			cam.lookAtModel(models.get(lookAtIndex));
+			refocusOnModel();
+//			cam.lookAtModel(models.get(lookAtIndex));
 		}
 		
 		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
@@ -326,8 +347,11 @@ public class GameSR extends Game implements Runnable {
 			g.setBackground(bg);
 
 			g.setColor(Color.LIGHT_GRAY);
-			((RenderingEngineSR)renderingEngine).render(modelsOldRenderMethod, g,cam);
-			((RenderingEngineSR)renderingEngine).render2(models,g);
+
+			if(models.size()>0) {
+				((RenderingEngineSR)renderingEngine).render2(models,g);
+			}
+			((RenderingEngineSR)renderingEngine).render(modelsOnlyOutline, g,cam);
 
 			g.setColor(Color.white);
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));

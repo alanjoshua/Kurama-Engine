@@ -24,9 +24,13 @@ public class ModelBuilder {
 		public boolean initLWJGLAttribs = false;
 	}
 
-	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances) {
+	public static Model buildModelFromFile(String loc, Map<String,Mesh> meshInstances) {
 		Model res;
-		Mesh resMesh = meshInstances.get(loc);
+		Mesh resMesh = null;
+
+		if(meshInstances != null) {
+			resMesh = meshInstances.get(loc);
+		}
 
 		if(resMesh != null) {
 			return new models.Model(resMesh,loc);
@@ -34,15 +38,18 @@ public class ModelBuilder {
 		else {
 			resMesh = loadRawData(loc);
 			resMesh = triangulate(resMesh,false);
+			resMesh = dumbBake(resMesh,null);
 
-			meshInstances.put(loc,resMesh);
+			if(meshInstances != null) {
+				meshInstances.put(loc, resMesh);
+			}
 
 			res = new Model(resMesh,loc);
 			return res;
 		}
 	}
 
-	public static Model buildModelFromFile(String loc,Map<String,Mesh> meshInstances,ModelBuilderHints hints) {
+	public static Model buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
 		Model res = null;
 		Mesh resMesh = null;
 
@@ -57,8 +64,13 @@ public class ModelBuilder {
 			resMesh = loadRawData(loc);
 
 			if(hints == null) {
-				resMesh = triangulate(resMesh, false);
-				meshInstances.put(loc, resMesh);
+				resMesh = triangulate(resMesh,false);
+				resMesh = dumbBake(resMesh,null);
+
+				if(meshInstances != null) {
+					meshInstances.put(loc, resMesh);
+				}
+
 			}
 			else {
 				if(hints.shouldTriangulate) {
@@ -69,7 +81,7 @@ public class ModelBuilder {
 					resMesh = bakeMesh(resMesh,hints);
 				}
 				else {
-					resMesh = hardCopy(resMesh,hints);
+					resMesh = dumbBake(resMesh,hints);
 				}
 
 				if(hints.initLWJGLAttribs) {
@@ -77,14 +89,19 @@ public class ModelBuilder {
 				}
 			}
 
-			meshInstances.put(loc,resMesh);
+			if(meshInstances != null) {
+				meshInstances.put(loc, resMesh);
+			}
 			res = new Model(resMesh,loc);
 			return res;
 		}
 	}
 
-	public static Mesh hardCopy(Mesh mesh,ModelBuilderHints hints) {
+	public static Mesh dumbBake(Mesh mesh, ModelBuilderHints hints) {
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
+		List<Integer> indices = new ArrayList<>();
+		List<Face> newFaces = new ArrayList<>();
+		int counter = 0;
 
 		mesh.displayMeshInformation();
 
@@ -94,6 +111,8 @@ public class ModelBuilder {
 
 		for(Face f: mesh.faces) {
 			for(Vertex v: f.vertices) {
+				indices.add(counter);
+				counter++;
 				for(int i = 0;i < v.vertAttributes.size();i++) {
 					Integer at = v.getAttribute(i);
 					if(at != null) {
@@ -111,7 +130,19 @@ public class ModelBuilder {
 			}
 		}
 
-		return new Mesh(null,null,newVertAttribs);
+		for(int i = 0;i < indices.size();i+=3) {
+			Face temp = new Face();
+			for(int k = 0;k < 3;k++) {
+				Vertex v = new Vertex();
+				for (int j = 0; j < newVertAttribs.size(); j++) {
+					v.setAttribute(i+k, j);
+				}
+				temp.addVertex(v);
+			}
+			newFaces.add(temp);
+		}
+
+		return new Mesh(indices,newFaces,newVertAttribs);
 
 	}
 
@@ -120,6 +151,7 @@ public class ModelBuilder {
 		List<Integer> indexList = new ArrayList<>();
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
 		List<Vertex> uniqueVertices = new ArrayList<>();
+		List<Face> newFaces = new ArrayList<>();
 
 		for(int i = 0;i < mesh.vertAttributes.size();i++) {
 			newVertAttribs.add(new ArrayList<>());
@@ -153,7 +185,19 @@ public class ModelBuilder {
 			}
 		}
 
-		return new Mesh(indexList,null,newVertAttribs);
+		for(int i = 0;i < indexList.size();i+=3) {
+			Face temp = new Face();
+			for(int k = 0;k < 3;k++) {
+				Vertex v = new Vertex();
+				for (int j = 0; j < newVertAttribs.size(); j++) {
+					v.setAttribute(indexList.get(i+k), j);
+				}
+				temp.addVertex(v);
+			}
+			newFaces.add(temp);
+		}
+
+		return new Mesh(indexList,newFaces,newVertAttribs);
 	}
 
 	public static Mesh loadRawData(String loc) {
