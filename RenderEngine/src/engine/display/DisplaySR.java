@@ -13,6 +13,7 @@ public class DisplaySR extends Display {
     private JFrame frame;
     private Canvas canvas;
     private GraphicsDevice screen;
+    private ComponentAdapter ca;
 
     public DisplaySR(int defaultWindowedWidth, int defaultWindowedHeight, Game game) {
         super(defaultWindowedWidth,defaultWindowedHeight,game);
@@ -70,11 +71,13 @@ public class DisplaySR extends Display {
         frame.add(canvas);
         frame.pack();
 
+        frame.addComponentListener(ca);
+
         canvas.requestFocus();
     }
 
     public void addComponentListenerToFrame(ComponentAdapter c) {
-        frame.addComponentListener(c);
+        this.ca = c;
     }
 
     public void setFullScreen() {

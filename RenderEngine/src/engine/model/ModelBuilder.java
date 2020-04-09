@@ -104,8 +104,6 @@ public class ModelBuilder {
 		List<Face> newFaces = new ArrayList<>();
 		int counter = 0;
 
-		mesh.displayMeshInformation();
-
 		for(int i = 0;i < mesh.vertAttributes.size();i++) {
 			newVertAttribs.add(new ArrayList<Vector>());
 		}
@@ -205,8 +203,6 @@ public class ModelBuilder {
 
 		ModelBuilder m = new ModelBuilder();
 		InputStream url = m.getClass().getResourceAsStream(loc);
-//		url = System.class.getResource(loc);
-		System.out.println(url);
 
 		Mesh resMesh = null;
 
@@ -470,14 +466,6 @@ public class ModelBuilder {
 		}
 		return new Mesh(newFaces,inMesh.vertAttributes);
 	}
-
-//	public static MeshLWJGL triangulate(MeshLWJGL inMesh, boolean forceEarClipping) {
-//		List<Face> newFaces = new ArrayList<>();
-//		for(Face f: inMesh.faces) {
-//			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
-//		}
-//		return new MeshLWJGL(newFaces,inMesh.vertAttributes);
-//	}
 
 	public static List<Face> triangulate(Face f, List<Vector> vertices,boolean forceEarClipping) {
 		if(f.vertices.size() > 4 || forceEarClipping) {

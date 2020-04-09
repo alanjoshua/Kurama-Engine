@@ -68,20 +68,19 @@ public class GameSR extends Game implements Runnable {
 		input = new InputSR(this);
 
 		display.setInput(input);
-		display.startScreen();
-
 		display.addComponentListenerToFrame(
 				new ComponentAdapter() {
-				public void componentResized(ComponentEvent e) {
-					try {
-						getCamera().setImageWidth(display.getWidth());
-						getCamera().setImageHeight(display.getHeight());
-						getCamera().setShouldUpdateValues(true);
-						renderingEngine.resetBuffers();
-					} catch (Exception ex) {
+					public void componentResized(ComponentEvent e) {
+						try {
+							getCamera().setImageWidth(display.getWidth());
+							getCamera().setImageHeight(display.getHeight());
+							getCamera().setShouldUpdateValues(true);
+							renderingEngine.resetBuffers();
+						} catch (Exception ex) {
 						}
-				}
-		});
+					}
+				});
+		display.startScreen();
 
 		renderingEngine = new RenderingEngineSR(this);
 

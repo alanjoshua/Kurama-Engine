@@ -16,7 +16,7 @@ public class Main {
 //		game = new GameSR("Software renderer");
 //		game.start();
 
-//		game = new GameSR_ESL("ESL Software renderer",false);
+//		game = new GameSR_ESL("ESL quat-quat",true);
 //		game.start();
 
 		game = new GameLWJGL("OpenGL Renderer");

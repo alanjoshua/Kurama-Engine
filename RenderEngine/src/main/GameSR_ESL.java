@@ -11,7 +11,7 @@ import java.util.Random;
 
 public class GameSR_ESL extends GameSR {
 
-    public int MODELCOUNT = 50;
+    public int MODELCOUNT = 10;
     public long seed = 123456789;
     public int gridWidth = 100;
     public int gridDepth = 100;
@@ -26,26 +26,17 @@ public class GameSR_ESL extends GameSR {
         super(threadName,shouldBenchmark);
     }
 
-    public GameSR_ESL(String threadName, boolean shouldBenchmark, String testModel, int modelCount, int w, int d, int angleMax,long seed) {
-        super(threadName,shouldBenchmark);
-        this.testModel = testModel;
-        this.MODELCOUNT = modelCount;
-        this.gridWidth = w;
-        this.gridDepth = d;
-        this.seed = seed;
-        this.angleMax = angleMax;
-    }
-
     @Override
     public void initModels() {
 
-        ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderingEngine.RenderPipeline.Matrix);
+        renderingEngine.setRenderPipeline(RenderingEngine.RenderPipeline.Quat);
 
         Random random = new Random();
         random.setSeed(seed);
 
         Model grid = ModelBuilder.buildGrid(gridWidth, gridDepth);
         modelsOnlyOutline.add(grid);
+        grid.displayMeshInformation();
 
         for(int i = 0;i < MODELCOUNT;i++) {
 
@@ -69,6 +60,9 @@ public class GameSR_ESL extends GameSR {
 
             modelsOnlyOutline.add(deer);
         }
+
+        meshInstances.get("/Resources/deer.obj").displayMeshInformation();
+
     }
 
 }
