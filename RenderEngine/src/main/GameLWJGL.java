@@ -157,19 +157,26 @@ public class GameLWJGL extends Game implements Runnable {
         // sasuke.setTickObj(tempRot);
 
         try {
-            tex = new Texture("textures/PocketClockTex.png");
+            tex = new Texture("textures/11.BMP");
         }catch (Exception e) {
             e.printStackTrace();
         }
         sasuke.mesh.texture = tex;
+
+        var spiderman = ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints);
+        try {
+            tex = new Texture("textures/spiderman.png");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        spiderman.mesh.texture = tex;
 
 //        models.add(ironMan);
         models.add(sasuke);
         models.add(deer);
         models.add(mill);
         models.add(cube);
-//        models.add(pot);
-
+        models.add(spiderman);
     }
 
     public void initPauseScreen() {

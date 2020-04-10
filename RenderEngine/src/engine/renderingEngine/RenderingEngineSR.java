@@ -41,6 +41,7 @@ public class RenderingEngineSR extends RenderingEngine {
         frameBuffer = new Color[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
     }
 
+//    Renders only the outlines of polygons
     public void render(List<Model> models, Graphics2D g, Camera cam) {
 
         Matrix worldToCam = cam.getWorldToCam();
@@ -154,6 +155,9 @@ public class RenderingEngineSR extends RenderingEngine {
 
         }
     }
+
+//    Render method which tries to shade triangles. Really stupid and slow because it individually checks every single pixel inside a triangle, therefore even if
+//    only one triangle is being rendered, the program would run faster when the triangle is further away from the camera
 
     public void render2(List<Model> models, Graphics2D g) {
 
