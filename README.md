@@ -3,20 +3,6 @@
 <p></p>
 &nbsp &nbsp &nbsp
 
-## Introduction
-
-<p> This is a 3D rendering engine program.</p>
-
-<p>This uses my linear algebra library for performing math operations </p>
-
-<p>This project relies entirely on code written by my as I started this project around the end of December 2019 to learn how rendering engines work and using existing graphics APIs would defeat the point of me learning </p>
-
-<p>Currently, the program runs entirely on the CPU and so the FPS would probably be really low on a relatively lower speced machine.</p>
-
-<p> Since this project in its infancy and so far I have been mainly using it only to test different algorithms, it is not yet properly documented</p>
-
-<p> This program currently does not have a properly functioning API as it embedded with my test program. I am working on making the graphics engine separate 
-
 ## Features
 * OpenGL support
 * software rendering mode if the user does not want to use openGL
@@ -33,7 +19,14 @@
 ## Test Program
 * Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases
 
-### GUI controls
+### GUI controls (for openGL renderer demo)
+* v - switch between fullscreen and windowed modes
+* ESC - toggle between camera movement and normal mouse controls
+* R - focus on pre-selected model
+* F - toggle between 165Hz FPS and uncapped FPS
+* To quit the program, either switch to windowed mode, press ESC to get normal mouse control and close program using the normal close button at the top right. You can also close the program by pressing ALT-F4.
+
+### GUI controls (for software renderer demo)
 <p> The program takes control of the mouse to control the camera so press the escape key to toggle the pause screen and get access to normal mouse controls </p>
 
 * Esc - Toggles the pause screen
