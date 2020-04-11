@@ -1,11 +1,13 @@
 package engine.model;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 
 import engine.Math.Vector;
 import engine.utils.Utils;
@@ -15,6 +17,9 @@ import engine.DataStructure.LinkedList.Node;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import org.lwjgl.system.CallbackI;
+
+import static org.lwjgl.opengl.GL11.GL_LINES;
 
 public class ModelBuilder {
 
@@ -23,9 +28,11 @@ public class ModelBuilder {
 		public boolean shouldTriangulate = true;
 		public boolean forceEarClipping = false;
 		public boolean initLWJGLAttribs = false;
+		public boolean addRandomColor = false;
+		public Vector addConstantColor;
 	}
 
-	public static Model buildModelFromFile(String loc, Map<String,Mesh> meshInstances) {
+	public static Mesh buildModelFromFile(String loc, Map<String,Mesh> meshInstances) {
 		Model res;
 		Mesh resMesh = null;
 
@@ -34,7 +41,9 @@ public class ModelBuilder {
 		}
 
 		if(resMesh != null) {
-			return new Model(resMesh,loc);
+			resMesh.meshIdentifier = loc;
+			return resMesh;
+//			return new Model(resMesh,loc);
 		}
 		else {
 			resMesh = loadRawData(loc);
@@ -45,13 +54,15 @@ public class ModelBuilder {
 				meshInstances.put(loc, resMesh);
 			}
 
-			res = new Model(resMesh,loc);
-			return res;
+			resMesh.meshIdentifier = loc;
+			return resMesh;
+//			res = new Model(resMesh,loc);
+//			return res;
 		}
 	}
 
-	public static Model buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
-		Model res = null;
+	public static Mesh buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
+//		Model res = null;
 		Mesh resMesh = null;
 
 		if(meshInstances != null) {
@@ -59,7 +70,8 @@ public class ModelBuilder {
 		}
 
 		if(resMesh != null) {
-			return new Model(resMesh,loc);
+			return resMesh;
+//			return new Model(resMesh,loc);
 		}
 		else {
 			resMesh = loadRawData(loc);
@@ -85,6 +97,14 @@ public class ModelBuilder {
 					resMesh = dumbBake(resMesh,hints);
 				}
 
+				if(hints.addRandomColor) {
+					resMesh = addRandomColor(resMesh);
+				}
+
+				if(hints.addConstantColor!=null) {
+					resMesh = addColor(resMesh,hints.addConstantColor);
+				}
+
 				if(hints.initLWJGLAttribs) {
 					resMesh.initOpenGLMeshData();
 				}
@@ -93,8 +113,9 @@ public class ModelBuilder {
 			if(meshInstances != null) {
 				meshInstances.put(loc, resMesh);
 			}
-			res = new Model(resMesh,loc);
-			return res;
+//			res = new Model(resMesh,loc);
+			resMesh.meshIdentifier = loc;
+			return resMesh;
 		}
 	}
 
@@ -198,6 +219,10 @@ public class ModelBuilder {
 
 		return new Mesh(indexList,newFaces,newVertAttribs);
 	}
+
+//	public static Mesh addRandomColor() {
+//
+//	}
 
 	public static Mesh loadRawData(String loc) {
 
@@ -445,7 +470,7 @@ public class ModelBuilder {
 				vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 				vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
-				resMesh = new Mesh(facesListObj, vertAttributes);
+				resMesh = new Mesh(null,facesListObj, vertAttributes);
 				resMesh.trimEverything();
 				return resMesh;
 
@@ -459,12 +484,50 @@ public class ModelBuilder {
 		}
 	}
 
+	public static Mesh addRandomColor(Mesh inMesh) {
+		List<Vector> colors = new ArrayList<>();
+		Random rand = new Random();
+
+		for(int i = 0;i < inMesh.getVertices().size();i++) {
+			Vector col = new Vector(new float[]{rand.nextFloat(),rand.nextFloat(),rand.nextFloat(),1});
+			colors.add(col);
+		}
+
+		for(Face f: inMesh.faces) {
+			for(Vertex v: f.vertices) {
+				v.setAttribute(v.getAttribute(Vertex.POSITION),Vertex.COLOR);
+			}
+		}
+
+		inMesh.setAttribute(colors,Mesh.COLOR);
+		return inMesh;
+
+	}
+
+	public static Mesh addColor(Mesh inMesh, Vector color) {
+		List<Vector> colors = new ArrayList<>();
+		for(int i = 0;i < inMesh.getVertices().size();i++) {
+			colors.add(color);
+		}
+
+		for(Face f: inMesh.faces) {
+			for(Vertex v: f.vertices) {
+				v.setAttribute(v.getAttribute(Vertex.POSITION),Vertex.COLOR);
+			}
+		}
+
+		inMesh.setAttribute(colors,Mesh.COLOR);
+		return inMesh;
+
+	}
+
 	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
 		List<Face> newFaces = new ArrayList<>();
+
 		for(Face f: inMesh.faces) {
 			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
-		return new Mesh(newFaces,inMesh.vertAttributes);
+		return new Mesh(null,newFaces,inMesh.vertAttributes);
 	}
 
 	public static List<Face> triangulate(Face f, List<Vector> vertices,boolean forceEarClipping) {
@@ -593,7 +656,7 @@ public class ModelBuilder {
 		return retFaces;
 	}
 
-	public static Model buildGrid(int w, int d) {
+	public static Mesh buildGridDeprecated(int w, int d) {
 
 		Vector[][] verts = new Vector[w][d];
 		List<int[]> cons = new ArrayList<>();
@@ -637,10 +700,255 @@ public class ModelBuilder {
 		List<List<Vector>> vertAttributes = new ArrayList<>(1);
 		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
 
-		resMesh = new Mesh(facesListObj, vertAttributes);
-		return new Model(resMesh,"grid");
+		resMesh = new Mesh(null,facesListObj, vertAttributes);
+		resMesh.meshIdentifier = "grid";
+		return resMesh;
+//		return new Model(resMesh,"grid");
 
-//		return new Model(vertices, cons, null, null, null, null);
+	}
+
+	public static Mesh buildGridTrigs(int w, int h, ModelBuilderHints hints) {
+
+		List<Face> faces = new ArrayList<>();
+		List<Vector> vertices = new ArrayList<>();
+		List<Integer> indices = new ArrayList<>();
+
+		for(int i = 0;i < w;i++) {
+			for(int j = 0;j < h;j++) {
+
+				if(i == 0 && j == 0) { //Very first cell in first column
+
+					Vector v1 = new Vector(new float[]{i, 0, j + 1,1});
+					Vector v2 = new Vector(new float[]{i, 0, j,1});
+					Vector v3 = new Vector(new float[]{i + 1, 0, j,1});
+					Vector v4 = new Vector(new float[]{i + 1, 0, j + 1,1});
+
+					vertices.add(v1);
+					vertices.add(v2);
+					vertices.add(v3);
+					vertices.add(v4);
+
+					for(int k = 0;k < 4;k++) {
+						indices.add(indices.size());
+					}
+
+					Face tempFace = new Face();
+
+					Vertex vert = new Vertex();
+					vert.setAttribute(0,Vertex.POSITION);
+					tempFace.addVertex(vert);
+
+					vert = new Vertex();
+					vert.setAttribute(1,Vertex.POSITION);
+					tempFace.addVertex(vert);
+
+					vert = new Vertex();
+					vert.setAttribute(2,Vertex.POSITION);
+					tempFace.addVertex(vert);
+
+					vert = new Vertex();
+					vert.setAttribute(3,Vertex.POSITION);
+					tempFace.addVertex(vert);
+
+					faces.add(tempFace);
+				}
+
+				else if(i == 0) { //Cell in first column but not first cell
+
+					Vector v1 = new Vector(new float[]{i, 0, j + 1,1});
+					Vector v4 = new Vector(new float[]{i+1, 0, j+1,1});
+
+					vertices.add(v1);
+					vertices.add(v4);
+
+					int ind1 = indices.get(indices.size() - 4);
+					int ind2 = indices.get(indices.size() - 1);
+
+					indices.add(vertices.size() - 2);
+					indices.add(ind1);
+					indices.add(ind2);
+					indices.add(vertices.size() - 1);
+
+					Face tempFace = new Face();
+					for(int k = 0;k < 4;k++) {
+						Vertex vert = new Vertex();
+						vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+						tempFace.addVertex(vert);
+					}
+					faces.add(tempFace);
+				}
+
+				else { // Not first column
+
+					if(j == 0) { //First cell in other columns
+						Vector v3 = new Vector(new float[]{i+1,0,j,1});
+						Vector v4 = new Vector(new float[]{i+1,0,j+1,1});
+
+						vertices.add(v3);
+						vertices.add(v4);
+
+						int cellInd = (4 * (i*h + j)) - (4*h);
+//						System.out.println("i: "+i+" j: "+j );
+
+						int ind1 = indices.get(cellInd + 3);
+						int ind2 = indices.get(cellInd + 2);
+						indices.add(ind1);
+						indices.add(ind2);
+						indices.add(vertices.size() - 2);
+						indices.add(vertices.size() - 1);
+
+						Face tempFace = new Face();
+						for(int k = 0;k < 4;k++) {
+							Vertex vert = new Vertex();
+							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+							tempFace.addVertex(vert);
+						}
+						faces.add(tempFace);
+					}
+
+					else {  //Not first cell of any column
+
+						Vector v4 = new Vector(new float[]{i+1,0,j+1,1});
+						vertices.add(v4);
+
+						int cellInd = (4 * (i*h + j)) - (4*h);
+						int ind1 = indices.get(cellInd + 3);
+						int ind2 = indices.get(cellInd + 2);
+						int ind3 = indices.get(indices.size() - 1);
+						int ind4 = vertices.size() - 1;
+
+						indices.add(ind1);
+						indices.add(ind2);
+						indices.add(ind3);
+						indices.add(ind4);
+
+						Face tempFace = new Face();
+						for(int k = 0;k < 4;k++) {
+							Vertex vert = new Vertex();
+							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+							tempFace.addVertex(vert);
+						}
+						faces.add(tempFace);
+
+					}
+
+				}
+
+
+			}
+		}
+
+		List<List<Vector>> vertAttribs = new ArrayList<>(1);
+		vertAttribs.add(vertices);
+
+		Mesh resMesh = new Mesh(null,faces,vertAttribs);
+		resMesh = triangulate(resMesh,false);
+
+		List<Integer> newIndices = new ArrayList<>();
+
+		for(int i = 0; i < indices.size();i+=4) {
+			int v1 = indices.get(i);
+			int v2 = indices.get(i+1);
+			int v3 = indices.get(i+2);
+			int v4 = indices.get(i+3);
+
+			newIndices.add(v1);
+			newIndices.add(v2);
+			newIndices.add(v3);
+
+			newIndices.add(v1);
+			newIndices.add(v3);
+			newIndices.add(v4);
+		}
+
+		resMesh.indices = newIndices;
+
+		if(hints != null) {
+
+			if(hints.addRandomColor) {
+				resMesh = addRandomColor(resMesh);
+			}
+
+			if(hints.addConstantColor!=null) {
+				resMesh = addColor(resMesh,hints.addConstantColor);
+			}
+
+			if(hints.initLWJGLAttribs)
+				resMesh.initOpenGLMeshData();
+		}
+
+		resMesh.meshIdentifier = "grid-trigs";
+		return resMesh;
+//		return new Model(resMesh,"grid-trigs");
+
+	}
+
+	public static Mesh buildGridLines(int w, int h,ModelBuilderHints hints) {
+		List<Vector> vertices = new ArrayList<>();
+		List<Face> faces = new ArrayList<>();
+
+		for(int i = 0;i <= w;i++) {
+			Vector v1 = new Vector(new float[]{i,0,0,1});
+			Vector v2 = new Vector(new float[]{i,0,h,1});
+			vertices.add(v1);
+			vertices.add(v2);
+
+			Vertex vert1 = new Vertex();
+			Vertex vert2 = new Vertex();
+
+			vert1.setAttribute(vertices.size() - 2,Vertex.POSITION);
+			vert2.setAttribute(vertices.size() - 1,Vertex.POSITION);
+
+			Face tempFace = new Face();
+			tempFace.addVertex(vert1);
+			tempFace.addVertex(vert2);
+
+			faces.add(tempFace);
+		}
+
+		for(int i = 0;i <= h;i++) {
+			Vector v1 = new Vector(new float[]{0,0,i,1});
+			Vector v2 = new Vector(new float[]{w,0,i,1});
+			vertices.add(v1);
+			vertices.add(v2);
+
+			Vertex vert1 = new Vertex();
+			Vertex vert2 = new Vertex();
+
+			vert1.setAttribute(vertices.size() - 2,Vertex.POSITION);
+			vert2.setAttribute(vertices.size() - 1,Vertex.POSITION);
+
+			Face tempFace = new Face();
+			tempFace.addVertex(vert1);
+			tempFace.addVertex(vert2);
+
+			faces.add(tempFace);
+		}
+
+		List<List<Vector>> vertAttribs = new ArrayList<>();
+		vertAttribs.add(vertices);
+
+		Mesh resMesh = new Mesh(null,faces,vertAttribs);
+
+		if(hints != null) {
+
+			if(hints.addRandomColor) {
+				resMesh = addRandomColor(resMesh);
+			}
+
+			if(hints.addConstantColor!=null) {
+				resMesh = addColor(resMesh,hints.addConstantColor);
+			}
+
+			if(hints.initLWJGLAttribs)
+				resMesh.initOpenGLMeshData();
+		}
+
+		resMesh.drawMode = GL_LINES;
+		resMesh.meshIdentifier = "Grid-Lines";
+		return resMesh;
+//		return new Model(resMesh,"Grid-Lines");
+
 	}
 
 }

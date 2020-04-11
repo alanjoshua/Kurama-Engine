@@ -7,13 +7,17 @@ import engine.DataStructure.Mesh.Mesh;
 
 public class Model {
 
-	public interface Tick {
-		void tick(Model m);
+	public interface MiniBehaviour {
+		void tick(Model m,ModelTickInput params);
+	}
+
+	public static class ModelTickInput {
+		public float timeDelta;
 	}
 
 	protected Vector scale;
 	protected Vector pos;
-	protected Tick tickObj;
+	protected MiniBehaviour miniBehaviourObj;
 	protected Quaternion orientation;
 	protected Matrix transformedVertices;
 	protected boolean isChanged = true;
@@ -26,14 +30,14 @@ public class Model {
 		this.mesh = mesh;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
-		tickObj = null;
+		miniBehaviourObj = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
 	}
 
-	public void tick() {
-		if (tickObj != null) {
-			tickObj.tick(this);
+	public void tick(ModelTickInput params) {
+		if (miniBehaviourObj != null) {
+			miniBehaviourObj.tick(this,params);
 		}
 	}
 
@@ -62,12 +66,12 @@ public class Model {
 
 	public Mesh getMesh() {return mesh;}
 
-	public Tick getTickObj() {
-		return tickObj;
+	public MiniBehaviour getMiniBehaviourObj() {
+		return miniBehaviourObj;
 	}
 
-	public void setTickObj(Tick tickObj) {
-		this.tickObj = tickObj;
+	public void setMiniBehaviourObj(MiniBehaviour miniBehaviourObj) {
+		this.miniBehaviourObj = miniBehaviourObj;
 	}
 
 	public Vector getPos() {

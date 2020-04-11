@@ -1,6 +1,6 @@
 #version 330
 
-in vec3 exColor;
+in vec4 exColor;
 in vec2 outTex;
 
 out vec4 fragColor;
@@ -13,7 +13,8 @@ void main() {
           fragColor = texture(texture_sampler,outTex);
       }
       else {
-          fragColor = vec4(exColor,1);
+          fragColor = exColor;
+          //fragColor = vec4(1,1,1,1);
       }
 
 }

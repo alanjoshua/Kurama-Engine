@@ -20,7 +20,7 @@ import engine.inputs.Input;
 import engine.inputs.InputSR;
 import engine.DataStructure.Mesh.Mesh;
 import engine.model.Model;
-import engine.model.Model.Tick;
+import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
@@ -129,28 +129,28 @@ public class GameSR extends Game implements Runnable {
 	}
 
 	public void initModels() {
-		Tick tempRot = (m -> {
+		MiniBehaviour tempRot = ((m, params) -> {
 			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
 			Quaternion newQ = rot.multiply(m.getOrientation());
 			m.setOrientation(newQ);
 		});
 
-		Model deer = ModelBuilder.buildModelFromFile("/Resources/deer.obj",meshInstances);
+		Model deer = new Model(ModelBuilder.buildModelFromFile("/Resources/deer.obj",meshInstances),"deer");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
-		Model mill = ModelBuilder.buildModelFromFile("/Resources/low-poly-mill.obj",meshInstances);
+		Model mill = new Model(ModelBuilder.buildModelFromFile("/Resources/low-poly-mill.obj",meshInstances),"mill");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
 //		mill.triangulate();
 
-		Model grid = ModelBuilder.buildGrid(100, 100);
+		Model grid = new Model(ModelBuilder.buildGridDeprecated(100, 100),"grid");
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = ModelBuilder.buildModelFromFile("/Resources/TeapotHex3.obj",meshInstances);
+		Model pot = new Model(ModelBuilder.buildModelFromFile("/Resources/TeapotHex3.obj",meshInstances),"pot");
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
-		pot.setTickObj(tempRot);
+		pot.setMiniBehaviourObj(tempRot);
 //		pot.triangulate();
 
 //		models.add(deer);
@@ -256,8 +256,11 @@ public class GameSR extends Game implements Runnable {
 		else
 			display.enableCursor();
 
-		models.forEach(Model::tick);
-		modelsOnlyOutline.forEach(Model::tick);
+		Model.ModelTickInput params = new Model.ModelTickInput();
+		params.timeDelta = timeDelta;
+
+		models.forEach(m -> m.tick(params));
+		modelsOnlyOutline.forEach(m -> m.tick(params));
 
 		if(!isGameRunning) {
 			pauseButtons.forEach((b) -> b.tick(((InputSR)input).getPosition(),((InputSR)input).buttonDown(1)));

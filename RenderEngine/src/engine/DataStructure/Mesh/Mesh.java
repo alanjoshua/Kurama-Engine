@@ -18,20 +18,25 @@ public class Mesh {
     public static final int POSITION = 0;
     public static final int TEXTURE = 1;
     public static final int NORMAL = 2;
+    public static final int COLOR = 3;
 
     public List<Face> faces;
     public List<List<Vector>> vertAttributes;
     public List<Integer> indices;
+
+    public String meshIdentifier;
+
+    public int drawMode = GL_TRIANGLES;
 
     public int vaoId;
     public List<Integer> vboIdList;
 
     public Texture texture;
 
-    public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
-        this.faces = faces;
-        this.vertAttributes = vertAttributes;
-    }
+//    public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
+//        this.faces = faces;
+//        this.vertAttributes = vertAttributes;
+//    }
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
@@ -74,10 +79,10 @@ public class Mesh {
             glBindVertexArray(vaoId);
 
             if(indices != null) {
-                glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+                glDrawElements(drawMode, indices.size(), GL_UNSIGNED_INT, 0);
             }
             else {
-                glDrawArrays(GL_TRIANGLES, 0, getVertices().size());
+                glDrawArrays(drawMode, 0, getVertices().size());
             }
 
             glBindVertexArray(0);
@@ -103,10 +108,12 @@ public class Mesh {
 
             if(curr == null) {
 //                break;
-                for(int j = 0;j < vertAttributes.get(i).size();j++) {
-                    curr = vertAttributes.get(i).get(j);
-                    if(curr != null) {
-                        break;
+                if(vertAttributes.get(i)!= null) {
+                    for (int j = 0; j < vertAttributes.get(i).size(); j++) {
+                        curr = vertAttributes.get(i).get(j);
+                        if (curr != null) {
+                            break;
+                        }
                     }
                 }
             }
@@ -136,28 +143,30 @@ public class Mesh {
             glBindVertexArray(vaoId);
 
             for(int i = 0;i < sizePerAttrib.size();i++) {
-                FloatBuffer tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * vertAttributes.get(i).size());
-                for(Vector v: vertAttributes.get(i)) {
-                    if(v != null) {
-                        tempBuffer.put(v.getData());
-                    }
-                    else {    //Hack to handle nulls
-                        for(int j = 0;j < sizePerAttrib.get(i)/sizeOfFloat;j++) {
-                            tempBuffer.put(0);
+                if(vertAttributes.get(i)!=null) {
+
+                    FloatBuffer tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * vertAttributes.get(i).size());
+                    for (Vector v : vertAttributes.get(i)) {
+                        if (v != null) {
+                            tempBuffer.put(v.getData());
+                        } else {    //Hack to handle nulls
+                            for (int j = 0; j < sizePerAttrib.get(i) / sizeOfFloat; j++) {
+                                tempBuffer.put(0);
+                            }
                         }
                     }
+                    tempBuffer.flip();
+
+                    vboId = glGenBuffers();
+                    vboIdList.add(vboId);
+                    glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                    glBufferData(GL_ARRAY_BUFFER, tempBuffer, GL_STATIC_DRAW);
+                    glEnableVertexAttribArray(i);
+                    glVertexAttribPointer(i, sizePerAttrib.get(i) / sizeOfFloat, GL_FLOAT, false, 0, 0);
+
+                    MemoryUtil.memFree(tempBuffer);   //Free buffer
+
                 }
-                tempBuffer.flip();
-
-                vboId = glGenBuffers();
-                vboIdList.add(vboId);
-                glBindBuffer(GL_ARRAY_BUFFER, vboId);
-                glBufferData(GL_ARRAY_BUFFER,tempBuffer,GL_STATIC_DRAW);
-                glEnableVertexAttribArray(i);
-                glVertexAttribPointer(i,sizePerAttrib.get(i)/sizeOfFloat,GL_FLOAT,false,0,0);
-
-                MemoryUtil.memFree(tempBuffer);   //Free buffer
-
             }
 
             if(indices != null) {
@@ -175,28 +184,6 @@ public class Mesh {
                 MemoryUtil.memFree(indicesBuffer);  //Free buffer
             }
 
-//            glBindBuffer(GL_ARRAY_BUFFER,0);
-//            glBindVertexArray(0);
-
-            Random rand = new Random();
-
-            colorBuffer = MemoryUtil.memAllocFloat(getVertices().size() * 3);
-            for(Vector v: getVertices()) {
-                float[] color = new float[] {rand.nextFloat(),rand.nextFloat(),rand.nextFloat()};
-//                float[] color = new float[] {0.2f,0.2f,0.2f};
-                for(float val:color) {
-                    colorBuffer.put(val);
-                }
-            }
-            colorBuffer.flip();
-
-            vboId = glGenBuffers();
-            vboIdList.add(vboId);
-            glBindBuffer(GL_ARRAY_BUFFER,vboId);
-            glBufferData(GL_ARRAY_BUFFER,colorBuffer,GL_STATIC_DRAW);
-            glEnableVertexAttribArray(3);
-            glVertexAttribPointer(3,3,GL_FLOAT,false,0,0);
-
             glBindBuffer(GL_ARRAY_BUFFER,0);
             glBindVertexArray(0);
 
@@ -207,6 +194,15 @@ public class Mesh {
 
         }
 
+    }
+
+    public void setAttribute(List<Vector> val, int key) {
+        if (key >= vertAttributes.size()) {
+            for (int i = vertAttributes.size(); i < key + 1; i++) {
+                vertAttributes.add(i, null);
+            }
+        }
+        vertAttributes.set(key,val);
     }
 
     public Mesh(List<List<Vector>> vertAttributes) {

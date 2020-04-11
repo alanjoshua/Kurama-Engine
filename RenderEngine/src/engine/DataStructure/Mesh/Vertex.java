@@ -8,6 +8,7 @@ public class Vertex {
     public static final int POSITION = 0;
     public static final int TEXTURE = 1;
     public static final int NORMAL = 2;
+    public static final int COLOR = 3;
 
     public List<Integer> vertAttributes;
 

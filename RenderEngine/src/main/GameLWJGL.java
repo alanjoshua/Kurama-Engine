@@ -16,7 +16,7 @@ import engine.inputs.InputLWJGL;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.model.Model;
-import engine.model.Model.Tick;
+import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
@@ -58,6 +58,7 @@ public class GameLWJGL extends Game implements Runnable {
         super(threadName);
     }
 
+    @Override
     public void start() {
         String osName = System.getProperty("os.name");
         if ( osName.contains("Mac") ) {
@@ -107,7 +108,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void initModels() {
-        Tick tempRot = (m -> {
+        MiniBehaviour tempRot = ((m, params) -> {
             Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
             Quaternion newQ = rot.multiply(m.getOrientation());
             m.setOrientation(newQ);
@@ -116,8 +117,9 @@ public class GameLWJGL extends Game implements Runnable {
         ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
         hints.shouldBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
+        hints.addRandomColor = true;
 
-        Model deer = ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints);
+        Model deer = new Model(ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints),"deer");
         deer.setPos(new Vector(new float[] {-10,15,-15}));
         deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
@@ -125,7 +127,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        deer2.setPos(new Vector(new float[] {0,18,0}));
 //        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        Model mill = ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints);
+        Model mill = new Model(ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints),"mill");
         mill.setPos(new Vector(new float[] {10,5,0}));
         mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 ////
@@ -139,7 +141,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        ironMan.setScale(1f,1f,1f);
 //        ironMan.setTickObj(tempRot);
 
-        Model cube = ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints);
+        Model cube = new Model(ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
         cube.setScale(1);
         cube.setPos(-5,15,-5);
 
@@ -151,7 +153,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
         cube.mesh.texture = tex;
 
-        Model sasuke = ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints);
+        Model sasuke = new Model(ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
         sasuke.setScale(0.1f);
         sasuke.setPos(0,17,0);
         // sasuke.setTickObj(tempRot);
@@ -163,7 +165,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
         sasuke.mesh.texture = tex;
 
-        var spiderman = ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints);
+        Model spiderman = new Model(ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints),"spiderman");
         try {
             tex = new Texture("textures/spiderman.png");
         }catch (Exception e) {
@@ -171,12 +173,17 @@ public class GameLWJGL extends Game implements Runnable {
         }
         spiderman.mesh.texture = tex;
 
+        hints.addRandomColor = false;
+        hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,1});
+        Model grid = new Model(ModelBuilder.buildGridLines(100,100,hints),"grid");
+
 //        models.add(ironMan);
-        models.add(sasuke);
+//        models.add(sasuke);
         models.add(deer);
-        models.add(mill);
-        models.add(cube);
-        models.add(spiderman);
+//        models.add(mill);
+//        models.add(cube);
+//        models.add(spiderman);
+        models.add(grid);
     }
 
     public void initPauseScreen() {
@@ -286,7 +293,10 @@ public class GameLWJGL extends Game implements Runnable {
             prevGameState = isGameRunning;
         }
 
-        models.forEach(Model::tick);
+        Model.ModelTickInput params = new Model.ModelTickInput();
+        params.timeDelta = timeDelta;
+
+        models.forEach(m -> m.tick(params));
 
         if(!isGameRunning) {
             pauseButtons.forEach((b) -> b.tick(mousePos,((InputLWJGL)input).isLeftMouseButtonPressed));
