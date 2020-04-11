@@ -20,7 +20,6 @@ import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngineLWJGL;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -310,7 +309,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tickInput() {
 
-        if(input.keyDown(GLFW_KEY_W)) {
+        if(input.keyDown(input.W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -320,7 +319,7 @@ public class GameLWJGL extends Game implements Runnable {
             cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDown(GLFW_KEY_S)) {
+        if(input.keyDown(input.S)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -330,7 +329,7 @@ public class GameLWJGL extends Game implements Runnable {
             cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDown(GLFW_KEY_A)) {
+        if(input.keyDown(input.A)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -338,7 +337,7 @@ public class GameLWJGL extends Game implements Runnable {
             cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDown(GLFW_KEY_D)) {
+        if(input.keyDown(input.D)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
@@ -346,35 +345,35 @@ public class GameLWJGL extends Game implements Runnable {
             cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDown(GLFW_KEY_SPACE)) {
+        if(input.keyDown(input.SPACE)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDown(GLFW_KEY_LEFT_SHIFT)) {
+        if(input.keyDown(input.LEFT_SHIFT)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
             cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
-        if(input.keyDownOnce(GLFW_KEY_ESCAPE)) {
+        if(input.keyDownOnce(input.ESCAPE)) {
             isGameRunning = !isGameRunning;
         }
 
         if(isGameRunning) {
-            if(input.keyDownOnce(GLFW_KEY_R)) {
+            if(input.keyDownOnce(input.R)) {
                 cam.lookAtModel(models.get(lookAtIndex));
             }
 
-            if(input.keyDownOnce(GLFW_KEY_LEFT_CONTROL)) {
+            if(input.keyDownOnce(input.LEFT_CONTROL)) {
                 if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
                 else speedMultiplier = 1;
             }
 
-            if(input.keyDownOnce(GLFW_KEY_F)) {
+            if(input.keyDownOnce(input.F)) {
                 if(targetFPS == ((DisplayLWJGL)display).getRefreshRate()) {
                     targetFPS = 10000;
                 }
@@ -388,7 +387,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
 //            }
 
-            if(input.keyDownOnce(GLFW_KEY_V)) {
+            if(input.keyDownOnce(input.V)) {
                 display.toggleWindowModes();
             }
         }

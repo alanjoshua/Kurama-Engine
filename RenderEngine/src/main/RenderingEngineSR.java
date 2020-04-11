@@ -1,4 +1,4 @@
-package engine.renderingEngine;
+package main;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 
 import engine.Math.Matrix;
+import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.Math.Quaternion;
 import engine.Math.Vector;

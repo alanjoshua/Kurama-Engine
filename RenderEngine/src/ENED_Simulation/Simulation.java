@@ -2,19 +2,14 @@ package ENED_Simulation;
 
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
-import engine.GUI.Button;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
-import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
-import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
 import engine.model.Model;
 import engine.model.ModelBuilder;
-import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngineLWJGL;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +24,7 @@ public class Simulation extends Game {
     protected DisplayLWJGL display;
     protected Camera cam;
     protected InputLWJGL input;
-    protected RenderingEngineLWJGL renderingEngine;
+    protected RenderingEngineSim renderingEngine;
     protected List<Model> models;
 
     protected float mouseXSensitivity = 20f;
@@ -66,7 +61,7 @@ public class Simulation extends Game {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        renderingEngine = new RenderingEngineLWJGL(this);
+        renderingEngine = new RenderingEngineSim(this);
         renderingEngine.init();
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
@@ -109,7 +104,7 @@ public class Simulation extends Game {
         models.add(grid);
 
         hints.addConstantColor = null;
-        robot = new Robot(ModelBuilder.buildModelFromFileGL("/Resources/car.obj",meshInstances,hints),"robot");
+        robot = new Robot(this,ModelBuilder.buildModelFromFileGL("/Resources/car.obj",meshInstances,hints),"robot");
         robot.setPos(grid.getCentre().add(new Vector(new float[]{0,1,0})));
 
         try {
@@ -303,12 +298,12 @@ public class Simulation extends Game {
     }
 
     @Override
-    public RenderingEngine getRenderingEngine() {
+    public RenderingEngineSim getRenderingEngine() {
         return renderingEngine;
     }
 
     @Override
-    public Display getDisplay() {
+    public DisplayLWJGL getDisplay() {
         return display;
     }
 
@@ -318,7 +313,7 @@ public class Simulation extends Game {
     }
 
     @Override
-    public Input getInput() {
+    public InputLWJGL getInput() {
         return input;
     }
 

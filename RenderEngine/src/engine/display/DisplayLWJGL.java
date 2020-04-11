@@ -77,10 +77,10 @@ public class DisplayLWJGL extends Display {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
 
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+//        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
         // Create the window
@@ -97,7 +97,7 @@ public class DisplayLWJGL extends Display {
         glfwMakeContextCurrent(window);
         capabilities = GL.createCapabilities();
 
-        GLUtil.setupDebugMessageCallback();
+//        GLUtil.setupDebugMessageCallback();
         // Enable v-sync
         glfwSwapInterval(1);
 

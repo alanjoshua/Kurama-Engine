@@ -1,6 +1,7 @@
-package engine.renderingEngine;
+package main;
 
 import engine.Math.Matrix;
+import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
@@ -20,7 +21,7 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
         try {
             shaderProgram = new ShaderProgram();

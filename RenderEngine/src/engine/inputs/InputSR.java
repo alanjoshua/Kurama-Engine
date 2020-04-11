@@ -17,7 +17,7 @@ import engine.display.DisplaySR;
 import engine.game.Game;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;
 
 public class InputSR extends Input implements MouseInputListener, MouseWheelListener, KeyListener {
 
@@ -158,6 +158,7 @@ public class InputSR extends Input implements MouseInputListener, MouseWheelList
 
 	@Override
 	public void init() {
+		initKeyFields();
 		KEY_COUNT = 256;
 
 		currentKeys = new boolean[KEY_COUNT];
@@ -189,6 +190,50 @@ public class InputSR extends Input implements MouseInputListener, MouseWheelList
 		for (int i = 0; i < BUTTON_COUNT; ++i) {
 			poll[i] = MouseState.RELEASED;
 		}
+	}
+
+	public void initKeyFields() {
+		Q = KeyEvent.VK_Q;
+		W = KeyEvent.VK_W;
+		E = KeyEvent.VK_E;
+		R = KeyEvent.VK_R;
+		T = KeyEvent.VK_T;
+		Y = KeyEvent.VK_Y;
+		U = KeyEvent.VK_U;
+		I = KeyEvent.VK_I;
+		O = KeyEvent.VK_O;
+		P = KeyEvent.VK_P;
+		A = KeyEvent.VK_A;
+		S = KeyEvent.VK_S;
+		D = KeyEvent.VK_D;
+		F = KeyEvent.VK_F;
+		G = KeyEvent.VK_G;
+		H = KeyEvent.VK_H;
+		J = KeyEvent.VK_J;
+		K = KeyEvent.VK_K;
+		L = KeyEvent.VK_L;
+		Z = KeyEvent.VK_Z;
+		X = KeyEvent.VK_X;
+		C = KeyEvent.VK_C;
+		V = KeyEvent.VK_V;
+		B = KeyEvent.VK_B;
+		N = KeyEvent.VK_N;
+		M = KeyEvent.VK_M;
+
+		SPACE = KeyEvent.VK_SPACE;
+		LEFT_CONTROL = KeyEvent.VK_CONTROL;
+		LEFT_SHIFT = KeyEvent.VK_SHIFT;
+		LEFT_ALT = KeyEvent.VK_ALT;
+		TAB = KeyEvent.VK_TAB;
+		RIGHT_CONTROL = KeyEvent.VK_CONTROL;
+		RIGHT_SHIFT = KeyEvent.VK_SHIFT;
+		RIGHT_ALT = KeyEvent.VK_ALT;
+		ESCAPE = KeyEvent.VK_ESCAPE;
+
+		UP_ARROW = KeyEvent.VK_UP;
+		DOWN_ARROW = KeyEvent.VK_DOWN;
+		LEFT_ARROW = KeyEvent.VK_LEFT;
+		RIGHT_ARROW = KeyEvent.VK_RIGHT;
 	}
 
 	public boolean keyDown(int keyCode) {

@@ -19,7 +19,7 @@ public class Main {
 //		game = new GameSR_ESL("ESL quat-quat",true);
 //		game.start();
 
-		game = new GameLWJGL("OpenGL Renderer");
-		game.start();
+//		game = new GameLWJGL("OpenGL Renderer");
+//		game.start();
 	}
 }

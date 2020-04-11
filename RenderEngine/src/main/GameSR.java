@@ -24,7 +24,6 @@ import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngineSR;
 import engine.renderingEngine.RenderingEngine.RenderPipeline;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
 
@@ -277,58 +276,58 @@ public class GameSR extends Game implements Runnable {
 		float cameraSpeed = speed * timeDelta * speedMultiplier;
 		Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
-		if (input.keyDownOnce(KeyEvent.VK_R)) {
+		if (input.keyDownOnce(input.R)) {
 			refocusOnModel();
 //			cam.lookAtModel(models.get(lookAtIndex));
 		}
 		
-		if (input.keyDownOnce(KeyEvent.VK_CONTROL)) {
+		if (input.keyDownOnce(input.LEFT_CONTROL)) {
 			if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
 			else speedMultiplier = 1;
 		}
 		
-		if (input.keyDownOnce(KeyEvent.VK_F)) {
+		if (input.keyDownOnce(input.F)) {
 			if(targetFPS == 165)
 				targetFPS = 1000;
 			else 		
 				targetFPS = 165;
 		}
 		
-		if (input.keyDown(KeyEvent.VK_W)) {
+		if (input.keyDown(input.W)) {
 			Vector x = rotationMatrix[0];
 			Vector y = new Vector(new float[] {0,1,0});
 			Vector z = x.cross(y);
 			cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDown(KeyEvent.VK_S)) {
+		if (input.keyDown(input.S)) {
 			Vector x = rotationMatrix[0];
 			Vector y = new Vector(new float[] {0,1,0});
 			Vector z = x.cross(y);
 			cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDown(KeyEvent.VK_A)) {
+		if (input.keyDown(input.A)) {
 			Vector v = rotationMatrix[0];
 			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDown(KeyEvent.VK_D)) {
+		if (input.keyDown(input.D)) {
 			Vector v = rotationMatrix[0];
 			cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDown(KeyEvent.VK_SPACE)) {
+		if (input.keyDown(input.SPACE)) {
 			Vector v = new Vector(new float[] {0,1,0});
 			cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDown(KeyEvent.VK_SHIFT)) {
+		if (input.keyDown(input.LEFT_SHIFT)) {
 			Vector v = new Vector(new float[] {0,1,0});
 			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDownOnce(KeyEvent.VK_Q)) {
+		if (input.keyDownOnce(input.Q)) {
 			if(((RenderingEngineSR)renderingEngine).getRenderPipeline() == RenderPipeline.Quat) ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Matrix);
 			else ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Quat);
 		}
