@@ -11,10 +11,7 @@ import engine.inputs.InputLWJGL;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -26,6 +23,9 @@ public class Simulation extends Game {
     protected InputLWJGL input;
     protected RenderingEngineSim renderingEngine;
     protected List<Model> models;
+    protected List<Box> boxes;
+    Scanner scanner;
+    protected int numberOfIPSRequests = 0;
 
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
@@ -33,8 +33,11 @@ public class Simulation extends Game {
     protected float speedMultiplier = 1;
     protected float speedIncreaseMultiplier = 2;
 
-    protected int lookAtIndex = 1;
+    protected Model lookAtModel;
     protected boolean isGameRunning = true;
+
+    public int simWidth = 100;
+    public int simDepth = 100;
 
     protected List<engine.GUI.Button> pauseButtons;
     protected engine.GUI.Button EXIT;
@@ -48,6 +51,19 @@ public class Simulation extends Game {
 
     Map<String, Mesh> meshInstances;
     Robot robot;
+    Model flag;
+
+    String robotModelLoc = "/Resources/car.obj";
+    String robotTextureLoc = "textures/car.jpg";
+
+    String boxModelLoc = "/Resources/box.obj";
+    String boxTextureLoc = "textures/box.png";
+
+    int[] boxRows = {12,24,36,48,60,72,84,96};
+    int[] boxCols = {20,35,65,80};
+    int boxesPerSide = 1;
+
+    long seed = 123456789;
 
     public Simulation(String threadName) {
         super(threadName);
@@ -56,7 +72,9 @@ public class Simulation extends Game {
     @Override
     public void init() {
         models = new ArrayList<>();
+        boxes = new ArrayList<>();
         meshInstances = new HashMap<>();
+        scanner = new Scanner(System.in);
 
         display = new DisplayLWJGL(this);
         display.startScreen();
@@ -87,7 +105,7 @@ public class Simulation extends Game {
         initPauseScreen();
 
         cam.updateValues();
-        cam.lookAtModel(models.get(lookAtIndex));
+        cam.lookAtModel(flag);
 
         targetFPS = display.getRefreshRate();
 
@@ -100,25 +118,123 @@ public class Simulation extends Game {
         hints.initLWJGLAttribs = true;
 
         hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,10});
-        Model grid = new Model(ModelBuilder.buildGridLines(103,103,hints),"grid");
-        models.add(grid);
+        Model grid = new Model(ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
+        grid.setPos(new Vector(new float[]{0,0,-simDepth}));
+
+        hints.convertToLines = true;
+        flag = new Model(ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
+        flag.setPos(new Vector(new float[]{0,10,0}));
 
         hints.addConstantColor = null;
-        robot = new Robot(this,ModelBuilder.buildModelFromFileGL("/Resources/car.obj",meshInstances,hints),"robot");
-        robot.setPos(grid.getCentre().add(new Vector(new float[]{0,1,0})));
+        hints.convertToLines = true;
+        robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
+        robot.setPos(new Vector(new float[]{0,1,0}));
 
         try {
-            Texture tex = new Texture("textures/car.jpg");
+            Texture tex = new Texture(robotTextureLoc);
             robot.mesh.texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        hints.convertToLines = false;
+//        Box box = new Box(ModelBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints),"box");
+//        try {
+//            Texture tex = new Texture(boxTextureLoc);
+//            box.mesh.texture = tex;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+////        boxes.add(box);
+//
+//        models.addAll(boxes);
         models.add(robot);
+        models.add(grid);
+        models.add(flag);
+
+        initCrates();
+
+        lookAtModel = robot;
 
     }
 
     public void initPauseScreen() {
+
+    }
+
+    public boolean isModelColliding(Model m) {
+        return false;
+    }
+
+//    This method initialises boxes
+    public void initCrates() {
+
+        Random rand = new Random();
+        rand.setSeed(seed);
+        Mesh boxMesh;
+        Mesh platformMesh;
+        float platY = -1;
+        float x,y = 1.5f,z;
+
+        ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
+        hints.shouldBakeVertexAttributes = false;
+        hints.initLWJGLAttribs = true;
+
+        boxMesh = ModelBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
+        try {
+            Texture tex = new Texture(boxTextureLoc);
+            boxMesh.texture = tex;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        platformMesh = ModelBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
+        try {
+            Texture tex = new Texture("textures/oldwood.jpg");
+            platformMesh.texture = tex;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        for(int c = 0; c < boxCols.length;c+=2) {
+            for (int r = 0; r < boxRows.length; r += 2) {
+
+//            Create shelf model
+                Model platform = new Model(platformMesh,"platform-r:"+r+"c:"+c);
+                platform.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),90));
+
+                int tempX = (boxCols[c] + (boxCols[c+1] - boxCols[c])/2);
+                int tempZ = -(boxRows[r] + (boxRows[r+1] - boxRows[r])/2) + 1;
+
+                platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
+                platform.setScale(new Vector(new float[]{1f,1f,1f}));
+                models.add(platform);
+
+//            Create two rows of boxes
+//                create bottom row
+                z = -boxRows[r] + 1;
+                for(int k = 0; k < boxesPerSide; k++) {
+                    x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
+                    Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,0,barCode);
+                    box.setPos(new Vector(new float[]{x,y,z}));
+                    boxes.add(box);
+                }
+
+//                create top row of shelf
+                z = -boxRows[r+1] + 1;
+                for(int k = 0; k < boxesPerSide; k++) {
+                    x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
+                    Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,1,barCode);
+                    box.setPos(new Vector(new float[]{x,y,z}));
+                    boxes.add(box);
+                }
+
+            }
+        }
+
+        models.addAll(boxes);
 
     }
 
@@ -177,6 +293,13 @@ public class Simulation extends Game {
 
     public void tickInput() {
 
+        if(input.keyDown(input.ENTER)) {
+            System.out.println("This is the "+(++numberOfIPSRequests)+"th request");
+            System.out.println("Enter IPS coordinates: ");
+            String text = scanner.nextLine();
+            robot.IGPS(text);
+        }
+
         if(input.keyDown(GLFW_KEY_W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -233,7 +356,7 @@ public class Simulation extends Game {
 
         if(isGameRunning) {
             if(input.keyDownOnce(GLFW_KEY_R)) {
-                cam.lookAtModel(models.get(lookAtIndex));
+                cam.lookAtModel(lookAtModel);
             }
 
             if(input.keyDownOnce(GLFW_KEY_LEFT_CONTROL)) {

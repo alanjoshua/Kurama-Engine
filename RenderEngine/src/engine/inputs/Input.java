@@ -50,6 +50,7 @@ public abstract class Input {
     public int DOWN_ARROW;
     public int LEFT_ARROW;
     public int RIGHT_ARROW;
+    public int ENTER;
 
     protected enum KeyState {
         JUST_RELEASED, // was just released

@@ -105,6 +105,7 @@ public class InputLWJGL extends Input {
         RIGHT_SHIFT = GLFW_KEY_RIGHT_SHIFT;
         RIGHT_ALT = GLFW_KEY_RIGHT_ALT;
         ESCAPE = GLFW_KEY_ESCAPE;
+        ENTER = GLFW_KEY_ENTER;
 
         UP_ARROW = GLFW_KEY_UP;
         DOWN_ARROW = GLFW_KEY_DOWN;

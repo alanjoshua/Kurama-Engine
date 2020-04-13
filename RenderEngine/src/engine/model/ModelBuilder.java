@@ -20,6 +20,7 @@ import engine.DataStructure.Mesh.Vertex;
 import org.lwjgl.system.CallbackI;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
 public class ModelBuilder {
 
@@ -30,6 +31,7 @@ public class ModelBuilder {
 		public boolean initLWJGLAttribs = false;
 		public boolean addRandomColor = false;
 		public Vector addConstantColor;
+		public boolean convertToLines = false;
 	}
 
 	public static Mesh buildModelFromFile(String loc, Map<String,Mesh> meshInstances) {
@@ -105,6 +107,10 @@ public class ModelBuilder {
 					resMesh = addColor(resMesh,hints.addConstantColor);
 				}
 
+				if(hints.convertToLines) {
+					resMesh = convertToLines(resMesh,hints);
+				}
+
 				if(hints.initLWJGLAttribs) {
 					resMesh.initOpenGLMeshData();
 				}
@@ -113,10 +119,66 @@ public class ModelBuilder {
 			if(meshInstances != null) {
 				meshInstances.put(loc, resMesh);
 			}
-//			res = new Model(resMesh,loc);
+
 			resMesh.meshIdentifier = loc;
 			return resMesh;
 		}
+	}
+
+//	This functions converts models with triangular faces to lines
+	public static Mesh convertToLines(Mesh mesh, ModelBuilderHints hints) {
+		List<Integer> newIndices = new ArrayList<>();
+		List<Face> newFaces = new ArrayList<>();
+
+		if(mesh.indices == null) {
+			System.err.println("Indices list is null. Returning same mesh. Mesh couldn't be converted to lines. Error with mesh: "+mesh.meshIdentifier);
+			return mesh;
+		}
+
+		if(mesh.drawMode == GL_LINES) {
+			System.err.println("Mesh draw mode already set to lines. Returning same mesh: " +mesh.meshIdentifier);
+			return mesh;
+		}
+
+		for(int i = 0;i < mesh.indices.size();i+=3) {
+			newIndices.add(mesh.indices.get(i));
+			newIndices.add(mesh.indices.get(i+1));
+
+			newIndices.add(mesh.indices.get(i+1));
+			newIndices.add(mesh.indices.get(i+2));
+
+			newIndices.add(mesh.indices.get(i+2));
+			newIndices.add(mesh.indices.get(i));
+		}
+
+		for(Face f:mesh.faces) {
+			if(f.vertices.size() != 3) {
+				throw new IllegalArgumentException("convertToLines method can only convert triangulated meshes. Error with mesh: "+mesh.meshIdentifier);
+			}
+
+			Face line1 = new Face();
+			line1.addVertex(f.vertices.get(0));
+			line1.addVertex(f.vertices.get(1));
+
+			Face line2 = new Face();
+			line2.addVertex(f.vertices.get(1));
+			line2.addVertex(f.vertices.get(2));
+
+			Face line3 = new Face();
+			line3.addVertex(f.vertices.get(2));
+			line3.addVertex(f.vertices.get(0));
+
+			newFaces.add(line1);
+			newFaces.add(line2);
+			newFaces.add(line3);
+		}
+
+		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes);
+		retMesh.drawMode = GL_LINES;
+		retMesh.meshIdentifier = mesh.meshIdentifier;
+
+		return retMesh;
+
 	}
 
 	public static Mesh dumbBake(Mesh mesh, ModelBuilderHints hints) {
@@ -162,7 +224,10 @@ public class ModelBuilder {
 			newFaces.add(temp);
 		}
 
-		return new Mesh(indices,newFaces,newVertAttribs);
+		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs);
+		retMesh.meshIdentifier = mesh.meshIdentifier;
+		retMesh.drawMode = GL_TRIANGLES;
+		return retMesh;
 
 	}
 
@@ -200,11 +265,15 @@ public class ModelBuilder {
 		}
 
 		for(Face f:mesh.faces) {
+			if(f.vertices.size() != 3) {
+				throw new IllegalArgumentException("only triangles could be baked: "+mesh.meshIdentifier);
+			}
 			for(Vertex v: f.vertices) {
 				indexList.add(uniqueVertices.indexOf(v));
 			}
 		}
 
+//		Assumes there are only triangles
 		for(int i = 0;i < indexList.size();i+=3) {
 			Face temp = new Face();
 			for(int k = 0;k < 3;k++) {
@@ -217,7 +286,10 @@ public class ModelBuilder {
 			newFaces.add(temp);
 		}
 
-		return new Mesh(indexList,newFaces,newVertAttribs);
+		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs);
+		retMesh.meshIdentifier = mesh.meshIdentifier;
+		retMesh.drawMode = GL_TRIANGLES;
+		return retMesh;
 	}
 
 //	public static Mesh addRandomColor() {
@@ -472,6 +544,7 @@ public class ModelBuilder {
 
 				resMesh = new Mesh(null,facesListObj, vertAttributes);
 				resMesh.trimEverything();
+				resMesh.meshIdentifier = loc;
 				return resMesh;
 
 			} catch (IOException e) {
@@ -527,7 +600,10 @@ public class ModelBuilder {
 		for(Face f: inMesh.faces) {
 			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
-		return new Mesh(null,newFaces,inMesh.vertAttributes);
+		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes);
+		retMesh.meshIdentifier = inMesh.meshIdentifier;
+		retMesh.drawMode = GL_TRIANGLES;
+		return retMesh;
 	}
 
 	public static List<Face> triangulate(Face f, List<Vector> vertices,boolean forceEarClipping) {

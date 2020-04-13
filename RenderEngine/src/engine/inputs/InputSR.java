@@ -229,6 +229,7 @@ public class InputSR extends Input implements MouseInputListener, MouseWheelList
 		RIGHT_SHIFT = KeyEvent.VK_SHIFT;
 		RIGHT_ALT = KeyEvent.VK_ALT;
 		ESCAPE = KeyEvent.VK_ESCAPE;
+		ENTER = KeyEvent.VK_ENTER;
 
 		UP_ARROW = KeyEvent.VK_UP;
 		DOWN_ARROW = KeyEvent.VK_DOWN;

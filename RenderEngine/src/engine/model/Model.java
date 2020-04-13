@@ -4,7 +4,6 @@ import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.DataStructure.Mesh.Mesh;
-import engine.game.Game;
 
 public class Model {
 
@@ -22,6 +21,8 @@ public class Model {
 	protected Quaternion orientation;
 	protected Matrix transformedVertices;
 	protected boolean isChanged = true;
+	protected Vector boundMin;
+	protected  Vector boundMax;
 
 	public String identifier;
 
@@ -34,12 +35,17 @@ public class Model {
 		miniBehaviourObj = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
+		calculateBoundingBox();
 	}
 
 	public void tick(ModelTickInput params) {
 		if (miniBehaviourObj != null) {
 			miniBehaviourObj.tick(this,params);
 		}
+	}
+
+	public void calculateBoundingBox() {
+
 	}
 
 	public Matrix getObjectToWorldMatrix() {
@@ -90,6 +96,14 @@ public class Model {
 		isChanged = true;
 	}
 
+	public Vector getBoundMin() {
+		return boundMin;
+	}
+
+	public Vector getBoundMax() {
+		return boundMax;
+	}
+
 	public Vector getScale() {
 		return scale;
 	}
@@ -97,18 +111,21 @@ public class Model {
 	public void setScale(Vector scale) {
 		this.scale = scale;
 		isChanged = true;
+		calculateBoundingBox();
 	}
 
 	public void setScale(float v) {
 		Vector scale = new Vector(new float[]{v,v,v});
 		this.scale = scale;
 		isChanged = true;
+		calculateBoundingBox();
 	}
 
 	public void setScale(float x, float y, float z) {
 		Vector scale = new Vector(new float[]{x,y,z});
 		this.scale = scale;
 		isChanged = true;
+		calculateBoundingBox();
 	}
 
 	public Vector getCentre() {
