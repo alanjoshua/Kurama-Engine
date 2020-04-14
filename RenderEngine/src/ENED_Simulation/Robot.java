@@ -6,17 +6,14 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
+import engine.model.Movable;
 
 import java.util.Optional;
 
-public class Robot extends Model {
+public class Robot extends Movable {
 
     private Simulation game;
 
-    public Vector translationDirection;
-    public float rotationSpeed = 150;
-    public float movementSpeed = 10;
-    public boolean isManualControl = false;
     private Input input;
     public float scanRadius = 5;
     private Box boxPicked;
@@ -26,6 +23,8 @@ public class Robot extends Model {
         this.game = game;
         input = game.getInput();
         translationDirection = new Vector(3,0);
+        boundMin = new Vector(new float[]{0,0});
+        boundMax = new Vector(new float[]{game.simWidth,-game.simDepth});
     }
 
     @Override
@@ -103,54 +102,6 @@ public class Robot extends Model {
 
         this.setPos(new Vector(radVals));
         System.out.println("coordinates logged");
-    }
-
-    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
-        if(newPos.get(0) >= 0 && newPos.get(0) < game.simWidth && newPos.get(2) <= 0 && newPos.get(2) > -game.simDepth && !game.isModelColliding(this)) {
-            this.pos = newPos;
-            return true;
-        }
-        return false;
-    }
-
-    public void moveForward(ModelTickInput params) {
-        Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-        Vector x = rotationMatrix[0];
-        Vector y = new Vector(new float[] {0,1,0});
-        Vector z = x.cross(y);
-        Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
-        Vector newPos = getPos().add(delta);
-
-        if(updatePosAfterBoundingBoxCheck(newPos)) {
-            translationDirection = translationDirection.add(delta);
-        }
-    }
-
-    public void moveBackward(ModelTickInput params) {
-        Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-        Vector x = rotationMatrix[0];
-        Vector y = new Vector(new float[] {0,1,0});
-        Vector z = x.cross(y);
-        Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
-        Vector newPos = getPos().add(delta);
-
-        if(updatePosAfterBoundingBoxCheck(newPos)) {
-            translationDirection = translationDirection.add(delta);
-        }
-    }
-
-    public void turnLeft(ModelTickInput params) {
-        Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed* params.timeDelta);
-        Quaternion newQ = rot.multiply(getOrientation());
-        setOrientation(newQ);
-    }
-
-    public void turnRight(ModelTickInput params) {
-        Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -rotationSpeed* params.timeDelta);
-        Quaternion newQ = rot.multiply(getOrientation());
-        setOrientation(newQ);
     }
 
 }

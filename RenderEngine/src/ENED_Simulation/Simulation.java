@@ -164,10 +164,6 @@ public class Simulation extends Game {
 
     }
 
-    public boolean isModelColliding(Model m) {
-        return false;
-    }
-
     public void addBoxToDropped(Box box) {
         boxes.remove(box);
         droppedBoxes.add(box);

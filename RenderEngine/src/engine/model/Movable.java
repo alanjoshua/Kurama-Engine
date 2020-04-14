@@ -1,0 +1,68 @@
+package engine.model;
+
+import engine.DataStructure.Mesh.Mesh;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+
+public class Movable extends Model {
+
+    public Vector translationDirection;
+    public float rotationSpeed = 150;
+    public float movementSpeed = 10;
+    public boolean isManualControl = false;
+    public Vector boundMin;
+    public Vector boundMax;
+
+    public Movable(Mesh mesh, String identifier) {
+        super(mesh, identifier);
+    }
+
+    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
+        if(newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
+            this.pos = newPos;
+            return true;
+        }
+        return false;
+    }
+
+    public void moveForward(ModelTickInput params) {
+        Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+        Vector x = rotationMatrix[0];
+        Vector y = new Vector(new float[] {0,1,0});
+        Vector z = x.cross(y);
+        Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
+        Vector newPos = getPos().add(delta);
+
+        if(updatePosAfterBoundingBoxCheck(newPos)) {
+            translationDirection = translationDirection.add(delta);
+        }
+    }
+
+    public void moveBackward(ModelTickInput params) {
+        Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+        Vector x = rotationMatrix[0];
+        Vector y = new Vector(new float[] {0,1,0});
+        Vector z = x.cross(y);
+        Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
+        Vector newPos = getPos().add(delta);
+
+        if(updatePosAfterBoundingBoxCheck(newPos)) {
+            translationDirection = translationDirection.add(delta);
+        }
+    }
+
+    public void turnLeft(ModelTickInput params) {
+        Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed* params.timeDelta);
+        Quaternion newQ = rot.multiply(getOrientation());
+        setOrientation(newQ);
+    }
+
+    public void turnRight(ModelTickInput params) {
+        Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -rotationSpeed* params.timeDelta);
+        Quaternion newQ = rot.multiply(getOrientation());
+        setOrientation(newQ);
+    }
+
+}
