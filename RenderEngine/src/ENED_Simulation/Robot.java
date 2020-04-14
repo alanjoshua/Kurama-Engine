@@ -55,6 +55,7 @@ public class Robot extends Model {
         if(input.keyDown(input.ONE)) {
             if(boxPicked != null) {
                 boxPicked.setPos(new Vector(new float[]{this.pos.get(0), 0, this.getPos().get(2)}));
+                game.addBoxToDropped(boxPicked);
                 boxPicked = null;
             }
         }
