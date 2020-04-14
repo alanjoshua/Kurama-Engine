@@ -51,18 +51,15 @@ public class Vector {
 
 	public Vector add(Vector v) {
 		float[] res = null;
-		try {
+
 			if (getNumberOfDimensions() == v.getNumberOfDimensions()) {
 				res = new float[getNumberOfDimensions()];
 				for (int i = 0; i < v.getNumberOfDimensions(); i++) {
 					res[i] = v.getData()[i] + this.getData()[i];
 				}
 			} else {
-				throw new Exception("The vectors dont match in size");
+				throw new IllegalArgumentException("The vectors dont match in size");
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 
 		return new Vector(res);
 	}

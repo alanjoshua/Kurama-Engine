@@ -24,6 +24,7 @@ public class Simulation extends Game {
     protected RenderingEngineSim renderingEngine;
     protected List<Model> models;
     protected List<Box> boxes;
+    protected List<Box> droppedBoxes;
     Scanner scanner;
     protected int numberOfIPSRequests = 0;
 
@@ -73,6 +74,7 @@ public class Simulation extends Game {
     public void init() {
         models = new ArrayList<>();
         boxes = new ArrayList<>();
+        droppedBoxes = new ArrayList<>();
         meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
 
@@ -166,6 +168,11 @@ public class Simulation extends Game {
         return false;
     }
 
+    public void addBoxToDropped(Box box) {
+        boxes.remove(box);
+        droppedBoxes.add(box);
+    }
+
 //    This method initialises boxes
     public void initCrates() {
 
@@ -216,7 +223,7 @@ public class Simulation extends Game {
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
-                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,0,barCode);
+                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     boxes.add(box);
                 }
@@ -226,8 +233,9 @@ public class Simulation extends Game {
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
-                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,1,barCode);
+                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
+                    box.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),180));
                     boxes.add(box);
                 }
 
@@ -298,6 +306,10 @@ public class Simulation extends Game {
             System.out.println("Enter IPS coordinates: ");
             String text = scanner.nextLine();
             robot.IGPS(text);
+        }
+
+        if(input.keyDown(input.TAB)) {
+            robot.isManualControl = false;
         }
 
         if(input.keyDown(GLFW_KEY_W)) {

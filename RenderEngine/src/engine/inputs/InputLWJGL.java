@@ -111,6 +111,17 @@ public class InputLWJGL extends Input {
         DOWN_ARROW = GLFW_KEY_DOWN;
         LEFT_ARROW = GLFW_KEY_LEFT;
         RIGHT_ARROW = GLFW_KEY_RIGHT;
+
+        ONE = GLFW_KEY_1;
+        TWO = GLFW_KEY_2;
+        THREE = GLFW_KEY_3;
+        FOUR = GLFW_KEY_4;
+        FIVE = GLFW_KEY_5;
+        SIX = GLFW_KEY_6;
+        SEVEN = GLFW_KEY_7;
+        EIGHT = GLFW_KEY_8;
+        NINE = GLFW_KEY_9;
+        ZERO = GLFW_KEY_0;
     }
 
     public void initKeyCallBacks() {

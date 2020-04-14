@@ -59,6 +59,14 @@ public class Model {
 		return transformationMatrix;
 	}
 
+	public Matrix getWorldToObject() {
+		Matrix m_ = orientation.getInverse().getRotationMatrix();
+		Vector pos_ = (m_.matMul(pos).toVector()).scalarMul(-1);
+		Matrix res = m_.addColumn(pos_);
+		res = res.addRow(new Vector(new float[]{0,0,0,1}));
+		return res;
+	}
+
 	public void displayMeshInformation() {
 		mesh.displayMeshInformation();
 	}

@@ -1,33 +1,36 @@
 package ENED_Simulation;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.game.Game;
 import engine.inputs.Input;
 import engine.model.Model;
-import engine.model.ModelBuilder;
-import org.lwjgl.system.CallbackI;
+
+import java.util.Optional;
 
 public class Robot extends Model {
 
     private Simulation game;
 
+    public Vector translationDirection;
     public float rotationSpeed = 150;
     public float movementSpeed = 10;
-    private boolean isManualControl = false;
+    public boolean isManualControl = false;
+    private Input input;
+    public float scanRadius = 5;
+    private Box boxPicked;
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(mesh, identifier);
         this.game = game;
+        input = game.getInput();
+        translationDirection = new Vector(3,0);
     }
 
     @Override
     public void tick(ModelTickInput params) {
-        Input input = game.getInput();
-        isManualControl = false;
-
-        //pos.display();
+        translationDirection = new Vector(3,0);
 
         if(input.keyDown(input.UP_ARROW)) {
             moveForward(params);
@@ -49,8 +52,36 @@ public class Robot extends Model {
             isManualControl = true;
         }
 
+        if(input.keyDown(input.ONE)) {
+            if(boxPicked != null) {
+                boxPicked.setPos(new Vector(new float[]{this.pos.get(0), 0, this.getPos().get(2)}));
+                boxPicked = null;
+            }
+        }
+
         if(!isManualControl) {
             autoMove();
+        }
+
+       translationDirection = translationDirection.normalise();
+
+        if(boxPicked == null) {
+            Matrix robotMatrix = this.getOrientation().getRotationMatrix();
+            Optional<Box> optional = game.boxes
+                    .stream()
+                    .filter(b -> b.isRobotInCorrectPositionToScan(this, robotMatrix))
+                    .findFirst();
+            if (optional.isPresent()) {
+                boxPicked = optional.get();
+                System.out.println("box to be scanned is: " + boxPicked.identifier);
+                System.out.print("barcode: ");
+                boxPicked.barCode.display();
+            }
+        }
+        else {   //Already picked a box
+            boxPicked.setPos(this.pos.add(new Vector(new float[]{0,2,0})));
+            boxPicked.setOrientation(this.getOrientation());
+
         }
 
     }
@@ -73,10 +104,12 @@ public class Robot extends Model {
         System.out.println("coordinates logged");
     }
 
-    public void updatePosAfterBoundingBoxCheck(Vector newPos) {
+    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
         if(newPos.get(0) >= 0 && newPos.get(0) < game.simWidth && newPos.get(2) <= 0 && newPos.get(2) > -game.simDepth && !game.isModelColliding(this)) {
             this.pos = newPos;
+            return true;
         }
+        return false;
     }
 
     public void moveForward(ModelTickInput params) {
@@ -85,8 +118,12 @@ public class Robot extends Model {
         Vector x = rotationMatrix[0];
         Vector y = new Vector(new float[] {0,1,0});
         Vector z = x.cross(y);
-        Vector newPos = getPos().sub(z.scalarMul(movementSpeed * params.timeDelta));
-        updatePosAfterBoundingBoxCheck(newPos);
+        Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
+        Vector newPos = getPos().add(delta);
+
+        if(updatePosAfterBoundingBoxCheck(newPos)) {
+            translationDirection = translationDirection.add(delta);
+        }
     }
 
     public void moveBackward(ModelTickInput params) {
@@ -95,8 +132,12 @@ public class Robot extends Model {
         Vector x = rotationMatrix[0];
         Vector y = new Vector(new float[] {0,1,0});
         Vector z = x.cross(y);
-        Vector newPos = getPos().add(z.scalarMul(movementSpeed * params.timeDelta));
-        updatePosAfterBoundingBoxCheck(newPos);
+        Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
+        Vector newPos = getPos().add(delta);
+
+        if(updatePosAfterBoundingBoxCheck(newPos)) {
+            translationDirection = translationDirection.add(delta);
+        }
     }
 
     public void turnLeft(ModelTickInput params) {

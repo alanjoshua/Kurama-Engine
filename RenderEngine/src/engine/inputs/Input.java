@@ -52,6 +52,17 @@ public abstract class Input {
     public int RIGHT_ARROW;
     public int ENTER;
 
+    public int ONE;
+    public int TWO;
+    public int THREE;
+    public int FOUR;
+    public int FIVE;
+    public int SIX;
+    public int SEVEN;
+    public int EIGHT;
+    public int NINE;
+    public int ZERO;
+
     protected enum KeyState {
         JUST_RELEASED, // was just released
         RELEASED, // Not pressed

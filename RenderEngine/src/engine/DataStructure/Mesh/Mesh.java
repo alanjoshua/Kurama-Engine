@@ -62,7 +62,7 @@ public class Mesh {
             glBindVertexArray(0);
             glDeleteVertexArrays(vaoId);
         }catch(Exception e) {
-            System.err.println("Couldn't clean mesh. OpenGL bindings might be missing");
+           //System.out.println("Couldn't clean OPENGL atrtibs of mesh: "+meshIdentifier);
         }
     }
 

@@ -235,6 +235,17 @@ public class InputSR extends Input implements MouseInputListener, MouseWheelList
 		DOWN_ARROW = KeyEvent.VK_DOWN;
 		LEFT_ARROW = KeyEvent.VK_LEFT;
 		RIGHT_ARROW = KeyEvent.VK_RIGHT;
+
+		ONE = KeyEvent.VK_1;
+		TWO = KeyEvent.VK_2;
+		THREE = KeyEvent.VK_3;
+		FOUR = KeyEvent.VK_4;
+		FIVE = KeyEvent.VK_5;
+		SIX = KeyEvent.VK_6;
+		SEVEN = KeyEvent.VK_7;
+		EIGHT = KeyEvent.VK_8;
+		NINE = KeyEvent.VK_9;
+		ZERO = KeyEvent.VK_0;
 	}
 
 	public boolean keyDown(int keyCode) {
