@@ -18,7 +18,7 @@ public class Movable extends Model {
     }
 
     public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
-        if(newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
+        if(boundMin!= null && boundMax!=null && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
             this.pos = newPos;
             return true;
         }
