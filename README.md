@@ -15,6 +15,7 @@
 * Input handling
 * Option to use either perspective or orthographic projection
 * Proper fullscreen support and UI elements scale with windows scaling, so things look good even in high DPI monitors
+* Built-in simple benchmarking tool
 
 ## Test Program
 * Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases
