@@ -79,8 +79,8 @@ public class Simulation extends Game {
         meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
 
-        boundMin = new Vector(new float[]{0,0});
-        boundMax = new Vector(new float[]{simWidth,-simDepth});
+        boundMin = new Vector(new float[]{0,0,-simDepth});
+        boundMax = new Vector(new float[]{simWidth,100,0});
 
         display = new DisplayLWJGL(this);
         display.startScreen();
@@ -126,10 +126,12 @@ public class Simulation extends Game {
         hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,10});
         Model grid = new Model(this,ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
+        grid.isCollidable = false;
 
         hints.convertToLines = true;
         flag = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
+        flag.isCollidable = false;
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
@@ -216,7 +218,7 @@ public class Simulation extends Game {
                 int tempZ = -(boxRows[r] + (boxRows[r+1] - boxRows[r])/2) + 1;
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
-                platform.setScale(new Vector(new float[]{1f,1f,1f}));
+                platform.setScale(new Vector(new float[]{0.5f,0.5f,0.5f}));
                 models.add(platform);
 
 //            Create two rows of boxes
@@ -268,43 +270,72 @@ public class Simulation extends Game {
         }
     }
 
-    public List<GridNode> getNeighbours(GridNode current) {
+    public List<GridNode> getNeighbours(GridNode current,Model currModel,Model target) {
         List<GridNode> neighbours = new ArrayList<>();
 
-        Vector n1 = current.pos.add(new Vector(new float[]{1,0,0}));
-        Vector n2 = current.pos.add(new Vector(new float[]{-1,0,0}));
-        Vector n3 = current.pos.add(new Vector(new float[]{0,0,1}));
-        Vector n4 = current.pos.add(new Vector(new float[]{0,0,-1}));
+        Vector n1 = current.pos.add(new Vector(new float[]{1f,0,0}));
+        Vector n2 = current.pos.add(new Vector(new float[]{-1f,0,0}));
+        Vector n3 = current.pos.add(new Vector(new float[]{0,0,1f}));
+        Vector n4 = current.pos.add(new Vector(new float[]{0,0,-1f}));
 
-        if(isVectorInsideWorld(n1)) neighbours.add(new GridNode(n1,1000));
-        if(isVectorInsideWorld(n2)) neighbours.add(new GridNode(n2,1000));
-        if(isVectorInsideWorld(n3)) neighbours.add(new GridNode(n3,1000));
-        if(isVectorInsideWorld(n4)) neighbours.add(new GridNode(n4,1000));
+        if(isVectorInsideWorld(n1) && !isColliding(n1,currModel,target)) neighbours.add(new GridNode(n1,0));
+        if(isVectorInsideWorld(n2)  && !isColliding(n2,currModel,target)) neighbours.add(new GridNode(n2,0));
+        if(isVectorInsideWorld(n3)  && !isColliding(n3,currModel,target)) neighbours.add(new GridNode(n3,0));
+        if(isVectorInsideWorld(n4)  && !isColliding(n4,currModel,target)) neighbours.add(new GridNode(n4,0));
 
+//        if(isVectorInsideWorld(n1)) neighbours.add(new GridNode(n1,0));
+//        if(isVectorInsideWorld(n2)) neighbours.add(new GridNode(n2,0));
+//        if(isVectorInsideWorld(n3)) neighbours.add(new GridNode(n3,0));
+//        if(isVectorInsideWorld(n4)) neighbours.add(new GridNode(n4,0));
+       // System.out.println(neighbours.size());
         return neighbours;
     }
 
-    @Override
-    public float getMovementCost(GridNode current) {
-
-        float ret = 1;
-
+    public boolean isColliding(Vector v,Model modelThatIsSearching,Model target) {
+//        return false;
         for(Model m:models) {
-            Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
-            Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
+            if(m != modelThatIsSearching && m.isCollidable && m != target) {
+                Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
+                Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
 
-            Vector pos = current.pos;
+                Vector pos = v;
+                //boundMax.display();
 
-            if (boundMin != null && boundMax != null && boundMin.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0) && pos.get(1) >= boundMin.get(1) && pos.get(1) <= boundMax.get(1) && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
-                ret = 1;
+                if (boundMin != null && boundMax != null
+                        && pos.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0)
+//                        && pos.get(1) >= boundMin.get(1) && pos.get(1) <= boundMax.get(1)
+                        && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
+                   // System.out.println("collided wiht: "+m.identifier);
+                    return true;
+                }
+                else {
+
+                }
             }
-            else {
-                return Float.POSITIVE_INFINITY;
-            }
-
         }
+        return false;
+    }
 
-        return ret;
+    public float getMovementCost(GridNode current,GridNode next) {
+            return current.pos.sub(next.pos).getNorm();
+//        float ret = 1;
+//
+//        for(Model m:models) {
+//            Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
+//            Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
+//
+//            Vector pos = current.pos;
+//
+//            if (boundMin != null && boundMax != null && boundMin.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0) && pos.get(1) >= boundMin.get(1) && pos.get(1) <= boundMax.get(1) && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
+//                ret = 1;
+//            }
+//            else {
+//                return Float.POSITIVE_INFINITY;
+//            }
+//
+//        }
+//
+//        return ret;
     }
 
     @Override
@@ -467,7 +498,12 @@ public class Simulation extends Game {
 
     @Override
     public void render() {
-        renderingEngine.render(models);
+        List<Model> drawModels = new ArrayList<>(models);
+        if(robot.pathModel!= null && robot.shouldShowPath) {
+            drawModels.add(robot.pathModel);
+        }
+        renderingEngine.render(drawModels);
+
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
         input.poll();

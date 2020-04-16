@@ -46,6 +46,6 @@ public class GridNode implements Comparable<GridNode> {
         for(float val:pos.getData()) {
             hash+=val;
         }
-        return hash;
+        return (hash);
     }
 }

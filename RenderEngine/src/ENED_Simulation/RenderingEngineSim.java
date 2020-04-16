@@ -73,9 +73,15 @@ public class RenderingEngineSim extends RenderingEngine {
             shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
 
             model.mesh.render();
+
+            shaderProgram.setUniform("shouldUseTexture", 0);
+
             if(model.shouldShowCollisionBox && model.boundingbox!= null) {
                 model.boundingbox.render();
             }
+//            if(model.shouldShowPath && model.pathModel!= null) {
+//                model.pathModel.mesh.render();
+//            }
         }
 
         shaderProgram.unbind();

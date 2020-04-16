@@ -31,7 +31,6 @@ public class Robot extends Movable {
         this.game = game;
         input = game.getInput();
         translationDirection = new Vector(3,0);
-        pathFind();
     }
 
     @Override
@@ -69,8 +68,9 @@ public class Robot extends Movable {
         if(!isManualControl) {
             autoMove();
         }
-
+       
        translationDirection = translationDirection.normalise();
+        pathFind();
 
         if(boxPicked == null) {
             Matrix robotMatrix = this.getOrientation().getRotationMatrix();
@@ -98,72 +98,96 @@ public class Robot extends Movable {
     }
 
     public void pathFind() {
+
         Box target = selectBox(game.boxes);
-        PriorityQueue<GridNode> frontier = new PriorityQueue<>();
 
-        GridNode start = new GridNode(pos,0);
-        frontier.add(start);
+        try {
+            if (target != null) {
 
-        HashMap<Vector,Vector> cameFrom = new HashMap<>();
-        HashMap<Vector,Float> costSoFar = new HashMap<>();
+                PriorityQueue<GridNode> frontier = new PriorityQueue<>();
 
-        cameFrom.put(start.pos,null);
-        costSoFar.put(start.pos,0f);
+                Vector pos = new Vector(new float[]{(int) this.pos.get(0), (int) this.pos.get(1), (int) this.pos.get(2)});
 
-        costSoFar.put(null,0f);
+                GridNode start = new GridNode(pos, 0);
+                frontier.add(start);
+//        System.out.println(start);
 
-//        GridNode goal = new GridNode(target.getPos(),0);
-        GridNode goal = new GridNode(new Vector(new float[]{50,0,-50}),0);
-        GridNode current = null;
+                HashMap<Vector, Vector> cameFrom = new HashMap<>();
+                HashMap<Vector, Float> costSoFar = new HashMap<>();
 
-        while(!frontier.isEmpty()) {
-            current = frontier.poll();
+                cameFrom.put(start.pos, null);
+                costSoFar.put(start.pos, 0f);
 
-            if(current.equals(goal)) {
-                break; //Reached end point
-            }
+                costSoFar.put(null, 0f);
 
-            for(GridNode next:game.getNeighbours(current)) {
-                Float tempCost = costSoFar.get(current.pos);
-                float newCost =  (tempCost==null ? 0 : tempCost) + game.getMovementCost(next);
+                Vector tempGoal = new Vector(new float[]{(int) target.getPos().get(0), (int) this.getPos().get(1), (int) target.getPos().get(2)});
+                GridNode goal = new GridNode(tempGoal, 0);
+                //GridNode goal = new GridNode(new Vector(new float[]{50,pos.get(1),-50}),0);
+                GridNode current = null;
 
-                if(!costSoFar.containsKey(next.pos) || newCost < costSoFar.get(next.pos)) {
-                    costSoFar.put(next.pos,newCost);
-                    float priority = newCost + heuristic(goal,next);
-                    next.priority = priority;
-                    frontier.add(next);
-                    cameFrom.put(next.pos,current.pos);
+                while (!frontier.isEmpty()) {
+                    current = frontier.poll();
+
+                    if (current.equals(goal)) {
+                        break; //Reached end point
+                    }
+
+                    List<GridNode> neighbours = game.getNeighbours(current, this, target);
+                    //System.out.println(neighbours.size());
+                    for (GridNode next : neighbours) {
+                        Float tempCost = costSoFar.get(current.pos);
+                        float newCost = (tempCost == null ? 0 : tempCost) + game.getMovementCost(current, next);
+
+                        if (!costSoFar.containsKey(next.pos) || newCost < costSoFar.get(next.pos)) {
+                            costSoFar.put(next.pos, newCost);
+                            float priority = newCost + heuristic(goal, next);
+                            next.priority = priority;
+                            frontier.add(next);
+                            cameFrom.put(next.pos, current.pos);
+                            //System.out.println("next: "+next + " current: "+ current);
+                        }
+                    }
+
                 }
+
+                if(cameFrom.size() != 0) {
+
+                    List<Vector> path = new ArrayList<>();
+
+                    Vector curr = goal.pos;
+
+                    while (!curr.equals(start.pos)) {
+                        path.add(curr);
+                        curr = cameFrom.get(curr);
+//                        System.out.println("here");
+                    }
+//                    System.out.println("here");
+                    path.add(start.pos);
+//                    System.out.println("here");
+                    List<Vector> finalPath = new ArrayList<>();
+                    for (int i = path.size() - 1; i >= 0; i--) {
+                        finalPath.add(path.get(i));
+                    }
+
+                    Mesh pathMesh = createMeshFromPath(finalPath);
+                    pathMesh.drawMode = GL_LINES;
+                    ModelBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
+                    pathMesh.initOpenGLMeshData();
+
+                    pathModel = new Model(game, pathMesh, identifier + "-path", false);
+                }
+                else {
+                    System.out.println("could not find path");
+                }
+
+            } else {
+                pathModel = null;
             }
-
+        }catch (Exception e) {
+//            e.printStackTrace();
+            System.out.println("error while creating path");
         }
 
-        System.out.println(cameFrom.size());
-
-        current = goal;
-        List<Vector> path = new ArrayList<>();
-
-        Vector curr = goal.pos;
-
-        while(!curr.equals(start.pos)) {
-            path.add(curr);
-            curr = cameFrom.get(curr);
-        }
-        path.add(start.pos);
-
-        List<Vector> finalPath = new ArrayList<>();
-        for(int i = path.size() - 1;i >= 0;i--) {
-            finalPath.add(path.get(i));
-        }
-
-        Mesh pathmesh = createMeshFromPath(finalPath);
-        pathmesh.drawMode = GL_LINES;
-        ModelBuilder.addColor(pathmesh,new Vector(new float[]{0f,1f,0f,1f}));
-        pathmesh.initOpenGLMeshData();
-
-        pathModel = new Model(game,pathmesh,identifier+"-path",false);
-        pathModel.setPos(pos);
-        game.models.add(pathModel);
     }
 
     public Mesh createMeshFromPath(List<Vector> path) {
@@ -203,6 +227,7 @@ public class Robot extends Movable {
             float dist = this.getPos().sub(b.getPos()).getNorm();
             if(dist < closestDist) {
                 selected = b;
+                closestDist = dist;
             }
         }
         return selected;
