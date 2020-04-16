@@ -1,5 +1,7 @@
 package engine.game;
 
+import engine.DataStructure.GridNode;
+import engine.Math.Vector;
 import engine.display.Display;
 import engine.inputs.Input;
 import engine.model.Model;
@@ -22,6 +24,8 @@ public abstract class Game implements Runnable {
     protected float fps;
     protected float displayFPS;
     protected boolean shouldBenchMark = false;
+    public Vector boundMin;
+    public Vector boundMax;
 
     protected Thread gameLoopThread;
     protected BufferedWriter bw;
@@ -74,6 +78,18 @@ public abstract class Game implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean isVectorInsideWorld(Vector newPos) {
+
+        if(boundMax == null || boundMin == null) {
+            return true;
+        }
+
+        if(boundMin!= null && boundMax!=null && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
+            return true;
+        }
+        return false;
     }
 
     public void runGame() {
@@ -163,4 +179,7 @@ public abstract class Game implements Runnable {
 
     public abstract List<Model> getModels();
 
+    public float getMovementCost(GridNode current) {
+        return 0f;
+    }
 }

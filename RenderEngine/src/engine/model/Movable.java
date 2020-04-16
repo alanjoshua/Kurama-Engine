@@ -3,6 +3,7 @@ package engine.model;
 import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.game.Game;
 
 public class Movable extends Model {
 
@@ -10,20 +11,18 @@ public class Movable extends Model {
     public float rotationSpeed = 150;
     public float movementSpeed = 10;
     public boolean isManualControl = false;
-    public Vector boundMin;
-    public Vector boundMax;
 
-    public Movable(Mesh mesh, String identifier) {
-        super(mesh, identifier);
+    public Movable(Game game, Mesh mesh, String identifier) {
+        super(game,mesh, identifier);
     }
 
-    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
-        if(boundMin!= null && boundMax!=null && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
-            this.pos = newPos;
-            return true;
-        }
-        return false;
-    }
+//    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
+//        if(boundMin!= null && boundMax!=null && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
+//            this.pos = newPos;
+//            return true;
+//        }
+//        return false;
+//    }
 
     public void moveForward(ModelTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -34,7 +33,8 @@ public class Movable extends Model {
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
         Vector newPos = getPos().add(delta);
 
-        if(updatePosAfterBoundingBoxCheck(newPos)) {
+        if(game.isVectorInsideWorld(newPos)) {
+            this.pos = newPos;
             translationDirection = translationDirection.add(delta);
         }
     }
@@ -48,7 +48,8 @@ public class Movable extends Model {
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
         Vector newPos = getPos().add(delta);
 
-        if(updatePosAfterBoundingBoxCheck(newPos)) {
+        if(game.isVectorInsideWorld(newPos)) {
+            this.pos = newPos;
             translationDirection = translationDirection.add(delta);
         }
     }

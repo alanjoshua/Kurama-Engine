@@ -73,6 +73,9 @@ public class RenderingEngineSim extends RenderingEngine {
             shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
 
             model.mesh.render();
+            if(model.shouldShowCollisionBox && model.boundingbox!= null) {
+                model.boundingbox.render();
+            }
         }
 
         shaderProgram.unbind();

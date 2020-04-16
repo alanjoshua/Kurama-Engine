@@ -1,5 +1,6 @@
 package ENED_Simulation;
 
+import engine.DataStructure.GridNode;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Math.Quaternion;
@@ -78,6 +79,9 @@ public class Simulation extends Game {
         meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
 
+        boundMin = new Vector(new float[]{0,0});
+        boundMax = new Vector(new float[]{simWidth,-simDepth});
+
         display = new DisplayLWJGL(this);
         display.startScreen();
 
@@ -120,17 +124,19 @@ public class Simulation extends Game {
         hints.initLWJGLAttribs = true;
 
         hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,10});
-        Model grid = new Model(ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
+        Model grid = new Model(this,ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
 
         hints.convertToLines = true;
-        flag = new Model(ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
+        flag = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
         robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
         robot.setPos(new Vector(new float[]{0,1,0}));
+        robot.shouldShowCollisionBox = true;
+        robot.shouldShowPath = true;
 
         try {
             Texture tex = new Texture(robotTextureLoc);
@@ -203,7 +209,7 @@ public class Simulation extends Game {
             for (int r = 0; r < boxRows.length; r += 2) {
 
 //            Create shelf model
-                Model platform = new Model(platformMesh,"platform-r:"+r+"c:"+c);
+                Model platform = new Model(this,platformMesh,"platform-r:"+r+"c:"+c);
                 platform.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),90));
 
                 int tempX = (boxCols[c] + (boxCols[c+1] - boxCols[c])/2);
@@ -219,7 +225,7 @@ public class Simulation extends Game {
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
-                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,barCode);
+                    Box box = new Box(this,boxMesh,"box-x:"+x+"z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     boxes.add(box);
                 }
@@ -229,7 +235,7 @@ public class Simulation extends Game {
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
-                    Box box = new Box(boxMesh,"box-x:"+x+"z:"+z,barCode);
+                    Box box = new Box(this,boxMesh,"box-x:"+x+"z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     box.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),180));
                     boxes.add(box);
@@ -258,8 +264,47 @@ public class Simulation extends Game {
         display.cleanUp();
         renderingEngine.cleanUp();
         for(Model m:models) {
-            m.mesh.cleanUp();
+            m.cleanUp();
         }
+    }
+
+    public List<GridNode> getNeighbours(GridNode current) {
+        List<GridNode> neighbours = new ArrayList<>();
+
+        Vector n1 = current.pos.add(new Vector(new float[]{1,0,0}));
+        Vector n2 = current.pos.add(new Vector(new float[]{-1,0,0}));
+        Vector n3 = current.pos.add(new Vector(new float[]{0,0,1}));
+        Vector n4 = current.pos.add(new Vector(new float[]{0,0,-1}));
+
+        if(isVectorInsideWorld(n1)) neighbours.add(new GridNode(n1,1000));
+        if(isVectorInsideWorld(n2)) neighbours.add(new GridNode(n2,1000));
+        if(isVectorInsideWorld(n3)) neighbours.add(new GridNode(n3,1000));
+        if(isVectorInsideWorld(n4)) neighbours.add(new GridNode(n4,1000));
+
+        return neighbours;
+    }
+
+    @Override
+    public float getMovementCost(GridNode current) {
+
+        float ret = 1;
+
+        for(Model m:models) {
+            Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
+            Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
+
+            Vector pos = current.pos;
+
+            if (boundMin != null && boundMax != null && boundMin.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0) && pos.get(1) >= boundMin.get(1) && pos.get(1) <= boundMax.get(1) && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
+                ret = 1;
+            }
+            else {
+                return Float.POSITIVE_INFINITY;
+            }
+
+        }
+
+        return ret;
     }
 
     @Override

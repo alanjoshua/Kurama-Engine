@@ -63,6 +63,24 @@ public class Vector {
 
 		return new Vector(res);
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(o == null) {
+			return false;
+		}
+		Vector v = (Vector)o;
+		return this.sub(v).getNorm() == 0;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 0;
+		for(float val:this.getData()) {
+			hash+=val;
+		}
+		return hash;
+	}
 	
 	public float getAngleBetweenVectors(Vector x) {
 		Vector v = this.normalise();

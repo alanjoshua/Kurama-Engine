@@ -1,14 +1,22 @@
 package ENED_Simulation;
 
+import engine.DataStructure.GridNode;
+import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Mesh.Vertex;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.game.Game;
 import engine.inputs.Input;
 import engine.model.Model;
+import engine.model.ModelBuilder;
 import engine.model.Movable;
+import org.lwjgl.system.CallbackI;
 
-import java.util.Optional;
+import java.util.*;
+
+import static org.lwjgl.opengl.GL11C.GL_LINES;
 
 public class Robot extends Movable {
 
@@ -19,12 +27,11 @@ public class Robot extends Movable {
     private Box boxPicked;
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
-        super(mesh, identifier);
+        super(game,mesh, identifier);
         this.game = game;
         input = game.getInput();
         translationDirection = new Vector(3,0);
-        boundMin = new Vector(new float[]{0,0});
-        boundMax = new Vector(new float[]{game.simWidth,-game.simDepth});
+        pathFind();
     }
 
     @Override
@@ -88,6 +95,117 @@ public class Robot extends Movable {
 
     public void autoMove() {
 
+    }
+
+    public void pathFind() {
+        Box target = selectBox(game.boxes);
+        PriorityQueue<GridNode> frontier = new PriorityQueue<>();
+
+        GridNode start = new GridNode(pos,0);
+        frontier.add(start);
+
+        HashMap<Vector,Vector> cameFrom = new HashMap<>();
+        HashMap<Vector,Float> costSoFar = new HashMap<>();
+
+        cameFrom.put(start.pos,null);
+        costSoFar.put(start.pos,0f);
+
+        costSoFar.put(null,0f);
+
+//        GridNode goal = new GridNode(target.getPos(),0);
+        GridNode goal = new GridNode(new Vector(new float[]{50,0,-50}),0);
+        GridNode current = null;
+
+        while(!frontier.isEmpty()) {
+            current = frontier.poll();
+
+            if(current.equals(goal)) {
+                break; //Reached end point
+            }
+
+            for(GridNode next:game.getNeighbours(current)) {
+                Float tempCost = costSoFar.get(current.pos);
+                float newCost =  (tempCost==null ? 0 : tempCost) + game.getMovementCost(next);
+
+                if(!costSoFar.containsKey(next.pos) || newCost < costSoFar.get(next.pos)) {
+                    costSoFar.put(next.pos,newCost);
+                    float priority = newCost + heuristic(goal,next);
+                    next.priority = priority;
+                    frontier.add(next);
+                    cameFrom.put(next.pos,current.pos);
+                }
+            }
+
+        }
+
+        System.out.println(cameFrom.size());
+
+        current = goal;
+        List<Vector> path = new ArrayList<>();
+
+        Vector curr = goal.pos;
+
+        while(!curr.equals(start.pos)) {
+            path.add(curr);
+            curr = cameFrom.get(curr);
+        }
+        path.add(start.pos);
+
+        List<Vector> finalPath = new ArrayList<>();
+        for(int i = path.size() - 1;i >= 0;i--) {
+            finalPath.add(path.get(i));
+        }
+
+        Mesh pathmesh = createMeshFromPath(finalPath);
+        pathmesh.drawMode = GL_LINES;
+        ModelBuilder.addColor(pathmesh,new Vector(new float[]{0f,1f,0f,1f}));
+        pathmesh.initOpenGLMeshData();
+
+        pathModel = new Model(game,pathmesh,identifier+"-path",false);
+        pathModel.setPos(pos);
+        game.models.add(pathModel);
+    }
+
+    public Mesh createMeshFromPath(List<Vector> path) {
+        List<Integer> indices = new ArrayList<>();
+        List<Face> faces = new ArrayList<>();
+
+        for(int i = 0;i < path.size()-1;i++) {
+            indices.add(i);
+            indices.add(i+1);
+
+            Face tempFace = new Face();
+            Vertex v1 = new Vertex();
+            Vertex v2 = new Vertex();
+
+            v1.setAttribute(i,Vertex.POSITION);
+            v2.setAttribute(i+1,Vertex.POSITION);
+
+            tempFace.addVertex(v1);
+            tempFace.addVertex(v2);
+            faces.add(tempFace);
+        }
+        List<List<Vector>> vertAttribs = new ArrayList<>();
+        vertAttribs.add(path);
+        Mesh pathMesh = new Mesh(indices,faces,vertAttribs);
+        return pathMesh;
+    }
+
+    public float heuristic(GridNode a, GridNode b) {
+        return a.pos.sub(b.pos).getNorm();
+    }
+
+    public Box selectBox(List<Box> boxes) {
+        Box selected = null;
+        float closestDist = Float.POSITIVE_INFINITY;
+
+        for(Box b:boxes) {
+            float dist = this.getPos().sub(b.getPos()).getNorm();
+            if(dist < closestDist) {
+                selected = b;
+            }
+        }
+        return selected;
     }
 
     public void IGPS(String text) {

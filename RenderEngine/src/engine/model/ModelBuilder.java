@@ -577,6 +577,7 @@ public class ModelBuilder {
 
 	}
 
+//	Adds a constant color to the mesh
 	public static Mesh addColor(Mesh inMesh, Vector color) {
 		List<Vector> colors = new ArrayList<>();
 		for(int i = 0;i < inMesh.getVertices().size();i++) {
@@ -585,7 +586,7 @@ public class ModelBuilder {
 
 		for(Face f: inMesh.faces) {
 			for(Vertex v: f.vertices) {
-				v.setAttribute(v.getAttribute(Vertex.POSITION),Vertex.COLOR);
+				v.setAttribute(v.getAttribute(Vertex.POSITION), Vertex.COLOR);
 			}
 		}
 
