@@ -10,6 +10,7 @@ import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
+import jdk.swing.interop.SwingInterOpUtils;
 
 import java.util.*;
 
@@ -26,8 +27,8 @@ public class Robot extends Movable {
     public Vector home;
     public Vector barcodeBeingSearched;
     public float pathFindResolution = 1f;
-    public boolean shouldLockSelectedBox = false;
-    public int maxPathFindingCount = -1; //-1 = uncapped
+    public boolean shouldLockSelectedBox = true;
+    public int maxPathFindingCount = 1000; //-1 = uncapped
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(game,mesh, identifier);
@@ -85,7 +86,6 @@ public class Robot extends Movable {
 
            int[][] collisionArray = game.createCollisionArray(modelsToAvoid);
             if(!isPathValid(collisionArray)) {
-                System.out.println("path not valid");
                 pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded,collisionArray);
             }
         }
@@ -156,6 +156,23 @@ public class Robot extends Movable {
 
     }
 
+    public boolean isLineOfSight(Vector from,Vector to,int[][] collisionArray) {
+        Vector dir = to.sub(from);
+        float dist = dir.getNorm();
+        dir = dir.normalise();
+
+        for(int i = 0;i < dist;i++) {
+            Vector p = dir.scalarMul(i).add(from);
+            int x = (int)p.get(0);
+            int z = -(int)p.get(2);
+            if(collisionArray[x][z] == 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public boolean isPathValid(int[][] collisionArray) {
         if(pathModel == null) {
             return false;
@@ -183,14 +200,17 @@ public class Robot extends Movable {
 
     }
 
+//    Implements theta A*.
+//    Algorithm inspired from:
+//    https://www.redblobgames.com/pathfinding/a-star/introduction.html
+//    https://en.wikipedia.org/wiki/Theta*
     public void pathFind(Vector target,Model targetModel,int[][] collisionArray) {
 
-            if (target != null) {
+        boolean surr = isCompletelySurrounded(targetModel,collisionArray);
+//            boolean surr = false;
+            if (target != null && !surr) {
 
                 boolean hasReachedEnd = false;
-                List<Model> modelsToAvoid = new ArrayList<>();
-                modelsToAvoid.add(this);
-                modelsToAvoid.add(targetModel);
                 int count = 0;
 
                 PriorityQueue<GridNode> frontier = new PriorityQueue<>();
@@ -228,18 +248,46 @@ public class Robot extends Movable {
                         break;
                     }
 
-                    List<GridNode> neighbours = getNeighbours(current,modelsToAvoid,collisionArray);
+                    List<GridNode> neighbours = getNeighbours(current,collisionArray);
                     for (GridNode next : neighbours) {
-                        Float tempCost = costSoFar.get(current.pos);
-                        float newCost = (tempCost == null ? 0 : tempCost) + getMovementCost(current, next);
+//                        Float tempCost = costSoFar.get(current.pos);
+//                        float newCost = (tempCost == null ? 0 : tempCost) + getMovementCost(current.pos, next.pos);
 
-                        if (!costSoFar.containsKey(next.pos) || newCost < costSoFar.get(next.pos)) {
-                            costSoFar.put(next.pos, newCost);
-                            float priority = newCost + heuristic(goal, next);
-                            next.priority = priority;
-                            frontier.add(next);
-                            cameFrom.put(next.pos, current.pos);
+                        if (!costSoFar.containsKey(next.pos)) {
+                            costSoFar.put(next.pos,Float.POSITIVE_INFINITY);
+                            cameFrom.put(next.pos,null);
                         }
+
+//                       Logic to update vertex
+                        Vector parent = cameFrom.get(current.pos);
+
+                        if(parent != null && isLineOfSight(parent,next.pos,collisionArray)) {
+                            if(costSoFar.get(parent)+
+                                    getMovementCost(parent,next.pos)
+                                    < costSoFar.get(next.pos)) {
+                                costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos));
+                                cameFrom.put(next.pos,parent);
+//                                Might have the remove below if statement
+                                if(frontier.contains(next)) {
+                                    frontier.remove(next);
+                                }
+                                next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
+                                frontier.add(next);
+
+                            }
+                        }
+                        else {
+                            if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos) < costSoFar.get(next.pos)) {
+                                costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos));
+                                cameFrom.put(next.pos,current.pos);
+                                if(frontier.contains(next)) {
+                                    frontier.remove(next);
+                                }
+                                next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
+                                frontier.add(next);
+                            }
+                        }
+
                     }
 
                 }
@@ -288,7 +336,82 @@ public class Robot extends Movable {
             }
     }
 
-    public List<GridNode> getNeighbours(GridNode current,List<Model> modelsToNotCheck,int[][] collisionArray) {
+    public boolean isCompletelySurrounded(Model m,int[][] collisionArray) {
+
+        List<Vector> boundData = new ArrayList<>();
+
+        List<Vector> vertices = new ArrayList<>();
+        vertices.add(m.boundingbox.getVertices().get(0));
+        vertices.add(m.boundingbox.getVertices().get(2));
+        vertices.add(m.boundingbox.getVertices().get(4));
+        vertices.add(m.boundingbox.getVertices().get(6));
+
+        vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
+
+        Vector v1 = vertices.get(0);
+        Vector v2 = vertices.get(1);
+        Vector v3 = vertices.get(2);
+        Vector v4 = vertices.get(3);
+
+        Vector edge1 = v2.sub(v1);
+        Vector edge2 = v4.sub(v1);
+
+        int dist1 = (int)edge1.getNorm();
+        int dist2 = (int)edge2.getNorm();
+
+        edge1 = edge1.normalise();
+        edge2 = edge2.normalise();
+
+        for (int t1 = 0; t1 <= dist1; t1++) {
+            Vector p1 = edge1.scalarMul(t1).add(v1);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < game.simWidth && j >= 0 && j < game.simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist1; t1++) {
+            Vector p1 = edge1.scalarMul(t1).add(v4);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < game.simWidth && j >= 0 && j < game.simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist2; t1++) {
+            Vector p1 = edge2.scalarMul(t1).add(v1);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < game.simWidth && j >= 0 && j < game.simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist2; t1++) {
+            Vector p1 = edge2.scalarMul(t1).add(v2);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < game.simWidth && j >= 0 && j < game.simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for(Vector v:boundData) {
+            if(!isCollidingWithAnyModel(v,collisionArray)) {
+                return false;
+            }
+        }
+
+//        if(!isCollidingWithAnyModel(m.getPos(),collisionArray)) {
+//            return false;
+//        }
+
+        return true;
+    }
+
+    public List<GridNode> getNeighbours(GridNode current,int[][] collisionArray) {
         List<GridNode> neighbours = new ArrayList<>();
 
         Vector n1 = current.pos.add(new Vector(new float[]{pathFindResolution,0,0}));
@@ -297,15 +420,15 @@ public class Robot extends Movable {
         Vector n4 = current.pos.add(new Vector(new float[]{0,0,-pathFindResolution}));
 
 
-        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n2)  && !isCollidingWithAnyModel(n2,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n3)  && !isCollidingWithAnyModel(n3,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n4)  && !isCollidingWithAnyModel(n4,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,collisionArray)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n2)  && !isCollidingWithAnyModel(n2,collisionArray)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n3)  && !isCollidingWithAnyModel(n3,collisionArray)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n4)  && !isCollidingWithAnyModel(n4,collisionArray)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
 
         return neighbours;
     }
 
-    public boolean isCollidingWithAnyModel(Vector v, List<Model> modelsToNotCheck, int[][] collisionArray) {
+    public boolean isCollidingWithAnyModel(Vector v, int[][] collisionArray) {
 
         if(v.get(0) < 0 || v.get(0) >= collisionArray.length || -v.get(2) < 0 || -v.get(2) >= collisionArray[0].length) {
             return true;
@@ -337,8 +460,8 @@ public class Robot extends Movable {
         return false;
     }
 
-    public float getMovementCost(GridNode current,GridNode next) {
-        return current.pos.sub(next.pos).getNorm();
+    public float getMovementCost(Vector current,Vector next) {
+        return current.sub(next).getNorm();
     }
 
     public Mesh createMeshFromPath(List<Vector> path) {
@@ -366,8 +489,8 @@ public class Robot extends Movable {
         return pathMesh;
     }
 
-    public float heuristic(GridNode a, GridNode b) {
-        return a.pos.sub(b.pos).getNorm();
+    public float heuristic(Vector goal, Vector p) {
+        return goal.sub(p).getNorm();
     }
 
     public Box selectBox(List<Box> boxes) {

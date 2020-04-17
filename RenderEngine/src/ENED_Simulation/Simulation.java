@@ -227,8 +227,8 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{0.5f,0.5f,0.5f}));
-//                platform.shouldShowCollisionBox = true;
-//                platform.setMiniBehaviourObj(tempRot);
+                platform.shouldShowCollisionBox = true;
+                platform.setMiniBehaviourObj(tempRot);
                 models.add(platform);
 
 //            Create two rows of boxes
