@@ -5,14 +5,11 @@ import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
 import engine.Math.Matrix;
-import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.game.Game;
 import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
 
@@ -25,6 +22,12 @@ public class Robot extends Movable {
     private Input input;
     public float scanRadius = 5;
     private Box boxPicked;
+    public Box boxBeingPathFounded;
+    public Vector home;
+    public Vector barcodeBeingSearched;
+    public float pathFindResolution = 1f;
+    public boolean shouldLockSelectedBox = false;
+    public int maxPathFindingCount = 1000;
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(game,mesh, identifier);
@@ -35,6 +38,7 @@ public class Robot extends Movable {
 
     @Override
     public void tick(ModelTickInput params) {
+
         translationDirection = new Vector(3,0);
 
         if(input.keyDown(input.UP_ARROW)) {
@@ -58,59 +62,114 @@ public class Robot extends Movable {
         }
 
         if(input.keyDown(input.ONE)) {
-            if(boxPicked != null) {
-                boxPicked.setPos(new Vector(new float[]{this.pos.get(0), 0, this.getPos().get(2)}));
-                game.addBoxToDropped(boxPicked);
-                boxPicked = null;
-            }
+            shouldDropBox();
         }
 
         if(!isManualControl) {
             autoMove();
         }
-       
-       translationDirection = translationDirection.normalise();
-        pathFind();
+
+        if(boxPicked==null) {
+            if(shouldLockSelectedBox) {
+                if(boxBeingPathFounded == null) {
+                    boxBeingPathFounded = selectBox(game.boxes);
+                }
+            }
+            else {
+                boxBeingPathFounded = selectBox(game.boxes);
+            }
+
+            List<Model> modelsToAvoid = new ArrayList<>();
+            modelsToAvoid.add(this);
+            modelsToAvoid.add(boxBeingPathFounded);
+
+            game.createCollisionArray(modelsToAvoid);
+            pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded);
+        }
+
+        finalUpdate();
+
+    }
+
+    public void shouldDropBox() {
+        if(boxPicked != null) {
+            boxPicked.setPos(new Vector(new float[]{this.pos.get(0), 0, this.getPos().get(2)}));
+            game.addBoxToDropped(boxPicked);
+            boxPicked = null;
+            boxBeingPathFounded = null;
+            barcodeBeingSearched = null;
+        }
+    }
+
+    public void finalUpdate() {
+        translationDirection = translationDirection.normalise();
 
         if(boxPicked == null) {
-            Matrix robotMatrix = this.getOrientation().getRotationMatrix();
-            Optional<Box> optional = game.boxes
-                    .stream()
-                    .filter(b -> b.isRobotInCorrectPositionToScan(this, robotMatrix))
-                    .findFirst();
-            if (optional.isPresent()) {
-                boxPicked = optional.get();
-                System.out.println("box to be scanned is: " + boxPicked.identifier);
-                System.out.print("barcode: ");
-                boxPicked.barCode.display();
-            }
+            checkShouldPickBox();
         }
         else {   //Already picked a box
-            boxPicked.setPos(this.pos.add(new Vector(new float[]{0,2,0})));
-            boxPicked.setOrientation(this.getOrientation());
-
+            updatePickedBox();
         }
 
+        if(barcodeBeingSearched == null) {
+            Box search = game.requestNextBarcode();
+            System.out.println("box being searched: "+search + " barcode: "+search.barCode);
+            barcodeBeingSearched = search.barCode;
+        }
+    }
+
+    public void updatePickedBox() {
+        boxPicked.setPos(this.pos.add(new Vector(new float[]{0,2,0})));
+        boxPicked.setOrientation(this.getOrientation());
+    }
+
+    public void checkShouldPickBox() {
+        Matrix robotMatrix = this.getOrientation().getRotationMatrix();
+        Optional<Box> optional = game.boxes
+                .stream()
+                .filter(b -> b.isRobotInCorrectPositionToScan(this, robotMatrix))
+                .findFirst();
+        if (optional.isPresent()) {
+
+            Box currBox = optional.get();
+            System.out.println("Box scanned is: " + currBox.identifier);
+            System.out.println("barcode: "+currBox.barCode);
+
+//                Box picked only if correct barcode
+            if(currBox.barCode.equals(barcodeBeingSearched)) {
+                System.out.println("Required box was found");
+                boxPicked = currBox;
+                boxPicked.barCode.display();
+                pathModel = null;
+            }
+            else {
+                System.out.println("Barcodes did not match. This is not the required box");
+            }
+
+        }
     }
 
     public void autoMove() {
 
     }
 
-    public void pathFind() {
+    public void pathFind(Vector target,Model targetModel) {
 
-        Box target = selectBox(game.boxes);
-
-        try {
             if (target != null) {
+                //System.out.println(isCompleteSurrounded(target));
+
+                boolean hasReachedEnd = false;
+                List<Model> modelsToAvoid = new ArrayList<>();
+                modelsToAvoid.add(this);
+                modelsToAvoid.add(targetModel);
+                int count = 0;
 
                 PriorityQueue<GridNode> frontier = new PriorityQueue<>();
 
-                Vector pos = new Vector(new float[]{(int) this.pos.get(0), (int) this.pos.get(1), (int) this.pos.get(2)});
+                Vector pos = new Vector(new float[]{this.pos.get(0),this.pos.get(1),this.pos.get(2)});
 
                 GridNode start = new GridNode(pos, 0);
                 frontier.add(start);
-//        System.out.println(start);
 
                 HashMap<Vector, Vector> cameFrom = new HashMap<>();
                 HashMap<Vector, Float> costSoFar = new HashMap<>();
@@ -120,23 +179,30 @@ public class Robot extends Movable {
 
                 costSoFar.put(null, 0f);
 
-                Vector tempGoal = new Vector(new float[]{(int) target.getPos().get(0), (int) this.getPos().get(1), (int) target.getPos().get(2)});
+                Vector tempGoal = new Vector(new float[]{target.get(0),this.getPos().get(1), target.get(2)});
                 GridNode goal = new GridNode(tempGoal, 0);
-                //GridNode goal = new GridNode(new Vector(new float[]{50,pos.get(1),-50}),0);
+
                 GridNode current = null;
 
                 while (!frontier.isEmpty()) {
                     current = frontier.poll();
+                    count++;
 
-                    if (current.equals(goal)) {
+                    if (current.equals(goal) || (targetModel!=null && isCollidingModel(current.pos,targetModel))) {
+                        hasReachedEnd = true;
+                        goal = current;
                         break; //Reached end point
                     }
 
-                    List<GridNode> neighbours = game.getNeighbours(current, this, target);
-                    //System.out.println(neighbours.size());
+                    if(count >= maxPathFindingCount) {
+                        goal = current;
+                        break;
+                    }
+
+                    List<GridNode> neighbours = getNeighbours(current,modelsToAvoid);
                     for (GridNode next : neighbours) {
                         Float tempCost = costSoFar.get(current.pos);
-                        float newCost = (tempCost == null ? 0 : tempCost) + game.getMovementCost(current, next);
+                        float newCost = (tempCost == null ? 0 : tempCost) + getMovementCost(current, next);
 
                         if (!costSoFar.containsKey(next.pos) || newCost < costSoFar.get(next.pos)) {
                             costSoFar.put(next.pos, newCost);
@@ -144,26 +210,29 @@ public class Robot extends Movable {
                             next.priority = priority;
                             frontier.add(next);
                             cameFrom.put(next.pos, current.pos);
-                            //System.out.println("next: "+next + " current: "+ current);
                         }
                     }
 
                 }
 
-                if(cameFrom.size() != 0) {
+                if(!hasReachedEnd) goal = current;
 
+                if(targetModel != null) {
+                    if(!isCollidingModel(goal.pos,targetModel)) {
+                        pathModel = null;
+                        return;
+                    }
+                }
+
+                if(cameFrom.size() > 1) {
                     List<Vector> path = new ArrayList<>();
-
                     Vector curr = goal.pos;
-
                     while (!curr.equals(start.pos)) {
                         path.add(curr);
                         curr = cameFrom.get(curr);
-//                        System.out.println("here");
                     }
-//                    System.out.println("here");
                     path.add(start.pos);
-//                    System.out.println("here");
+
                     List<Vector> finalPath = new ArrayList<>();
                     for (int i = path.size() - 1; i >= 0; i--) {
                         finalPath.add(path.get(i));
@@ -174,20 +243,85 @@ public class Robot extends Movable {
                     ModelBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
                     pathMesh.initOpenGLMeshData();
 
-                    pathModel = new Model(game, pathMesh, identifier + "-path", false);
+                    if(pathModel == null) {
+                        pathModel = new Model(game, pathMesh, identifier + "-path", false);
+                    }
+                    else {
+                        pathModel.mesh = pathMesh;
+                    }
                 }
                 else {
-                    System.out.println("could not find path");
+                    pathModel = null;
                 }
 
             } else {
-                pathModel = null;
+                pathModel = null;  //If target Pos is null
             }
-        }catch (Exception e) {
-//            e.printStackTrace();
-            System.out.println("error while creating path");
+    }
+
+    public List<GridNode> getNeighbours(GridNode current,List<Model> modelsToNotCheck) {
+        List<GridNode> neighbours = new ArrayList<>();
+
+        Vector n1 = current.pos.add(new Vector(new float[]{pathFindResolution,0,0}));
+        Vector n2 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,0}));
+        Vector n3 = current.pos.add(new Vector(new float[]{0,0,pathFindResolution}));
+        Vector n4 = current.pos.add(new Vector(new float[]{0,0,-pathFindResolution}));
+
+
+        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,modelsToNotCheck)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n2)  && !isCollidingWithAnyModel(n2,modelsToNotCheck)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n3)  && !isCollidingWithAnyModel(n3,modelsToNotCheck)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n4)  && !isCollidingWithAnyModel(n4,modelsToNotCheck)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+
+        return neighbours;
+    }
+
+    public boolean isCollidingWithAnyModel(Vector v, List<Model> modelsToNotCheck) {
+
+//        for(Model m:game.models) {
+//            if(modelsToNotCheck.indexOf(m) == -1 && m.isCollidable) {
+//                if(isCollidingModel(v,m)) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+
+        if(v.get(0) < 0 || v.get(0) >= game.collisionArray.length || -v.get(2) < 0 || -v.get(2) >= game.collisionArray[0].length) {
+            return true;
         }
 
+        if(game.collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public boolean isCollidingModel(Vector v, Model m) {
+
+//        Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
+//        Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
+
+        Vector[] bounds = Model.getBounds(m.getObjectToWorldMatrix().matMul(m.boundingbox.getVertices()).convertToColumnVectorList());
+        Vector boundMin = bounds[0];
+        Vector boundMax = bounds[1];
+
+        Vector pos = v;
+
+        if (boundMin != null && boundMax != null
+                && pos.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0)
+//                       && pos.get(1) > boundMin.get(1) - 1 && pos.get(1) < boundMax.get(1) + 1
+                && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public float getMovementCost(GridNode current,GridNode next) {
+        return current.pos.sub(next.pos).getNorm();
     }
 
     public Mesh createMeshFromPath(List<Vector> path) {

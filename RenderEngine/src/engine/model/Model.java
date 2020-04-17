@@ -75,9 +75,9 @@ public class Model {
 		}
 	}
 
-	public void calculateBoundingBox() {
-		boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
-		boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+	public static Vector[] getBounds(Mesh mesh) {
+		Vector boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+		Vector boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
 
 		for(Vector v: mesh.getVertices()) {
 			for(int i = 0;i < 3;i++) {
@@ -90,18 +90,64 @@ public class Model {
 			}
 		}
 
+		Vector[] res = new Vector[2];
+		res[0] = boundMin;
+		res[1] = boundMax;
+		return res;
+	}
+
+	public static Vector[] getBounds(List<Vector> verts) {
+		Vector boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+		Vector boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+
+		for(Vector v: verts) {
+			for(int i = 0;i < 3;i++) {
+				if(v.get(i) < boundMin.get(i)) {
+					boundMin.setDataElement(i,v.get(i));
+				}
+				if(v.get(i) > boundMax.get(i)) {
+					boundMax.setDataElement(i,v.get(i));
+				}
+			}
+		}
+
+		Vector[] res = new Vector[2];
+		res[0] = boundMin;
+		res[1] = boundMax;
+		return res;
+	}
+
+	public void calculateBoundingBox() {
+//		boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
+//		boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+//
+//		for(Vector v: mesh.getVertices()) {
+//			for(int i = 0;i < 3;i++) {
+//				if(v.get(i) < boundMin.get(i)) {
+//					boundMin.setDataElement(i,v.get(i));
+//				}
+//				if(v.get(i) > boundMax.get(i)) {
+//					boundMax.setDataElement(i,v.get(i));
+//				}
+//			}
+//		}
+
+		Vector[] bounds = Model.getBounds(mesh);
+		boundMin = bounds[0];
+		boundMax = bounds[1];
+
 //		Code to create bounding box mesh
 
-		Vector v1 = new Vector(boundMin.getData());
-		Vector v7 = new Vector(boundMax.getData());
+		Vector v1 = new Vector(boundMin.getData()).addDimensionToVec(1);
+		Vector v7 = new Vector(boundMax.getData()).addDimensionToVec(1);
 
-		Vector v2 = new Vector(new float[]{v7.get(0),v1.get(1),v1.get(2)});
-		Vector v3 = new Vector(new float[]{v7.get(0),v1.get(1),v7.get(2)});
-		Vector v4 = new Vector(new float[]{v1.get(0),v1.get(1),v7.get(2)});
+		Vector v2 = new Vector(new float[]{v7.get(0),v1.get(1),v1.get(2),1});
+		Vector v3 = new Vector(new float[]{v7.get(0),v1.get(1),v7.get(2),1});
+		Vector v4 = new Vector(new float[]{v1.get(0),v1.get(1),v7.get(2),1});
 
-		Vector v5 = new Vector(new float[]{v1.get(0),v7.get(1),v1.get(2)});
-		Vector v6 = new Vector(new float[]{v7.get(0),v7.get(1),v1.get(2)});
-		Vector v8 = new Vector(new float[]{v1.get(0),v7.get(1),v7.get(2)});
+		Vector v5 = new Vector(new float[]{v1.get(0),v7.get(1),v1.get(2),1});
+		Vector v6 = new Vector(new float[]{v7.get(0),v7.get(1),v1.get(2),1});
+		Vector v8 = new Vector(new float[]{v1.get(0),v7.get(1),v7.get(2),1});
 
 		List<Vector> vertices = new ArrayList<>();
 		vertices.add(v1);
@@ -339,6 +385,11 @@ public class Model {
 		if(pathModel!=null) {
 			pathModel.cleanUp();
 		}
+	}
+
+	@Override
+	public String toString() {
+		return identifier;
 	}
 
 }
