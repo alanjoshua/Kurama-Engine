@@ -43,8 +43,6 @@ public class Simulation extends Game {
     public int simWidth = 100;
     public int simDepth = 100;
 
-    public int[][] collisionArray;
-
     protected List<engine.GUI.Button> pauseButtons;
     protected engine.GUI.Button EXIT;
     protected engine.GUI.Button FULLSCREEN;
@@ -85,8 +83,6 @@ public class Simulation extends Game {
 
         boundMin = new Vector(new float[]{0,0,-simDepth});
         boundMax = new Vector(new float[]{simWidth,100,0});
-
-        collisionArray = new int[simWidth][simDepth];
 
         display = new DisplayLWJGL(this);
         display.startScreen();
@@ -328,8 +324,8 @@ public class Simulation extends Game {
         }
     }
 
-    public void createCollisionArray(List<Model> modelsToAvoidChecking) {
-        collisionArray = new int[simWidth][simDepth];
+    public int[][] createCollisionArray(List<Model> modelsToAvoidChecking) {
+        int[][] collisionArray = new int[simWidth][simDepth];
         for(Model m:models) {
             if(m.isCollidable && modelsToAvoidChecking.indexOf(m) == -1) {  //Model is collidable and also not in avoid list
 
@@ -416,6 +412,8 @@ public class Simulation extends Game {
 
             }
         }
+
+        return collisionArray;
 
     }
 

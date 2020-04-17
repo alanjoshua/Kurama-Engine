@@ -27,7 +27,7 @@ public class Robot extends Movable {
     public Vector barcodeBeingSearched;
     public float pathFindResolution = 1f;
     public boolean shouldLockSelectedBox = false;
-    public int maxPathFindingCount = 1000;
+    public int maxPathFindingCount = -1; //-1 = uncapped
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(game,mesh, identifier);
@@ -83,8 +83,11 @@ public class Robot extends Movable {
             modelsToAvoid.add(this);
             modelsToAvoid.add(boxBeingPathFounded);
 
-            game.createCollisionArray(modelsToAvoid);
-            pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded);
+           int[][] collisionArray = game.createCollisionArray(modelsToAvoid);
+            if(!isPathValid(collisionArray)) {
+                System.out.println("path not valid");
+                pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded,collisionArray);
+            }
         }
 
         finalUpdate();
@@ -153,10 +156,36 @@ public class Robot extends Movable {
 
     }
 
-    public void pathFind(Vector target,Model targetModel) {
+    public boolean isPathValid(int[][] collisionArray) {
+        if(pathModel == null) {
+            return false;
+        }
+
+        Vector start = pathModel.mesh.getVertices().get(0);
+        if(!isCollidingModel(start,this)) {
+            return false;
+        }
+
+        Vector goal = pathModel.mesh.getVertices().get(pathModel.mesh.getVertices().size() - 1);
+        if(!isCollidingModel(goal,boxBeingPathFounded)) {
+            return false;
+        }
+
+        for(Vector v: pathModel.mesh.getVertices()) {
+            int i = (int)v.get(0);
+            int j = -(int)v.get(2);
+            if(collisionArray[i][j] == 1) {
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    public void pathFind(Vector target,Model targetModel,int[][] collisionArray) {
 
             if (target != null) {
-                //System.out.println(isCompleteSurrounded(target));
 
                 boolean hasReachedEnd = false;
                 List<Model> modelsToAvoid = new ArrayList<>();
@@ -194,12 +223,12 @@ public class Robot extends Movable {
                         break; //Reached end point
                     }
 
-                    if(count >= maxPathFindingCount) {
+                    if(maxPathFindingCount != -1 && count >= maxPathFindingCount) {
                         goal = current;
                         break;
                     }
 
-                    List<GridNode> neighbours = getNeighbours(current,modelsToAvoid);
+                    List<GridNode> neighbours = getNeighbours(current,modelsToAvoid,collisionArray);
                     for (GridNode next : neighbours) {
                         Float tempCost = costSoFar.get(current.pos);
                         float newCost = (tempCost == null ? 0 : tempCost) + getMovementCost(current, next);
@@ -259,7 +288,7 @@ public class Robot extends Movable {
             }
     }
 
-    public List<GridNode> getNeighbours(GridNode current,List<Model> modelsToNotCheck) {
+    public List<GridNode> getNeighbours(GridNode current,List<Model> modelsToNotCheck,int[][] collisionArray) {
         List<GridNode> neighbours = new ArrayList<>();
 
         Vector n1 = current.pos.add(new Vector(new float[]{pathFindResolution,0,0}));
@@ -268,30 +297,21 @@ public class Robot extends Movable {
         Vector n4 = current.pos.add(new Vector(new float[]{0,0,-pathFindResolution}));
 
 
-        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,modelsToNotCheck)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n2)  && !isCollidingWithAnyModel(n2,modelsToNotCheck)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n3)  && !isCollidingWithAnyModel(n3,modelsToNotCheck)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n4)  && !isCollidingWithAnyModel(n4,modelsToNotCheck)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n2)  && !isCollidingWithAnyModel(n2,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n3)  && !isCollidingWithAnyModel(n3,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n4)  && !isCollidingWithAnyModel(n4,modelsToNotCheck,collisionArray)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
 
         return neighbours;
     }
 
-    public boolean isCollidingWithAnyModel(Vector v, List<Model> modelsToNotCheck) {
+    public boolean isCollidingWithAnyModel(Vector v, List<Model> modelsToNotCheck, int[][] collisionArray) {
 
-//        for(Model m:game.models) {
-//            if(modelsToNotCheck.indexOf(m) == -1 && m.isCollidable) {
-//                if(isCollidingModel(v,m)) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-
-        if(v.get(0) < 0 || v.get(0) >= game.collisionArray.length || -v.get(2) < 0 || -v.get(2) >= game.collisionArray[0].length) {
+        if(v.get(0) < 0 || v.get(0) >= collisionArray.length || -v.get(2) < 0 || -v.get(2) >= collisionArray[0].length) {
             return true;
         }
 
-        if(game.collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
+        if(collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
             return true;
         }
         else {
@@ -300,9 +320,6 @@ public class Robot extends Movable {
     }
 
     public boolean isCollidingModel(Vector v, Model m) {
-
-//        Vector boundMin = m.getBoundMin().mul(m.getScale()).add(m.getPos());
-//        Vector boundMax = m.getBoundMax().mul(m.getScale()).add(m.getPos());
 
         Vector[] bounds = Model.getBounds(m.getObjectToWorldMatrix().matMul(m.boundingbox.getVertices()).convertToColumnVectorList());
         Vector boundMin = bounds[0];
