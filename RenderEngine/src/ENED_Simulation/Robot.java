@@ -33,12 +33,13 @@ public class Robot extends Movable {
     public float turnOnlyThreshhold = 0.90f;
     public float verticalOnlyThreshhold = 0.1f;
 
-    public float movementWeight = 1f;
-    public float nearbyCollisionWeight = 10f; //Right now, code for calculcating this is commented off in movementCost()
+    public float movementCost = 1f;
+    public float nearbyCollisionCost = 0f; //Right now, code for calculcating this is commented off in movementCost()
     public int nearbyCollisionRange = 3;
     public float heuristicWeight = 1f;
 
     public int berzierResolution = 50;
+    public boolean hasPathFindingFailed = false;
 
     protected int[][] collisionMask;  //This mask includes everything except robot. This is only to be used for collision detection, not pathfinding
 
@@ -225,14 +226,14 @@ public class Robot extends Movable {
         }
 
 //        Logic to update path model                                  //Not implemented because this would mess with pathfind model
-        if(pathModel.mesh.getVertices().size() > 2) {
+        if(pathModel != null && pathModel.mesh.getVertices().size() > 2) {
             Vector oldV = pathModel.mesh.getVertices().get(0);
             Vector next = pathModel.mesh.getVertices().get(1);
             float diff = next.sub(this.pos).getNorm();
 
             if(diff < next.sub(oldV).getNorm()) {
                 pathModel.mesh.getVertices().set(0,this.pos);
-                if(diff <= 1) {
+                if(diff <= 0.5) {
                     pathModel.mesh.getVertices().remove(0);
                 }
                 pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
@@ -316,8 +317,6 @@ public class Robot extends Movable {
 
     public boolean isLineOfSight(Vector from,Vector to,int[][] collisionArray) {
 
-        List<Vector> vecs = new ArrayList<>();
-
         Vector dir = to.sub(from);
         float dist = dir.getNorm();
         dir = dir.normalise();
@@ -325,27 +324,10 @@ public class Robot extends Movable {
         for(int i = 0;i < dist;i++) {
             Vector p = dir.scalarMul(i).add(from);
 
-            for(int j = 0;j < nearbyCollisionRange;j++) {
-                vecs.add(p.add(new Vector(new float[]{j, 0, 0})));
-                vecs.add(p.add(new Vector(new float[]{-j, 0, 0})));
-                vecs.add(p.add(new Vector(new float[]{0, 0, j})));
-                vecs.add(p.add(new Vector(new float[]{0, 0, -j})));
-            }
-
-//            int x = (int)p.get(0);
-//            int z = -(int)p.get(2);
-//            if(collisionArray[x][z] == 1) {
-//                return false;
-//            }
-        }
-
-        for(Vector v:vecs) {
-            int x = (int)v.get(0);
-            int z = -(int)v.get(2);
-            if(x >= 0 && x < collisionArray.length && z >= 0 && z < collisionArray[0].length) {
-                if (collisionArray[x][z] == 1) {
-                    return false;
-                }
+            int x = (int)p.get(0);
+            int z = -(int)p.get(2);
+            if(isWithingRangeOfCollision(p,collisionArray,nearbyCollisionRange) || collisionArray[x][z] == 1) {
+                return false;
             }
         }
 
@@ -418,6 +400,7 @@ public class Robot extends Movable {
 //    https://en.wikipedia.org/wiki/Theta*
     public void pathFind(Vector target,Model targetModel,int[][] collisionArray) {
 
+        hasPathFindingFailed = false;
         boolean surr = isCompletelySurrounded(targetModel,collisionArray);
 
             if (target != null && !surr) {
@@ -457,6 +440,7 @@ public class Robot extends Movable {
 
                     if(maxPathFindingCount != -1 && count >= maxPathFindingCount) {
                         goal = current;
+                        hasPathFindingFailed = true;
                         break;
                     }
 
@@ -477,10 +461,7 @@ public class Robot extends Movable {
                                     < costSoFar.get(next.pos)) {
                                 costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos,collisionArray));
                                 cameFrom.put(next.pos,parent);
-//                                Might have the remove below if statement
-                                if(frontier.contains(next)) {
-                                    frontier.remove(next);
-                                }
+                                frontier.remove(next);
                                 next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
                                 frontier.add(next);
 
@@ -490,9 +471,7 @@ public class Robot extends Movable {
                             if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos,collisionArray) < costSoFar.get(next.pos)) {
                                 costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos,collisionArray));
                                 cameFrom.put(next.pos,current.pos);
-                                if(frontier.contains(next)) {
-                                    frontier.remove(next);
-                                }
+                                frontier.remove(next);
                                 next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
                                 frontier.add(next);
                             }
@@ -507,6 +486,7 @@ public class Robot extends Movable {
                 if(targetModel != null) {
                     if(!isCollidingModel(goal.pos,targetModel)) {
                         pathModel = null;
+                        hasPathFindingFailed = true;
                         return;
                     }
                 }
@@ -535,10 +515,12 @@ public class Robot extends Movable {
                     }
                 }
                 else {
+                    hasPathFindingFailed = true;
                     pathModel = null;
                 }
 
             } else {
+                hasPathFindingFailed = true;
                 pathModel = null;  //If target Pos is null
             }
     }
@@ -570,21 +552,39 @@ public class Robot extends Movable {
         Vector n8 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,-pathFindResolution}));
 
 
-        if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,collisionArray)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n2) && !isCollidingWithAnyModel(n2,collisionArray)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n3) && !isCollidingWithAnyModel(n3,collisionArray)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n4) && !isCollidingWithAnyModel(n4,collisionArray)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n5) && !isCollidingWithAnyModel(n1,collisionArray)) neighbours.add(new GridNode(n5,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n6) && !isCollidingWithAnyModel(n2,collisionArray)) neighbours.add(new GridNode(n6,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n7) && !isCollidingWithAnyModel(n3,collisionArray)) neighbours.add(new GridNode(n7,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n8) && !isCollidingWithAnyModel(n4,collisionArray)) neighbours.add(new GridNode(n8,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n1) && !isWithingRangeOfCollision(n1,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n2) && !isWithingRangeOfCollision(n2,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n3) && !isWithingRangeOfCollision(n3,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n4) && !isWithingRangeOfCollision(n4,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n5) && !isWithingRangeOfCollision(n1,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n5,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n6) && !isWithingRangeOfCollision(n2,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n6,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n7) && !isWithingRangeOfCollision(n3,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n7,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n8) && !isWithingRangeOfCollision(n4,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n8,Float.POSITIVE_INFINITY));
 
         return neighbours;
     }
 
-    public boolean isCollidingWithAnyModel(Vector v, int[][] collisionArray) {
+    public static boolean isWithingRangeOfCollision(Vector v,int[][] collisionArray, int range) {
+        List<Vector> vecs = new ArrayList<>();
+        vecs.add(v);
+        for(int j = 0;j < range;j++) {
+            vecs.add(v.add(new Vector(new float[]{j, 0, 0})));
+            vecs.add(v.add(new Vector(new float[]{-j, 0, 0})));
+            vecs.add(v.add(new Vector(new float[]{0, 0, j})));
+            vecs.add(v.add(new Vector(new float[]{0, 0, -j})));
+        }
+
+        for(Vector vert: vecs) {
+            if(isCollidingWithAnyModel(vert,collisionArray)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isCollidingWithAnyModel(Vector v, int[][] collisionArray) {
         if(v.get(0) < 0 || v.get(0) >= collisionArray.length || -v.get(2) < 0 || -v.get(2) >= collisionArray[0].length) {
-            return true;
+            return false;
         }
 
         if(collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
@@ -613,31 +613,32 @@ public class Robot extends Movable {
     }
 
     public float getMovementCost(Vector current,Vector next,int[][] collisionArray) {
-        List<Vector> vecs = new ArrayList<>();
-
-        vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
-        vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
-        vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
-        vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
-        vecs.add(next.add(new Vector(new float[]{1,0,1})));
-        vecs.add(next.add(new Vector(new float[]{-1,0,1})));
-        vecs.add(next.add(new Vector(new float[]{1,0,-1})));
-        vecs.add(next.add(new Vector(new float[]{-1,0,-1})));
-
         float collisionCost = 0;
-        for(Vector v:vecs) {
-            int i = (int)v.get(0);
-            int j = -(int)v.get(2);
 
-            if(i >= 0 && i < collisionArray.length && j >= 0 && j < collisionArray[0].length) {
-                if (collisionArray[i][j] == 1) {
-                    collisionCost += 1;
-                }
-            }
-        }
+//        List<Vector> vecs = new ArrayList<>();
+//
+//        vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
+//        vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
+//        vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
+//        vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
+//        vecs.add(next.add(new Vector(new float[]{1,0,1})));
+//        vecs.add(next.add(new Vector(new float[]{-1,0,1})));
+//        vecs.add(next.add(new Vector(new float[]{1,0,-1})));
+//        vecs.add(next.add(new Vector(new float[]{-1,0,-1})));
+//
+//        for(Vector v:vecs) {
+//            int i = (int)v.get(0);
+//            int j = -(int)v.get(2);
+//
+//            if(i >= 0 && i < collisionArray.length && j >= 0 && j < collisionArray[0].length) {
+//                if (collisionArray[i][j] == 1) {
+//                    collisionCost += 1;
+//                }
+//            }
+//        }
 
         float movementCost = current.sub(next).getNorm();
-        return movementCost*movementWeight + collisionCost*nearbyCollisionWeight;
+        return movementCost* this.movementCost + collisionCost* nearbyCollisionCost;
     }
 
     public List<Vector> smoothenPath(List<Vector> path) {
