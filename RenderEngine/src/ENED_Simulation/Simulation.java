@@ -1,9 +1,7 @@
 package ENED_Simulation;
 
-import engine.DataStructure.GridNode;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
-import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
@@ -25,8 +23,9 @@ public class Simulation extends Game {
     protected InputLWJGL input;
     protected RenderingEngineSim renderingEngine;
     protected List<Model> models;
-    protected List<Box> boxes;
-    protected List<Box> droppedBoxes;
+    protected List<Box> boxesToBeSearched;
+    protected List<Box> boxesAlreadySearched;
+    protected List<Box> boxesAtDestination;
     Scanner scanner;
     protected int numberOfIPSRequests = 0;
 
@@ -76,8 +75,9 @@ public class Simulation extends Game {
     @Override
     public void init() {
         models = new ArrayList<>();
-        boxes = new ArrayList<>();
-        droppedBoxes = new ArrayList<>();
+        boxesToBeSearched = new ArrayList<>();
+        boxesAlreadySearched = new ArrayList<>();
+        boxesAtDestination = new ArrayList<>();
         meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
 
@@ -150,16 +150,7 @@ public class Simulation extends Game {
         }
 
         hints.convertToLines = false;
-//        Box box = new Box(ModelBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints),"box");
-//        try {
-//            Texture tex = new Texture(boxTextureLoc);
-//            box.mesh.texture = tex;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-////        boxes.add(box);
-//
-//        models.addAll(boxes);
+
         models.add(robot);
         models.add(grid);
         models.add(flag);
@@ -174,9 +165,15 @@ public class Simulation extends Game {
 
     }
 
-    public void addBoxToDropped(Box box) {
-        boxes.remove(box);
-        droppedBoxes.add(box);
+    public void addBoxToSearched(Box box) {
+        boxesToBeSearched.remove(box);
+        boxesAlreadySearched.add(box);
+    }
+
+    public void addBoxToAtDestination(Box box) {
+        box.isCollidable = false;
+        boxesToBeSearched.remove(box);
+        boxesAtDestination.add(box);
     }
 
 //    This method initialises boxes
@@ -227,8 +224,6 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{0.5f,0.5f,0.5f}));
-                platform.shouldShowCollisionBox = true;
-                platform.setMiniBehaviourObj(tempRot);
                 models.add(platform);
 
 //            Create two rows of boxes
@@ -239,7 +234,7 @@ public class Simulation extends Game {
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
                     Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
-                    boxes.add(box);
+                    boxesToBeSearched.add(box);
                 }
 
 //                create top row of shelf
@@ -250,19 +245,28 @@ public class Simulation extends Game {
                     Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     box.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),180));
-                    boxes.add(box);
+                    boxesToBeSearched.add(box);
                 }
 
             }
         }
 
-        models.addAll(boxes);
+        models.addAll(boxesToBeSearched);
 
     }
 
     public Box requestNextBarcode() {
+        boxesToBeSearched.addAll(boxesAlreadySearched);
+        boxesAlreadySearched = new ArrayList<>();
+        for(Box b: boxesToBeSearched) {
+            b.shouldShowCollisionBox = false;
+        }
+
         Random rand = new Random();
-        return boxes.get(rand.nextInt(boxes.size()));
+        Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
+        ret.setBoundingBoxColor(new Vector(new float[]{0,1,0,1}));
+        ret.shouldShowCollisionBox = true;
+        return ret;
     }
 
     @Override
@@ -326,94 +330,133 @@ public class Simulation extends Game {
 
     public int[][] createCollisionArray(List<Model> modelsToAvoidChecking) {
         int[][] collisionArray = new int[simWidth][simDepth];
+        List<Vector> boundData = new ArrayList<>();
+
         for(Model m:models) {
             if(m.isCollidable && modelsToAvoidChecking.indexOf(m) == -1) {  //Model is collidable and also not in avoid list
-
-                List<Vector> vertices = new ArrayList<>();
-                vertices.add(m.boundingbox.getVertices().get(0));
-                vertices.add(m.boundingbox.getVertices().get(2));
-                vertices.add(m.boundingbox.getVertices().get(4));
-                vertices.add(m.boundingbox.getVertices().get(6));
-
-                vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
-
-                Vector v1 = vertices.get(0);
-                Vector v2 = vertices.get(1);
-                Vector v3 = vertices.get(2);
-                Vector v4 = vertices.get(3);
-
-                v1.setDataElement(2,-v1.get(2));
-                v2.setDataElement(2,-v2.get(2));
-                v3.setDataElement(2,-v3.get(2));
-                v4.setDataElement(2,-v4.get(2));
-
-                Vector edge1 = v2.sub(v1);
-                Vector edge2 = v4.sub(v1);
-
-                int dist1 = (int)edge1.getNorm();
-                int dist2 = (int)edge2.getNorm();
-
-                edge1 = edge1.normalise();
-                edge2 = edge2.normalise();
-
-                if(!shouldOnlyOutline) {
-
-                    for (int t1 = 0; t1 <= dist1; t1++) {
-                        Vector p1 = edge1.scalarMul(t1).add(v1);
-
-                        for (int t2 = 0; t2 <= dist2; t2++) {
-                            Vector p2 = p1.add(edge2.scalarMul(t2));
-                            int i = (int) p2.get(0);
-                            int j = (int) p2.get(2);
-//                        p2.display();
-                            if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
-                                collisionArray[i][j] = 1;
-                            }
-                        }
-                    }
-                }else {
-
-                    for (int t1 = 0; t1 <= dist1; t1++) {
-                        Vector p1 = edge1.scalarMul(t1).add(v1);
-                        int i = (int) p1.get(0);
-                        int j = (int) p1.get(2);
-                        if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
-                            collisionArray[i][j] = 1;
-                        }
-                    }
-
-                    for (int t1 = 0; t1 <= dist1; t1++) {
-                        Vector p1 = edge1.scalarMul(t1).add(v4);
-                        int i = (int) p1.get(0);
-                        int j = (int) p1.get(2);
-                        if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
-                            collisionArray[i][j] = 1;
-                        }
-                    }
-
-                    for (int t1 = 0; t1 <= dist2; t1++) {
-                        Vector p1 = edge2.scalarMul(t1).add(v1);
-                        int i = (int) p1.get(0);
-                        int j = (int) p1.get(2);
-                        if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
-                            collisionArray[i][j] = 1;
-                        }
-                    }
-
-                    for (int t1 = 0; t1 <= dist2; t1++) {
-                        Vector p1 = edge2.scalarMul(t1).add(v2);
-                        int i = (int) p1.get(0);
-                        int j = (int) p1.get(2);
-                        if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
-                            collisionArray[i][j] = 1;
-                        }
-                    }
+                if(shouldOnlyOutline) {
+                   boundData.addAll(getModelOutlineCollisionData(m));
+                }
+                else {
+                    boundData.addAll(getModelFillCollisionData(m));
                 }
 
             }
         }
 
+        for(Vector v:boundData) {
+            int i = (int)v.get(0);
+            int j = -(int)v.get(2);
+            collisionArray[i][j] = 1;
+        }
+
         return collisionArray;
+
+    }
+
+    public List<Vector> getModelFillCollisionData(Model m) {
+        List<Vector> boundData = new ArrayList<>();
+
+        List<Vector> vertices = new ArrayList<>();
+        vertices.add(m.boundingbox.getVertices().get(0));
+        vertices.add(m.boundingbox.getVertices().get(2));
+        vertices.add(m.boundingbox.getVertices().get(4));
+        vertices.add(m.boundingbox.getVertices().get(6));
+
+        vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
+
+        Vector v1 = vertices.get(0);
+        Vector v2 = vertices.get(1);
+        Vector v3 = vertices.get(2);
+        Vector v4 = vertices.get(3);
+
+        Vector edge1 = v2.sub(v1);
+        Vector edge2 = v4.sub(v1);
+
+        int dist1 = (int)edge1.getNorm();
+        int dist2 = (int)edge2.getNorm();
+
+        edge1 = edge1.normalise();
+        edge2 = edge2.normalise();
+
+        for (int t1 = 0; t1 <= dist1; t1++) {
+            Vector p1 = edge1.scalarMul(t1).add(v1);
+
+            for (int t2 = 0; t2 <= dist2; t2++) {
+                Vector p2 = p1.add(edge2.scalarMul(t2));
+                int i = (int) p2.get(0);
+                int j = -(int) p2.get(2);
+                if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
+                    boundData.add(p2);
+                }
+            }
+        }
+
+        return boundData;
+    }
+
+    public List<Vector> getModelOutlineCollisionData(Model m) {
+        List<Vector> boundData = new ArrayList<>();
+
+        List<Vector> vertices = new ArrayList<>();
+        vertices.add(m.boundingbox.getVertices().get(0));
+        vertices.add(m.boundingbox.getVertices().get(2));
+        vertices.add(m.boundingbox.getVertices().get(4));
+        vertices.add(m.boundingbox.getVertices().get(6));
+
+        vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
+
+        Vector v1 = vertices.get(0);
+        Vector v2 = vertices.get(1);
+        Vector v3 = vertices.get(2);
+        Vector v4 = vertices.get(3);
+
+        Vector edge1 = v2.sub(v1);
+        Vector edge2 = v4.sub(v1);
+
+        int dist1 = (int)edge1.getNorm();
+        int dist2 = (int)edge2.getNorm();
+
+        edge1 = edge1.normalise();
+        edge2 = edge2.normalise();
+
+        for (int t1 = 0; t1 <= dist1; t1++) {
+            Vector p1 = edge1.scalarMul(t1).add(v1);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist1; t1++) {
+            Vector p1 = edge1.scalarMul(t1).add(v4);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist2; t1++) {
+            Vector p1 = edge2.scalarMul(t1).add(v1);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        for (int t1 = 0; t1 <= dist2; t1++) {
+            Vector p1 = edge2.scalarMul(t1).add(v2);
+            int i = (int) p1.get(0);
+            int j = -(int) p1.get(2);
+            if (i >= 0 && i < simWidth && j >= 0 && j < simDepth) {
+                boundData.add(p1);
+            }
+        }
+
+        return boundData;
 
     }
 

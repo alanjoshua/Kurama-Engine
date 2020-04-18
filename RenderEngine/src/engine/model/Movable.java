@@ -7,6 +7,10 @@ import engine.game.Game;
 
 public class Movable extends Model {
 
+    public enum MOVEMENT {
+        FORWARD,BACKWARD,LEFT,RIGHT
+    }
+
     public Vector translationDirection;
     public float rotationSpeed = 150;
     public float movementSpeed = 10;
@@ -16,13 +20,9 @@ public class Movable extends Model {
         super(game,mesh, identifier);
     }
 
-//    public boolean updatePosAfterBoundingBoxCheck(Vector newPos) {
-//        if(boundMin!= null && boundMax!=null && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0) && newPos.get(2) <= boundMin.get(1) && newPos.get(2) > boundMax.get(1)) {
-//            this.pos = newPos;
-//            return true;
-//        }
-//        return false;
-//    }
+    public boolean isOkayToUpdatePosition(Vector newPos) {
+        return game.isVectorInsideWorld(newPos);
+    }
 
     public void moveForward(ModelTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -33,7 +33,7 @@ public class Movable extends Model {
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
         Vector newPos = getPos().add(delta);
 
-        if(game.isVectorInsideWorld(newPos)) {
+        if(isOkayToUpdatePosition(newPos)) {
             this.pos = newPos;
             translationDirection = translationDirection.add(delta);
         }
@@ -48,7 +48,7 @@ public class Movable extends Model {
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
         Vector newPos = getPos().add(delta);
 
-        if(game.isVectorInsideWorld(newPos)) {
+        if(isOkayToUpdatePosition(newPos)) {
             this.pos = newPos;
             translationDirection = translationDirection.add(delta);
         }

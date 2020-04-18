@@ -20,7 +20,7 @@ public class Box extends Model {
 //    Robot orientation does not matter as long as it is moving in the correct scan direction (eg, even if its moving backwards but in the correct scan direction, the box would be scanned)
 //    Meaning, the robot has scanners in both sides
 
-    public boolean isRobotInCorrectPositionToScan(Robot robot,Matrix robotMatrix) {
+    public boolean isRobotInCorrectPositionToScan(Robot robot) {
         Vector dir = robot.getPos().sub(this.getPos());
         float dist = dir.getNorm();
 

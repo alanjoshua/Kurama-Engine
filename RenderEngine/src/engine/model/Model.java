@@ -35,6 +35,7 @@ public class Model {
 	public boolean isCollidable = true;
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
+	public boolean shouldShowAxes = true;
 	public Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
@@ -117,21 +118,20 @@ public class Model {
 		return res;
 	}
 
-	public void calculateBoundingBox() {
-//		boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
-//		boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
-//
-//		for(Vector v: mesh.getVertices()) {
-//			for(int i = 0;i < 3;i++) {
-//				if(v.get(i) < boundMin.get(i)) {
-//					boundMin.setDataElement(i,v.get(i));
-//				}
-//				if(v.get(i) > boundMax.get(i)) {
-//					boundMax.setDataElement(i,v.get(i));
-//				}
-//			}
-//		}
+	public void setBoundingBoxColor(Vector color) {
+		this.boundingBoxColor = color;
+		ModelBuilder.addColor(boundingbox,boundingBoxColor);
+		boundingbox.drawMode = GL_LINES;
+		boundingbox.initOpenGLMeshData();
+	}
 
+	public void setRandomColorToBoundingBox() {
+		ModelBuilder.addRandomColor(boundingbox);
+		boundingbox.drawMode = GL_LINES;
+		boundingbox.initOpenGLMeshData();
+	}
+
+	public void calculateBoundingBox() {
 		Vector[] bounds = Model.getBounds(mesh);
 		boundMin = bounds[0];
 		boundMax = bounds[1];

@@ -784,6 +784,83 @@ public class ModelBuilder {
 
 	}
 
+	public static Mesh buildAxes() {
+
+		Vector xColor = new Vector(new float[]{1,0,0,1});
+		Vector yColor = new Vector(new float[]{0,1,0,1});
+		Vector zColor = new Vector(new float[]{0,0,1,1});
+
+		Vector origin = new Vector(new float[]{0,0,0,1});
+		Vector x = new Vector(new float[]{1,0,0,1});
+		Vector y = new Vector(new float[]{0,1,0,1});
+		Vector z = new Vector(new float[]{0,0,1,1});
+
+		List<Vector> vertices = new ArrayList<>();
+		List<Integer> indices = new ArrayList<>();
+		List<Face> faces = new ArrayList<>();
+		List<Vector> colors = new ArrayList<>();
+
+		vertices.add(origin);
+		vertices.add(x);
+		vertices.add(y);
+		vertices.add(z);
+
+		colors.add(new Vector(new float[]{1,1,1,1}));
+		colors.add(xColor);
+		colors.add(yColor);
+		colors.add(zColor);
+
+		indices.add(0);
+		indices.add(1);
+		indices.add(0);
+		indices.add(2);
+		indices.add(0);
+		indices.add(3);
+
+		Face tempFace = new Face();
+		Vertex v0 = new Vertex();
+		Vertex v1 = new Vertex();
+		v0.setAttribute(0,Vertex.POSITION);
+		v0.setAttribute(0,Vertex.COLOR);
+		v1.setAttribute(1,Vertex.POSITION);
+		v1.setAttribute(1,Vertex.COLOR);
+		tempFace.addVertex(v0);
+		tempFace.addVertex(v1);
+		faces.add(tempFace);
+
+		tempFace = new Face();
+		v0 = new Vertex();
+		v1 = new Vertex();
+		v0.setAttribute(0,Vertex.POSITION);
+		v0.setAttribute(0,Vertex.COLOR);
+		v1.setAttribute(2,Vertex.POSITION);
+		v1.setAttribute(2,Vertex.COLOR);
+		tempFace.addVertex(v0);
+		tempFace.addVertex(v1);
+		faces.add(tempFace);
+
+		tempFace = new Face();
+		v0 = new Vertex();
+		v1 = new Vertex();
+		v0.setAttribute(0,Vertex.POSITION);
+		v0.setAttribute(0,Vertex.COLOR);
+		v1.setAttribute(3,Vertex.POSITION);
+		v1.setAttribute(3,Vertex.COLOR);
+		tempFace.addVertex(v0);
+		tempFace.addVertex(v1);
+		faces.add(tempFace);
+
+		List<List<Vector>> attribs = new ArrayList<>();
+		attribs.add(vertices);
+
+		Mesh ret = new Mesh(indices,faces,attribs);
+		ret.setAttribute(colors,Mesh.COLOR);
+		ret.drawMode = GL_LINES;
+		ret.initOpenGLMeshData();
+
+		return ret;
+	}
+
 	public static Mesh buildGridTrigs(int w, int h, ModelBuilderHints hints) {
 
 		List<Face> faces = new ArrayList<>();

@@ -1,6 +1,9 @@
 package ENED_Simulation;
 
+import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Matrix;
+import engine.Math.Vector;
+import engine.model.ModelBuilder;
 import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
@@ -14,12 +17,14 @@ import static org.lwjgl.opengl.GL11.*;
 public class RenderingEngineSim extends RenderingEngine {
 
     public ShaderProgram shaderProgram;
+    public Mesh axes;
 
     public RenderingEngineSim(Game game) {
         super(game);
     }
 
     public void init() {
+        axes = ModelBuilder.buildAxes();
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
         glEnable(GL_BLEND);
@@ -76,12 +81,14 @@ public class RenderingEngineSim extends RenderingEngine {
 
             shaderProgram.setUniform("shouldUseTexture", 0);
 
-            if(model.shouldShowCollisionBox && model.boundingbox!= null) {
+            if(model.shouldShowCollisionBox && model.boundingbox != null) {
                 model.boundingbox.render();
             }
-//            if(model.shouldShowPath && model.pathModel!= null) {
-//                model.pathModel.mesh.render();
-//            }
+
+            if(model.shouldShowAxes && axes != null) {
+                axes.render();
+            }
+
         }
 
         shaderProgram.unbind();

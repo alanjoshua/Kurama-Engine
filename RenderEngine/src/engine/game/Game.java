@@ -24,6 +24,7 @@ public abstract class Game implements Runnable {
     protected float fps;
     protected float displayFPS;
     protected boolean shouldBenchMark = false;
+
     public Vector boundMin;
     public Vector boundMax;
 
