@@ -538,12 +538,20 @@ public class Robot extends Movable {
         Vector n2 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,0}));
         Vector n3 = current.pos.add(new Vector(new float[]{0,0,pathFindResolution}));
         Vector n4 = current.pos.add(new Vector(new float[]{0,0,-pathFindResolution}));
+        Vector n5 = current.pos.add(new Vector(new float[]{pathFindResolution,0,pathFindResolution}));
+        Vector n6 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,pathFindResolution}));
+        Vector n7 = current.pos.add(new Vector(new float[]{pathFindResolution,0,-pathFindResolution}));
+        Vector n8 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,-pathFindResolution}));
 
 
         if(game.isVectorInsideWorld(n1) && !isCollidingWithAnyModel(n1,collisionArray)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
         if(game.isVectorInsideWorld(n2) && !isCollidingWithAnyModel(n2,collisionArray)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
         if(game.isVectorInsideWorld(n3) && !isCollidingWithAnyModel(n3,collisionArray)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
         if(game.isVectorInsideWorld(n4) && !isCollidingWithAnyModel(n4,collisionArray)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n5) && !isCollidingWithAnyModel(n1,collisionArray)) neighbours.add(new GridNode(n5,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n6) && !isCollidingWithAnyModel(n2,collisionArray)) neighbours.add(new GridNode(n6,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n7) && !isCollidingWithAnyModel(n3,collisionArray)) neighbours.add(new GridNode(n7,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n8) && !isCollidingWithAnyModel(n4,collisionArray)) neighbours.add(new GridNode(n8,Float.POSITIVE_INFINITY));
 
         return neighbours;
     }
