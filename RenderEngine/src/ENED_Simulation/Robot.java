@@ -26,9 +26,16 @@ public class Robot extends Movable {
     public Vector barcodeBeingSearched;
     public float pathFindResolution = 1f;
     public boolean shouldLockSelectedBox = false;
+
+//    Path finding and following fine tuning parameters
     public int maxPathFindingCount = 5000; //-1 = uncapped
-    public float turnOnlyThreshhold = 0.70f;
-    public float verticalOnlyThreshhold = 0.2f;
+    public float turnOnlyThreshhold = 0.90f;
+    public float verticalOnlyThreshhold = 0.1f;
+
+    public float movementWeight = 1f;
+    public float nearbyCollisionWeight = 10f;
+    public int nearbyCollisionRange = 3;
+    public float heuristicWeight = 1f;
 
     protected int[][] collisionMask;  //This mask includes everything except robot. This is only to be used for collision detection, not pathfinding
 
@@ -170,7 +177,6 @@ public class Robot extends Movable {
 
             List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
             modelsToAvoidCreatingCollisionMasks.add(this);
-           // modelsToAvoidCreatingCollisionMasks.addAll(game.boxesAtDestination);
             modelsToAvoidCreatingCollisionMasks.add(boxBeingPathFounded);
 
             int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
@@ -183,7 +189,6 @@ public class Robot extends Movable {
         else {
             List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
             modelsToAvoidCreatingCollisionMasks.add(this);
-            //modelsToAvoidCreatingCollisionMasks.addAll(game.boxesAtDestination);
             modelsToAvoidCreatingCollisionMasks.add(boxPicked);
 
             int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
@@ -192,8 +197,8 @@ public class Robot extends Movable {
             }
         }
 
+        List<MOVEMENT> movements = getMovementFromPath();
         if(!isManualControl) {
-            List<MOVEMENT> movements = getMovementFromPath();
             for (MOVEMENT m : movements) {
                 if (m == MOVEMENT.FORWARD) {
                     moveForward(params);
@@ -209,6 +214,18 @@ public class Robot extends Movable {
                 }
             }
         }
+
+//        Logic to update path model                                  //Not implemented because this would mess with pathfind model
+//        if(pathModel.mesh.getVertices().size() > 2) {
+//            Vector oldV = pathModel.mesh.getVertices().get(0);
+//            Vector next = pathModel.mesh.getVertices().get(1);
+//            if(next.sub(this.pos).getNorm() < next.sub(oldV).getNorm()) {
+//                pathModel.mesh.getVertices().set(1,this.pos);
+//                if(next.sub(this.pos).getNorm() <= 0.5) {
+//                    pathModel.mesh.getVertices().remove(0);
+//                }
+//            }
+//        }
 
         checkChanges();
 
@@ -269,16 +286,37 @@ public class Robot extends Movable {
     }
 
     public boolean isLineOfSight(Vector from,Vector to,int[][] collisionArray) {
+
+        List<Vector> vecs = new ArrayList<>();
+
         Vector dir = to.sub(from);
         float dist = dir.getNorm();
         dir = dir.normalise();
 
         for(int i = 0;i < dist;i++) {
             Vector p = dir.scalarMul(i).add(from);
-            int x = (int)p.get(0);
-            int z = -(int)p.get(2);
-            if(collisionArray[x][z] == 1) {
-                return false;
+
+            for(int j = 0;j < nearbyCollisionRange;j++) {
+                vecs.add(p.add(new Vector(new float[]{j, 0, 0})));
+                vecs.add(p.add(new Vector(new float[]{-j, 0, 0})));
+                vecs.add(p.add(new Vector(new float[]{0, 0, j})));
+                vecs.add(p.add(new Vector(new float[]{0, 0, -j})));
+            }
+
+//            int x = (int)p.get(0);
+//            int z = -(int)p.get(2);
+//            if(collisionArray[x][z] == 1) {
+//                return false;
+//            }
+        }
+
+        for(Vector v:vecs) {
+            int x = (int)v.get(0);
+            int z = -(int)v.get(2);
+            if(x >= 0 && x < collisionArray.length && z >= 0 && z < collisionArray[0].length) {
+                if (collisionArray[x][z] == 1) {
+                    return false;
+                }
             }
         }
 
@@ -406,9 +444,9 @@ public class Robot extends Movable {
 
                         if(parent != null && isLineOfSight(parent,next.pos,collisionArray)) {
                             if(costSoFar.get(parent)+
-                                    getMovementCost(parent,next.pos)
+                                    getMovementCost(parent,next.pos,collisionArray)
                                     < costSoFar.get(next.pos)) {
-                                costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos));
+                                costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos,collisionArray));
                                 cameFrom.put(next.pos,parent);
 //                                Might have the remove below if statement
                                 if(frontier.contains(next)) {
@@ -420,8 +458,8 @@ public class Robot extends Movable {
                             }
                         }
                         else {
-                            if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos) < costSoFar.get(next.pos)) {
-                                costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos));
+                            if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos,collisionArray) < costSoFar.get(next.pos)) {
+                                costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos,collisionArray));
                                 cameFrom.put(next.pos,current.pos);
                                 if(frontier.contains(next)) {
                                     frontier.remove(next);
@@ -511,33 +549,37 @@ public class Robot extends Movable {
     }
 
     public boolean isCollidingWithAnyModel(Vector v, int[][] collisionArray) {
-        List<Vector> vecs = new ArrayList<>();
-        vecs.add(v);
-        if(v.getNumberOfDimensions() == 3) {
-            vecs.add(v.add(new Vector(new float[]{1, 0, 0})));
-            vecs.add(v.add(new Vector(new float[]{-1, 0, 0})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, 1})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, -1})));
-        }
-        else {
-            vecs.add(v.add(new Vector(new float[]{1, 0, 0,1})));
-            vecs.add(v.add(new Vector(new float[]{-1, 0, 0,1})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, 1,1})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, -1,1})));
-        }
-
-        for(Vector vec:vecs) {
-            if(game.isVectorInsideWorld(vec) && collisionArray[(int)vec.get(0)][-(int)vec.get(2)] == 1) {
-                return true;
-            }
-        }
-        return false;
-//        if(collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
-//            return true;
+//        List<Vector> vecs = new ArrayList<>();
+//        vecs.add(v);
+//        if(v.getNumberOfDimensions() == 3) {
+//            vecs.add(v.add(new Vector(new float[]{1, 0, 0})));
+//            vecs.add(v.add(new Vector(new float[]{-1, 0, 0})));
+//            vecs.add(v.add(new Vector(new float[]{0, 0, 1})));
+//            vecs.add(v.add(new Vector(new float[]{0, 0, -1})));
 //        }
 //        else {
-//            return false;
+//            vecs.add(v.add(new Vector(new float[]{1, 0, 0,1})));
+//            vecs.add(v.add(new Vector(new float[]{-1, 0, 0,1})));
+//            vecs.add(v.add(new Vector(new float[]{0, 0, 1,1})));
+//            vecs.add(v.add(new Vector(new float[]{0, 0, -1,1})));
 //        }
+//
+//        for(Vector vec:vecs) {
+//            if(game.isVectorInsideWorld(vec) && collisionArray[(int)vec.get(0)][-(int)vec.get(2)] == 1) {
+//                return true;
+//            }
+//        }
+//        return false;
+        if(v.get(0) < 0 || v.get(0) >= collisionArray.length || -v.get(2) < 0 || -v.get(2) >= collisionArray[0].length) {
+            return true;
+        }
+
+        if(collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     public boolean isCollidingModel(Vector v, Model m) {
@@ -558,8 +600,36 @@ public class Robot extends Movable {
         return false;
     }
 
-    public float getMovementCost(Vector current,Vector next) {
-        return current.sub(next).getNorm();
+    public float getMovementCost(Vector current,Vector next,int[][] collisionArray) {
+        List<Vector> vecs = new ArrayList<>();
+
+//        for(int i = 0;i < nearbyCollisionRange;i++) {
+//            vecs.add(next.add(new Vector(new float[]{i, 0, 0})));
+//            vecs.add(next.add(new Vector(new float[]{-i, 0, 0})));
+//            vecs.add(next.add(new Vector(new float[]{0, 0, i})));
+//            vecs.add(next.add(new Vector(new float[]{0, 0, -i})));
+//        }
+
+        vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
+        vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
+        vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
+        vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
+
+        float collisionCost = 0;
+        for(Vector v:vecs) {
+            int i = (int)v.get(0);
+            int j = -(int)v.get(2);
+
+            if(i >= 0 && i < collisionArray.length && j >= 0 && j < collisionArray[0].length) {
+                if (collisionArray[i][j] == 1) {
+                    //System.out.println("here" + " i:" + i + " j: " + j);
+                    collisionCost += 1;
+                }
+            }
+        }
+        //System.out.println(collisionCost);
+        float movementCost = current.sub(next).getNorm();
+        return movementCost*movementWeight + collisionCost*nearbyCollisionWeight;
     }
 
     public Mesh createMeshFromPath(List<Vector> path) {
@@ -588,7 +658,8 @@ public class Robot extends Movable {
     }
 
     public float heuristic(Vector goal, Vector p) {
-        return goal.sub(p).getNorm();
+        return goal.sub(p).getNorm() * heuristicWeight;
+        //return 0;
     }
 
     public Box selectBox(List<Box> boxes) {
