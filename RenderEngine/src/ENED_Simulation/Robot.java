@@ -375,7 +375,11 @@ public class Robot extends Movable {
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
-        if(!isCollidingModel(start,this)) {
+//        if(!isCollidingModel(start,this)) {
+//            return false;
+//        }
+
+        if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return false;
         }
 
@@ -402,7 +406,11 @@ public class Robot extends Movable {
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
-        if(!isCollidingModel(start,this)) {
+//        if(!isCollidingModel(start,this)) {
+//            return false;
+//        }
+
+        if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return false;
         }
 
