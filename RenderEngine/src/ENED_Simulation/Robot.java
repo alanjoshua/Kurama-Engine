@@ -4,12 +4,14 @@ import engine.DataStructure.GridNode;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
+import org.lwjgl.system.CallbackI;
 
 import java.util.*;
 
@@ -100,6 +102,7 @@ public class Robot extends Movable {
     public boolean isOkayToUpdatePosition(Vector newPos) {
         int i = (int)newPos.get(0);
         int j = -(int)newPos.get(2);
+
         return game.isVectorInsideWorld(newPos) && !(collisionMask[i][j] == 1);
     }
 
@@ -207,21 +210,50 @@ public class Robot extends Movable {
             }
         }
 
-        List<MOVEMENT> movements = getMovementFromPath(params);
+//        List<MOVEMENT> movements = getMovementFromPath(params);
+//        if(!isManualControl) {
+//            for (MOVEMENT m : movements) {
+//                if (m == MOVEMENT.FORWARD) {
+//                    moveForward(params);
+//                }
+//                if (m == MOVEMENT.BACKWARD) {
+//                    moveBackward(params);
+//                }
+//                if (m == MOVEMENT.LEFT) {
+//                    turnLeft(params);
+//                }
+//                if (m == MOVEMENT.RIGHT) {
+//                    turnRight(params);
+//                }
+//            }
+//        }
+
         if(!isManualControl) {
-            for (MOVEMENT m : movements) {
-                if (m == MOVEMENT.FORWARD) {
-                    moveForward(params);
+            Vector dir = getMovementFromPath(params);
+            if(dir != null) {
+
+                Matrix rotMatrix = this.getOrientation().getRotationMatrix();
+                Vector robotX = rotMatrix.getColumn(0);
+                Vector robotZ = rotMatrix.getColumn(2);
+                float angle = -dir.getAngleBetweenVectors(robotX);
+
+                Vector verticalAmount = robotX.cross(dir);
+                Vector temp = new Vector(3, 1);
+                float pointerDir = -verticalAmount.dot(temp);
+
+//        Logic to move a certain amount
+                Vector delta = robotZ.scalarMul(movementSpeed * params.timeDelta * Math.signum(pointerDir) * verticalAmount.getNorm());
+                Vector newPos = getPos().add(delta);
+
+                if (isOkayToUpdatePosition(newPos)) {
+                    this.pos = newPos;
+                    translationDirection = translationDirection.add(delta);
                 }
-                if (m == MOVEMENT.BACKWARD) {
-                    moveBackward(params);
-                }
-                if (m == MOVEMENT.LEFT) {
-                    turnLeft(params);
-                }
-                if (m == MOVEMENT.RIGHT) {
-                    turnRight(params);
-                }
+//
+////        Logic to rotate
+                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle))));
+                Quaternion newQ = rot.multiply(getOrientation());
+                setOrientation(newQ);
             }
         }
 
@@ -233,7 +265,7 @@ public class Robot extends Movable {
 
             if(diff < next.sub(oldV).getNorm()) {
                 pathModel.mesh.getVertices().set(0,this.pos);
-                if(diff <= 0.5) {
+                if(diff <= 2) {
                     pathModel.mesh.getVertices().remove(0);
                 }
                 pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
@@ -244,9 +276,10 @@ public class Robot extends Movable {
 
     }
 
-    public List<MOVEMENT> getMovementFromPath(ModelTickInput params) {
+    public Vector getMovementFromPath(ModelTickInput params) {
         if(pathModel == null) {
-            return new ArrayList<>();
+//            return new ArrayList<>();
+            return null;
         }
 
         List<MOVEMENT> movements = new ArrayList<>();
@@ -270,49 +303,51 @@ public class Robot extends Movable {
                 break;
             }
         }
+
         dir = dir.normalise();
+        return dir;
 
-        Vector cross = robotZ.cross(dir);
-        Vector temp = new Vector(3,1);
-        float dist = cross.dot(temp);
-
-        float pointerDir = robotZ.dot(dir);
-
-        MOVEMENT verticalDirection;
-        if(pointerDir < 0) {
-            verticalDirection = MOVEMENT.FORWARD;
-        }
-        else {
-            verticalDirection = MOVEMENT.BACKWARD;
-        }
-
-        //Turn right
-        if(dist < 0) {
-            if(Math.abs(dist) <= verticalOnlyThreshhold) {
-                movements.add(verticalDirection);
-            }
-            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
-                movements.add(verticalDirection);
-                movements.add(MOVEMENT.LEFT);
-            }
-            else {
-                movements.add(MOVEMENT.LEFT);
-            }
-        }
-        else {
-            if(Math.abs(dist) <= verticalOnlyThreshhold) {
-                movements.add(verticalDirection);
-            }
-            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
-                movements.add(verticalDirection);
-                movements.add(MOVEMENT.RIGHT);
-            }
-            else {
-                movements.add(MOVEMENT.RIGHT);
-            }
-        }
-
-        return movements;
+//        Vector cross = robotZ.cross(dir);
+//        Vector temp = new Vector(3,1);
+//        float dist = cross.dot(temp);
+//
+//        float pointerDir = robotZ.dot(dir);
+//
+//        MOVEMENT verticalDirection;
+//        if(pointerDir < 0) {
+//            verticalDirection = MOVEMENT.FORWARD;
+//        }
+//        else {
+//            verticalDirection = MOVEMENT.BACKWARD;
+//        }
+//
+//        //Turn right
+//        if(dist < 0) {
+//            if(Math.abs(dist) <= verticalOnlyThreshhold) {
+//                movements.add(verticalDirection);
+//            }
+//            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
+//                movements.add(verticalDirection);
+//                movements.add(MOVEMENT.LEFT);
+//            }
+//            else {
+//                movements.add(MOVEMENT.LEFT);
+//            }
+//        }
+//        else {
+//            if(Math.abs(dist) <= verticalOnlyThreshhold) {
+//                movements.add(verticalDirection);
+//            }
+//            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
+//                movements.add(verticalDirection);
+//                movements.add(MOVEMENT.RIGHT);
+//            }
+//            else {
+//                movements.add(MOVEMENT.RIGHT);
+//            }
+//        }
+//
+//        return movements;
     }
 
     public boolean isLineOfSight(Vector from,Vector to,int[][] collisionArray) {

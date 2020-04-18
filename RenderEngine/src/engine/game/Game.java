@@ -88,9 +88,9 @@ public abstract class Game implements Runnable {
         }
 
         if(boundMin!= null && boundMax!=null
-                && newPos.get(0) >= boundMin.get(0) && newPos.get(0) <= boundMax.get(0)
-                && newPos.get(1) >= boundMin.get(1) && newPos.get(1) <= boundMax.get(1)
-                && newPos.get(2) >= boundMin.get(2) && newPos.get(2) <= boundMax.get(2)) {
+                && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0)
+                && newPos.get(1) >= boundMin.get(1) && newPos.get(1) < boundMax.get(1)
+                && newPos.get(2) >= boundMin.get(2) && newPos.get(2) < boundMax.get(2)) {
             return true;
         }
         return false;
