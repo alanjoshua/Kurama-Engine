@@ -38,7 +38,7 @@ public class Robot extends Movable {
     public int nearbyCollisionRange = 3;
     public float heuristicWeight = 1f;
 
-    public int berzierResolution = 50;
+    public float berzierResolution = 50;
     public boolean hasPathFindingFailed = false;
 
     protected int[][] collisionMask;  //This mask includes everything except robot. This is only to be used for collision detection, not pathfinding
@@ -457,9 +457,9 @@ public class Robot extends Movable {
 
                         if(parent != null && isLineOfSight(parent,next.pos,collisionArray)) {
                             if(costSoFar.get(parent)+
-                                    getMovementCost(parent,next.pos,collisionArray)
+                                    getMovementCost(parent,next.pos)
                                     < costSoFar.get(next.pos)) {
-                                costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos,collisionArray));
+                                costSoFar.put(next.pos,costSoFar.get(parent)+getMovementCost(parent,next.pos));
                                 cameFrom.put(next.pos,parent);
                                 frontier.remove(next);
                                 next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
@@ -468,8 +468,8 @@ public class Robot extends Movable {
                             }
                         }
                         else {
-                            if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos,collisionArray) < costSoFar.get(next.pos)) {
-                                costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos,collisionArray));
+                            if(costSoFar.get(current.pos) + getMovementCost(current.pos,next.pos) < costSoFar.get(next.pos)) {
+                                costSoFar.put(next.pos,costSoFar.get(current.pos)+getMovementCost(current.pos,goal.pos));
                                 cameFrom.put(next.pos,current.pos);
                                 frontier.remove(next);
                                 next.priority = costSoFar.get(next.pos)+heuristic(goal.pos,next.pos);
@@ -587,12 +587,7 @@ public class Robot extends Movable {
             return false;
         }
 
-        if(collisionArray[(int)v.get(0)][-(int)v.get(2)] == 1) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return collisionArray[(int) v.get(0)][-(int) v.get(2)] == 1;
     }
 
     public boolean isCollidingModel(Vector v, Model m) {
@@ -601,18 +596,12 @@ public class Robot extends Movable {
         Vector boundMin = bounds[0];
         Vector boundMax = bounds[1];
 
-        Vector pos = v;
-
-        if (boundMin != null && boundMax != null
-                && pos.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0)
-                && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
-            return true;
-        }
-
-        return false;
+        return boundMin != null && boundMax != null
+                && v.get(0) >= boundMin.get(0) && v.get(0) <= boundMax.get(0)
+                && v.get(2) >= boundMin.get(2) && v.get(2) <= boundMax.get(2);
     }
 
-    public float getMovementCost(Vector current,Vector next,int[][] collisionArray) {
+    public float getMovementCost(Vector current, Vector next) {
         float collisionCost = 0;
 
 //        List<Vector> vecs = new ArrayList<>();
