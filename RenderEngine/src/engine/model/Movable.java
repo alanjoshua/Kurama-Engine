@@ -26,10 +26,7 @@ public class Movable extends Model {
 
     public void moveForward(ModelTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-        Vector x = rotationMatrix[0];
-        Vector y = new Vector(new float[] {0,1,0});
-        Vector z = x.cross(y);
+        Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
         Vector newPos = getPos().add(delta);
 
@@ -41,10 +38,7 @@ public class Movable extends Model {
 
     public void moveBackward(ModelTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-        Vector x = rotationMatrix[0];
-        Vector y = new Vector(new float[] {0,1,0});
-        Vector z = x.cross(y);
+        Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
         Vector newPos = getPos().add(delta);
 

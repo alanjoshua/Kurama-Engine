@@ -4,6 +4,7 @@ import engine.DataStructure.GridNode;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
@@ -33,9 +34,11 @@ public class Robot extends Movable {
     public float verticalOnlyThreshhold = 0.1f;
 
     public float movementWeight = 1f;
-    public float nearbyCollisionWeight = 10f;
+    public float nearbyCollisionWeight = 10f; //Right now, code for calculcating this is commented off in movementCost()
     public int nearbyCollisionRange = 3;
     public float heuristicWeight = 1f;
+
+    public int berzierResolution = 50;
 
     protected int[][] collisionMask;  //This mask includes everything except robot. This is only to be used for collision detection, not pathfinding
 
@@ -82,6 +85,10 @@ public class Robot extends Movable {
 
         if(input.keyDownOnce(input.TWO)) {
             isManualControl = !isManualControl;
+        }
+
+        if(input.keyDownOnce(input.THREE)) {
+            shouldShowPath = !shouldShowPath;
         }
 
         AI(params);
@@ -181,6 +188,7 @@ public class Robot extends Movable {
 
             int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
             if(!isPathToModelValid(collisionArray,boxBeingPathFounded)) {
+                System.out.println("creating new path");
                 pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded,collisionArray);
             }
         }
@@ -193,11 +201,12 @@ public class Robot extends Movable {
 
             int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
             if(!isPathToVectorValid(collisionArray,home)) {
+                System.out.println("creating new path");
                 pathFind(home, null,collisionArray);
             }
         }
 
-        List<MOVEMENT> movements = getMovementFromPath();
+        List<MOVEMENT> movements = getMovementFromPath(params);
         if(!isManualControl) {
             for (MOVEMENT m : movements) {
                 if (m == MOVEMENT.FORWARD) {
@@ -216,22 +225,25 @@ public class Robot extends Movable {
         }
 
 //        Logic to update path model                                  //Not implemented because this would mess with pathfind model
-//        if(pathModel.mesh.getVertices().size() > 2) {
-//            Vector oldV = pathModel.mesh.getVertices().get(0);
-//            Vector next = pathModel.mesh.getVertices().get(1);
-//            if(next.sub(this.pos).getNorm() < next.sub(oldV).getNorm()) {
-//                pathModel.mesh.getVertices().set(1,this.pos);
-//                if(next.sub(this.pos).getNorm() <= 0.5) {
-//                    pathModel.mesh.getVertices().remove(0);
-//                }
-//            }
-//        }
+        if(pathModel.mesh.getVertices().size() > 2) {
+            Vector oldV = pathModel.mesh.getVertices().get(0);
+            Vector next = pathModel.mesh.getVertices().get(1);
+            float diff = next.sub(this.pos).getNorm();
+
+            if(diff < next.sub(oldV).getNorm()) {
+                pathModel.mesh.getVertices().set(0,this.pos);
+                if(diff <= 1) {
+                    pathModel.mesh.getVertices().remove(0);
+                }
+                pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
+            }
+        }
 
         checkChanges();
 
     }
 
-    public List<MOVEMENT> getMovementFromPath() {
+    public List<MOVEMENT> getMovementFromPath(ModelTickInput params) {
         if(pathModel == null) {
             return new ArrayList<>();
         }
@@ -240,7 +252,24 @@ public class Robot extends Movable {
         List<Vector> vertices = pathModel.mesh.getVertices();
 
         Vector robotZ = this.getOrientation().getRotationMatrix().getColumn(2);
-        Vector dir = vertices.get(1).sub(vertices.get(0)).normalise();
+        Vector deltaZMove = new Vector(new float[]{0,0,1}).scalarMul(movementSpeed * params.timeDelta);
+        Vector deltaZTurn = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed * params.timeDelta).getRotationMatrix().getColumn(2);
+        Vector avgMove = deltaZMove.add(deltaZTurn);
+        float avgMoveSize = avgMove.getNorm();
+        float moveSizeSoFar = 0;
+        int counter = 0;
+        Vector dir = null;
+
+
+        while (moveSizeSoFar < avgMoveSize) {
+            dir = vertices.get(counter + 1).sub(vertices.get(counter));
+            moveSizeSoFar += dir.getNorm();
+            counter++;
+            if (counter == vertices.size()-1) {
+                break;
+            }
+        }
+        dir = dir.normalise();
 
         Vector cross = robotZ.cross(dir);
         Vector temp = new Vector(3,1);
@@ -496,10 +525,7 @@ public class Robot extends Movable {
                         finalPath.add(path.get(i));
                     }
 
-                    Mesh pathMesh = createMeshFromPath(finalPath);
-                    pathMesh.drawMode = GL_LINES;
-                    ModelBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
-                    pathMesh.initOpenGLMeshData();
+                    Mesh pathMesh = createMeshFromPath(smoothenPath(finalPath));
 
                     if(pathModel == null) {
                         pathModel = new Model(game, pathMesh, identifier + "-path", false);
@@ -589,17 +615,14 @@ public class Robot extends Movable {
     public float getMovementCost(Vector current,Vector next,int[][] collisionArray) {
         List<Vector> vecs = new ArrayList<>();
 
-//        for(int i = 0;i < nearbyCollisionRange;i++) {
-//            vecs.add(next.add(new Vector(new float[]{i, 0, 0})));
-//            vecs.add(next.add(new Vector(new float[]{-i, 0, 0})));
-//            vecs.add(next.add(new Vector(new float[]{0, 0, i})));
-//            vecs.add(next.add(new Vector(new float[]{0, 0, -i})));
-//        }
-
         vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
         vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
         vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
         vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
+        vecs.add(next.add(new Vector(new float[]{1,0,1})));
+        vecs.add(next.add(new Vector(new float[]{-1,0,1})));
+        vecs.add(next.add(new Vector(new float[]{1,0,-1})));
+        vecs.add(next.add(new Vector(new float[]{-1,0,-1})));
 
         float collisionCost = 0;
         for(Vector v:vecs) {
@@ -608,14 +631,67 @@ public class Robot extends Movable {
 
             if(i >= 0 && i < collisionArray.length && j >= 0 && j < collisionArray[0].length) {
                 if (collisionArray[i][j] == 1) {
-                    //System.out.println("here" + " i:" + i + " j: " + j);
                     collisionCost += 1;
                 }
             }
         }
-        //System.out.println(collisionCost);
+
         float movementCost = current.sub(next).getNorm();
         return movementCost*movementWeight + collisionCost*nearbyCollisionWeight;
+    }
+
+    public List<Vector> smoothenPath(List<Vector> path) {
+
+        if(path.size() < 3) {
+            return path;
+        }
+
+        List<Vector> newPath = new ArrayList<>();
+
+        List<Vector> tempVerts = new ArrayList<>();
+        tempVerts.add(path.get(0));
+
+        for(int i = 1;i < path.size();i+=1) {
+            tempVerts.add(path.get(i-1).add(path.get(i)).scalarMul(0.5f));  //Add point to middle
+            tempVerts.add(path.get(i));
+        }
+
+        newPath.add(tempVerts.get(0));
+        for(int i = 2;i < tempVerts.size();i+=2) {
+
+            if(i != tempVerts.size()-1) {
+                Vector control = tempVerts.get(i);
+                Vector start = tempVerts.get(i - 1).add(control).scalarMul(0.5f);
+                Vector end = tempVerts.get(i + 1).add(control).scalarMul(0.5f);
+//            Vector start = tempVerts.get(i-1);
+//            Vector end = tempVerts.get(i+1);
+
+
+                if (Math.abs(control.sub(tempVerts.get(i - 1)).normalise().dot(tempVerts.get(i + 1).sub(control).normalise())) < 0.9) {  //Find additional points only if not straight
+                    newPath.add(start);
+                    for (int k = 0; k < berzierResolution; k++) {
+                        Vector v = q(k / berzierResolution, start, control, end);
+                        newPath.add(v);
+                    }
+                    newPath.add(end);
+                }
+
+                newPath.add(tempVerts.get(i + 1));
+            }
+            else {
+                newPath.add(tempVerts.get(i));
+            }
+        }
+
+        System.out.println("path size: "+path.size());
+        System.out.println("temp verts: "+tempVerts.size());
+        System.out.println("new path: "+ newPath.size());
+
+        return newPath;
+    }
+
+    public Vector q(float t,Vector start, Vector control, Vector end) {
+        return ((start.scalarMul(1-t).add(control.scalarMul(t))).scalarMul(1-t)).add((control.scalarMul(1-t).add(end.scalarMul(t))).scalarMul(t));
     }
 
     public Mesh createMeshFromPath(List<Vector> path) {
@@ -640,6 +716,9 @@ public class Robot extends Movable {
         List<List<Vector>> vertAttribs = new ArrayList<>();
         vertAttribs.add(path);
         Mesh pathMesh = new Mesh(indices,faces,vertAttribs);
+        pathMesh.drawMode = GL_LINES;
+        ModelBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
+        pathMesh.initOpenGLMeshData();
         return pathMesh;
     }
 
