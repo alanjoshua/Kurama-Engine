@@ -557,27 +557,6 @@ public class Robot extends Movable {
     }
 
     public boolean isCollidingWithAnyModel(Vector v, int[][] collisionArray) {
-//        List<Vector> vecs = new ArrayList<>();
-//        vecs.add(v);
-//        if(v.getNumberOfDimensions() == 3) {
-//            vecs.add(v.add(new Vector(new float[]{1, 0, 0})));
-//            vecs.add(v.add(new Vector(new float[]{-1, 0, 0})));
-//            vecs.add(v.add(new Vector(new float[]{0, 0, 1})));
-//            vecs.add(v.add(new Vector(new float[]{0, 0, -1})));
-//        }
-//        else {
-//            vecs.add(v.add(new Vector(new float[]{1, 0, 0,1})));
-//            vecs.add(v.add(new Vector(new float[]{-1, 0, 0,1})));
-//            vecs.add(v.add(new Vector(new float[]{0, 0, 1,1})));
-//            vecs.add(v.add(new Vector(new float[]{0, 0, -1,1})));
-//        }
-//
-//        for(Vector vec:vecs) {
-//            if(game.isVectorInsideWorld(vec) && collisionArray[(int)vec.get(0)][-(int)vec.get(2)] == 1) {
-//                return true;
-//            }
-//        }
-//        return false;
         if(v.get(0) < 0 || v.get(0) >= collisionArray.length || -v.get(2) < 0 || -v.get(2) >= collisionArray[0].length) {
             return true;
         }
@@ -600,7 +579,6 @@ public class Robot extends Movable {
 
         if (boundMin != null && boundMax != null
                 && pos.get(0) >= boundMin.get(0) && pos.get(0) <= boundMax.get(0)
-//                       && pos.get(1) > boundMin.get(1) - 1 && pos.get(1) < boundMax.get(1) + 1
                 && pos.get(2) >= boundMin.get(2) && pos.get(2) <= boundMax.get(2)) {
             return true;
         }
