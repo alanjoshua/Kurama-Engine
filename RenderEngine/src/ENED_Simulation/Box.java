@@ -9,7 +9,9 @@ import engine.model.Model;
 public class Box extends Model {
 
     public Vector barCode; // 4 digit barcode
-    public float scanDirSensitivity = 0.8f;  //0 - not sensitive to direction, 1 - has to be exactly perpendicular
+    public float scanDirSensitivity = 0.95f;  //0 - not sensitive to direction, 1 - has to be exactly perpendicular
+    public float scanRotationRange = 0.05f;
+    public float scanXProximity = 2;
 
     public Box(Game game, Mesh mesh, String identifier, Vector barCode) {
         super(game,mesh, identifier);
@@ -22,7 +24,7 @@ public class Box extends Model {
 
     public boolean isRobotInCorrectPositionToScan(Robot robot) {
 //        Vector dir = robot.getPos().sub(this.getPos());
-        Vector dir = robot.getPos().sub(this.getPos().add(robot.getVectorToFrontFromPos(this)));
+        Vector dir = robot.getPos().sub(this.getPos().add(robot.getDirectionToFrontFromCentre(this)));
         float dist = dir.getNorm();
 
         if(dist <= robot.scanRadius) {

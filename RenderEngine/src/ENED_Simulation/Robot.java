@@ -11,7 +11,6 @@ import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
 
@@ -36,13 +35,13 @@ public class Robot extends Movable {
     public float verticalOnlyThreshhold = 0.1f;
 
     public float movementCost = 1f;
-    public float nearbyCollisionCost = 0f; //Right now, code for calculcating this is commented off in movementCost()
+    public float nearbyCollisionCost = 10f; //Right now, code for calculcating this is commented off in movementCost()
     public int nearbyCollisionRange = 3;
     public float heuristicWeight = 1f;
 
     public float berzierResolution = 50;
     public boolean hasPathFindingFailed = false;
-    public float pathFindDistanceFromModel = 3;
+    public float pathFindDistanceFromModel = 2f;
 
     protected int[][] collisionMask;  //This mask includes everything except robot and models marked as isCollidable = false
     public List<Vector> boundData;
@@ -126,10 +125,11 @@ public class Robot extends Movable {
         }
     }
 
-    public void checkChanges() {
+    public void checkChanges(ModelTickInput params) {
         translationDirection = translationDirection.normalise();
 
         if(boxPicked == null) {
+            orientTowardsBoxIfNear(params);
             checkShouldPickBox();
         }
         else {   //Already picked a box
@@ -144,6 +144,113 @@ public class Robot extends Movable {
             System.out.println("box being searched: "+search + " barcode: "+search.barCode);
             barcodeBeingSearched = search.barCode;
         }
+    }
+
+//    Returns true if actually orienting towards the box
+    public boolean orientTowardsBoxIfNear(ModelTickInput params) {
+        Vector directionFromCentre = getDirectionToFrontFromCentre(boxBeingPathFounded);
+        Vector dir = pos.sub(boxBeingPathFounded.getPos().add(directionFromCentre));
+        float dist = dir.getNorm();
+
+        Matrix robotMatrix = this.getOrientation().getRotationMatrix();
+        Matrix robotInBoxView = boxBeingPathFounded.getWorldToObject().matMul(pos.addDimensionToVec(1));
+        Vector diff = robotInBoxView.getColumn(0).add(directionFromCentre.addDimensionToVec(1));
+        float robotZ = diff.get(2);  // z position of robot from box's perspective
+        float robotX = -diff.get(0);
+
+        System.out.println("robotX: "+robotX);
+        System.out.println("robotZ: "+robotZ);
+
+        if (dist <= scanRadius && robotZ >= 0  && robotX <= boxBeingPathFounded.scanXProximity && robotX >= 0) {
+
+            Matrix boxMatrix = boxBeingPathFounded.getOrientation().getRotationMatrix();
+            Vector cross = boxMatrix.getColumn(2).cross(robotMatrix.getColumn(0));
+            Vector temp = new Vector(new float[]{1, 1, 1});
+            float rotation = cross.dot(temp);
+            float verticalDirection = boxMatrix.getColumn(2).dot(robotMatrix.getColumn(0));
+
+//            System.out.println("robotX: "+robotX);
+//            System.out.println("robotZ: "+robotZ);
+            System.out.println("rotation: "+rotation);
+            System.out.println("vertical: "+verticalDirection);
+
+            if (verticalDirection > boxBeingPathFounded.scanDirSensitivity
+                    && robotZ >= 0 && robotZ <= scanRadius
+                    && Math.abs(rotation) < boxBeingPathFounded.scanRotationRange
+                    && robotX <= boxBeingPathFounded.scanXProximity && robotX >= 0) {
+
+               //Reached correct position
+//                Move forward to scan box
+                Vector delta = robotMatrix.getColumn(2).scalarMul(movementSpeed * 1f  * params.timeDelta * -1);
+                Vector newPos = getPos().add(delta);
+
+                if (isOkayToUpdatePosition(newPos)) {
+                    this.pos = newPos;
+                    translationDirection = translationDirection.add(delta);
+                }
+                System.out.println("found spot. Moving forward");
+                return true;
+            }
+
+//            If robot is too far away in the z direction (relative to box) from the box but everything else is fine or if it is perpendicular to the box
+            if (verticalDirection > boxBeingPathFounded.scanDirSensitivity
+                    && robotZ > scanRadius
+                                ||
+                    (!(verticalDirection > boxBeingPathFounded.scanDirSensitivity)
+                    && (Math.abs(rotation) < boxBeingPathFounded.scanRotationRange)
+                    && !(robotX <= boxBeingPathFounded.scanXProximity && robotX >= 0)))  {
+
+                Vector delta = robotMatrix.getColumn(2).scalarMul(movementSpeed * 1f  * params.timeDelta);
+                Vector newPos = getPos().add(delta);
+
+                if (isOkayToUpdatePosition(newPos)) {
+                    this.pos = newPos;
+                    translationDirection = translationDirection.add(delta);
+                }
+
+                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * -1);
+                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
+                    Quaternion newQ = rot.multiply(getOrientation());
+                    setOrientation(newQ);
+                }
+
+                System.out.println("backing");
+            }
+
+//            If not in correct in correct rotational position
+            else {
+                System.out.println("trying to turn");
+                //Not in correct position, rotate to correct orientation
+//               Logic to rotate
+                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(-rotation));
+                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
+                    Quaternion newQ = rot.multiply(getOrientation());
+                    setOrientation(newQ);
+                }
+
+            }
+            return true;
+        }
+
+//        else if(dist <= scanRadius && robotZ >= 0  && robotX < 0) {
+//            Vector delta = robotMatrix.getColumn(2).scalarMul(movementSpeed * 1f  * params.timeDelta);
+//            Vector newPos = getPos().add(delta);
+//
+//            if (isOkayToUpdatePosition(newPos)) {
+//                this.pos = newPos;
+//                translationDirection = translationDirection.add(delta);
+//            }
+//
+//            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * 1);
+//            if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
+//                Quaternion newQ = rot.multiply(getOrientation());
+//                setOrientation(newQ);
+//            }
+//
+//            System.out.println("backing cuz robot entered from -x");
+//        }
+
+        return false;
     }
 
     public void updatePickedBox() {
@@ -197,51 +304,27 @@ public class Robot extends Movable {
                 boxBeingPathFounded = selectBox(game.boxesToBeSearched);
             }
 
-//            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
-//            modelsToAvoidCreatingCollisionMasks.add(this);
-//            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
-
             Vector destination = getModelSearchDestination(boxBeingPathFounded);
             if(!isPathToVectorValid(collisionMask,destination)) {
-                System.out.println("creating new path");
                 pathFind(destination, null,collisionMask);
             }
         }
 
 //        Logic if moving towards home/destination with box
         else {
-//            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
-//            modelsToAvoidCreatingCollisionMasks.add(this);
-//            modelsToAvoidCreatingCollisionMasks.add(boxPicked);
-//            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
-
             if(!isPathToVectorValid(collisionMask,home)) {
-                System.out.println("creating new path");
                 pathFind(home, null,collisionMask);
             }
         }
 
-//        List<MOVEMENT> movements = getMovementFromPath(params);
-//        if(!isManualControl) {
-//            for (MOVEMENT m : movements) {
-//                if (m == MOVEMENT.FORWARD) {
-//                    moveForward(params);
-//                }
-//                if (m == MOVEMENT.BACKWARD) {
-//                    moveBackward(params);
-//                }
-//                if (m == MOVEMENT.LEFT) {
-//                    turnLeft(params);
-//                }
-//                if (m == MOVEMENT.RIGHT) {
-//                    turnRight(params);
-//                }
-//            }
-//        }
+        boolean isOrientingTowardsBox = false;
+        if(boxBeingPathFounded != null && orientTowardsBoxIfNear(params)) {
+            isOrientingTowardsBox = true;
+        }
 
-        if(!isManualControl) {
+        if(!isManualControl && !isOrientingTowardsBox) {
             Vector dir = getMovementFromPath(params);
-            if(dir != null) {
+            if (dir != null) {
 
                 Matrix rotMatrix = this.getOrientation().getRotationMatrix();
                 Vector robotX = rotMatrix.getColumn(0);
@@ -252,7 +335,7 @@ public class Robot extends Movable {
                 Vector temp = new Vector(3, 1);
                 float pointerDir = -verticalAmount.dot(temp);
 
-//        Logic to move a certain amount
+//             Logic to move a certain amount
                 Vector delta = robotZ.scalarMul(movementSpeed * params.timeDelta * Math.signum(pointerDir) * verticalAmount.getNorm());
                 Vector newPos = getPos().add(delta);
 
@@ -261,40 +344,40 @@ public class Robot extends Movable {
                     translationDirection = translationDirection.add(delta);
                 }
 //
-////        Logic to rotate
+////            Logic to rotate
                 Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle))));
-                if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
+                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
                     Quaternion newQ = rot.multiply(getOrientation());
                     setOrientation(newQ);
                 }
             }
         }
 
-//        Logic to update path model                                  //Not implemented because this would mess with pathfind model
+//        Logic to update path model
         if(pathModel != null && pathModel.mesh.getVertices().size() > 2) {
             Vector oldV = pathModel.mesh.getVertices().get(0);
             Vector next = pathModel.mesh.getVertices().get(1);
             float diff = next.sub(this.pos).getNorm();
 
-            if(diff < next.sub(oldV).getNorm()) {
+//            if(diff < next.sub(oldV).getNorm()) {
                 pathModel.mesh.getVertices().set(0,this.pos);
                 if(diff <= 2) {
                     pathModel.mesh.getVertices().remove(0);
                 }
                 pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
-            }
+//            }
         }
 
-        checkChanges();
+        checkChanges(params);
 
     }
 
     public Vector getModelSearchDestination(Model search) {
-        Vector res = search.getPos().add(getVectorToFrontFromPos(search).scalarMul(pathFindDistanceFromModel));
+        Vector res = search.getPos().add(getDirectionToFrontFromCentre(search).scalarMul(pathFindDistanceFromModel));
         return res;
     }
 
-    public Vector getVectorToFrontFromPos(Model search) {
+    public Vector getDirectionToFrontFromCentre(Model search) {
         Vector[] bounds = Model.getBounds(search.boundingbox);
         float deltaZ = (bounds[1].get(2) - bounds[0].get(2)) / 2f;
 
@@ -305,14 +388,10 @@ public class Robot extends Movable {
 
     public Vector getMovementFromPath(ModelTickInput params) {
         if(pathModel == null) {
-//            return new ArrayList<>();
             return null;
         }
 
-        List<MOVEMENT> movements = new ArrayList<>();
         List<Vector> vertices = pathModel.mesh.getVertices();
-
-        Vector robotZ = this.getOrientation().getRotationMatrix().getColumn(2);
         Vector deltaZMove = new Vector(new float[]{0,0,1}).scalarMul(movementSpeed * params.timeDelta);
         Vector deltaZTurn = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed * params.timeDelta).getRotationMatrix().getColumn(2);
         Vector avgMove = deltaZMove.add(deltaZTurn);
@@ -320,7 +399,6 @@ public class Robot extends Movable {
         float moveSizeSoFar = 0;
         int counter = 0;
         Vector dir = null;
-
 
         while (moveSizeSoFar < avgMoveSize) {
             dir = vertices.get(counter + 1).sub(vertices.get(counter));
@@ -333,48 +411,6 @@ public class Robot extends Movable {
 
         dir = dir.normalise();
         return dir;
-
-//        Vector cross = robotZ.cross(dir);
-//        Vector temp = new Vector(3,1);
-//        float dist = cross.dot(temp);
-//
-//        float pointerDir = robotZ.dot(dir);
-//
-//        MOVEMENT verticalDirection;
-//        if(pointerDir < 0) {
-//            verticalDirection = MOVEMENT.FORWARD;
-//        }
-//        else {
-//            verticalDirection = MOVEMENT.BACKWARD;
-//        }
-//
-//        //Turn right
-//        if(dist < 0) {
-//            if(Math.abs(dist) <= verticalOnlyThreshhold) {
-//                movements.add(verticalDirection);
-//            }
-//            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
-//                movements.add(verticalDirection);
-//                movements.add(MOVEMENT.LEFT);
-//            }
-//            else {
-//                movements.add(MOVEMENT.LEFT);
-//            }
-//        }
-//        else {
-//            if(Math.abs(dist) <= verticalOnlyThreshhold) {
-//                movements.add(verticalDirection);
-//            }
-//            else if(Math.abs(dist) > verticalOnlyThreshhold && Math.abs(dist) <= turnOnlyThreshhold) {
-//                movements.add(verticalDirection);
-//                movements.add(MOVEMENT.RIGHT);
-//            }
-//            else {
-//                movements.add(MOVEMENT.RIGHT);
-//            }
-//        }
-//
-//        return movements;
     }
 
     public boolean isLineOfSight(Vector from,Vector to,int[][] collisionArray) {
@@ -696,27 +732,27 @@ public class Robot extends Movable {
     public float getMovementCost(Vector current, Vector next) {
         float collisionCost = 0;
 
-//        List<Vector> vecs = new ArrayList<>();
-//
-//        vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
-//        vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
-//        vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
-//        vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
-//        vecs.add(next.add(new Vector(new float[]{1,0,1})));
-//        vecs.add(next.add(new Vector(new float[]{-1,0,1})));
-//        vecs.add(next.add(new Vector(new float[]{1,0,-1})));
-//        vecs.add(next.add(new Vector(new float[]{-1,0,-1})));
-//
-//        for(Vector v:vecs) {
-//            int i = (int)v.get(0);
-//            int j = -(int)v.get(2);
-//
-//            if(i >= 0 && i < collisionArray.length && j >= 0 && j < collisionArray[0].length) {
-//                if (collisionArray[i][j] == 1) {
-//                    collisionCost += 1;
-//                }
-//            }
-//        }
+        List<Vector> vecs = new ArrayList<>();
+
+        vecs.add(next.add(new Vector(new float[]{1, 0, 0})));
+        vecs.add(next.add(new Vector(new float[]{-1, 0, 0})));
+        vecs.add(next.add(new Vector(new float[]{0, 0, 1})));
+        vecs.add(next.add(new Vector(new float[]{0, 0, -1})));
+        vecs.add(next.add(new Vector(new float[]{1,0,1})));
+        vecs.add(next.add(new Vector(new float[]{-1,0,1})));
+        vecs.add(next.add(new Vector(new float[]{1,0,-1})));
+        vecs.add(next.add(new Vector(new float[]{-1,0,-1})));
+
+        for(Vector v:vecs) {
+            int i = (int)v.get(0);
+            int j = -(int)v.get(2);
+
+            if(i >= 0 && i < collisionMask.length && j >= 0 && j < collisionMask[0].length) {
+                if (collisionMask[i][j] == 1) {
+                    collisionCost += 1;
+                }
+            }
+        }
 
         float movementCost = current.sub(next).getNorm();
         return movementCost* this.movementCost + collisionCost* nearbyCollisionCost;
@@ -745,9 +781,6 @@ public class Robot extends Movable {
                 Vector control = tempVerts.get(i);
                 Vector start = tempVerts.get(i - 1).add(control).scalarMul(0.5f);
                 Vector end = tempVerts.get(i + 1).add(control).scalarMul(0.5f);
-//            Vector start = tempVerts.get(i-1);
-//            Vector end = tempVerts.get(i+1);
-
 
                 if (Math.abs(control.sub(tempVerts.get(i - 1)).normalise().dot(tempVerts.get(i + 1).sub(control).normalise())) < 0.9) {  //Find additional points only if not straight
                     newPath.add(start);
@@ -764,10 +797,6 @@ public class Robot extends Movable {
                 newPath.add(tempVerts.get(i));
             }
         }
-
-        System.out.println("path size: "+path.size());
-        System.out.println("temp verts: "+tempVerts.size());
-        System.out.println("new path: "+ newPath.size());
 
         return newPath;
     }
