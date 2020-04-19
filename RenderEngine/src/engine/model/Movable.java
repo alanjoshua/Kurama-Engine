@@ -1,6 +1,7 @@
 package engine.model;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.game.Game;
@@ -22,6 +23,10 @@ public class Movable extends Model {
 
     public boolean isOkayToUpdatePosition(Vector newPos) {
         return game.isVectorInsideWorld(newPos);
+    }
+
+    public boolean isOkayToUpdateRotation(Matrix rot) {
+        return true;
     }
 
     public void moveForward(ModelTickInput params) {
@@ -50,14 +55,18 @@ public class Movable extends Model {
 
     public void turnLeft(ModelTickInput params) {
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed* params.timeDelta);
-        Quaternion newQ = rot.multiply(getOrientation());
-        setOrientation(newQ);
+        if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
+            Quaternion newQ = rot.multiply(getOrientation());
+            setOrientation(newQ);
+        }
     }
 
     public void turnRight(ModelTickInput params) {
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -rotationSpeed* params.timeDelta);
-        Quaternion newQ = rot.multiply(getOrientation());
-        setOrientation(newQ);
+        if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
+            Quaternion newQ = rot.multiply(getOrientation());
+            setOrientation(newQ);
+        }
     }
 
 }

@@ -42,15 +42,17 @@ public class Robot extends Movable {
 
     public float berzierResolution = 50;
     public boolean hasPathFindingFailed = false;
+    public float pathFindDistanceFromModel = 3;
 
-    protected int[][] collisionMask;  //This mask includes everything except robot. This is only to be used for collision detection, not pathfinding
+    protected int[][] collisionMask;  //This mask includes everything except robot and models marked as isCollidable = false
+    public List<Vector> boundData;
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(game,mesh, identifier);
         this.game = game;
         input = game.getInput();
         translationDirection = new Vector(3,0);
-        home = new Vector(new float[]{3,1,-3,1});
+        home = new Vector(new float[]{5,1,-5});
     }
 
     @Override
@@ -60,7 +62,9 @@ public class Robot extends Movable {
 
         List<Model> doNotMask = new ArrayList<>();
         doNotMask.add(this);
+        doNotMask.add(boxPicked);
         collisionMask = game.createCollisionArray(doNotMask);
+        boundData = game.getModelOutlineCollisionData(this);
 
         if(input.keyDown(input.UP_ARROW)) {
             moveForward(params);
@@ -100,11 +104,17 @@ public class Robot extends Movable {
 
     @Override
     public boolean isOkayToUpdatePosition(Vector newPos) {
+//        return !isCollidingWithAnyModel(boundData,newPos.sub(pos).addDimensionToVec(1),collisionMask);
+
         int i = (int)newPos.get(0);
         int j = -(int)newPos.get(2);
-
         return game.isVectorInsideWorld(newPos) && !(collisionMask[i][j] == 1);
     }
+
+//    @Override
+//    public boolean isOkayToUpdateRotation(Matrix rot) {
+//        return !isCollidingWithAnyModel(boundData,rot,collisionMask);
+//    }
 
     public void dropBox() {
         if(boxPicked != null) {
@@ -156,6 +166,7 @@ public class Robot extends Movable {
             if(currBox.barCode.equals(barcodeBeingSearched)) {
                 System.out.println("Required box was found");
                 boxPicked = currBox;
+                boxPicked.isCollidable = false;
                 boxPicked.barCode.display();
                 pathModel = null;
                 boxPicked.setRandomColorToBoundingBox();
@@ -186,27 +197,27 @@ public class Robot extends Movable {
                 boxBeingPathFounded = selectBox(game.boxesToBeSearched);
             }
 
-            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
-            modelsToAvoidCreatingCollisionMasks.add(this);
-            modelsToAvoidCreatingCollisionMasks.add(boxBeingPathFounded);
+//            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
+//            modelsToAvoidCreatingCollisionMasks.add(this);
+//            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
 
-            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
-            if(!isPathToModelValid(collisionArray,boxBeingPathFounded)) {
+            Vector destination = getModelSearchDestination(boxBeingPathFounded);
+            if(!isPathToVectorValid(collisionMask,destination)) {
                 System.out.println("creating new path");
-                pathFind(boxBeingPathFounded.getPos(), boxBeingPathFounded,collisionArray);
+                pathFind(destination, null,collisionMask);
             }
         }
 
 //        Logic if moving towards home/destination with box
         else {
-            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
-            modelsToAvoidCreatingCollisionMasks.add(this);
-            modelsToAvoidCreatingCollisionMasks.add(boxPicked);
+//            List<Model> modelsToAvoidCreatingCollisionMasks = new ArrayList<>();
+//            modelsToAvoidCreatingCollisionMasks.add(this);
+//            modelsToAvoidCreatingCollisionMasks.add(boxPicked);
+//            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
 
-            int[][] collisionArray = game.createCollisionArray(modelsToAvoidCreatingCollisionMasks);
-            if(!isPathToVectorValid(collisionArray,home)) {
+            if(!isPathToVectorValid(collisionMask,home)) {
                 System.out.println("creating new path");
-                pathFind(home, null,collisionArray);
+                pathFind(home, null,collisionMask);
             }
         }
 
@@ -252,8 +263,10 @@ public class Robot extends Movable {
 //
 ////        Logic to rotate
                 Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle))));
-                Quaternion newQ = rot.multiply(getOrientation());
-                setOrientation(newQ);
+                if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
+                    Quaternion newQ = rot.multiply(getOrientation());
+                    setOrientation(newQ);
+                }
             }
         }
 
@@ -274,6 +287,20 @@ public class Robot extends Movable {
 
         checkChanges();
 
+    }
+
+    public Vector getModelSearchDestination(Model search) {
+        Vector res = search.getPos().add(getVectorToFrontFromPos(search).scalarMul(pathFindDistanceFromModel));
+        return res;
+    }
+
+    public Vector getVectorToFrontFromPos(Model search) {
+        Vector[] bounds = Model.getBounds(search.boundingbox);
+        float deltaZ = (bounds[1].get(2) - bounds[0].get(2)) / 2f;
+
+        Vector z = search.getOrientation().getRotationMatrix().getColumn(2);
+        Vector res = z.scalarMul(deltaZ);
+        return res;
     }
 
     public Vector getMovementFromPath(ModelTickInput params) {
@@ -375,9 +402,6 @@ public class Robot extends Movable {
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
-//        if(!isCollidingModel(start,this)) {
-//            return false;
-//        }
 
         if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return false;
@@ -406,9 +430,6 @@ public class Robot extends Movable {
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
-//        if(!isCollidingModel(start,this)) {
-//            return false;
-//        }
 
         if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return false;
@@ -631,6 +652,34 @@ public class Robot extends Movable {
         }
 
         return collisionArray[(int) v.get(0)][-(int) v.get(2)] == 1;
+    }
+
+    public static boolean isCollidingWithAnyModel(List<Vector> vList, Vector offset, int[][] collisionArray) {
+        for(Vector v: vList) {
+           Vector t = v.add(offset);
+            if (t.get(0) < 0 || t.get(0) >= collisionArray.length || -t.get(2) < 0 || -t.get(2) >= collisionArray[0].length) {
+               return true;
+            }
+            if(collisionArray[(int) t.get(0)][-(int) t.get(2)] == 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isCollidingWithAnyModel(List<Vector> vList, Matrix rot, int[][] collisionArray) {
+        for(Vector v: vList) {
+            Vector t = rot.matMul(v.removeDimensionFromVec(3)).getColumn(0);
+            if (t.get(0) < 0 || t.get(0) >= collisionArray.length || -t.get(2) < 0 || -t.get(2) >= collisionArray[0].length) {
+                return true;
+            }
+            if(collisionArray[(int) t.get(0)][-(int) t.get(2)] == 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public boolean isCollidingModel(Vector v, Model m) {

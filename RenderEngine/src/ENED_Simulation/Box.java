@@ -21,7 +21,8 @@ public class Box extends Model {
 //    Meaning, the robot has scanners in both sides
 
     public boolean isRobotInCorrectPositionToScan(Robot robot) {
-        Vector dir = robot.getPos().sub(this.getPos());
+//        Vector dir = robot.getPos().sub(this.getPos());
+        Vector dir = robot.getPos().sub(this.getPos().add(robot.getVectorToFrontFromPos(this)));
         float dist = dir.getNorm();
 
         if(dist <= robot.scanRadius) {

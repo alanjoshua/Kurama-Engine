@@ -37,7 +37,7 @@ public class Simulation extends Game {
 
     protected Model lookAtModel;
     protected boolean isGameRunning = true;
-    public boolean shouldOnlyOutline = true;
+    public boolean shouldOnlyOutline = false;
 
     public int simWidth = 100;
     public int simDepth = 100;
@@ -138,9 +138,9 @@ public class Simulation extends Game {
         hints.addConstantColor = null;
         hints.convertToLines = true;
         robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
-        robot.setPos(new Vector(new float[]{0,1,0}));
         robot.shouldShowCollisionBox = true;
         robot.shouldShowPath = true;
+        robot.setPos(robot.home);
 
         try {
             Texture tex = new Texture(robotTextureLoc);
@@ -224,6 +224,7 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{0.5f,0.5f,0.5f}));
+                platform.shouldShowCollisionBox = true;
                 models.add(platform);
 
 //            Create two rows of boxes
