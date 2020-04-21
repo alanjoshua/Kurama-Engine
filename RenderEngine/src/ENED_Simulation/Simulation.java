@@ -180,11 +180,12 @@ public class Simulation extends Game {
     public void initCrates() {
 
         Random rand = new Random();
-        rand.setSeed(seed);
+        //rand.setSeed(seed);
         Mesh boxMesh;
         Mesh platformMesh;
         float platY = 0;
         float x,y = 1.5f,z;
+        List<Vector> barcodes = new ArrayList<>();
 
         Model.MiniBehaviour tempRot = ((m, params) -> {
             Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
@@ -232,7 +233,13 @@ public class Simulation extends Game {
                 z = -boxRows[r] + 1;
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
+
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    while(barcodes.indexOf(barCode) != -1) {
+                        barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    }
+                    barcodes.add(barCode);
+
                     Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     boxesToBeSearched.add(box);
@@ -242,7 +249,13 @@ public class Simulation extends Game {
                 z = -boxRows[r+1] + 1;
                 for(int k = 0; k < boxesPerSide; k++) {
                     x = rand.nextInt(boxCols[c+1] - boxCols[c]) + boxCols[c] - 1;
+
                     Vector barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    while(barcodes.indexOf(barCode) != -1) {
+                        barCode = new Vector(new float[]{rand.nextInt(2),rand.nextInt(2),rand.nextInt(2),rand.nextInt(2)});
+                    }
+                    barcodes.add(barCode);
+
                     Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
                     box.setPos(new Vector(new float[]{x,y,z}));
                     box.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),180));
@@ -254,6 +267,12 @@ public class Simulation extends Game {
 
         models.addAll(boxesToBeSearched);
 
+//        System.out.println("All barcodes");
+//
+//        for(Vector v: barcodes) {
+//            v.display();
+//        }
+
     }
 
     public Box requestNextBarcode() {
@@ -264,6 +283,11 @@ public class Simulation extends Game {
         }
 
         Random rand = new Random();
+
+        if(boxesToBeSearched.size() == 0) {
+            return null;
+        }
+
         Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
         ret.setBoundingBoxColor(new Vector(new float[]{0,1,0,1}));
         ret.shouldShowCollisionBox = true;
