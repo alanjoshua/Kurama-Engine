@@ -180,8 +180,6 @@ public class Robot extends Movable {
         }
 
         Vector directionFromCentre = getDirectionToFrontFromCentre(boxBeingPathFounded);
-        //Vector dir = pos.sub(boxBeingPathFounded.getPos().add(directionFromCentre));
-        //float dist = dir.getNorm();
 
         Matrix robotMatrix = this.getOrientation().getRotationMatrix();
         Matrix robotInBoxView = boxBeingPathFounded.getWorldToObject().matMul(pos.addDimensionToVec(1));
@@ -189,9 +187,6 @@ public class Robot extends Movable {
         float robotZ = robotInBoxView.getColumn(0).add(directionFromCentre.addDimensionToVec(1)).get(2);  // z position of robot from box's perspective
         float robotX = robotInBoxView.getColumn(0).sub(directionFromCentre.addDimensionToVec(1)).get(0);;
         float dist = new Vector(new float[]{robotX,robotZ}).getNorm();
-
-        //System.out.println("robotX: "+robotX);
-       // System.out.println("robotZ: "+robotZ);
 
         if (dist <= scanRadius && robotZ >= 0  && robotX <= boxBeingPathFounded.scanXProximity && robotX >= -boxBeingPathFounded.scanXProximity) {
 
@@ -201,24 +196,13 @@ public class Robot extends Movable {
             float rotation = cross.dot(temp);
             float verticalDirection = boxMatrix.getColumn(2).dot(robotMatrix.getColumn(0));
 
-           // System.out.println("rotation: "+rotation);
-           // System.out.println("vertical: "+verticalDirection);
-
             if (verticalDirection > boxBeingPathFounded.scanDirSensitivity
                     && robotZ >= 0 && robotZ <= scanRadius
                     && Math.abs(rotation) < boxBeingPathFounded.scanRotationRange
                     && robotX <= boxBeingPathFounded.scanXProximity && robotX >= 0) {
 
                //Reached correct position
-//                Move forward to scan box
-                Vector delta = robotMatrix.getColumn(2).scalarMul(movementSpeed * 1f  * params.timeDelta * -1);
-                Vector newPos = getPos().add(delta);
-
-                if (isOkayToUpdatePosition(newPos)) {
-                    this.pos = newPos;
-                    translationDirection = translationDirection.add(delta);
-                }
-                //System.out.println("found spot. Moving forward");
+                move(params,-movementSpeed*1);
                 return true;
             }
 
@@ -234,34 +218,13 @@ public class Robot extends Movable {
                     && robotX < 0
                     && (Math.abs(rotation) < boxBeingPathFounded.scanRotationRange)))  {
 
-                Vector delta = robotMatrix.getColumn(2).scalarMul(movementSpeed * 1f  * params.timeDelta);
-                Vector newPos = getPos().add(delta);
+                move(params,movementSpeed);
+                turn(params,-rotationSpeed);
 
-                if (isOkayToUpdatePosition(newPos)) {
-                    this.pos = newPos;
-                    translationDirection = translationDirection.add(delta);
-                }
-
-                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * -1);
-                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
-                    Quaternion newQ = rot.multiply(getOrientation());
-                    setOrientation(newQ);
-                }
-
-                //System.out.println("backing");
                 return true;
             }
 
-//            If not in correct in correct rotational position
-                //System.out.println("trying to turn");
-                //Not in correct position, rotate to correct orientation
-//               Logic to rotate
-                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(-rotation));
-                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
-                    Quaternion newQ = rot.multiply(getOrientation());
-                    setOrientation(newQ);
-                }
-
+            turn(params,rotationSpeed * Math.signum(-rotation));
             return true;
         }
 

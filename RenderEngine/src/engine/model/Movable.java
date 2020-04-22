@@ -89,7 +89,7 @@ public class Movable extends Model {
     public boolean move(ModelTickInput params,float dist) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
         Vector z = rotationMatrix[2];
-        Vector delta = z.scalarMul(-dist * params.timeDelta);
+        Vector delta = z.scalarMul(dist * params.timeDelta);
         Vector newPos = getPos().add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
