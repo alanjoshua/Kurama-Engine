@@ -27,7 +27,7 @@ public class Robot extends Movable {
     public Vector home;
     public Vector barcodeBeingSearched;
     public float pathFindResolution = 1f;
-    public boolean shouldLockSelectedBox = false;
+    public boolean shouldLockSelectedBox = true;
 
 //    Path finding and following fine tuning parameters
     public int maxPathFindingCount = 5000; //-1 = uncapped
@@ -40,8 +40,14 @@ public class Robot extends Movable {
     public float heuristicWeight = 1f;
 
     public float berzierResolution = 50;
-    public boolean hasPathFindingFailed = false;
-    public float pathFindDistanceFromModel = 2f;
+    public float pathFindDistanceFromModel = 1.5f;
+
+    public float minimumPathFindTimeInterval = 0.1f;
+    public float timePassedSinceLastPathFind = 0;
+
+    public float minimumIsStuckInterval = 0.1f;
+    public float timePassedSinceLastStuckCheck = 0;
+    public boolean isStuck = false;
 
     protected int[][] collisionMask;  //This mask includes everything except robot and models marked as isCollidable = false
     public List<Vector> boundData;
@@ -50,14 +56,16 @@ public class Robot extends Movable {
         super(game,mesh, identifier);
         this.game = game;
         input = game.getInput();
-        translationDirection = new Vector(3,0);
         home = new Vector(new float[]{5,1,-5});
     }
 
     @Override
     public void tick(ModelTickInput params) {
-
+        timePassedSinceLastPathFind += params.timeDelta;
+        timePassedSinceLastStuckCheck += params.timeDelta;
         translationDirection = new Vector(3,0);
+        rotationDirection = new Vector(3,0);
+        finalMovement = new Vector(3,0);
 
         List<Model> doNotMask = new ArrayList<>();
         doNotMask.add(this);
@@ -99,6 +107,18 @@ public class Robot extends Movable {
         }
 
         AI(params);
+        checkChanges(params);
+        finalMovement = rotationDirection.add(translationDirection);
+
+        if(timePassedSinceLastPathFind >= minimumPathFindTimeInterval) {
+            timePassedSinceLastPathFind = 0;
+        }
+        if(timePassedSinceLastStuckCheck >= minimumIsStuckInterval) {
+            if(finalMovement.getNorm() == 0) {
+                isStuck = true;
+            }
+            timePassedSinceLastStuckCheck = 0;
+        }
 
     }
 
@@ -142,8 +162,13 @@ public class Robot extends Movable {
 
         if(barcodeBeingSearched == null) {
             Box search = game.requestNextBarcode();
-            System.out.println("box being searched: "+search + " barcode: "+search.barCode);
-            barcodeBeingSearched = search.barCode;
+            if(search == null) {
+                System.out.println("picked all boxes");
+            }
+            else {
+                System.out.println("box being searched: " + search + " barcode: " + search.barCode);
+                barcodeBeingSearched = search.barCode;
+            }
         }
     }
 
@@ -275,6 +300,7 @@ public class Robot extends Movable {
                 System.out.println("Barcodes did not match. This is not the required box");
                 currBox.setBoundingBoxColor(new Vector(new float[]{1,0,0,1}));
                 currBox.shouldShowCollisionBox = true;
+                boxBeingPathFounded = null;
                 game.addBoxToSearched(currBox);
             }
 
@@ -282,6 +308,38 @@ public class Robot extends Movable {
     }
 
     public void AI(ModelTickInput params) {
+
+        updatePathFinding();
+
+        boolean isOrientingTowardsBox = false;
+        if(!isManualControl && boxPicked == null && boxBeingPathFounded != null && orientTowardsBoxIfNear(params)) {
+            isOrientingTowardsBox = true;
+        }
+
+        if(!isManualControl && !isOrientingTowardsBox) {
+            followPath(params);
+        }
+
+        if(isStuck) {
+            isStuck = false;
+
+            if(!isManualControl) {
+                if (!moveForward(params)) {
+                    moveBackward(params);
+                }
+
+                if (!turnLeft(params)) {
+                    turnRight(params);
+                }
+            }
+        }
+
+//      Logic to refactor path structure
+        refactorPath();
+
+    }
+
+    public void updatePathFinding() {
 
         // Logic if still searching for box
         if(boxPicked==null) {
@@ -294,72 +352,71 @@ public class Robot extends Movable {
                 boxBeingPathFounded = selectBox(game.boxesToBeSearched);
             }
 
-            Vector destination = getModelSearchDestination(boxBeingPathFounded);
-            if(!isPathToVectorValid(collisionMask,destination)) {
-                pathFind(destination, null,collisionMask);
+            if(boxBeingPathFounded != null) {
+                Vector destination = getModelSearchDestination(boxBeingPathFounded);
+                if (!isPathToVectorValid(collisionMask, destination)) {
+                    pathFind(destination, null, collisionMask);
+                }
             }
-        }
 
+        }
 //        Logic if moving towards home/destination with box
         else {
             if(!isPathToVectorValid(collisionMask,home)) {
                 pathFind(home, null,collisionMask);
             }
         }
+    }
 
-        boolean isOrientingTowardsBox = false;
-        if(boxBeingPathFounded != null && orientTowardsBoxIfNear(params)) {
-            isOrientingTowardsBox = true;
-        }
-
-        if(!isManualControl && !isOrientingTowardsBox) {
-            Vector dir = getMovementFromPath(params);
-            if (dir != null) {
-
-                Matrix rotMatrix = this.getOrientation().getRotationMatrix();
-                Vector robotX = rotMatrix.getColumn(0);
-                Vector robotZ = rotMatrix.getColumn(2);
-                float angle = -dir.getAngleBetweenVectors(robotX);
-
-                Vector verticalAmount = robotX.cross(dir);
-                Vector temp = new Vector(3, 1);
-                float pointerDir = -verticalAmount.dot(temp);
-
-//             Logic to move a certain amount
-                Vector delta = robotZ.scalarMul(movementSpeed * params.timeDelta * Math.signum(pointerDir) * verticalAmount.getNorm());
-                Vector newPos = getPos().add(delta);
-
-                if (isOkayToUpdatePosition(newPos)) {
-                    this.pos = newPos;
-                    translationDirection = translationDirection.add(delta);
-                }
-//
-////            Logic to rotate
-                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle))));
-                if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
-                    Quaternion newQ = rot.multiply(getOrientation());
-                    setOrientation(newQ);
-                }
-            }
-        }
-
-//        Logic to update path model
+    //        Logic to update path model
+    public void refactorPath() {
         if(pathModel != null && pathModel.mesh.getVertices().size() > 2) {
             Vector oldV = pathModel.mesh.getVertices().get(0);
             Vector next = pathModel.mesh.getVertices().get(1);
             float diff = next.sub(this.pos).getNorm();
 
 //            if(diff < next.sub(oldV).getNorm()) {
-                pathModel.mesh.getVertices().set(0,this.pos);
-                if(diff <= 2) {
-                    pathModel.mesh.getVertices().remove(0);
-                }
-                pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
+            pathModel.mesh.getVertices().set(0,this.pos);
+            if(diff <= 2) {
+                pathModel.mesh.getVertices().remove(0);
+            }
+            pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
 //            }
         }
+    }
 
-        checkChanges(params);
+    public void followPath(ModelTickInput params) {
+        Vector dir = getMovementFromPath(params);
+        if (dir != null) {
 
+            Matrix rotMatrix = this.getOrientation().getRotationMatrix();
+            Vector robotX = rotMatrix.getColumn(0);
+            Vector robotZ = rotMatrix.getColumn(2);
+            float angle = -dir.getAngleBetweenVectors(robotX);
+
+            Vector verticalAmount = robotX.cross(dir);
+            Vector temp = new Vector(3, 1);
+            float pointerDir = -verticalAmount.dot(temp);
+
+//             Logic to move a certain amount
+            Vector delta = robotZ.scalarMul(movementSpeed * params.timeDelta * Math.signum(pointerDir) * verticalAmount.getNorm());
+            Vector newPos = getPos().add(delta);
+
+            if (isOkayToUpdatePosition(newPos)) {
+                this.pos = newPos;
+                translationDirection = translationDirection.add(delta);
+            }
+//
+////            Logic to rotate
+            float angleFinal = rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle)));
+            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), angleFinal);
+            if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
+                Vector tempRot = new Vector(new float[]{(float)Math.sin(angleFinal),0,(float)Math.cos(angleFinal)});
+                rotationDirection = rotationDirection.add(tempRot);
+                Quaternion newQ = rot.multiply(getOrientation());
+                setOrientation(newQ);
+            }
+        }
     }
 
     public Vector getModelSearchDestination(Model search) {
@@ -493,7 +550,10 @@ public class Robot extends Movable {
 //    https://en.wikipedia.org/wiki/Theta*
     public void pathFind(Vector target,Model targetModel,int[][] collisionArray) {
 
-        hasPathFindingFailed = false;
+        if(timePassedSinceLastPathFind < minimumPathFindTimeInterval) {
+            return;
+        }
+
         //boolean surr = isCompletelySurrounded(targetModel,collisionArray);
         boolean surr = false;
 
@@ -534,7 +594,6 @@ public class Robot extends Movable {
 
                     if(maxPathFindingCount != -1 && count >= maxPathFindingCount) {
                         goal = current;
-                        hasPathFindingFailed = true;
                         break;
                     }
 
@@ -580,7 +639,6 @@ public class Robot extends Movable {
                 if(targetModel != null) {
                     if(!isCollidingModel(goal.pos,targetModel)) {
                         pathModel = null;
-                        hasPathFindingFailed = true;
                         return;
                     }
                 }
@@ -609,12 +667,10 @@ public class Robot extends Movable {
                     }
                 }
                 else {
-                    hasPathFindingFailed = true;
                     pathModel = null;
                 }
 
             } else {
-                hasPathFindingFailed = true;
                 pathModel = null;  //If target Pos is null
             }
     }

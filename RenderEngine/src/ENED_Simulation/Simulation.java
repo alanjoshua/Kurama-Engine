@@ -494,10 +494,6 @@ public class Simulation extends Game {
             robot.IGPS(text);
         }
 
-        if(input.keyDown(input.TAB)) {
-            robot.isManualControl = false;
-        }
-
         if(input.keyDown(GLFW_KEY_W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();

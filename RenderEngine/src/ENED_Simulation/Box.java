@@ -38,7 +38,9 @@ public class Box extends Model {
             Matrix robotInBoxView = this.getWorldToObject().matMul(robot.getPos().addDimensionToVec(1));
             float robotZ = robotInBoxView.getColumn(0).get(2);  // z position of robot from box's perspective
 
-            if (travelDir >= scanDirSensitivity && robotZ >= 0) {
+            float verticalDirection = boxMatrix.getColumn(2).dot(robot.getOrientation().getRotationMatrix().getColumn(0));
+
+            if (travelDir >= scanDirSensitivity && robotZ >= 0 && verticalDirection > scanDirSensitivity) {
                 return true;
             } else {
                 return false;
