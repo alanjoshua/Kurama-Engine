@@ -45,34 +45,41 @@ public class Robot extends Movable {
     public float minimumPathFindTimeInterval = 0.1f;
     public float timePassedSinceLastPathFind = 0;
 
-    public float minimumIsStuckInterval = 0.1f;
+    public float minimumIsStuckInterval = 0.3f;
     public float timePassedSinceLastStuckCheck = 0;
     public boolean isStuck = false;
 
+    public Float stuckMoveDir = null;
+    public Float stuckTurnDir = null;
+
     protected int[][] collisionMask;  //This mask includes everything except robot and models marked as isCollidable = false
     public List<Vector> boundData;
+
+    Vector oldPos;
+    Quaternion oldOrientation;
+    float finalMovement = 0;
 
     public Robot(Simulation game,Mesh mesh, String identifier) {
         super(game,mesh, identifier);
         this.game = game;
         input = game.getInput();
         home = new Vector(new float[]{5,1,-5});
+        oldPos = new Vector(new float[]{0,0,0});
+        oldOrientation = orientation;
     }
 
     @Override
     public void tick(ModelTickInput params) {
         timePassedSinceLastPathFind += params.timeDelta;
         timePassedSinceLastStuckCheck += params.timeDelta;
-        translationDirection = new Vector(3,0);
-        rotationDirection = new Vector(3,0);
-        finalMovement = new Vector(3,0);
 
         List<Model> doNotMask = new ArrayList<>();
         doNotMask.add(this);
         doNotMask.add(boxPicked);
+        //doNotMask.add(boxBeingPathFounded);
 
         collisionMask = game.createCollisionArray(doNotMask);
-        boundData = game.getModelFillCollisionData(this);
+        boundData = game.getModelOutlineCollisionData(this);
 
         if(input.keyDown(input.UP_ARROW)) {
             moveForward(params);
@@ -108,23 +115,78 @@ public class Robot extends Movable {
 
         AI(params);
         checkChanges(params);
-        finalMovement = rotationDirection.add(translationDirection);
+
+        translationDirection = pos.sub(oldPos);
+        finalMovement += translationDirection.getNorm() + orientation.getCoordinate().sub(oldOrientation.getCoordinate()).getNorm();
 
         if(timePassedSinceLastPathFind >= minimumPathFindTimeInterval) {
             timePassedSinceLastPathFind = 0;
         }
-        if(timePassedSinceLastStuckCheck >= minimumIsStuckInterval) {
-            if(finalMovement.getNorm() == 0) {
+
+        if (timePassedSinceLastStuckCheck >= minimumIsStuckInterval) {
+            if (finalMovement <= 1.5f * minimumIsStuckInterval) {
                 isStuck = true;
             }
+            else {
+                isStuck = false;
+            }
             timePassedSinceLastStuckCheck = 0;
+            stuckMoveDir = null;
+            stuckTurnDir = null;
+            finalMovement = 0;
         }
 
+        if(isStuck) {
+            tryEndStuck(params);
+        }
+
+        oldPos = pos;
+        oldOrientation = orientation;
+    }
+
+    public void tryEndStuck(ModelTickInput params) {
+        if(!isManualControl) {
+//            System.out.println("stuck here");
+//            if(stuckMoveDir == null) {
+//                stuckMoveDir = movementSpeed * -1f;
+//                if (!move(params, stuckMoveDir)) {
+//                    stuckMoveDir = movementSpeed * 1f;
+//                    move(params, stuckMoveDir);
+//                }
+//            }
+//            else {
+//                move(params,stuckMoveDir);
+//            }
+//
+//            System.out.println("move dir: "+stuckMoveDir);
+//
+//            if(stuckTurnDir == null) {
+//                stuckTurnDir = rotationSpeed * -1f;
+//                if (!turn(params, stuckTurnDir)) {
+//                    stuckTurnDir = rotationSpeed * 1f;
+//                    turn(params, stuckTurnDir);
+//                }
+//            }
+//            else {
+//                turn(params,stuckTurnDir);
+//            }
+//
+//            System.out.println("rot dir: "+stuckTurnDir);
+
+            if(!move(params,movementSpeed*-1f)) {
+                move(params,movementSpeed*1f);
+            }
+
+            if(!turn(params,rotationSpeed*-1f)) {
+                turn(params,rotationSpeed*1f);
+            }
+
+        }
     }
 
     @Override
     public boolean isOkayToUpdatePosition(Vector newPos) {
-        //return !isCollidingWithAnyModel(boundData,newPos.sub(pos).addDimensionToVec(1),collisionMask);
+//        return !isCollidingWithAnyModel(boundData,newPos.sub(pos).addDimensionToVec(1),collisionMask);
 
         int i = (int)newPos.get(0);
         int j = -(int)newPos.get(2);
@@ -133,6 +195,7 @@ public class Robot extends Movable {
 
 //    @Override
 //    public boolean isOkayToUpdateRotation(Matrix rot) {
+////        isOkayToUpdatePosition(this.pos);
 //        return !isCollidingWithAnyModel(boundData,rot,collisionMask);
 //    }
 
@@ -185,7 +248,7 @@ public class Robot extends Movable {
         Matrix robotInBoxView = boxBeingPathFounded.getWorldToObject().matMul(pos.addDimensionToVec(1));
 
         float robotZ = robotInBoxView.getColumn(0).add(directionFromCentre.addDimensionToVec(1)).get(2);  // z position of robot from box's perspective
-        float robotX = robotInBoxView.getColumn(0).sub(directionFromCentre.addDimensionToVec(1)).get(0);;
+        float robotX = robotInBoxView.getColumn(0).sub(directionFromCentre.addDimensionToVec(1)).get(0);
         float dist = new Vector(new float[]{robotX,robotZ}).getNorm();
 
         if (dist <= scanRadius && robotZ >= 0  && robotX <= boxBeingPathFounded.scanXProximity && robotX >= -boxBeingPathFounded.scanXProximity) {
@@ -283,21 +346,6 @@ public class Robot extends Movable {
             followPath(params);
         }
 
-        if(isStuck) {
-            isStuck = false;
-
-            if(!isManualControl) {
-                if (!moveForward(params)) {
-                    moveBackward(params);
-                }
-
-                if (!turnLeft(params)) {
-                    turnRight(params);
-                }
-            }
-        }
-
-//      Logic to refactor path structure
         refactorPath();
 
     }
@@ -317,7 +365,7 @@ public class Robot extends Movable {
 
             if(boxBeingPathFounded != null) {
                 Vector destination = getModelSearchDestination(boxBeingPathFounded);
-                if (!isPathToVectorValid(collisionMask, destination)) {
+                if (isPathToVectorInValid(collisionMask, destination)) {
                     pathFind(destination, null, collisionMask);
                 }
             }
@@ -325,7 +373,7 @@ public class Robot extends Movable {
         }
 //        Logic if moving towards home/destination with box
         else {
-            if(!isPathToVectorValid(collisionMask,home)) {
+            if(isPathToVectorInValid(collisionMask, home)) {
                 pathFind(home, null,collisionMask);
             }
         }
@@ -334,7 +382,6 @@ public class Robot extends Movable {
     //        Logic to update path model
     public void refactorPath() {
         if(pathModel != null && pathModel.mesh.getVertices().size() > 2) {
-            Vector oldV = pathModel.mesh.getVertices().get(0);
             Vector next = pathModel.mesh.getVertices().get(1);
             float diff = next.sub(this.pos).getNorm();
 
@@ -367,15 +414,12 @@ public class Robot extends Movable {
 
             if (isOkayToUpdatePosition(newPos)) {
                 this.pos = newPos;
-                translationDirection = translationDirection.add(delta);
             }
 //
 ////            Logic to rotate
             float angleFinal = rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle)));
             Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), angleFinal);
             if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
-                Vector tempRot = new Vector(new float[]{(float)Math.sin(angleFinal),0,(float)Math.cos(angleFinal)});
-                rotationDirection = rotationDirection.add(tempRot);
                 Quaternion newQ = rot.multiply(getOrientation());
                 setOrientation(newQ);
             }
@@ -386,8 +430,7 @@ public class Robot extends Movable {
         Vector dir = getDirectionToFrontFromCentre(search);
         Vector norm = dir.normalise();
         Vector offset = norm.scalarMul(pathFindDistanceFromModel);
-        Vector res = search.getPos().add(dir).add(offset);
-        return res;
+        return search.getPos().add(dir).add(offset);
     }
 
     public Vector getDirectionToFrontFromCentre(Model search) {
@@ -395,8 +438,7 @@ public class Robot extends Movable {
         float deltaZ = (bounds[1].get(2) - bounds[0].get(2)) / 2f;
 
         Vector z = search.getOrientation().getRotationMatrix().getColumn(2);
-        Vector res = z.scalarMul(deltaZ);
-        return res;
+        return z.scalarMul(deltaZ);
     }
 
     public Vector getMovementFromPath(ModelTickInput params) {
@@ -451,7 +493,9 @@ public class Robot extends Movable {
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
-
+//        if(!isCollidingModel(start,this)) {
+//            return false;
+//        }
         if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return false;
         }
@@ -473,31 +517,31 @@ public class Robot extends Movable {
 
     }
 
-    public boolean isPathToVectorValid(int[][] collisionArray,Vector vecGoal) {
+    public boolean isPathToVectorInValid(int[][] collisionArray, Vector vecGoal) {
         if(pathModel == null) {
-            return false;
+            return true;
         }
 
         Vector start = pathModel.mesh.getVertices().get(0);
 
         if(!areVectorsApproximatelyEqual(start,this.pos)) {
-            return false;
+            return true;
         }
 
         Vector goal = pathModel.mesh.getVertices().get(pathModel.mesh.getVertices().size() - 1);
         if(!areVectorsApproximatelyEqual(goal,vecGoal)) {
-            return false;
+            return true;
         }
 
         for(Vector v: pathModel.mesh.getVertices()) {
             int i = (int)v.get(0);
             int j = -(int)v.get(2);
             if(collisionArray[i][j] == 1) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
 
     }
 
@@ -517,8 +561,8 @@ public class Robot extends Movable {
             return;
         }
 
-        //boolean surr = isCompletelySurrounded(targetModel,collisionArray);
-        boolean surr = false;
+        boolean surr = isCompletelySurrounded(targetModel,collisionArray);
+//        boolean surr = false;
 
             if (target != null && !surr) {
 

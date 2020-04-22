@@ -144,6 +144,11 @@ public class Vector {
 		}
 	}
 
+	public float sumAllElements() {
+		Vector temp = new Vector(this.numberOfDimensions,1);
+		return this.dot(temp);
+	}
+
 	public Vector sub(Vector v) {
 		float[] res = null;
 
