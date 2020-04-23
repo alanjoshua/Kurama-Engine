@@ -41,7 +41,7 @@ public class Simulation extends Game {
     protected Model lookAtModel;
     protected boolean isGameRunning = true;
     public boolean shouldOnlyOutline = false;
-    public boolean barcodeRequestShouldAskUser = false;
+    public boolean barcodeRequestShouldAskUser = true;
 
     public int simWidth = 100;
     public int simDepth = 100;

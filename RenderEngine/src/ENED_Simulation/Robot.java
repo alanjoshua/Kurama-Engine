@@ -30,6 +30,7 @@ public class Robot extends Movable {
     public boolean shouldLockSelectedBox = false;
     public boolean shouldTurn90ToPickBox = false;  //If true, correct box has been scanned
     public boolean isOrientingToScan = false;
+    public boolean shouldMoveToDesitanation = false;
 
 //    Path finding and following fine tuning parameters
     public int maxPathFindingCount = 5000; //-1 = uncapped
@@ -148,7 +149,6 @@ public class Robot extends Movable {
     }
 
     public void tryEndStuck(ModelTickInput params) {
-            System.out.println("stuck called");
             if(stuckMoveDir == null) {
                 stuckMoveDir = movementSpeed * -1f;
                 if (!move(params, stuckMoveDir)) {
@@ -160,8 +160,6 @@ public class Robot extends Movable {
                 move(params,stuckMoveDir);
             }
 
-            System.out.println("move dir: "+stuckMoveDir);
-
             if(stuckTurnDir == null) {
                 stuckTurnDir = rotationSpeed * -1f;
                 if (!turn(params, stuckTurnDir)) {
@@ -172,8 +170,6 @@ public class Robot extends Movable {
             else {
                 turn(params,stuckTurnDir);
             }
-            System.out.println("rot dir: "+stuckTurnDir);
-
 
 //            if(!move(params,movementSpeed*-1f)) {
 //                move(params,movementSpeed*1f);
@@ -203,20 +199,21 @@ public class Robot extends Movable {
         if(boxPicked != null) {
             boxPicked.setPos(new Vector(new float[]{this.pos.get(0), 0, this.getPos().get(2)}));
             game.addBoxToAtDestination(boxPicked);
-            boxPicked = null;
-            boxBeingPathFounded = null;
-            barcodeBeingSearched = null;
         }
+        boxPicked = null;
+        boxBeingPathFounded = null;
+        barcodeBeingSearched = null;
+        shouldMoveToDesitanation = false;
     }
 
     public void checkChanges(ModelTickInput params) {
         translationDirection = translationDirection.normalise();
 
-        if(boxPicked == null && !shouldTurn90ToPickBox) {
+        if(!shouldMoveToDesitanation && !shouldTurn90ToPickBox) {
             checkHasCorrectlyScannedBox();
         }
 
-        if(boxPicked != null && !shouldTurn90ToPickBox) {   //Already picked a box
+        if(shouldMoveToDesitanation && !shouldTurn90ToPickBox) {   //Already picked a box
             updatePickedBox();
             if(areVectorsApproximatelyEqual(home,this.pos)) { //Successfully reached home/destination. Dropping box
                 dropBox();
@@ -294,8 +291,10 @@ public class Robot extends Movable {
     }
 
     public void updatePickedBox() {
-        boxPicked.setPos(this.pos.add(new Vector(new float[]{0,2,0})));
-        boxPicked.setOrientation(this.getOrientation());
+        if(boxPicked != null) {
+            boxPicked.setPos(this.pos.add(new Vector(new float[]{0, 2, 0})));
+            boxPicked.setOrientation(this.getOrientation());
+        }
     }
 
     public void checkHasCorrectlyScannedBox() {
@@ -337,7 +336,7 @@ public class Robot extends Movable {
 
         updatePathFinding();
 
-        if(!isManualControl && boxPicked == null && boxBeingPathFounded != null && !shouldTurn90ToPickBox) {
+        if(!isManualControl && !shouldMoveToDesitanation && boxBeingPathFounded != null && !shouldTurn90ToPickBox) {
             isOrientingToScan = orientTowardsBoxIfNear(params);
         }
         else {
@@ -363,6 +362,7 @@ public class Robot extends Movable {
 
         if(verticalDirection >= boxPicked.scanDirSensitivity) {
             shouldTurn90ToPickBox = false;  //box picked
+            shouldMoveToDesitanation = true;
         }
         else {
             turnLeft(params);
@@ -373,14 +373,20 @@ public class Robot extends Movable {
     public void updatePathFinding() {
 
         // Logic if still searching for box
-        if(boxPicked==null) {
+        if(!shouldMoveToDesitanation) {
             if(shouldLockSelectedBox) {
                 if(boxBeingPathFounded == null) {
                     boxBeingPathFounded = selectBox(game.boxesToBeSearched);
+                    if(boxBeingPathFounded == null) {
+                        shouldMoveToDesitanation = true;
+                    }
                 }
             }
             else {
                 boxBeingPathFounded = selectBox(game.boxesToBeSearched);
+                if(boxBeingPathFounded == null) {
+                    shouldMoveToDesitanation = true;
+                }
             }
 
             if(boxBeingPathFounded != null) {
@@ -392,7 +398,7 @@ public class Robot extends Movable {
 
         }
 //        Logic if moving towards home/destination with box
-        else {
+        if(shouldMoveToDesitanation) {
             if(isPathToVectorInValid(collisionMask, home)) {
                 pathFind(home, null,collisionMask);
             }
