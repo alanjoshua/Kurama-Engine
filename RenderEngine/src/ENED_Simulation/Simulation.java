@@ -5,12 +5,15 @@ import engine.DataStructure.Texture;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
+import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import engine.inputs.InputLWJGL;
 import engine.model.Model;
 import engine.model.ModelBuilder;
+import org.lwjgl.system.CallbackI;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -38,6 +41,7 @@ public class Simulation extends Game {
     protected Model lookAtModel;
     protected boolean isGameRunning = true;
     public boolean shouldOnlyOutline = false;
+    public boolean barcodeRequestShouldAskUser = true;
 
     public int simWidth = 100;
     public int simDepth = 100;
@@ -282,16 +286,74 @@ public class Simulation extends Game {
             b.shouldShowCollisionBox = false;
         }
 
-        Random rand = new Random();
+        if(barcodeRequestShouldAskUser) {
 
-        if(boxesToBeSearched.size() == 0) {
+            isGameRunning = false;
+            Display.DisplayMode mode = display.displayMode;
+            if(mode == Display.DisplayMode.FULLSCREEN) {
+                display.setWindowedMode();
+            }
+
+            System.out.println("These are the barcodes of the boxes still present on shelves: ");
+            boxesToBeSearched.forEach(b -> b.barCode.display());
+            System.out.println("--------------------------");
+            System.out.println("Please enter a barcode (leave whitespace between individual digits)");
+
+            String input = scanner.nextLine();
+            String[] split = input.split("\\s+");
+            float[] data = new float[split.length];
+
+            try {
+                for(int i = 0;i < split.length;i++) {
+                    data[i] = Float.parseFloat(split[i]);
+                }
+                Vector barcode = new Vector(data);
+               Optional<Box> optional = boxesToBeSearched.stream()
+                                .filter(b -> b.barCode.equals(barcode))
+                                .findFirst();
+
+               if(optional.isPresent()) {
+                   Box ret = optional.get();
+                   ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
+                   ret.shouldShowCollisionBox = true;
+                   isGameRunning = true;
+                   if (mode == Display.DisplayMode.FULLSCREEN) {
+                       display.setFullScreen();
+                   }
+                   return ret;
+               }
+                else {
+                   Box box = new Box(this, null, "temp", barcode);
+                   isGameRunning = true;
+                   if (mode == Display.DisplayMode.FULLSCREEN) {
+                       display.setFullScreen();
+                   }
+                   return box;
+               }
+
+            }catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Failed to convert user input as barcode. Barcode being randomly selected from available boxes. Press 4 to request new barcode next time");
+                barcodeRequestShouldAskUser = false;
+            }
+
+            isGameRunning = true;
+            if(mode == Display.DisplayMode.FULLSCREEN) {
+                display.setWindowedMode();
+            }
             return null;
         }
+        else {
+            Random rand = new Random();
+            if (boxesToBeSearched.size() == 0) {
+                return null;
+            }
+            Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
+            ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
+            ret.shouldShowCollisionBox = true;
+            return ret;
+        }
 
-        Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
-        ret.setBoundingBoxColor(new Vector(new float[]{0,1,0,1}));
-        ret.shouldShowCollisionBox = true;
-        return ret;
     }
 
     @Override
@@ -488,10 +550,22 @@ public class Simulation extends Game {
     public void tickInput() {
 
         if(input.keyDown(input.ENTER)) {
+
+            isGameRunning = false;
+            Display.DisplayMode mode = display.displayMode;
+            if(mode == Display.DisplayMode.FULLSCREEN) {
+                display.setWindowedMode();
+            }
+
             System.out.println("This is the "+(++numberOfIPSRequests)+"th request");
             System.out.println("Enter IPS coordinates: ");
             String text = scanner.nextLine();
             robot.IGPS(text);
+            isGameRunning = true;
+
+            if(mode == Display.DisplayMode.FULLSCREEN) {
+                display.setFullScreen();
+            }
         }
 
         if(input.keyDown(GLFW_KEY_W)) {
@@ -546,6 +620,10 @@ public class Simulation extends Game {
 
         if(input.keyDownOnce(GLFW_KEY_ESCAPE)) {
             isGameRunning = !isGameRunning;
+        }
+
+        if(input.keyDownOnce(input.FOUR)) {
+            barcodeRequestShouldAskUser = true;
         }
 
         if(isGameRunning) {

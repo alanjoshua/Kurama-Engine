@@ -11,6 +11,7 @@ import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
+import org.lwjgl.system.CallbackI;
 
 import java.util.*;
 
@@ -27,12 +28,12 @@ public class Robot extends Movable {
     public Vector home;
     public Vector barcodeBeingSearched;
     public float pathFindResolution = 1f;
-    public boolean shouldLockSelectedBox = true;
+    public boolean shouldLockSelectedBox = false;
+    public boolean shouldTurn90ToPickBox = false;  //If true, correct box has been scanned
+    public boolean isOrientingToScan = false;
 
 //    Path finding and following fine tuning parameters
     public int maxPathFindingCount = 5000; //-1 = uncapped
-    public float turnOnlyThreshhold = 0.90f;
-    public float verticalOnlyThreshhold = 0.1f;
 
     public float movementCost = 1f;
     public float nearbyCollisionCost = 50f; //Right now, code for calculcating this is commented off in movementCost()
@@ -79,7 +80,7 @@ public class Robot extends Movable {
         //doNotMask.add(boxBeingPathFounded);
 
         collisionMask = game.createCollisionArray(doNotMask);
-        boundData = game.getModelOutlineCollisionData(this);
+        boundData = game.getModelFillCollisionData(this);
 
         if(input.keyDown(input.UP_ARROW)) {
             moveForward(params);
@@ -136,7 +137,7 @@ public class Robot extends Movable {
             finalMovement = 0;
         }
 
-        if(isStuck) {
+        if(isStuck && !isOrientingToScan && !shouldTurn90ToPickBox && !isManualControl) {
             tryEndStuck(params);
         }
 
@@ -145,7 +146,6 @@ public class Robot extends Movable {
     }
 
     public void tryEndStuck(ModelTickInput params) {
-        if(!isManualControl) {
 //            System.out.println("stuck here");
 //            if(stuckMoveDir == null) {
 //                stuckMoveDir = movementSpeed * -1f;
@@ -180,8 +180,6 @@ public class Robot extends Movable {
             if(!turn(params,rotationSpeed*-1f)) {
                 turn(params,rotationSpeed*1f);
             }
-
-        }
     }
 
     @Override
@@ -212,11 +210,11 @@ public class Robot extends Movable {
     public void checkChanges(ModelTickInput params) {
         translationDirection = translationDirection.normalise();
 
-        if(boxPicked == null) {
-            orientTowardsBoxIfNear(params);
-            checkShouldPickBox();
+        if(boxPicked == null && !shouldTurn90ToPickBox) {
+            checkHasCorrectlyScannedBox();
         }
-        else {   //Already picked a box
+
+        if(boxPicked != null && !shouldTurn90ToPickBox) {   //Already picked a box
             updatePickedBox();
             if(areVectorsApproximatelyEqual(home,this.pos)) { //Successfully reached home/destination. Dropping box
                 dropBox();
@@ -237,7 +235,6 @@ public class Robot extends Movable {
 
 //    Returns true if actually orienting towards the box
     public boolean orientTowardsBoxIfNear(ModelTickInput params) {
-
         if(pathModel != null && pathModel.mesh != null && pathModel.mesh.getVertices().size() >= 2) {
             return false;
         }
@@ -299,7 +296,7 @@ public class Robot extends Movable {
         boxPicked.setOrientation(this.getOrientation());
     }
 
-    public void checkShouldPickBox() {
+    public void checkHasCorrectlyScannedBox() {
         Optional<Box> optional = game.boxesToBeSearched
                 .stream()
                 .filter(b -> b.isRobotInCorrectPositionToScan(this))
@@ -321,6 +318,7 @@ public class Robot extends Movable {
                 boxPicked.shouldShowCollisionBox = true;
                 boxPicked.isCollidable = false;
                 boxBeingPathFounded = null;
+                shouldTurn90ToPickBox = true;
             }
             else {
                 System.out.println("Barcodes did not match. This is not the required box");
@@ -337,16 +335,36 @@ public class Robot extends Movable {
 
         updatePathFinding();
 
-        boolean isOrientingTowardsBox = false;
-        if(!isManualControl && boxPicked == null && boxBeingPathFounded != null && orientTowardsBoxIfNear(params)) {
-            isOrientingTowardsBox = true;
+        if(!isManualControl && boxPicked == null && boxBeingPathFounded != null && !shouldTurn90ToPickBox) {
+            isOrientingToScan = orientTowardsBoxIfNear(params);
+        }
+        else {
+            isOrientingToScan = false;
         }
 
-        if(!isManualControl && !isOrientingTowardsBox) {
+        if(!isManualControl && !isOrientingToScan && !shouldTurn90ToPickBox) {
             followPath(params);
         }
 
+        if(shouldTurn90ToPickBox) {
+            turn90ToPickUpBox(params);
+        }
+
         refactorPath();
+
+    }
+
+    public void turn90ToPickUpBox(ModelTickInput params) {
+        Matrix robotMatrix = this.getOrientation().getRotationMatrix();
+        Matrix boxMatrix = boxPicked.getOrientation().getRotationMatrix();
+        float verticalDirection = boxMatrix.getColumn(2).dot(robotMatrix.getColumn(2));
+
+        if(verticalDirection >= boxPicked.scanDirSensitivity) {
+            shouldTurn90ToPickBox = false;  //box picked
+        }
+        else {
+            turnLeft(params);
+        }
 
     }
 

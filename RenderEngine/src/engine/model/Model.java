@@ -132,6 +132,10 @@ public class Model {
 	}
 
 	public void calculateBoundingBox() {
+		if(mesh == null) {
+			return;
+		}
+
 		Vector[] bounds = Model.getBounds(mesh);
 		boundMin = bounds[0];
 		boundMax = bounds[1];

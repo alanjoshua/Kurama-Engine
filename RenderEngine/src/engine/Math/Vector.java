@@ -70,6 +70,11 @@ public class Vector {
 			return false;
 		}
 		Vector v = (Vector)o;
+
+		if(this.getNumberOfDimensions() != v.getNumberOfDimensions()) {
+			return false;
+		}
+
 		return this.sub(v).getNorm() == 0;
 	}
 
