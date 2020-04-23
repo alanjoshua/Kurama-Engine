@@ -41,7 +41,7 @@ public class Simulation extends Game {
     protected Model lookAtModel;
     protected boolean isGameRunning = true;
     public boolean shouldOnlyOutline = false;
-    public boolean barcodeRequestShouldAskUser = true;
+    public boolean barcodeRequestShouldAskUser = false;
 
     public int simWidth = 100;
     public int simDepth = 100;
@@ -71,6 +71,7 @@ public class Simulation extends Game {
     int boxesPerSide = 1;
 
     long seed = 123456789;
+    Vector towerA,towerB,towerC,towerD;
 
     public Simulation(String threadName) {
         super(threadName);
@@ -332,7 +333,6 @@ public class Simulation extends Game {
                }
 
             }catch (Exception e) {
-                e.printStackTrace();
                 System.out.println("Failed to convert user input as barcode. Barcode being randomly selected from available boxes. Press 4 to request new barcode next time");
                 barcodeRequestShouldAskUser = false;
             }

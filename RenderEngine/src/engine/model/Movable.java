@@ -8,11 +8,8 @@ import engine.game.Game;
 
 public class Movable extends Model {
 
-    public enum MOVEMENT {
-        FORWARD,BACKWARD,LEFT,RIGHT
-    }
-
     public Vector translationDirection;
+    public Vector attemptedTranslation;
     public float rotationSpeed = 150;
     public float movementSpeed = 10;
     public boolean isManualControl = false;
@@ -20,6 +17,7 @@ public class Movable extends Model {
     public Movable(Game game, Mesh mesh, String identifier) {
         super(game,mesh, identifier);
         translationDirection = new Vector(3,0);
+        attemptedTranslation = new Vector(3,0);
     }
 
     public boolean isOkayToUpdatePosition(Vector newPos) {
@@ -35,10 +33,10 @@ public class Movable extends Model {
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
         Vector newPos = getPos().add(delta);
+        attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
             this.pos = newPos;
-            //translationDirection = translationDirection.add(delta);
             return true;
         }
         return false;
@@ -49,10 +47,10 @@ public class Movable extends Model {
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
         Vector newPos = getPos().add(delta);
+        attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
             this.pos = newPos;
-            //translationDirection = translationDirection.add(delta);
             return true;
         }
         return false;
@@ -83,10 +81,10 @@ public class Movable extends Model {
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(dist * params.timeDelta);
         Vector newPos = getPos().add(delta);
+        attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
             this.pos = newPos;
-            //translationDirection = translationDirection.add(delta);
             return true;
         }
         return false;

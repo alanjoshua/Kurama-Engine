@@ -11,7 +11,6 @@ import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
-import org.lwjgl.system.CallbackI;
 
 import java.util.*;
 
@@ -37,7 +36,7 @@ public class Robot extends Movable {
 
     public float movementCost = 1f;
     public float nearbyCollisionCost = 50f; //Right now, code for calculcating this is commented off in movementCost()
-    public int nearbyCollisionRange = 3;
+    public int nearbyCollisionRange = 1;
     public float heuristicWeight = 1f;
 
     public float berzierResolution = 50;
@@ -46,9 +45,10 @@ public class Robot extends Movable {
     public float minimumPathFindTimeInterval = 0.1f;
     public float timePassedSinceLastPathFind = 0;
 
-    public float minimumIsStuckInterval = 0.3f;
+    public float minimumIsStuckInterval = 0.5f;
     public float timePassedSinceLastStuckCheck = 0;
     public boolean isStuck = false;
+    public float stuckSensitivity = 1f;
 
     public Float stuckMoveDir = null;
     public Float stuckTurnDir = null;
@@ -73,6 +73,7 @@ public class Robot extends Movable {
     public void tick(ModelTickInput params) {
         timePassedSinceLastPathFind += params.timeDelta;
         timePassedSinceLastStuckCheck += params.timeDelta;
+        attemptedTranslation = new Vector(3,0);
 
         List<Model> doNotMask = new ArrayList<>();
         doNotMask.add(this);
@@ -80,7 +81,7 @@ public class Robot extends Movable {
         //doNotMask.add(boxBeingPathFounded);
 
         collisionMask = game.createCollisionArray(doNotMask);
-        boundData = game.getModelFillCollisionData(this);
+        boundData = game.getModelOutlineCollisionData(this);
 
         if(input.keyDown(input.UP_ARROW)) {
             moveForward(params);
@@ -118,14 +119,15 @@ public class Robot extends Movable {
         checkChanges(params);
 
         translationDirection = pos.sub(oldPos);
-        finalMovement += translationDirection.getNorm() + orientation.getCoordinate().sub(oldOrientation.getCoordinate()).getNorm();
+        finalMovement += Math.abs(attemptedTranslation.getNorm() - translationDirection.getNorm());
 
         if(timePassedSinceLastPathFind >= minimumPathFindTimeInterval) {
             timePassedSinceLastPathFind = 0;
         }
 
         if (timePassedSinceLastStuckCheck >= minimumIsStuckInterval) {
-            if (finalMovement <= 1.5f * minimumIsStuckInterval) {
+
+            if (finalMovement > stuckSensitivity * minimumIsStuckInterval) {
                 isStuck = true;
             }
             else {
@@ -146,40 +148,40 @@ public class Robot extends Movable {
     }
 
     public void tryEndStuck(ModelTickInput params) {
-//            System.out.println("stuck here");
-//            if(stuckMoveDir == null) {
-//                stuckMoveDir = movementSpeed * -1f;
-//                if (!move(params, stuckMoveDir)) {
-//                    stuckMoveDir = movementSpeed * 1f;
-//                    move(params, stuckMoveDir);
-//                }
-//            }
-//            else {
-//                move(params,stuckMoveDir);
-//            }
-//
-//            System.out.println("move dir: "+stuckMoveDir);
-//
-//            if(stuckTurnDir == null) {
-//                stuckTurnDir = rotationSpeed * -1f;
-//                if (!turn(params, stuckTurnDir)) {
-//                    stuckTurnDir = rotationSpeed * 1f;
-//                    turn(params, stuckTurnDir);
-//                }
-//            }
-//            else {
-//                turn(params,stuckTurnDir);
-//            }
-//
-//            System.out.println("rot dir: "+stuckTurnDir);
-
-            if(!move(params,movementSpeed*-1f)) {
-                move(params,movementSpeed*1f);
+            System.out.println("stuck called");
+            if(stuckMoveDir == null) {
+                stuckMoveDir = movementSpeed * -1f;
+                if (!move(params, stuckMoveDir)) {
+                    stuckMoveDir = movementSpeed * 1f;
+                    move(params, stuckMoveDir);
+                }
+            }
+            else {
+                move(params,stuckMoveDir);
             }
 
-            if(!turn(params,rotationSpeed*-1f)) {
-                turn(params,rotationSpeed*1f);
+            System.out.println("move dir: "+stuckMoveDir);
+
+            if(stuckTurnDir == null) {
+                stuckTurnDir = rotationSpeed * -1f;
+                if (!turn(params, stuckTurnDir)) {
+                    stuckTurnDir = rotationSpeed * 1f;
+                    turn(params, stuckTurnDir);
+                }
             }
+            else {
+                turn(params,stuckTurnDir);
+            }
+            System.out.println("rot dir: "+stuckTurnDir);
+
+
+//            if(!move(params,movementSpeed*-1f)) {
+//                move(params,movementSpeed*1f);
+//            }
+//
+//            if(!turn(params,rotationSpeed*-1f)) {
+//                turn(params,rotationSpeed*1f);
+//            }
     }
 
     @Override
@@ -404,10 +406,11 @@ public class Robot extends Movable {
             float diff = next.sub(this.pos).getNorm();
 
 //            if(diff < next.sub(oldV).getNorm()) {
-            pathModel.mesh.getVertices().set(0,this.pos);
             if(diff <= 2) {
                 pathModel.mesh.getVertices().remove(0);
             }
+            pathModel.mesh.getVertices().set(0,this.pos);
+
             pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
 //            }
         }
@@ -415,8 +418,8 @@ public class Robot extends Movable {
 
     public void followPath(ModelTickInput params) {
         Vector dir = getMovementFromPath(params);
-        if (dir != null) {
 
+        if (dir != null) {
             Matrix rotMatrix = this.getOrientation().getRotationMatrix();
             Vector robotX = rotMatrix.getColumn(0);
             Vector robotZ = rotMatrix.getColumn(2);
@@ -426,22 +429,10 @@ public class Robot extends Movable {
             Vector temp = new Vector(3, 1);
             float pointerDir = -verticalAmount.dot(temp);
 
-//             Logic to move a certain amount
-            Vector delta = robotZ.scalarMul(movementSpeed * params.timeDelta * Math.signum(pointerDir) * verticalAmount.getNorm());
-            Vector newPos = getPos().add(delta);
-
-            if (isOkayToUpdatePosition(newPos)) {
-                this.pos = newPos;
-            }
-//
-////            Logic to rotate
-            float angleFinal = rotationSpeed * params.timeDelta * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle)));
-            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[]{0, 1, 0}), angleFinal);
-            if (isOkayToUpdateRotation(rot.getRotationMatrix())) {
-                Quaternion newQ = rot.multiply(getOrientation());
-                setOrientation(newQ);
-            }
+            move(params,movementSpeed * Math.signum(pointerDir) * verticalAmount.getNorm());
+            turn(params,rotationSpeed * Math.signum(angle) * (float) Math.cos(Math.toRadians(Math.abs(angle))));
         }
+
     }
 
     public Vector getModelSearchDestination(Model search) {
@@ -497,7 +488,7 @@ public class Robot extends Movable {
 
             int x = (int)p.get(0);
             int z = -(int)p.get(2);
-            if(isWithingRangeOfCollision(p,collisionArray,nearbyCollisionRange) || collisionArray[x][z] == 1) {
+            if(isWithingRangeOfCollisionPerpendicularToLineDir(p,collisionArray,nearbyCollisionRange,dir) || collisionArray[x][z] == 1) {
                 return false;
             }
         }
@@ -549,6 +540,22 @@ public class Robot extends Movable {
         Vector goal = pathModel.mesh.getVertices().get(pathModel.mesh.getVertices().size() - 1);
         if(!areVectorsApproximatelyEqual(goal,vecGoal)) {
             return true;
+        }
+
+        for(int i = 0;i < pathModel.mesh.getVertices().size() - 1;i++) {
+            Vector v0 = pathModel.mesh.getVertices().get(i);
+            Vector v1 = pathModel.mesh.getVertices().get(i+1);
+            Vector dir = v1.sub(v0);
+            float dist = dir.getNorm();
+            dir = dir.normalise();
+            for(int j = 0;j < dist;j++) {
+                Vector p = v0.add(dir.scalarMul(j));
+                int x = (int)p.get(0);
+                int y = -(int)p.get(2);
+                if(collisionArray[x][y] == 1) {
+                    return true;
+                }
+            }
         }
 
         for(Vector v: pathModel.mesh.getVertices()) {
@@ -727,26 +734,38 @@ public class Robot extends Movable {
         Vector n8 = current.pos.add(new Vector(new float[]{-pathFindResolution,0,-pathFindResolution}));
 
 
-        if(game.isVectorInsideWorld(n1) && !isWithingRangeOfCollision(n1,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n2) && !isWithingRangeOfCollision(n2,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n3) && !isWithingRangeOfCollision(n3,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n4) && !isWithingRangeOfCollision(n4,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n5) && !isWithingRangeOfCollision(n1,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n5,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n6) && !isWithingRangeOfCollision(n2,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n6,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n7) && !isWithingRangeOfCollision(n3,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n7,Float.POSITIVE_INFINITY));
-        if(game.isVectorInsideWorld(n8) && !isWithingRangeOfCollision(n4,collisionArray,nearbyCollisionRange)) neighbours.add(new GridNode(n8,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n1) && !isWithingRangeOfCollisionPerpendicularToLineDir(n1,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n1,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n2) && !isWithingRangeOfCollisionPerpendicularToLineDir(n2,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n2,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n3) && !isWithingRangeOfCollisionPerpendicularToLineDir(n3,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n3,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n4) && !isWithingRangeOfCollisionPerpendicularToLineDir(n4,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n4,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n5) && !isWithingRangeOfCollisionPerpendicularToLineDir(n1,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n5,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n6) && !isWithingRangeOfCollisionPerpendicularToLineDir(n2,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n6,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n7) && !isWithingRangeOfCollisionPerpendicularToLineDir(n3,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n7,Float.POSITIVE_INFINITY));
+        if(game.isVectorInsideWorld(n8) && !isWithingRangeOfCollisionPerpendicularToLineDir(n4,collisionArray,nearbyCollisionRange,null)) neighbours.add(new GridNode(n8,Float.POSITIVE_INFINITY));
 
         return neighbours;
     }
 
-    public static boolean isWithingRangeOfCollision(Vector v,int[][] collisionArray, int range) {
+    public static boolean isWithingRangeOfCollisionPerpendicularToLineDir(Vector v, int[][] collisionArray, int range, Vector lineDir) {
         List<Vector> vecs = new ArrayList<>();
         vecs.add(v);
-        for(int j = 0;j < range;j++) {
-            vecs.add(v.add(new Vector(new float[]{j, 0, 0})));
-            vecs.add(v.add(new Vector(new float[]{-j, 0, 0})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, j})));
-            vecs.add(v.add(new Vector(new float[]{0, 0, -j})));
+
+        if(lineDir == null) {
+            for (int j = 0; j < range; j++) {
+                vecs.add(v.add(new Vector(new float[]{j, 0, 0})));
+                vecs.add(v.add(new Vector(new float[]{-j, 0, 0})));
+                vecs.add(v.add(new Vector(new float[]{0, 0, j})));
+                vecs.add(v.add(new Vector(new float[]{0, 0, -j})));
+            }
+        }
+        else {
+            Vector y = new Vector(new float[]{0, 1, 0});
+            Vector dir = y.cross(lineDir);
+
+            for (int i = 1; i <= range; i++) {
+                vecs.add(v.add(dir.scalarMul(i)));
+                vecs.add(v.add(dir.scalarMul(-i)));
+            }
         }
 
         for(Vector vert: vecs) {
