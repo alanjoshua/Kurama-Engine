@@ -66,8 +66,8 @@ public class Simulation extends Game {
     String boxModelLoc = "/Resources/box.obj";
     String boxTextureLoc = "textures/box.png";
 
-    int[] boxRows = {12,24,36,48,60,72,84,96};
-    int[] boxCols = {20,35,65,80};
+    int[] boxRows = {24,36,48,60,72,84,96,108};
+    int[] boxCols = {12,48,60,96};
     int boxesPerSide = 1;
 
     long seed = 123456789;
@@ -85,6 +85,14 @@ public class Simulation extends Game {
         boxesAtDestination = new ArrayList<>();
         meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
+
+        towerA = new Vector(new float[]{6,1,-6});
+        towerB = new Vector(new float[]{102,1,-6});
+        towerC = new Vector(new float[]{6,1,-126});
+        towerD = new Vector(new float[]{102,1,-126});
+
+        simDepth = 132;
+        simWidth = 108;
 
         boundMin = new Vector(new float[]{0,0,-simDepth});
         boundMax = new Vector(new float[]{simWidth,100,0});
@@ -140,11 +148,31 @@ public class Simulation extends Game {
         flag.setPos(new Vector(new float[]{0,10,0}));
         flag.isCollidable = false;
 
+        hints.convertToLines = false;
+        hints.addConstantColor = null;
+        hints.addRandomColor = true;
+        Model h1 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h1");
+        h1.setPos(0,0,-12);
+        h1.isCollidable = false;
+
+        Model h2 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h2");
+        h2.setPos(96,0,-12);
+        h2.isCollidable = false;
+
+        Model h3 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h3");
+        h3.setPos(0,0,-132);
+        h3.isCollidable = false;
+
+        Model h4 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h4");
+        h4.setPos(96,0,-132);
+        h4.isCollidable = false;
+
         hints.addConstantColor = null;
         hints.convertToLines = true;
         robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
         robot.shouldShowCollisionBox = true;
         robot.shouldShowPath = true;
+        robot.home = towerA;
         robot.setPos(robot.home);
 
         try {
@@ -159,6 +187,11 @@ public class Simulation extends Game {
         models.add(robot);
         models.add(grid);
         models.add(flag);
+        models.add(h1);
+        models.add(h2);
+        models.add(h3);
+        models.add(h4);
+
 
         initCrates();
 
@@ -188,8 +221,9 @@ public class Simulation extends Game {
         //rand.setSeed(seed);
         Mesh boxMesh;
         Mesh platformMesh;
-        float platY = 0;
+        float platY = 1;
         float x,y = 1.5f,z;
+
         List<Vector> barcodes = new ArrayList<>();
 
         Model.MiniBehaviour tempRot = ((m, params) -> {
@@ -218,20 +252,45 @@ public class Simulation extends Game {
             e.printStackTrace();
         }
 
+        Vector[] bounds = Model.getBounds(platformMesh);
+        float platScaleY = 0.5f;
+
+        float requiredZ = boxRows[1] - boxRows[0] - 2;
+        float currentZ = bounds[1].get(2) - bounds[0].get(2);
+        float platScaleZ = requiredZ / currentZ;
+
+        float requiredX = boxCols[1] - boxCols[0] - 1;
+        float currentX = bounds[1].get(0) - bounds[0].get(0);
+        float platScaleX = requiredX / currentX;
+
+        bounds = Model.getBounds(boxMesh);
+        float requiredZBox = 4;
+        float currentZBox = bounds[1].get(2) - bounds[0].get(2);
+        float boxScaleZ = requiredZBox / currentZBox;
+
+        float requiredXBox = 4;
+        float currentXBox = bounds[1].get(0) - bounds[0].get(0);
+        float boxScaleX = requiredXBox / currentXBox;
+
+        float requiredYBox = 6;
+        float currentYBox = bounds[1].get(1) - bounds[0].get(1);
+        float boxScaleY = requiredYBox / currentYBox;
+
         for(int c = 0; c < boxCols.length;c+=2) {
             for (int r = 0; r < boxRows.length; r += 2) {
 
 //            Create shelf model
                 Model platform = new Model(this,platformMesh,"platform-r:"+r+"c:"+c);
-                platform.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),90));
+                //platform.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),90));
 
                 int tempX = (boxCols[c] + (boxCols[c+1] - boxCols[c])/2);
-                int tempZ = -(boxRows[r] + (boxRows[r+1] - boxRows[r])/2) + 1;
+                int tempZ = -(boxRows[r] + (boxRows[r+1] - boxRows[r])/2)+1;
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
-                platform.setScale(new Vector(new float[]{0.5f,0.5f,0.5f}));
-                platform.shouldShowCollisionBox = true;
+                platform.setScale(new Vector(new float[]{platScaleX,platScaleY,platScaleZ}));
                 models.add(platform);
+
+                Integer currZone = getZone(r,c);
 
 //            Create two rows of boxes
 //                create bottom row
@@ -245,8 +304,9 @@ public class Simulation extends Game {
                     }
                     barcodes.add(barCode);
 
-                    Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
+                    Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode,currZone);
                     box.setPos(new Vector(new float[]{x,y,z}));
+                    //box.setScale(boxScaleX,boxScaleY,boxScaleZ);
                     boxesToBeSearched.add(box);
                 }
 
@@ -261,8 +321,9 @@ public class Simulation extends Game {
                     }
                     barcodes.add(barCode);
 
-                    Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode);
+                    Box box = new Box(this,boxMesh,"box:: x:"+x+" z:"+z,barCode,currZone);
                     box.setPos(new Vector(new float[]{x,y,z}));
+                    //box.setScale(boxScaleX,boxScaleY,boxScaleZ);
                     box.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),180));
                     boxesToBeSearched.add(box);
                 }
@@ -272,12 +333,27 @@ public class Simulation extends Game {
 
         models.addAll(boxesToBeSearched);
 
-//        System.out.println("All barcodes");
-//
-//        for(Vector v: barcodes) {
-//            v.display();
-//        }
+    }
 
+    public Integer getZone(int r, int c) {
+
+        if(r <= 3 && c <= 1) {
+            return Box.ZONE_A;
+        }
+
+        if(r <= 3 && c > 1) {
+            return Box.ZONE_B;
+        }
+
+        if(r > 3 && c <= 1) {
+            return Box.ZONE_C;
+        }
+
+        if(r > 3 && c > 1) {
+            return Box.ZONE_D;
+        }
+
+        return null;
     }
 
     public Box requestNextBarcode() {
@@ -288,7 +364,6 @@ public class Simulation extends Game {
         }
 
         if(barcodeRequestShouldAskUser) {
-
             isGameRunning = false;
             Display.DisplayMode mode = display.displayMode;
             if(mode == Display.DisplayMode.FULLSCREEN) {
@@ -317,15 +392,15 @@ public class Simulation extends Game {
                    Box ret = optional.get();
                    ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
                    ret.shouldShowCollisionBox = true;
-                   isGameRunning = true;
+
                    if (mode == Display.DisplayMode.FULLSCREEN) {
                        display.setFullScreen();
                    }
                    return ret;
                }
                 else {
-                   Box box = new Box(this, null, "temp", barcode);
-                   isGameRunning = true;
+                   Box box = new Box(this, null, "temp", barcode,null);
+
                    if (mode == Display.DisplayMode.FULLSCREEN) {
                        display.setFullScreen();
                    }
@@ -337,7 +412,6 @@ public class Simulation extends Game {
                 barcodeRequestShouldAskUser = false;
             }
 
-            isGameRunning = true;
             if(mode == Display.DisplayMode.FULLSCREEN) {
                 display.setWindowedMode();
             }
@@ -395,16 +469,17 @@ public class Simulation extends Game {
             prevGameState = isGameRunning;
         }
 
-        Model.ModelTickInput params = new Model.ModelTickInput();
-        params.timeDelta = timeDelta;
+        if(isGameRunning) {
+            Model.ModelTickInput params = new Model.ModelTickInput();
+            params.timeDelta = timeDelta;
 
-//        models.forEach(m -> m.tick(params));
-        models
-                .stream()
-                .filter(m -> m != robot)
-                .forEach(m -> m.tick(params));
+            models
+                    .stream()
+                    .filter(m -> m != robot)
+                    .forEach(m -> m.tick(params));
 
-        robot.tick(params);
+            robot.tick(params);
+        }
 
         if(!isGameRunning) {
             pauseButtons.forEach((b) -> b.tick(mousePos,((InputLWJGL)input).isLeftMouseButtonPressed));

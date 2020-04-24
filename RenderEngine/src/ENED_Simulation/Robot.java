@@ -12,6 +12,7 @@ import engine.model.Model;
 import engine.model.ModelBuilder;
 import engine.model.Movable;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 
 import static org.lwjgl.opengl.GL11C.GL_LINES;
@@ -65,7 +66,7 @@ public class Robot extends Movable {
         super(game,mesh, identifier);
         this.game = game;
         input = game.getInput();
-        home = new Vector(new float[]{5,1,-5});
+        home = game.towerA;
         oldPos = new Vector(new float[]{0,0,0});
         oldOrientation = orientation;
     }
@@ -939,14 +940,65 @@ public class Robot extends Movable {
     }
 
     public Box selectBox(List<Box> boxes) {
+
+        if(boxes.size() == 0) {
+            return null;
+        }
+
         Box selected = null;
         float closestDist = Float.POSITIVE_INFINITY;
 
-        for(Box b:boxes) {
-            float dist = this.getPos().sub(b.getPos()).getNorm();
-            if(dist < closestDist) {
-                selected = b;
-                closestDist = dist;
+        Integer searchZone;
+        if(home == game.towerA) {
+            searchZone = Box.ZONE_A;
+        }
+        else if(home == game.towerB) {
+            searchZone = Box.ZONE_B;
+        }
+        else if(home == game.towerC) {
+            searchZone = Box.ZONE_C;
+        }
+        else if(home == game.towerD) {
+            searchZone = Box.ZONE_D;
+        }
+        else {
+            searchZone = null;
+        }
+
+        if(searchZone != null) {
+            int searchZoneCounter = 0;
+
+            while (searchZoneCounter < 4) {
+                int tempZone = searchZone;
+                Iterator<Box> it = boxes.stream()
+                        .filter(b -> b.zone == tempZone)
+                        .iterator();
+
+                while(it.hasNext()) {
+                    Box b = it.next();
+                    float dist = this.getPos().sub(b.getPos()).getNorm();
+                    if(dist < closestDist) {
+                        selected = b;
+                        closestDist = dist;
+                    }
+                }
+                if(selected != null) {
+                    break;
+                }
+
+                searchZoneCounter++;
+                searchZone++;
+                searchZone %= 4;
+            }
+        }
+
+        else {
+            for(Box b:boxes) {
+                float dist = this.getPos().sub(b.getPos()).getNorm();
+                if(dist < closestDist) {
+                    selected = b;
+                    closestDist = dist;
+                }
             }
         }
         return selected;
@@ -990,16 +1042,16 @@ public class Robot extends Movable {
 //            tempPos.display();
 
             float x1,x2,x3,y1,y2,y3,r1,r2,r3,x,y;
-            x1 = boundMin.get(0);
-            y1 = boundMin.get(1);
+            x1 = game.towerA.get(0);
+            y1 = game.towerA.get(2);
             r1 = radVals[0];
 
-            x2 = boundMin.get(0);
-            y2 = boundMax.get(1);
+            x2 = game.towerC.get(0);
+            y2 = game.towerC.get(2);
             r2 = radVals[1];
 
-            x3 = boundMax.get(0);
-            y3 = boundMax.get(1);
+            x3 = game.towerD.get(0);
+            y3 = game.towerD.get(2);
             r3 = radVals[2];
 
 //            Triangulation formula from ENED community site
@@ -1009,8 +1061,6 @@ public class Robot extends Movable {
             System.out.println("Calculated coordinates are: ");
             Vector res = new Vector(new float[]{x,pos.get(1),y});
             res.display();
-            System.out.println("Actual coordinates: ");
-            pos.display();
 
         }
 
