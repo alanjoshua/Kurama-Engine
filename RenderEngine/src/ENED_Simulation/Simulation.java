@@ -170,7 +170,7 @@ public class Simulation extends Game {
         hints.addConstantColor = null;
         hints.convertToLines = true;
         robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
-        robot.shouldShowCollisionBox = true;
+        robot.shouldShowCollisionBox = false;
         robot.shouldShowPath = true;
         robot.home = towerA;
         robot.setPos(robot.home);
