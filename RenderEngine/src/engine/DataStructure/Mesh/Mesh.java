@@ -31,15 +31,15 @@ public class Mesh {
 
     public int vaoId;
     public List<Integer> vboIdList;
-    public Texture texture;
     public Material material;
-
+//    public Texture texture;
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
         vboIdList = new ArrayList<>();
         this.indices = indices;
+        material = new Material();
     }
 
     public void cleanUp() {
@@ -54,7 +54,7 @@ public class Mesh {
                 glDeleteBuffers(vbo);
             }
 
-            texture.cleanUp();
+            material.texture.cleanUp();
 
             glBindVertexArray(0);
             glDeleteVertexArrays(vaoId);
@@ -66,11 +66,11 @@ public class Mesh {
     public void render() {
         try {
 
-            if(texture != null) {
+            if(material.texture != null) {
 //              Activate first texture
                 glActiveTexture(GL_TEXTURE0);
 //                Bind texture
-                glBindTexture(GL_TEXTURE_2D, texture.getId());
+                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
             }
 
             glBindVertexArray(vaoId);

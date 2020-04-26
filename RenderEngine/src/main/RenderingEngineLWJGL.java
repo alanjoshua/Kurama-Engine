@@ -86,9 +86,7 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
         for(Model model: models) {
             shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-//            shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
-            shaderProgram.setUniform("material",model.mesh.material);
-
+            shaderProgram.setUniform("material", model.mesh.material);
             model.mesh.render();
         }
 

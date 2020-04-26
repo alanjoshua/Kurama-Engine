@@ -16,8 +16,8 @@ public class Material {
 
     public Material() {
         this.ambientColor = DEFAULTCOLOR;
-        this.ambientColor = DEFAULTCOLOR;
-        this.ambientColor = DEFAULTCOLOR;
+        this.diffuseColor = DEFAULTCOLOR;
+        this.specularColor = DEFAULTCOLOR;
         this.texture = null;
         this.reflectance = 0;
     }

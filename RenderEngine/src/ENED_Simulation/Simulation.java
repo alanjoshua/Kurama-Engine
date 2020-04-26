@@ -9,6 +9,8 @@ import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import engine.inputs.InputLWJGL;
+import engine.lighting.Material;
+import engine.lighting.PointLight;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import org.lwjgl.system.CallbackI;
@@ -41,7 +43,7 @@ public class Simulation extends Game {
     protected Model lookAtModel;
     protected boolean isGameRunning = true;
     public boolean shouldOnlyOutline = false;
-    public boolean barcodeRequestShouldAskUser = true;
+    public boolean barcodeRequestShouldAskUser = false;
 
     public int simWidth = 100;
     public int simDepth = 100;
@@ -73,12 +75,27 @@ public class Simulation extends Game {
     long seed = 123456789;
     Vector towerA,towerB,towerC,towerD;
 
+    public PointLight pointLight;
+    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
+    public float specularPower = 10f;
+
+    public Material pathMat;
+    public Material boxWrongMat;
+    public  Material boxRequiredMat;
+
     public Simulation(String threadName) {
         super(threadName);
     }
 
     @Override
     public void init() {
+
+        Vector lightColor = new Vector(new float[]{1f,1f,1f});
+        Vector lightPos = new Vector(new float[]{0f,0f,1f});
+        float lightIntensity = 10f;
+        pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+
         models = new ArrayList<>();
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
@@ -121,6 +138,10 @@ public class Simulation extends Game {
 
         pauseButtons = new ArrayList<>();
         models = new ArrayList<>();
+
+        boxWrongMat = new Material(new Vector(new float[]{1,0,0,1}),1);
+        boxRequiredMat = new Material(new Vector(new float[]{0,1,0,1}),1);
+        pathMat = new Material(new Vector(new float[]{0,1,0,1}),1);
 
         initModels();
         initPauseScreen();
@@ -177,7 +198,7 @@ public class Simulation extends Game {
 
         try {
             Texture tex = new Texture(robotTextureLoc);
-            robot.mesh.texture = tex;
+            robot.mesh.material.texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -239,7 +260,7 @@ public class Simulation extends Game {
         boxMesh = ModelBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
         try {
             Texture tex = new Texture(boxTextureLoc);
-            boxMesh.texture = tex;
+            boxMesh.material.texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -247,7 +268,7 @@ public class Simulation extends Game {
         platformMesh = ModelBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
         try {
             Texture tex = new Texture("textures/oldwood.jpg");
-            platformMesh.texture = tex;
+            platformMesh.material.texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -391,6 +412,7 @@ public class Simulation extends Game {
                if(optional.isPresent()) {
                    Box ret = optional.get();
                    ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
+                   ret.boundingbox.material = boxRequiredMat;
                    ret.shouldShowCollisionBox = true;
 
                    if (mode == Display.DisplayMode.FULLSCREEN) {
@@ -425,6 +447,7 @@ public class Simulation extends Game {
             Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
             ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
             ret.shouldShowCollisionBox = true;
+            ret.boundingbox.material = boxRequiredMat;
             return ret;
         }
 

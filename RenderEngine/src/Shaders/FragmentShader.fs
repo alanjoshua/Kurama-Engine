@@ -29,8 +29,6 @@ uniform Material material;
 uniform PointLight pointLight;
 uniform vec3 camera_pos;
 
-uniform int shouldUseTexture; //Legacy
-
 in vec4 exColor;
 in vec2 outTex;
 in vec3 vertNormal;

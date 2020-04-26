@@ -128,16 +128,8 @@ public class GameLWJGL extends Game implements Runnable {
 
         ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
         hints.shouldBakeVertexAttributes = false;
-        hints.initLWJGLAttribs = true;
         hints.addRandomColor = true;
-
-//        Model deer = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints),"deer");
-//        deer.setPos(new Vector(new float[] {-10,15,-15}));
-//        deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-//
-//        Model mill = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints),"mill");
-//        mill.setPos(new Vector(new float[] {10,5,0}));
-//        mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
+        hints.initLWJGLAttribs = true;
 
         Model cube = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
         cube.setScale(1);
@@ -150,44 +142,14 @@ public class GameLWJGL extends Game implements Runnable {
             e.printStackTrace();
         }
 
-//        cube.mesh.texture = tex;
         float reflectance = 1f;
         Material cubeMat = new Material(tex,reflectance);
         cube.mesh.material = cubeMat;
 
         pointLight.pos = cube.getPos().add(cube.getDirectionToFrontFromCentre(cube)).add(new Vector(new float[]{0,0,10}));
 
-//        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
-//        sasuke.setScale(0.1f);
-//        sasuke.setPos(0,17,0);
-//        // sasuke.setTickObj(tempRot);
-//
-//        try {
-//            tex = new Texture("textures/11.BMP");
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        sasuke.mesh.texture = tex;
-//
-//        Model spiderman = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints),"spiderman");
-//        try {
-//            tex = new Texture("textures/spiderman.png");
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        spiderman.mesh.texture = tex;
-//
-//        hints.addRandomColor = false;
-//        hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,1});
-//        Model grid = new Model(this,ModelBuilder.buildGridLines(100,100,hints),"grid");
-
-//        models.add(ironMan);
-//        models.add(sasuke);
-//        models.add(deer);
-//        models.add(mill);
         models.add(cube);
-//        models.add(spiderman);
-//        models.add(grid);
+
     }
 
     public void initPauseScreen() {
