@@ -4,6 +4,9 @@ import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import engine.Math.Matrix;
+import engine.Math.Vector;
+import engine.lighting.Material;
+import engine.lighting.PointLight;
 import org.lwjgl.system.MemoryStack;
 
 import static org.lwjgl.opengl.GL20.*;
@@ -33,6 +36,41 @@ public class ShaderProgram {
         uniforms.put(uniformName,uniformLocation);
     }
 
+    public void createPointLightUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".color");
+        createUniform(uniformName + ".pos");
+        createUniform(uniformName + ".intensity");
+        createUniform(uniformName + ".att.constant");
+        createUniform(uniformName + ".att.linear");
+        createUniform(uniformName + ".att.exponent");
+    }
+
+    public void createMaterialUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".ambient");
+        createUniform(uniformName + ".diffuse");
+        createUniform(uniformName + ".specular");
+        createUniform(uniformName + ".hasTexture");
+        createUniform(uniformName + ".reflectance");
+    }
+
+    public void setUniform(String uniformName, PointLight pointLight) {
+        setUniform(uniformName + ".color", pointLight.color);
+        setUniform(uniformName + ".pos", pointLight.pos);
+        setUniform(uniformName + ".intensity", pointLight.intensity);
+        PointLight.Attenuation att = pointLight.attenuation;
+        setUniform(uniformName + ".att.constant", att.constant);
+        setUniform(uniformName + ".att.linear", att.linear);
+        setUniform(uniformName + ".att.exponent", att.exponent);
+    }
+
+    public void setUniform(String uniformName, Material material) {
+        setUniform(uniformName + ".ambient", material.ambientColor);
+        setUniform(uniformName + ".diffuse", material.diffuseColor);
+        setUniform(uniformName + ".specular", material.specularColor);
+        setUniform(uniformName + ".hasTexture", material.texture == null ? 0 : 1);
+        setUniform(uniformName + ".reflectance", material.reflectance);
+    }
+
     public void setUniform(String uniformName, Matrix value) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
@@ -44,6 +82,25 @@ public class ShaderProgram {
     public void setUniform(String uniformName,int value) {
         glUniform1i(uniforms.get(uniformName), value);
     }
+
+    public void setUniform(String uniformName,float value) {
+        glUniform1f(uniforms.get(uniformName), value);
+    }
+
+    public void setUniform(String uniformName,Vector value) {
+        if(value.getNumberOfDimensions() == 3) {
+            glUniform3f(uniforms.get(uniformName),
+                    value.get(0),value.get(1),value.get(2));
+        }
+        else if(value.getNumberOfDimensions() == 4) {
+            glUniform4fv(uniforms.get(uniformName),value.getData());
+        }
+        //Should probably throw an error
+        else {
+            System.err.println("Cannot set vector uniform. Can only set vectors of size 3 or 4");
+        }
+    }
+
 
     public void createVertexShader(String shaderCode) throws Exception {
         vertexShaderID = createShader(shaderCode,GL_VERTEX_SHADER);

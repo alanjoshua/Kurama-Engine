@@ -6,6 +6,7 @@ import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.DataStructure.Mesh.Mesh;
+import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import org.lwjgl.system.CallbackI;
 
@@ -74,6 +75,14 @@ public class Model {
 		if (miniBehaviourObj != null) {
 			miniBehaviourObj.tick(this,params);
 		}
+	}
+
+	public Vector getDirectionToFrontFromCentre(Model search) {
+		Vector[] bounds = Model.getBounds(search.boundingbox);
+		float deltaZ = (bounds[1].get(2) - bounds[0].get(2)) / 2f;
+
+		Vector z = search.getOrientation().getRotationMatrix().getColumn(2);
+		return z.scalarMul(deltaZ);
 	}
 
 	public static Vector[] getBounds(Mesh mesh) {
@@ -257,7 +266,10 @@ public class Model {
 		boundingbox = new Mesh(null,faces,vertAttribs);
 		ModelBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
-		boundingbox.initOpenGLMeshData();
+
+		if(game.getDisplay() instanceof DisplayLWJGL) {
+			boundingbox.initOpenGLMeshData();
+		}
 	}
 
 	public Matrix getObjectToWorldMatrix() {

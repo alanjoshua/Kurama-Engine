@@ -1,6 +1,8 @@
 package main;
 
 import engine.Math.Matrix;
+import engine.Math.Vector;
+import engine.lighting.PointLight;
 import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
@@ -14,6 +16,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class RenderingEngineLWJGL extends RenderingEngine {
 
     public ShaderProgram shaderProgram;
+    public GameLWJGL game;
 
     public void init() {
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
@@ -30,9 +33,14 @@ public class RenderingEngineLWJGL extends RenderingEngine {
             shaderProgram.link();
 
             shaderProgram.createUniform("projectionMatrix");
-            shaderProgram.createUniform("worldMatrix");
+            shaderProgram.createUniform("modelViewMatrix");
             shaderProgram.createUniform("texture_sampler");
-            shaderProgram.createUniform("shouldUseTexture");
+
+            shaderProgram.createMaterialUniform("material");
+
+            shaderProgram.createUniform("specularPower");
+            shaderProgram.createUniform("ambientLight");
+            shaderProgram.createPointLightUniform("pointLight");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -42,8 +50,9 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
     }
 
-    public RenderingEngineLWJGL(Game game) {
+    public RenderingEngineLWJGL(GameLWJGL game) {
         super(game);
+        this.game = game;
     }
 
     public void enableModelOutline() {
@@ -68,9 +77,17 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         shaderProgram.setUniform("texture_sampler",0);
         shaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
+        shaderProgram.setUniform("ambientLight",game.ambientLight);
+        shaderProgram.setUniform("specularPower",game.specularPower);
+
+        PointLight currLight = new PointLight(game.pointLight);
+        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(1)).getColumn(0);
+        shaderProgram.setUniform("pointLight",currLight);
+
         for(Model model: models) {
-            shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-            shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
+            shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+//            shaderProgram.setUniform("shouldUseTexture", model.mesh.texture != null ? 1 : 0);
+            shaderProgram.setUniform("material",model.mesh.material);
 
             model.mesh.render();
         }

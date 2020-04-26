@@ -15,11 +15,14 @@ import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
+import engine.lighting.Material;
+import engine.lighting.PointLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
+import org.lwjgl.system.CallbackI;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -53,6 +56,10 @@ public class GameLWJGL extends Game implements Runnable {
 
     Map<String, Mesh> meshInstances;
 
+    public PointLight pointLight;
+    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
+    public float specularPower = 10f;
+
     public GameLWJGL(String threadName) {
         super(threadName);
     }
@@ -69,6 +76,13 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void init() {
+
+        Vector lightColor = new Vector(new float[]{1f,1f,1f});
+        Vector lightPos = new Vector(new float[]{0f,0f,1f});
+        float lightIntensity = 10f;
+        pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+
         meshInstances = new HashMap<>();
         renderingEngine = new RenderingEngineLWJGL(this);
 
@@ -100,7 +114,6 @@ public class GameLWJGL extends Game implements Runnable {
         initPauseScreen();
 
         cam.updateValues();
-        //cam.lookAtModel(models.get(lookAtIndex));
 
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
 
@@ -118,27 +131,13 @@ public class GameLWJGL extends Game implements Runnable {
         hints.initLWJGLAttribs = true;
         hints.addRandomColor = true;
 
-        Model deer = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints),"deer");
-        deer.setPos(new Vector(new float[] {-10,15,-15}));
-        deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
-
-//        ModelLWJGL deer2 = ModelBuilder.buildModelLWJGLFromFile("deer.obj",meshInstances);
-//        deer2.setPos(new Vector(new float[] {0,18,0}));
-//        deer2.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
+//        Model deer = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints),"deer");
+//        deer.setPos(new Vector(new float[] {-10,15,-15}));
+//        deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 //
-        Model mill = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints),"mill");
-        mill.setPos(new Vector(new float[] {10,5,0}));
-        mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
-////
-//        ModelLWJGL pot = ModelBuilder.buildModelLWJGLFromFile("/Resources/TeapotHex3.obj",meshInstances);
-//        pot.setPos(new Vector(new float[]{0,10,10}));
-//        pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
-//        pot.setTickObj(tempRot);
-//
-//
-//        Model ironMan = ModelBuilder.buildModelFromFile("/Resources/IronMan.obj",meshInstances,hints);
-//        ironMan.setScale(1f,1f,1f);
-//        ironMan.setTickObj(tempRot);
+//        Model mill = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints),"mill");
+//        mill.setPos(new Vector(new float[] {10,5,0}));
+//        mill.setScale(new Vector(new float[] { 0.5f, 0.5f, 0.5f }));
 
         Model cube = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
         cube.setScale(1);
@@ -150,39 +149,45 @@ public class GameLWJGL extends Game implements Runnable {
         }catch (Exception e) {
             e.printStackTrace();
         }
-        cube.mesh.texture = tex;
 
-        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
-        sasuke.setScale(0.1f);
-        sasuke.setPos(0,17,0);
-        // sasuke.setTickObj(tempRot);
+//        cube.mesh.texture = tex;
+        float reflectance = 1f;
+        Material cubeMat = new Material(tex,reflectance);
+        cube.mesh.material = cubeMat;
 
-        try {
-            tex = new Texture("textures/11.BMP");
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-        sasuke.mesh.texture = tex;
+        pointLight.pos = cube.getPos().add(cube.getDirectionToFrontFromCentre(cube)).add(new Vector(new float[]{0,0,10}));
 
-        Model spiderman = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints),"spiderman");
-        try {
-            tex = new Texture("textures/spiderman.png");
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-        spiderman.mesh.texture = tex;
-
-        hints.addRandomColor = false;
-        hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,1});
-        Model grid = new Model(this,ModelBuilder.buildGridLines(100,100,hints),"grid");
+//        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
+//        sasuke.setScale(0.1f);
+//        sasuke.setPos(0,17,0);
+//        // sasuke.setTickObj(tempRot);
+//
+//        try {
+//            tex = new Texture("textures/11.BMP");
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        sasuke.mesh.texture = tex;
+//
+//        Model spiderman = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/spiderman.obj",meshInstances,hints),"spiderman");
+//        try {
+//            tex = new Texture("textures/spiderman.png");
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        spiderman.mesh.texture = tex;
+//
+//        hints.addRandomColor = false;
+//        hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,1});
+//        Model grid = new Model(this,ModelBuilder.buildGridLines(100,100,hints),"grid");
 
 //        models.add(ironMan);
 //        models.add(sasuke);
-        models.add(deer);
+//        models.add(deer);
 //        models.add(mill);
-//        models.add(cube);
+        models.add(cube);
 //        models.add(spiderman);
-        models.add(grid);
+//        models.add(grid);
     }
 
     public void initPauseScreen() {

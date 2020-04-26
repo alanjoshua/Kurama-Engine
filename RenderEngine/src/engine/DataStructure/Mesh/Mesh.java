@@ -6,6 +6,7 @@ import java.util.*;
 
 import engine.Math.Vector;
 import engine.DataStructure.Texture;
+import engine.lighting.Material;
 import org.lwjgl.system.MemoryUtil;
 
 import static org.lwjgl.opengl.GL15.*;
@@ -30,13 +31,9 @@ public class Mesh {
 
     public int vaoId;
     public List<Integer> vboIdList;
-
     public Texture texture;
+    public Material material;
 
-//    public Mesh(List<Face> faces, List<List<Vector>> vertAttributes) {
-//        this.faces = faces;
-//        this.vertAttributes = vertAttributes;
-//    }
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;

@@ -151,7 +151,7 @@ public class Camera {
 		}
 	}
 
-	public void lookAtModel(Model m) {
+	public Vector lookAtModel(Model m) {
 
 		float[] dataMin = new float[3];
 		dataMin[0] = Float.POSITIVE_INFINITY;
@@ -212,10 +212,10 @@ public class Camera {
 		fromData[2] = (max.get(2) + z);
 		
 		Vector from = new Vector(fromData);
-		lookAtPoint(from, to);
+		return lookAtPoint(from, to);
 	}
 
-	public void lookAtPoint(Vector from, Vector to) {
+	public Vector lookAtPoint(Vector from, Vector to) {
 		
 		Vector dir = (from.sub(to)).normalise();
 		float yawIncrease   = (float) Math.toRadians(Math.acos(dir.dot(new Vector(new float[] {1,0,0}))));
@@ -230,6 +230,7 @@ public class Camera {
 		this.setOrientation(q);
 		
 		this.setPos(from);
+		return from;
 	}
 	
 	public Vector[] getAxesFromforwardVec(Vector v) {

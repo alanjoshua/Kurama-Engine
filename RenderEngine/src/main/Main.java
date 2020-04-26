@@ -13,13 +13,13 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new GameSR("Software renderer");
-		game.start();
+//		game = new GameSR("Software renderer");
+//		game.start();
 
 //		game = new GameSR_ESL("ESL quat-quat",true);
 //		game.start();
 
-//		game = new GameLWJGL("OpenGL Renderer");
-//		game.start();
+		game = new GameLWJGL("OpenGL Renderer");
+		game.start();
 	}
 }
