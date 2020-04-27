@@ -2,12 +2,14 @@ package main;
 
 import engine.Math.Matrix;
 import engine.Math.Vector;
+import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
 import engine.model.Model;
+import org.lwjgl.system.CallbackI;
 
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class RenderingEngineLWJGL extends RenderingEngine {
             shaderProgram.createUniform("specularPower");
             shaderProgram.createUniform("ambientLight");
             shaderProgram.createPointLightUniform("pointLight");
+            shaderProgram.createDirectionalLightUniform("directionalLight");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,8 +84,12 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         shaderProgram.setUniform("specularPower",game.specularPower);
 
         PointLight currLight = new PointLight(game.pointLight);
-        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(1)).getColumn(0);
+        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(2);
         shaderProgram.setUniform("pointLight",currLight);
+
+        DirectionalLight currDirectionalLight = new DirectionalLight(game.directionalLight);
+        currDirectionalLight.direction = worldToCam.matMul(currDirectionalLight.direction.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(2);
+        shaderProgram.setUniform("directionalLight",currDirectionalLight);
 
         for(Model model: models) {
             shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));

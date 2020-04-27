@@ -15,6 +15,7 @@ import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
+import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
 import engine.lighting.PointLight;
 import engine.model.Model;
@@ -59,6 +60,8 @@ public class GameLWJGL extends Game implements Runnable {
     public PointLight pointLight;
     public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
     public float specularPower = 10f;
+    public DirectionalLight directionalLight;
+    float lightAngle = 0;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -78,10 +81,12 @@ public class GameLWJGL extends Game implements Runnable {
     public void init() {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
-        Vector lightPos = new Vector(new float[]{0f,0f,1f});
-        float lightIntensity = 10f;
+        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
+        float lightIntensity = 1f;
         pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+
+        directionalLight = new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{-1,0,0}),1);
 
         meshInstances = new HashMap<>();
         renderingEngine = new RenderingEngineLWJGL(this);
@@ -128,12 +133,12 @@ public class GameLWJGL extends Game implements Runnable {
 
         ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
         hints.shouldBakeVertexAttributes = false;
-        hints.addRandomColor = true;
+        hints.addRandomColor = false;
         hints.initLWJGLAttribs = true;
 
         Model cube = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
-        cube.setScale(1);
-        cube.setPos(-5,15,-5);
+        cube.setScale(0.5f);
+        cube.setPos(0,0,-2);
 
         Texture tex = null;
         try {
@@ -146,8 +151,11 @@ public class GameLWJGL extends Game implements Runnable {
         Material cubeMat = new Material(tex,reflectance);
         cube.mesh.material = cubeMat;
 
-        pointLight.pos = cube.getPos().add(cube.getDirectionToFrontFromCentre(cube)).add(new Vector(new float[]{0,0,10}));
-
+//        hints.shouldBakeVertexAttributes = true;
+//        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
+//        sasuke.setScale(0.05f);
+//
+//        models.add(sasuke);
         models.add(cube);
 
     }
@@ -259,10 +267,32 @@ public class GameLWJGL extends Game implements Runnable {
             prevGameState = isGameRunning;
         }
 
-        Model.ModelTickInput params = new Model.ModelTickInput();
-        params.timeDelta = timeDelta;
+        if(isGameRunning) {
+            Model.ModelTickInput params = new Model.ModelTickInput();
+            params.timeDelta = timeDelta;
 
-        models.forEach(m -> m.tick(params));
+            models.forEach(m -> m.tick(params));
+
+            lightAngle += 10f * timeDelta;
+            if (lightAngle > 90) {
+                directionalLight.intensity = 0;
+                if (lightAngle >= 360) {
+                    lightAngle = -90;
+                }
+            } else if (lightAngle <= -80 || lightAngle >= 80) {
+                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
+                directionalLight.intensity = factor;
+                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
+                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
+            } else {
+                directionalLight.intensity = 1;
+                directionalLight.color = new Vector(3,1);
+            }
+            double angRad = Math.toRadians(lightAngle);
+            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+
+        }
 
         if(!isGameRunning) {
             pauseButtons.forEach((b) -> b.tick(mousePos,((InputLWJGL)input).isLeftMouseButtonPressed));

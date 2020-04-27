@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import engine.Math.Matrix;
 import engine.Math.Vector;
+import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
 import engine.lighting.PointLight;
 import org.lwjgl.system.MemoryStack;
@@ -45,6 +46,12 @@ public class ShaderProgram {
         createUniform(uniformName + ".att.exponent");
     }
 
+    public void createDirectionalLightUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".color");
+        createUniform(uniformName + ".direction");
+        createUniform(uniformName + ".intensity");
+    }
+
     public void createMaterialUniform(String uniformName) throws Exception {
         createUniform(uniformName + ".ambient");
         createUniform(uniformName + ".diffuse");
@@ -61,6 +68,12 @@ public class ShaderProgram {
         setUniform(uniformName + ".att.constant", att.constant);
         setUniform(uniformName + ".att.linear", att.linear);
         setUniform(uniformName + ".att.exponent", att.exponent);
+    }
+
+    public void setUniform(String uniformName, DirectionalLight dirLight) {
+        setUniform(uniformName + ".color", dirLight.color);
+        setUniform(uniformName + ".direction", dirLight.direction);
+        setUniform(uniformName + ".intensity", dirLight.intensity);
     }
 
     public void setUniform(String uniformName, Material material) {

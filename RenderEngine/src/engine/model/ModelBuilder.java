@@ -226,7 +226,7 @@ public class ModelBuilder {
 
 		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
-		retMesh.drawMode = GL_TRIANGLES;
+		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
 
 	}
@@ -288,7 +288,7 @@ public class ModelBuilder {
 
 		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
-		retMesh.drawMode = GL_TRIANGLES;
+		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
 	}
 
