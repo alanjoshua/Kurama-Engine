@@ -18,6 +18,7 @@ import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
 import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
@@ -57,10 +58,11 @@ public class GameLWJGL extends Game implements Runnable {
 
     Map<String, Mesh> meshInstances;
 
-    public PointLight pointLight;
     public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
     public float specularPower = 10f;
-    public DirectionalLight directionalLight;
+    public List<PointLight> pointLights;
+    public List<DirectionalLight> directionalLights;
+    public List<SpotLight> spotLights;
     float lightAngle = 0;
 
     public GameLWJGL(String threadName) {
@@ -80,13 +82,26 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void init() {
 
+        pointLights = new ArrayList<>();
+        spotLights = new ArrayList<>();
+        directionalLights = new ArrayList<>();
+
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
         float lightIntensity = 1f;
-        pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+        pointLights.add(pointLight);
 
-        directionalLight = new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{-1,0,0}),1);
+        lightPos = new Vector(new float[]{0,0,10});
+        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, lightIntensity);
+        sl_pointLight.attenuation = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
+        Vector coneDir = new Vector(new float[]{0, 0, -1});
+        float cutoff = (float) Math.cos(Math.toRadians(140));
+        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
+        spotLights.add(spotLight);
+
+        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{-1,0,0}),1));
 
         meshInstances = new HashMap<>();
         renderingEngine = new RenderingEngineLWJGL(this);
@@ -272,6 +287,7 @@ public class GameLWJGL extends Game implements Runnable {
             params.timeDelta = timeDelta;
 
             models.forEach(m -> m.tick(params));
+            DirectionalLight directionalLight = directionalLights.get(0);
 
             lightAngle += 10f * timeDelta;
             if (lightAngle > 90) {

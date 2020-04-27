@@ -1,9 +1,13 @@
 package main;
 
+import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.lighting.DirectionalLight;
+import engine.lighting.Material;
 import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
+import engine.model.ModelBuilder;
 import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
@@ -12,6 +16,7 @@ import engine.model.Model;
 import org.lwjgl.system.CallbackI;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -19,8 +24,13 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
     public ShaderProgram shaderProgram;
     public GameLWJGL game;
+    protected Mesh axes;
 
     public void init() {
+
+        axes = ModelBuilder.buildAxes();
+        axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
+
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
         
         glEnable(GL_BLEND);
@@ -42,8 +52,10 @@ public class RenderingEngineLWJGL extends RenderingEngine {
 
             shaderProgram.createUniform("specularPower");
             shaderProgram.createUniform("ambientLight");
-            shaderProgram.createPointLightUniform("pointLight");
-            shaderProgram.createDirectionalLightUniform("directionalLight");
+
+            shaderProgram.createPointLightListUniform("pointLights",game.pointLights.size());
+            shaderProgram.createDirectionalLightListUniform("directionalLights",game.directionalLights.size());
+            shaderProgram.createSpotLightListUniform("spotLights",game.spotLights.size());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,18 +95,30 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         shaderProgram.setUniform("ambientLight",game.ambientLight);
         shaderProgram.setUniform("specularPower",game.specularPower);
 
-        PointLight currLight = new PointLight(game.pointLight);
-        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
-        shaderProgram.setUniform("pointLight",currLight);
+        LightDataPackage lights = processLights(game.pointLights, game.spotLights, game.directionalLights, worldToCam);
+        shaderProgram.setUniform("spotLights",lights.spotLights);
+        shaderProgram.setUniform("pointLights",lights.pointLights);
+        shaderProgram.setUniform("directionalLights",lights.directionalLights);
 
-        DirectionalLight currDirectionalLight = new DirectionalLight(game.directionalLight);
-        currDirectionalLight.direction = worldToCam.matMul(currDirectionalLight.direction.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
-        shaderProgram.setUniform("directionalLight",currDirectionalLight);
 
         for(Model model: models) {
             shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
             shaderProgram.setUniform("material", model.mesh.material);
+
             model.mesh.render();
+
+            shaderProgram.setUniform("material.hasTexture", 0);
+
+            if(model.shouldShowCollisionBox && model.boundingbox != null) {
+                shaderProgram.setUniform("material", model.boundingbox.material);
+                model.boundingbox.render();
+            }
+
+            if(model.shouldShowAxes && axes != null) {
+                shaderProgram.setUniform("material", axes.material);
+                axes.render();
+            }
+
         }
 
         shaderProgram.unbind();

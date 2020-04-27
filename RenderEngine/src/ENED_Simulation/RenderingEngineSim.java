@@ -53,8 +53,10 @@ public class RenderingEngineSim extends RenderingEngine {
 
             shaderProgram.createUniform("specularPower");
             shaderProgram.createUniform("ambientLight");
-            shaderProgram.createPointLightUniform("pointLight");
-            shaderProgram.createDirectionalLightUniform("directionalLight");
+
+            shaderProgram.createDirectionalLightListUniform("directionalLights",game.directionalLights.size());
+            shaderProgram.createSpotLightListUniform("spotLights",game.spotLights.size());
+            shaderProgram.createPointLightListUniform("pointLights",game.pointLights.size());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,37 +78,6 @@ public class RenderingEngineSim extends RenderingEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-//    public void render(List<Model> models) {
-//        clear();
-//        shaderProgram.bind();
-//
-//        Matrix worldToCam = game.getCamera().getWorldToCam();
-//        Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
-//
-//        shaderProgram.setUniform("texture_sampler",0);
-//        shaderProgram.setUniform("projectionMatrix",projectionMatrix);
-//
-//        for(Model model: models) {
-//            shaderProgram.setUniform("worldMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-//            shaderProgram.setUniform("shouldUseTexture", model.mesh.material.texture != null ? 1 : 0);
-//
-//            model.mesh.render();
-//
-//            shaderProgram.setUniform("shouldUseTexture", 0);
-//
-//            if(model.shouldShowCollisionBox && model.boundingbox != null) {
-//                model.boundingbox.render();
-//            }
-//
-//            if(model.shouldShowAxes && axes != null) {
-//                axes.render();
-//            }
-//
-//        }
-//
-//        shaderProgram.unbind();
-//
-//    }
 
     public void render(List<Model> models) {
         clear();
@@ -121,13 +92,10 @@ public class RenderingEngineSim extends RenderingEngine {
         shaderProgram.setUniform("ambientLight",game.ambientLight);
         shaderProgram.setUniform("specularPower",game.specularPower);
 
-        PointLight currLight = new PointLight(game.pointLight);
-        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(1)).getColumn(0).removeDimensionFromVec(2);
-        shaderProgram.setUniform("pointLight",currLight);
-
-        DirectionalLight currDirectionalLight = new DirectionalLight(game.directionalLight);
-        currDirectionalLight.direction = worldToCam.matMul(currDirectionalLight.direction.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
-        shaderProgram.setUniform("directionalLight",currDirectionalLight);
+        LightDataPackage lights = processLights(game.pointLights, game.spotLights, game.directionalLights, worldToCam);
+        shaderProgram.setUniform("spotLights",lights.spotLights);
+        shaderProgram.setUniform("pointLights",lights.pointLights);
+        shaderProgram.setUniform("directionalLights",lights.directionalLights);
 
         for(Model model: models) {
             shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));

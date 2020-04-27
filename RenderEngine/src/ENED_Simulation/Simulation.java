@@ -12,6 +12,7 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
 import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.ModelBuilder;
 import org.lwjgl.system.CallbackI;
@@ -76,8 +77,9 @@ public class Simulation extends Game {
     long seed = 123456789;
     Vector towerA,towerB,towerC,towerD;
 
-    public DirectionalLight directionalLight;
-    public PointLight pointLight;
+    public List<PointLight> pointLights;
+    public List<DirectionalLight> directionalLights;
+    public List<SpotLight> spotLights;
     public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
     public float specularPower = 10f;
 
@@ -92,13 +94,18 @@ public class Simulation extends Game {
     @Override
     public void init() {
 
+        pointLights = new ArrayList<>();
+        spotLights = new ArrayList<>();
+        directionalLights = new ArrayList<>();
+
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{0f,0f,1f});
         float lightIntensity = 10f;
-        pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+        pointLights.add(pointLight);
 
-        directionalLight = new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1);
+        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,1}),1));
 
         models = new ArrayList<>();
         boxesToBeSearched = new ArrayList<>();
