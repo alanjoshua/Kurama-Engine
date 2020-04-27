@@ -26,6 +26,7 @@ import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngine.RenderPipeline;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
+import engine.renderingEngine.RenderingEngineSR;
 
 public class GameSR extends Game implements Runnable {
 

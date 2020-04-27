@@ -1,4 +1,4 @@
-package main;
+package engine.renderingEngine;
 
 import java.awt.*;
 import java.util.ArrayList;

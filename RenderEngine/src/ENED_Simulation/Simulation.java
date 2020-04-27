@@ -80,6 +80,7 @@ public class Simulation extends Game {
     public Material pathMat;
     public Material boxWrongMat;
     public  Material boxRequiredMat;
+    public Material nullMat;
 
     public Simulation(String threadName) {
         super(threadName);
@@ -99,7 +100,7 @@ public class Simulation extends Game {
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
         pointLights.add(pointLight);
 
-        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,1}),1));
+        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
         models = new ArrayList<>();
         boxesToBeSearched = new ArrayList<>();
@@ -147,6 +148,7 @@ public class Simulation extends Game {
         boxWrongMat = new Material(new Vector(new float[]{1,0,0,1}),1);
         boxRequiredMat = new Material(new Vector(new float[]{0,1,0,1}),1);
         pathMat = new Material(new Vector(new float[]{0,1,0,1}),1);
+        nullMat = new Material(new Vector(new float[]{0,0,0,1}),0);
 
         initModels();
         initPauseScreen();
@@ -180,18 +182,22 @@ public class Simulation extends Game {
         Model h1 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h1");
         h1.setPos(0,0,-12);
         h1.isCollidable = false;
+        h1.mesh.material = nullMat;
 
         Model h2 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h2");
         h2.setPos(96,0,-12);
         h2.isCollidable = false;
+        h2.mesh.material = nullMat;
 
         Model h3 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h3");
         h3.setPos(0,0,-132);
         h3.isCollidable = false;
+        h3.mesh.material = nullMat;
 
         Model h4 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h4");
         h4.setPos(96,0,-132);
         h4.isCollidable = false;
+        h4.mesh.material = nullMat;
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
