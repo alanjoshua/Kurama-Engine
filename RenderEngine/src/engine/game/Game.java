@@ -4,6 +4,9 @@ import engine.DataStructure.GridNode;
 import engine.Math.Vector;
 import engine.display.Display;
 import engine.inputs.Input;
+import engine.lighting.DirectionalLight;
+import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
@@ -30,6 +33,12 @@ public abstract class Game implements Runnable {
 
     protected Thread gameLoopThread;
     protected BufferedWriter bw;
+
+    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
+    public float specularPower = 10f;
+    public List<PointLight> pointLights;
+    public List<DirectionalLight> directionalLights;
+    public List<SpotLight> spotLights;
 
     public Game(String threadName) {
         gameLoopThread = new Thread(this,threadName);

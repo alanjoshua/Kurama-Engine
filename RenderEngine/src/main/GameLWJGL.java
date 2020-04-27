@@ -57,12 +57,6 @@ public class GameLWJGL extends Game implements Runnable {
     protected boolean prevGameState = false;
 
     Map<String, Mesh> meshInstances;
-
-    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
-    public float specularPower = 10f;
-    public List<PointLight> pointLights;
-    public List<DirectionalLight> directionalLights;
-    public List<SpotLight> spotLights;
     float lightAngle = 0;
 
     public GameLWJGL(String threadName) {

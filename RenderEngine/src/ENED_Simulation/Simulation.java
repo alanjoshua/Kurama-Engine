@@ -77,12 +77,6 @@ public class Simulation extends Game {
     long seed = 123456789;
     Vector towerA,towerB,towerC,towerD;
 
-    public List<PointLight> pointLights;
-    public List<DirectionalLight> directionalLights;
-    public List<SpotLight> spotLights;
-    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
-    public float specularPower = 10f;
-
     public Material pathMat;
     public Material boxWrongMat;
     public  Material boxRequiredMat;

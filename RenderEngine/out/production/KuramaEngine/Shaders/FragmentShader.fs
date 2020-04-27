@@ -14,6 +14,12 @@ struct PointLight {
     Attenuation att;
 };
 
+struct SpotLight {
+    PointLight pl;
+    float cutOff;
+    vec3 coneDir;
+};
+
 struct DirectionalLight {
     vec3 color;
     vec3 direction;
@@ -28,12 +34,17 @@ struct Material {
     float reflectance;
 };
 
+const int MAX_POINT_LIGHTS = 10;
+const int MAX_SPOT_LIGHTS = 10;
+const int MAX_DIRECTIONAL_LIGHTS = 10;
+
 uniform sampler2D texture_sampler;
 uniform vec3 ambientLight;
 uniform float specularPower;
 uniform Material material;
-uniform PointLight pointLight;
-uniform DirectionalLight directionalLight;
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
+uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
 uniform vec3 camera_pos;
 
 in vec4 exColor;
@@ -97,12 +108,47 @@ vec4 calculateDirectionalLight(DirectionalLight light, vec3 pos, vec3 normal) {
     return calculateLight(light.color, light.intensity, pos, normalize(light.direction),normal);
 }
 
+vec4 calculateSpotLight(SpotLight light, vec3 pos, vec3 normal) {
+     vec3 lightDirection = light.pl.pos - pos;
+     vec3 toLightDir  = normalize(lightDirection);
+     vec3 fromLightDir  = -toLightDir;
+     float spotAlpha = dot(fromLightDir, normalize(light.coneDir));
+
+     vec4 color = vec4(0, 0, 0, 0);
+
+     if ( spotAlpha > light.cutOff ) {
+        color = calculatePointLight(light.pl, pos, normal);
+        color *= (1.0 - (1.0 - spotAlpha)/(1.0 - light.cutOff));
+     }
+     return color;
+}
+
 void main() {
      setupColors(material, outTex);
+     vec4 color = vec4(0,0,0,0);
 
-     vec4 dirColor = calculateDirectionalLight(directionalLight, vertPos, vertNormal);
-     vec4 pointColor = calculatePointLight(pointLight, vertPos, vertNormal);
-     vec4 diffuseSpecularComp = pointColor + dirColor;
+     for(int i = 0;i < MAX_POINT_LIGHTS;i++) {
+        if(pointLights[i].intensity > 0) {
+            color += calculatePointLight(pointLights[i],vertPos,vertNormal);
+        }
+     }
 
-    fragColor = (ambientC * vec4(ambientLight, 1)) + diffuseSpecularComp;
+     for(int i = 0;i < MAX_SPOT_LIGHTS;i++) {
+        if(spotLights[i].pl.intensity > 0) {
+            color += calculateSpotLight(spotLights[i],vertPos,vertNormal);
+        }
+     }
+
+     for(int i = 0;i < MAX_DIRECTIONAL_LIGHTS;i++) {
+        if(directionalLights[i].intensity > 0) {
+            color += calculateDirectionalLight(directionalLights[i],vertPos,vertNormal);
+        }
+     }
+
+    // vec4 dirColor = calculateDirectionalLight(directionalLight, vertPos, vertNormal);
+    // vec4 pointColor = calculatePointLight(pointLight, vertPos, vertNormal);
+    // vec4 spotColor = calculateSpotLight(spotLight, vertPos, vertNormal);
+    // vec4 diffuseSpecularComp = pointColor + dirColor + spotColor;
+
+    fragColor = (ambientC * vec4(ambientLight, 1)) + color;
 }
