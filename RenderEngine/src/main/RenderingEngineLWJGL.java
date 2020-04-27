@@ -84,11 +84,11 @@ public class RenderingEngineLWJGL extends RenderingEngine {
         shaderProgram.setUniform("specularPower",game.specularPower);
 
         PointLight currLight = new PointLight(game.pointLight);
-        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(2);
+        currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
         shaderProgram.setUniform("pointLight",currLight);
 
         DirectionalLight currDirectionalLight = new DirectionalLight(game.directionalLight);
-        currDirectionalLight.direction = worldToCam.matMul(currDirectionalLight.direction.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(2);
+        currDirectionalLight.direction = worldToCam.matMul(currDirectionalLight.direction.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
         shaderProgram.setUniform("directionalLight",currDirectionalLight);
 
         for(Model model: models) {
