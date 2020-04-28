@@ -95,7 +95,7 @@ public class Simulation extends Game {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{0f,0f,1f});
-        float lightIntensity = 10f;
+        float lightIntensity = 1f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
         pointLights.add(pointLight);

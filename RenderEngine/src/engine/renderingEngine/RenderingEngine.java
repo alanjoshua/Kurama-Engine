@@ -47,7 +47,7 @@ public abstract class RenderingEngine {
         pointLightsRes = pointLights.stream()
                 .map(l -> {
                     PointLight currLight = new PointLight(l);
-                    currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
+                    currLight.pos = worldToCam.matMul(currLight.pos.addDimensionToVec(1)).getColumn(0).removeDimensionFromVec(3);
                     return currLight;
                 })
                 .collect(Collectors.toList());

@@ -81,6 +81,11 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void render(List<Model> models) {
         clear();
+        renderScene(models);
+        renderHUD();
+    }
+
+    public void renderScene(List<Model> models) {
         shaderProgram.bind();
 
         Matrix worldToCam = game.getCamera().getWorldToCam();
@@ -119,6 +124,9 @@ public class RenderingEngineGL extends RenderingEngine {
         }
 
         shaderProgram.unbind();
+    }
+
+    public void renderHUD() {
 
     }
 
