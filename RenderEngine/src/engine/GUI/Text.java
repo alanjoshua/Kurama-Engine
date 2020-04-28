@@ -15,7 +15,7 @@ import engine.model.ModelBuilder;
 
 public class Text extends Model {
 
-    public static final float ZPOS = 0.0f;
+    public static final float ZPOS = 0f;
     public static final int VERTICES_PER_QUAD = 4;
     protected String text;
     public final int numCols;
@@ -44,8 +44,9 @@ public class Text extends Model {
 
         for(int i=0; i<numChars; i++) {
             byte currChar = chars[i];
-            int col = currChar % numCols;
-            int row = currChar / numCols;
+
+            int col = (currChar) % (numCols);
+            int row = (currChar) / (numCols);
 
             Vector pos;
             Vector tex;
@@ -60,7 +61,8 @@ public class Text extends Model {
 
             // Left Top vertex
             pos = new Vector(new float[]{i*tileWidth,0,ZPOS,1});
-            tex = new Vector(new float[]{(float)col / (float)numCols, (float)row / (float)numRows});
+            tex = new Vector(new float[]{(float)col / (float)numCols,(float)row / (float)numRows});
+            //tex = new Vector(new float[]{col * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD;
             tl.setAttribute(index,Vertex.POSITION);
             tl.setAttribute(index, Vertex.TEXTURE);
@@ -70,7 +72,8 @@ public class Text extends Model {
 
             // Left Bottom vertex
             pos = new Vector(new float[]{(float)i*tileWidth, tileHeight,ZPOS,1});
-            tex = new Vector(new float[]{(float)col / (float)numCols, (float)(row + 1) / (float)numRows});
+            tex = new Vector(new float[]{(float)col / (float)numCols,(float)(row + 1) / (float)numRows});
+            //tex = new Vector(new float[]{col * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 1;
             indices.add(index);
             bl.setAttribute(index, Vertex.POSITION);
@@ -81,7 +84,8 @@ public class Text extends Model {
 
             // Right Bottom vertex
             pos = new Vector(new float[]{(float)i*tileWidth + tileWidth, tileHeight,ZPOS,1});
-            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols, (float)(row + 1) / (float)numRows});
+            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols,(float)(row + 1) / (float)numRows});
+            //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 2;
             indices.add(index);
             br.setAttribute(index, Vertex.POSITION);
@@ -93,7 +97,8 @@ public class Text extends Model {
 
             // Right Top vertex
             pos = new Vector(new float[]{(float)i*tileWidth + tileWidth, 0,ZPOS,1});
-            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols, (float)row / (float)numRows});
+            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols,(float)row / (float)numRows});
+            //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 3;
             indices.add(index);
             tr.setAttribute(index, Vertex.POSITION);
@@ -116,7 +121,9 @@ public class Text extends Model {
 
         Mesh res = new Mesh(null,faces,vertAttribs);
         res = ModelBuilder.triangulate(res,false);
+        res = ModelBuilder.bakeMesh(res,null);
         res.initOpenGLMeshData();
+        res.material.texture = texture;
         return res;
     }
 

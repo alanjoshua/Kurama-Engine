@@ -10,6 +10,7 @@ import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
 import engine.model.Model;
+import org.lwjgl.system.CallbackI;
 
 import java.util.List;
 
@@ -27,8 +28,7 @@ public class RenderingEngineGL extends RenderingEngine {
         axes = ModelBuilder.buildAxes();
         axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
         try {
-            text = new Text(game, "HELLO", "textures/fontsTransparent.png", 15, 17, "text");
-            text.getMesh().material = new Material(new Vector(new float[]{1,1,1,1}),1);
+            text = new Text(game, "Hello World", "textures/fontTexture.png", 16, 16, "text");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -150,17 +150,14 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void renderHUD() {
 
-        text.setPos(10f, game.getDisplay().getHeight() - 50f, 0);
+        text.setPos(10, game.getDisplay().getHeight() - 100f, 0);
 
         hudShaderProgram.bind();
 
-        Matrix worldToCam = game.getCamera().getWorldToCam();
-        Matrix ortho = game.getCamera().getOrthographicProjectionMatrix();
+        Matrix ortho = buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(),0);
 
         // Set orthographic and model matrix for this HUD item
-        Matrix projModelMatrix = ortho.matMul(worldToCam.matMul(text.getObjectToWorldMatrix()));
-
-        projModelMatrix.matMul(text.mesh.getVertices().get(0)).getColumn(0).display();
+        Matrix projModelMatrix = ortho.matMul((text.getObjectToWorldMatrix()));
 
         hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
         hudShaderProgram.setUniform("color",text.mesh.material.ambientColor);

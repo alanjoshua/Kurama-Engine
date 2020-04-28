@@ -88,6 +88,23 @@ public abstract class RenderingEngine {
         return res;
     }
 
+    public Matrix buildOrtho2D(float left, float right, float bottom, float top) {
+        float n = -1;
+        float r = right;
+        float l = left;
+        float t = top;
+        float b = bottom;
+        float f = 1;
+
+        float[][] data = new float[][] {
+                { (2) / (r - l), 0, 0, -(r + l) / (r - l) },
+                { 0, (2) / (t - b), 0, -(t + b) / (t - b) },
+                { 0, 0, -(2) / (f - n), -(f + n) / (f - n) },
+                { 0, 0, 0, 1 } };
+
+        return new Matrix(data);
+    }
+
     public ProjectionMode getProjectionMode() {
         return projectionMode;
     }

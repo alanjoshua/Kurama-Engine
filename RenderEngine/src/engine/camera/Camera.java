@@ -127,7 +127,6 @@ public class Camera {
 				canvasHeight = top * 2;
 
 				buildPerspectiveProjectionMatrix();
-				buildOrthographicProjectionMatrix();
 			}
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
@@ -147,7 +146,6 @@ public class Camera {
 				canvasWidth = right * 2;
 				canvasHeight = top * 2;
 
-				buildPerspectiveProjectionMatrix();
 				buildOrthographicProjectionMatrix();
 			}
 		}
