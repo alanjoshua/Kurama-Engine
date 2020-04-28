@@ -1,66 +1,88 @@
 package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.GUI.Text;
 import engine.Math.Matrix;
 import engine.Math.Vector;
-import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
-import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
 import engine.model.ModelBuilder;
-import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
 import engine.model.Model;
-import main.GameLWJGL;
-import org.lwjgl.system.CallbackI;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.*;
 
 public class RenderingEngineGL extends RenderingEngine {
 
-    public ShaderProgram shaderProgram;
+    public ShaderProgram sceneShaderProgram;
+    public ShaderProgram hudShaderProgram;
     protected Mesh axes;
+    public Text text;
 
     public void init() {
 
         axes = ModelBuilder.buildAxes();
         axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
+        try {
+            text = new Text(game, "HELLO", "textures/fontsTransparent.png", 15, 17, "text");
+            text.getMesh().material = new Material(new Vector(new float[]{1,1,1,1}),1);
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        setupSceneShader();
+        setupHUDShader();
+
+    }
+
+    public void setupSceneShader() {
         try {
-            shaderProgram = new ShaderProgram();
-            shaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
-            shaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/FragmentShader.fs"));
-            shaderProgram.link();
+            sceneShaderProgram = new ShaderProgram();
+            sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
+            sceneShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/FragmentShader.fs"));
+            sceneShaderProgram.link();
 
-            shaderProgram.createUniform("projectionMatrix");
-            shaderProgram.createUniform("modelViewMatrix");
-            shaderProgram.createUniform("texture_sampler");
+            sceneShaderProgram.createUniform("projectionMatrix");
+            sceneShaderProgram.createUniform("modelViewMatrix");
+            sceneShaderProgram.createUniform("texture_sampler");
 
-            shaderProgram.createMaterialUniform("material");
+            sceneShaderProgram.createMaterialUniform("material");
 
-            shaderProgram.createUniform("specularPower");
-            shaderProgram.createUniform("ambientLight");
+            sceneShaderProgram.createUniform("specularPower");
+            sceneShaderProgram.createUniform("ambientLight");
 
-            shaderProgram.createPointLightListUniform("pointLights",game.pointLights.size());
-            shaderProgram.createDirectionalLightListUniform("directionalLights",game.directionalLights.size());
-            shaderProgram.createSpotLightListUniform("spotLights",game.spotLights.size());
+            sceneShaderProgram.createPointLightListUniform("pointLights",game.pointLights.size());
+            sceneShaderProgram.createDirectionalLightListUniform("directionalLights",game.directionalLights.size());
+            sceneShaderProgram.createSpotLightListUniform("spotLights",game.spotLights.size());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
-        //enableModelFill();
+    public void setupHUDShader() {
+        try {
+        hudShaderProgram = new ShaderProgram();
+        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/shaders/HUDVertexShader.vs"));
+        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/shaders/HUDFragmentShader.fs"));
+        hudShaderProgram.link();
 
+        // Create uniforms for Orthographic-model projection matrix and base colour
+        hudShaderProgram.createUniform("projModelMatrix");
+        hudShaderProgram.createUniform("color");
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public RenderingEngineGL(Game game) {
@@ -86,53 +108,73 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void renderScene(List<Model> models) {
-        shaderProgram.bind();
+        sceneShaderProgram.bind();
 
         Matrix worldToCam = game.getCamera().getWorldToCam();
         Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
 
-        shaderProgram.setUniform("texture_sampler",0);
-        shaderProgram.setUniform("projectionMatrix",projectionMatrix);
+        sceneShaderProgram.setUniform("texture_sampler",0);
+        sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
-        shaderProgram.setUniform("ambientLight",game.ambientLight);
-        shaderProgram.setUniform("specularPower",game.specularPower);
+        sceneShaderProgram.setUniform("ambientLight",game.ambientLight);
+        sceneShaderProgram.setUniform("specularPower",game.specularPower);
 
         LightDataPackage lights = processLights(game.pointLights, game.spotLights, game.directionalLights, worldToCam);
-        shaderProgram.setUniform("spotLights",lights.spotLights);
-        shaderProgram.setUniform("pointLights",lights.pointLights);
-        shaderProgram.setUniform("directionalLights",lights.directionalLights);
+        sceneShaderProgram.setUniform("spotLights",lights.spotLights);
+        sceneShaderProgram.setUniform("pointLights",lights.pointLights);
+        sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
 
 
         for(Model model: models) {
-            shaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-            shaderProgram.setUniform("material", model.mesh.material);
+            sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+            sceneShaderProgram.setUniform("material", model.mesh.material);
 
             model.mesh.render();
 
-            shaderProgram.setUniform("material.hasTexture", 0);
+            sceneShaderProgram.setUniform("material.hasTexture", 0);
 
             if(model.shouldShowCollisionBox && model.boundingbox != null) {
-                shaderProgram.setUniform("material", model.boundingbox.material);
+                sceneShaderProgram.setUniform("material", model.boundingbox.material);
                 model.boundingbox.render();
             }
 
             if(model.shouldShowAxes && axes != null) {
-                shaderProgram.setUniform("material", axes.material);
+                sceneShaderProgram.setUniform("material", axes.material);
                 axes.render();
             }
 
         }
 
-        shaderProgram.unbind();
+        sceneShaderProgram.unbind();
     }
 
     public void renderHUD() {
 
+        text.setPos(10f, game.getDisplay().getHeight() - 50f, 0);
+
+        hudShaderProgram.bind();
+
+        Matrix worldToCam = game.getCamera().getWorldToCam();
+        Matrix ortho = game.getCamera().getOrthographicProjectionMatrix();
+
+        // Set orthographic and model matrix for this HUD item
+        Matrix projModelMatrix = ortho.matMul(worldToCam.matMul(text.getObjectToWorldMatrix()));
+
+        projModelMatrix.matMul(text.mesh.getVertices().get(0)).getColumn(0).display();
+
+        hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+        hudShaderProgram.setUniform("color",text.mesh.material.ambientColor);
+
+        // Render the mesh for this HUD item
+        text.mesh.render();
+
+        hudShaderProgram.unbind();
+
     }
 
     public void cleanUp() {
-        if(shaderProgram != null) {
-            shaderProgram.cleanUp();
+        if(sceneShaderProgram != null) {
+            sceneShaderProgram.cleanUp();
         }
     }
 
