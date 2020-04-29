@@ -21,12 +21,17 @@ public class Text extends Model {
     public final int numCols;
     public final int numRows;
 
-    public Text(Game game, String text, String fontFileName, int numCols, int numRows, String identifier) throws Exception {
+    public Text(Game game, String text, String fontFileName, int numCols, int numRows, String identifier) {
         super(game,null,identifier);
         this.text = text;
         this.numCols = numCols;
         this.numRows = numRows;
-        Texture texture = new Texture(fontFileName);
+        Texture texture = null;
+        try {
+            texture = new Texture(fontFileName);
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
         this.mesh = buildMesh(texture, numCols, numRows);
     }
 

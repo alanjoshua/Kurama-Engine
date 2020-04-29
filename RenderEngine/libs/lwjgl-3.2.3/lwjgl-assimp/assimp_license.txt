@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ******************************************************************************
 
-AN EXCEPTION applies to all files in the ./test/models-nonbsd folder.
+AN EXCEPTION applies to all files in the ./main/models-nonbsd folder.
 These are 3d models for testing purposes, from various free sources
 on the internet. They are - unless otherwise stated - copyright of
 their respective creators, which may impose additional requirements

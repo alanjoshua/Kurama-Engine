@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import engine.GUI.Text;
+import engine.HUD;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.display.Display;
@@ -24,7 +26,6 @@ import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import org.lwjgl.system.CallbackI;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -95,7 +96,7 @@ public class GameLWJGL extends Game implements Runnable {
         SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
         spotLights.add(spotLight);
 
-        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{-1,0,0}),1));
+        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
         meshInstances = new HashMap<>();
         renderingEngine = new RenderingEngineLWJGL(this);
@@ -128,8 +129,8 @@ public class GameLWJGL extends Game implements Runnable {
         initPauseScreen();
 
         cam.updateValues();
-
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
+        hud = new TestHUD(this);
 
     }
 
@@ -160,12 +161,17 @@ public class GameLWJGL extends Game implements Runnable {
         Material cubeMat = new Material(tex,reflectance);
         cube.mesh.material = cubeMat;
 
+        Model text = new Text(this, "Hello World", "textures/fontTexture.png", 16, 16, "text");
+        text.setScale(0.01f,-0.01f,0.01f);
+        text.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),0));
+        text.mesh.material .reflectance = 1;
 //        hints.shouldBakeVertexAttributes = true;
 //        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
 //        sasuke.setScale(0.05f);
 //
 //        models.add(sasuke);
         models.add(cube);
+        models.add(text);
 
     }
 
@@ -260,6 +266,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
         tickInput();
+        hud.tick();
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
@@ -283,24 +290,24 @@ public class GameLWJGL extends Game implements Runnable {
             models.forEach(m -> m.tick(params));
             DirectionalLight directionalLight = directionalLights.get(0);
 
-            lightAngle += 10f * timeDelta;
-            if (lightAngle > 90) {
-                directionalLight.intensity = 0;
-                if (lightAngle >= 360) {
-                    lightAngle = -90;
-                }
-            } else if (lightAngle <= -80 || lightAngle >= 80) {
-                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
-                directionalLight.intensity = factor;
-                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
-                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
-            } else {
-                directionalLight.intensity = 1;
-                directionalLight.color = new Vector(3,1);
-            }
-            double angRad = Math.toRadians(lightAngle);
-            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
-            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+//            lightAngle += 10f * timeDelta;
+//            if (lightAngle > 90) {
+//                directionalLight.intensity = 0;
+//                if (lightAngle >= 360) {
+//                    lightAngle = -90;
+//                }
+//            } else if (lightAngle <= -80 || lightAngle >= 80) {
+//                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
+//                directionalLight.intensity = factor;
+//                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
+//                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
+//            } else {
+//                directionalLight.intensity = 1;
+//                directionalLight.color = new Vector(3,1);
+//            }
+//            double angRad = Math.toRadians(lightAngle);
+//            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+//            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
 
         }
 
@@ -429,7 +436,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void render() {
-        ((RenderingEngineLWJGL)renderingEngine).render(models);
+        ((RenderingEngineLWJGL)renderingEngine).render(models,hud);
 
         glfwSwapBuffers(((DisplayLWJGL)display).getWindow());
         glfwPollEvents();

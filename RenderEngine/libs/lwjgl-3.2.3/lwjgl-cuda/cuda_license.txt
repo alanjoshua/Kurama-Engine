@@ -209,7 +209,7 @@ SDK:
     result in personal injury, death, or catastrophic loss.
     Examples include use in nuclear, avionics, navigation,
     military, medical, life support or other life critical
-    applications. NVIDIA does not design, test or manufacture
+    applications. NVIDIA does not design, main or manufacture
     the SDK for these critical uses and NVIDIA shall not be
     liable to you or any third party, in whole or in part, for
     any claims or damages arising from such uses.

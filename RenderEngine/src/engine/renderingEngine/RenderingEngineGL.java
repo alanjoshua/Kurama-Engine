@@ -2,7 +2,9 @@ package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
 import engine.GUI.Text;
+import engine.HUD;
 import engine.Math.Matrix;
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.lighting.Material;
 import engine.model.ModelBuilder;
@@ -21,18 +23,11 @@ public class RenderingEngineGL extends RenderingEngine {
     public ShaderProgram sceneShaderProgram;
     public ShaderProgram hudShaderProgram;
     protected Mesh axes;
-    public Text text;
 
     public void init() {
 
         axes = ModelBuilder.buildAxes();
         axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
-        try {
-            text = new Text(game, "Hello World", "textures/fontTexture.png", 16, 16, "text");
-
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
@@ -101,10 +96,10 @@ public class RenderingEngineGL extends RenderingEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(List<Model> models) {
+    public void render(List<Model> models, HUD hud) {
         clear();
         renderScene(models);
-        renderHUD();
+        renderHUD(hud);
     }
 
     public void renderScene(List<Model> models) {
@@ -148,22 +143,25 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.unbind();
     }
 
-    public void renderHUD() {
+    public void renderHUD(HUD hud) {
 
-        text.setPos(10, game.getDisplay().getHeight() - 100f, 0);
+        if(hud == null) {
+            return;
+        }
 
-        hudShaderProgram.bind();
+        for(Model m: hud.hudElements) {
+            hudShaderProgram.bind();
 
-        Matrix ortho = buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(),0);
+            Matrix ortho = buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(), 0);
 
-        // Set orthographic and model matrix for this HUD item
-        Matrix projModelMatrix = ortho.matMul((text.getObjectToWorldMatrix()));
+            // Set orthographic and model matrix for this HUD item
+            Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
 
-        hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-        hudShaderProgram.setUniform("color",text.mesh.material.ambientColor);
+            hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+            hudShaderProgram.setUniform("color", m.mesh.material.ambientColor);
 
-        // Render the mesh for this HUD item
-        text.mesh.render();
+            m.mesh.render();
+        }
 
         hudShaderProgram.unbind();
 

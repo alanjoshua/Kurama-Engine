@@ -157,6 +157,7 @@ public class Simulation extends Game {
         cam.lookAtModel(flag);
 
         targetFPS = display.getRefreshRate();
+        hud = new SimulationHUD(this);
 
     }
 
@@ -223,7 +224,6 @@ public class Simulation extends Game {
         models.add(h2);
         models.add(h3);
         models.add(h4);
-
 
         initCrates();
 
@@ -487,6 +487,7 @@ public class Simulation extends Game {
     @Override
     public void tick() {
         tickInput();
+        hud.tick();
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
@@ -799,7 +800,12 @@ public class Simulation extends Game {
         if(robot.pathModel!= null && robot.shouldShowPath) {
             drawModels.add(robot.pathModel);
         }
-        renderingEngine.render(drawModels);
+        if(isGameRunning) {
+            renderingEngine.render(drawModels, null);
+        }
+        else {
+            renderingEngine.render(drawModels, hud);
+        }
 
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
