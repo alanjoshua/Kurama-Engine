@@ -4,6 +4,7 @@ import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Texture;
+import engine.font.FontTexture;
 import engine.game.Game;
 import engine.model.Model;
 
@@ -18,40 +19,28 @@ public class Text extends Model {
     public static final float ZPOS = 0f;
     public static final int VERTICES_PER_QUAD = 4;
     protected String text;
-    public final int numCols;
-    public final int numRows;
+    public FontTexture fontTexture;
+    public float width;
 
-    public Text(Game game, String text, String fontFileName, int numCols, int numRows, String identifier) {
+    public Text(Game game, String text, FontTexture fontTexture,String identifier) {
         super(game,null,identifier);
         this.text = text;
-        this.numCols = numCols;
-        this.numRows = numRows;
-        Texture texture = null;
-        try {
-            texture = new Texture(fontFileName);
-        }catch(Exception e) {
-            e.printStackTrace();
-        }
-        this.mesh = buildMesh(texture, numCols, numRows);
+        this.fontTexture = fontTexture;
+
+        this.mesh = buildMesh();
     }
 
-    public Mesh buildMesh(Texture texture, int numCols, int numRows) {
-        byte[] chars = text.getBytes(Charset.forName("ISO-8859-1"));
-        int numChars = chars.length;
-
+    public Mesh buildMesh() {
         List<Vector> positions = new ArrayList<>();
         List<Vector> textCoords = new ArrayList<>();
         List<Integer> indices= new ArrayList<>();
         List<Face> faces = new ArrayList<>();
+        char[] characters = text.toCharArray();
+        int numChars = characters.length;
 
-        float tileWidth = (float)texture.width / (float)numCols;
-        float tileHeight = (float)texture.height / (float)numRows;
-
+        float startx = 0;
         for(int i=0; i<numChars; i++) {
-            byte currChar = chars[i];
-
-            int col = (currChar) % (numCols);
-            int row = (currChar) / (numCols);
+            FontTexture.CharInfo charInfo = fontTexture.getCharInfo(characters[i]);
 
             Vector pos;
             Vector tex;
@@ -65,8 +54,8 @@ public class Text extends Model {
             // Build a character tile composed by two triangles
 
             // Left Top vertex
-            pos = new Vector(new float[]{i*tileWidth,0,ZPOS,1});
-            tex = new Vector(new float[]{(float)col / (float)numCols,(float)row / (float)numRows});
+            pos = new Vector(new float[]{startx,0,ZPOS,1});
+            tex = new Vector(new float[]{(float)charInfo.startX / (float)fontTexture.width,0});
             //tex = new Vector(new float[]{col * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD;
             tl.setAttribute(index,Vertex.POSITION);
@@ -76,8 +65,8 @@ public class Text extends Model {
             indices.add(index);
 
             // Left Bottom vertex
-            pos = new Vector(new float[]{(float)i*tileWidth, tileHeight,ZPOS,1});
-            tex = new Vector(new float[]{(float)col / (float)numCols,(float)(row + 1) / (float)numRows});
+            pos = new Vector(new float[]{startx,fontTexture.height,ZPOS,1});
+            tex = new Vector(new float[]{(float)charInfo.startX / (float)fontTexture.width,1});
             //tex = new Vector(new float[]{col * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 1;
             indices.add(index);
@@ -88,8 +77,8 @@ public class Text extends Model {
             indices.add(index);
 
             // Right Bottom vertex
-            pos = new Vector(new float[]{(float)i*tileWidth + tileWidth, tileHeight,ZPOS,1});
-            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols,(float)(row + 1) / (float)numRows});
+            pos = new Vector(new float[]{startx + charInfo.width, fontTexture.height,ZPOS,1});
+            tex = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)fontTexture.width,1});
             //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 2;
             indices.add(index);
@@ -101,8 +90,8 @@ public class Text extends Model {
 
 
             // Right Top vertex
-            pos = new Vector(new float[]{(float)i*tileWidth + tileWidth, 0,ZPOS,1});
-            tex = new Vector(new float[]{(float)(col + 1)/ (float)numCols,(float)row / (float)numRows});
+            pos = new Vector(new float[]{startx + charInfo.width, 0,ZPOS,1});
+            tex = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)fontTexture.width,0});
             //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 3;
             indices.add(index);
@@ -118,7 +107,9 @@ public class Text extends Model {
             f1.addVertex(tr);
 
             faces.add(f1);
+            startx += charInfo.width;
         }
+        width = startx;
 
         List<List<Vector>> vertAttribs = new ArrayList<>();
         vertAttribs.add(positions);
@@ -128,15 +119,14 @@ public class Text extends Model {
         res = ModelBuilder.triangulate(res,false);
         res = ModelBuilder.bakeMesh(res,null);
         res.initOpenGLMeshData();
-        res.material.texture = texture;
+        res.material.texture = fontTexture.texture;
         return res;
     }
 
     public void setText(String text) {
         this.text = text;
-        Texture texture = this.mesh.material.texture;
         this.mesh.deleteBuffers();
-        this.mesh = buildMesh(texture, numCols, numRows);
+        this.mesh = buildMesh();
     }
 
 }

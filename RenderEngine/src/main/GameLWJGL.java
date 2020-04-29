@@ -12,6 +12,7 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
+import engine.font.FontTexture;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
@@ -161,15 +162,11 @@ public class GameLWJGL extends Game implements Runnable {
         Material cubeMat = new Material(tex,reflectance);
         cube.mesh.material = cubeMat;
 
-        Model text = new Text(this, "Hello World", "textures/fontTexture.png", 16, 16, "text");
-        text.setScale(0.01f,-0.01f,0.01f);
+        Model text = new Text(this, "Hello World", new FontTexture(new Font("Arial", Font.PLAIN, 100), "ISO-8859-1"), "text");
+        text.setScale(0.005f,-0.005f,0.005f);
         text.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),0));
         text.mesh.material .reflectance = 1;
-//        hints.shouldBakeVertexAttributes = true;
-//        Model sasuke = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/Sasuke.obj",meshInstances,hints),"sasuke");
-//        sasuke.setScale(0.05f);
-//
-//        models.add(sasuke);
+
         models.add(cube);
         models.add(text);
 
