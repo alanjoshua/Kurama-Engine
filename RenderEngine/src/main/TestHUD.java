@@ -11,7 +11,7 @@ import java.awt.*;
 public class TestHUD extends HUD {
 
     public Text demoText;
-    Font FONT = new Font("Arial", Font.PLAIN, 40);
+    Font FONT = new Font("Arial", Font.PLAIN, 50);
     String CHARSET = "ISO-8859-1";
 
     public TestHUD(Game game) {

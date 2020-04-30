@@ -163,7 +163,7 @@ public class GameLWJGL extends Game implements Runnable {
         cube.mesh.material = cubeMat;
 
         Model text = new Text(this, "Hello World", new FontTexture(new Font("Arial", Font.PLAIN, 100), "ISO-8859-1"), "text");
-        text.setScale(0.005f,-0.005f,0.005f);
+        text.setScale(0.01f,-0.01f,0.01f);
         text.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),0));
         text.mesh.material .reflectance = 1;
 
