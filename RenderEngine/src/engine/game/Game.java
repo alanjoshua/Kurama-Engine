@@ -1,6 +1,7 @@
 package engine.game;
 
 import engine.DataStructure.GridNode;
+import engine.DataStructure.Scene;
 import engine.HUD;
 import engine.Math.Vector;
 import engine.display.Display;
@@ -37,10 +38,9 @@ public abstract class Game implements Runnable {
 
     public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
     public float specularPower = 10f;
-    public List<PointLight> pointLights;
-    public List<DirectionalLight> directionalLights;
-    public List<SpotLight> spotLights;
+
     public HUD hud;
+    public Scene scene;
 
     public Game(String threadName) {
         gameLoopThread = new Thread(this,threadName);

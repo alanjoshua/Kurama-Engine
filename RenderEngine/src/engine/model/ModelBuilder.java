@@ -784,6 +784,29 @@ public class ModelBuilder {
 
 	}
 
+//	public static Mesh createNormals(Mesh mesh) {
+//
+//	}
+
+	public static Mesh reverseWindingOrder(Mesh mesh) {
+		List<Face> newFaces = new ArrayList<>();
+		for(Face f:mesh.faces) {
+			List<Vertex> newVerts = new ArrayList<>();
+			for(int i = f.vertices.size()-1;i>=0;i--) {
+				newVerts.add(f.vertices.get(i));
+			}
+			Vertex v1 = newVerts.remove(newVerts.size()-1);
+			newVerts.add(0,v1);
+			Face newFace = new Face();
+			newFace.vertices = newVerts;
+			newFaces.add(newFace);
+		}
+
+		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes);
+		resMesh.drawMode = mesh.drawMode;
+		return resMesh;
+	}
+
 	public static Mesh buildAxes() {
 
 		Vector xColor = new Vector(new float[]{1,0,0,1});
@@ -861,11 +884,15 @@ public class ModelBuilder {
 		return ret;
 	}
 
+	//Normals not set properly
 	public static Mesh buildGridTrigs(int w, int h, ModelBuilderHints hints) {
 
 		List<Face> faces = new ArrayList<>();
 		List<Vector> vertices = new ArrayList<>();
+		List<Vector> normals = new ArrayList<>();
 		List<Integer> indices = new ArrayList<>();
+
+		Vector n = new Vector(new float[]{0,-1,0});
 
 		for(int i = 0;i < w;i++) {
 			for(int j = 0;j < h;j++) {
@@ -882,6 +909,11 @@ public class ModelBuilder {
 					vertices.add(v3);
 					vertices.add(v4);
 
+					normals.add(n);
+					normals.add(n);
+					normals.add(n);
+					normals.add(n);
+
 					for(int k = 0;k < 4;k++) {
 						indices.add(indices.size());
 					}
@@ -890,18 +922,22 @@ public class ModelBuilder {
 
 					Vertex vert = new Vertex();
 					vert.setAttribute(0,Vertex.POSITION);
+					vert.setAttribute(0,Vertex.NORMAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(1,Vertex.POSITION);
+					vert.setAttribute(1,Vertex.NORMAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(2,Vertex.POSITION);
+					vert.setAttribute(2,Vertex.NORMAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(3,Vertex.POSITION);
+					vert.setAttribute(3,Vertex.NORMAL);
 					tempFace.addVertex(vert);
 
 					faces.add(tempFace);
@@ -915,6 +951,9 @@ public class ModelBuilder {
 					vertices.add(v1);
 					vertices.add(v4);
 
+					normals.add(n);
+					normals.add(n);
+
 					int ind1 = indices.get(indices.size() - 4);
 					int ind2 = indices.get(indices.size() - 1);
 
@@ -927,6 +966,7 @@ public class ModelBuilder {
 					for(int k = 0;k < 4;k++) {
 						Vertex vert = new Vertex();
 						vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+						vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
 						tempFace.addVertex(vert);
 					}
 					faces.add(tempFace);
@@ -940,6 +980,9 @@ public class ModelBuilder {
 
 						vertices.add(v3);
 						vertices.add(v4);
+						normals.add(n);
+						normals.add(n);
+
 
 						int cellInd = (4 * (i*h + j)) - (4*h);
 //						System.out.println("i: "+i+" j: "+j );
@@ -955,6 +998,7 @@ public class ModelBuilder {
 						for(int k = 0;k < 4;k++) {
 							Vertex vert = new Vertex();
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
 							tempFace.addVertex(vert);
 						}
 						faces.add(tempFace);
@@ -964,6 +1008,7 @@ public class ModelBuilder {
 
 						Vector v4 = new Vector(new float[]{i+1,0,j+1,1});
 						vertices.add(v4);
+						normals.add(n);
 
 						int cellInd = (4 * (i*h + j)) - (4*h);
 						int ind1 = indices.get(cellInd + 3);
@@ -980,6 +1025,7 @@ public class ModelBuilder {
 						for(int k = 0;k < 4;k++) {
 							Vertex vert = new Vertex();
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
+							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
 							tempFace.addVertex(vert);
 						}
 						faces.add(tempFace);
@@ -992,8 +1038,10 @@ public class ModelBuilder {
 			}
 		}
 
-		List<List<Vector>> vertAttribs = new ArrayList<>(1);
+		List<List<Vector>> vertAttribs = new ArrayList<>(3);
 		vertAttribs.add(vertices);
+		vertAttribs.add(null);
+		vertAttribs.add(normals);
 
 		Mesh resMesh = new Mesh(null,faces,vertAttribs);
 		resMesh = triangulate(resMesh,false);
@@ -1016,6 +1064,7 @@ public class ModelBuilder {
 		}
 
 		resMesh.indices = newIndices;
+		resMesh = reverseWindingOrder(resMesh);
 
 		if(hints != null) {
 
@@ -1025,6 +1074,10 @@ public class ModelBuilder {
 
 			if(hints.addConstantColor!=null) {
 				resMesh = addColor(resMesh,hints.addConstantColor);
+			}
+
+			if(hints.convertToLines) {
+				resMesh = convertToLines(resMesh,hints);
 			}
 
 			if(hints.initLWJGLAttribs)

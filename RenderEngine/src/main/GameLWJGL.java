@@ -1,11 +1,10 @@
 package main;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
+import engine.DataStructure.Scene;
 import engine.GUI.Text;
 import engine.HUD;
 import engine.Math.Quaternion;
@@ -37,7 +36,6 @@ public class GameLWJGL extends Game implements Runnable {
     protected Camera cam;
     protected InputLWJGL input;
     protected RenderingEngineLWJGL renderingEngine;
-    protected List<Model> models;
 
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
@@ -77,17 +75,14 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void init() {
-
-        pointLights = new ArrayList<>();
-        spotLights = new ArrayList<>();
-        directionalLights = new ArrayList<>();
+        scene = new Scene();
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
         float lightIntensity = 1f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
-        pointLights.add(pointLight);
+        scene.pointLights.add(pointLight);
 
         lightPos = new Vector(new float[]{0,0,10});
         PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, lightIntensity);
@@ -95,11 +90,12 @@ public class GameLWJGL extends Game implements Runnable {
         Vector coneDir = new Vector(new float[]{0, 0, -1});
         float cutoff = (float) Math.cos(Math.toRadians(140));
         SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
-        spotLights.add(spotLight);
+        scene.spotLights.add(spotLight);
 
-        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
         meshInstances = new HashMap<>();
+
         renderingEngine = new RenderingEngineLWJGL(this);
 
         display = new DisplayLWJGL(this);
@@ -124,7 +120,6 @@ public class GameLWJGL extends Game implements Runnable {
         input = new InputLWJGL(this);
 
         pauseButtons = new ArrayList<>();
-        models = new ArrayList<>();
 
         initModels();
         initPauseScreen();
@@ -147,10 +142,6 @@ public class GameLWJGL extends Game implements Runnable {
         hints.addRandomColor = false;
         hints.initLWJGLAttribs = true;
 
-        Model cube = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
-        cube.setScale(0.5f);
-        cube.setPos(0,0,-2);
-
         Texture tex = null;
         try {
             tex = new Texture("textures/grassblock.png");
@@ -160,15 +151,40 @@ public class GameLWJGL extends Game implements Runnable {
 
         float reflectance = 1f;
         Material cubeMat = new Material(tex,reflectance);
-        cube.mesh.material = cubeMat;
 
-        Model text = new Text(this, "Hello World", new FontTexture(new Font("Arial", Font.PLAIN, 100), "ISO-8859-1"), "text");
-        text.setScale(0.01f,-0.01f,0.01f);
-        text.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),0));
-        text.mesh.material .reflectance = 1;
+        float skyBoxScale = 50;
+        float boxScale = 1f;
 
-        models.add(cube);
-        models.add(text);
+        hints.shouldBakeVertexAttributes = true;
+        scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox.setScale(skyBoxScale);
+        try {
+            tex = new Texture("textures/skybox.png");
+        }catch (Exception e) {
+            System.out.println("Couldn't load skybox texture");
+        }
+        Material skyMat = new Material(tex,1);
+        skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
+        scene.skybox.mesh.material = skyMat;
+
+        hints.shouldBakeVertexAttributes = false;
+        int cubeCount = 0;
+        Vector[] bounds = Model.getBounds(scene.skybox.mesh);
+        Random random = new Random();
+
+        for(int i = 0;i < skyBoxScale*2/(boxScale*2);i++) {
+            for(int j = 0;j < skyBoxScale*2/(boxScale*2);j++) {
+                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,random.nextFloat() > 0.7f ? boxScale*2:0f,j*boxScale*2}));
+                Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
+                cube.setScale(boxScale);
+                cube.setPos(pos);
+                cube.mesh.material = cubeMat;
+                scene.models.add(cube);
+                cubeCount++;
+            }
+        }
+
+        scene.buildModelMap();
 
     }
 
@@ -256,7 +272,7 @@ public class GameLWJGL extends Game implements Runnable {
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(Model m:models) {
+        for(Model m: scene.models) {
             m.mesh.cleanUp();
         }
     }
@@ -284,9 +300,9 @@ public class GameLWJGL extends Game implements Runnable {
             Model.ModelTickInput params = new Model.ModelTickInput();
             params.timeDelta = timeDelta;
 
-            models.forEach(m -> m.tick(params));
-            DirectionalLight directionalLight = directionalLights.get(0);
+            scene.models.forEach(m -> m.tick(params));
 
+            //DirectionalLight directionalLight = directionalLights.get(0);
 //            lightAngle += 10f * timeDelta;
 //            if (lightAngle > 90) {
 //                directionalLight.intensity = 0;
@@ -376,7 +392,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(isGameRunning) {
             if(input.keyDownOnce(input.R)) {
-                cam.lookAtModel(models.get(lookAtIndex));
+                cam.lookAtModel( scene.models.get(lookAtIndex));
             }
 
             if(input.keyDownOnce(input.LEFT_CONTROL)) {
@@ -433,7 +449,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void render() {
-        ((RenderingEngineLWJGL)renderingEngine).render(models,hud);
+        ((RenderingEngineLWJGL)renderingEngine).render(scene,hud);
 
         glfwSwapBuffers(((DisplayLWJGL)display).getWindow());
         glfwPollEvents();
@@ -457,11 +473,11 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public List<Model> getModels() {
-        return models;
+        return  scene.models;
     }
 
     public void setModels(List<Model> models) {
-        this.models = models;
+        scene.models = models;
     }
 
 }

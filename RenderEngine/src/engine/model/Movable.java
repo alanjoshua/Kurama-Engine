@@ -36,7 +36,7 @@ public class Movable extends Model {
         attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
-            this.pos = newPos;
+            setPos(newPos);
             return true;
         }
         return false;
@@ -50,7 +50,7 @@ public class Movable extends Model {
         attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
-            this.pos = newPos;
+            setPos(newPos);
             return true;
         }
         return false;
@@ -84,7 +84,7 @@ public class Movable extends Model {
         attemptedTranslation = attemptedTranslation.add(delta);
 
         if(isOkayToUpdatePosition(newPos)) {
-            this.pos = newPos;
+            setPos(newPos);
             return true;
         }
         return false;

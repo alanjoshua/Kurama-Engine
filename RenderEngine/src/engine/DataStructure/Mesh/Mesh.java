@@ -64,28 +64,34 @@ public class Mesh {
     }
 
     public void render() {
-        try {
+        initRender();
+        justRender();
+        endRender();
+    }
 
-            if(material.texture != null) {
-//              Activate first texture
-                glActiveTexture(GL_TEXTURE0);
-//                Bind texture
-                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
-            }
-
-            glBindVertexArray(vaoId);
-
-            if(indices != null) {
-                glDrawElements(drawMode, indices.size(), GL_UNSIGNED_INT, 0);
-            }
-            else {
-                glDrawArrays(drawMode, 0, getVertices().size());
-            }
-
-            glBindVertexArray(0);
-        }catch(Exception e) {
-            System.err.println("Couldn't render mesh. OpenGL bindings might be missing");
+    public void justRender() {
+        if(indices != null) {
+            glDrawElements(drawMode, indices.size(), GL_UNSIGNED_INT, 0);
         }
+        else {
+            glDrawArrays(drawMode, 0, getVertices().size());
+        }
+    }
+
+    public void initRender() {
+        if(material.texture != null) {
+//              Activate first texture
+            glActiveTexture(GL_TEXTURE0);
+//                Bind texture
+            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+        }
+
+        glBindVertexArray(vaoId);
+    }
+
+    public void endRender() {
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D,0);
     }
 
     public void initOpenGLMeshData() {

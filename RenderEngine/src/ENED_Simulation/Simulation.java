@@ -1,6 +1,7 @@
 package ENED_Simulation;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Scene;
 import engine.DataStructure.Texture;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
@@ -12,12 +13,9 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
 import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.ModelBuilder;
-import org.lwjgl.system.CallbackI;
 
-import javax.swing.text.html.Option;
 import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -29,7 +27,6 @@ public class Simulation extends Game {
     protected Camera cam;
     protected InputLWJGL input;
     protected RenderingEngineSim renderingEngine;
-    protected List<Model> models;
     protected List<Box> boxesToBeSearched;
     protected List<Box> boxesAlreadySearched;
     protected List<Box> boxesAtDestination;
@@ -89,20 +86,17 @@ public class Simulation extends Game {
     @Override
     public void init() {
 
-        pointLights = new ArrayList<>();
-        spotLights = new ArrayList<>();
-        directionalLights = new ArrayList<>();
+        scene = new Scene();
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{0f,0f,1f});
         float lightIntensity = 1f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
-        pointLights.add(pointLight);
+        scene.pointLights.add(pointLight);
 
-        directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
-        models = new ArrayList<>();
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
         boxesAtDestination = new ArrayList<>();
@@ -143,12 +137,11 @@ public class Simulation extends Game {
         input = new InputLWJGL(this);
 
         pauseButtons = new ArrayList<>();
-        models = new ArrayList<>();
 
         boxWrongMat = new Material(new Vector(new float[]{1,0,0,1}),1);
         boxRequiredMat = new Material(new Vector(new float[]{0,1,0,1}),1);
         pathMat = new Material(new Vector(new float[]{0,1,0,1}),1);
-        nullMat = new Material(new Vector(new float[]{0,0,0,1}),0);
+        nullMat = new Material(new Vector(new float[]{0,0,0,0}),0);
 
         initModels();
         initPauseScreen();
@@ -158,6 +151,7 @@ public class Simulation extends Game {
 
         targetFPS = display.getRefreshRate();
         hud = new SimulationHUD(this);
+        scene.buildModelMap();
 
     }
 
@@ -167,38 +161,35 @@ public class Simulation extends Game {
         hints.addRandomColor = true;
         hints.initLWJGLAttribs = true;
 
-        hints.addConstantColor = new Vector(new float[]{0.3f,0.3f,0.3f,10});
+        hints.addConstantColor = new Vector(new float[]{1f,1,1f,1f});
         Model grid = new Model(this,ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
         grid.isCollidable = false;
+        grid.mesh.material.ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
         flag = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
         flag.isCollidable = false;
 
-        hints.convertToLines = false;
         hints.addConstantColor = null;
         hints.addRandomColor = true;
         Model h1 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h1");
-        h1.setPos(0,0,-12);
+        h1.setPos(0,0.1f,-12);
         h1.isCollidable = false;
-        h1.mesh.material = nullMat;
+//        h1.shouldUseMaterial = false;
 
         Model h2 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h2");
-        h2.setPos(96,0,-12);
+        h2.setPos(96,0.1f,-12);
         h2.isCollidable = false;
-        h2.mesh.material = nullMat;
 
         Model h3 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h3");
-        h3.setPos(0,0,-132);
+        h3.setPos(0,0.1f,-132);
         h3.isCollidable = false;
-        h3.mesh.material = nullMat;
 
         Model h4 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h4");
-        h4.setPos(96,0,-132);
+        h4.setPos(96,0.1f,-132);
         h4.isCollidable = false;
-        h4.mesh.material = nullMat;
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
@@ -215,15 +206,31 @@ public class Simulation extends Game {
             e.printStackTrace();
         }
 
+        float skyBoxScale = 500;
+
+        hints.shouldBakeVertexAttributes = true;
+        hints.convertToLines = false;
+        scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox.setScale(skyBoxScale);
+        Texture tex = null;
+        try {
+            tex = new Texture("textures/skybox.png");
+        }catch (Exception e) {
+            System.out.println("Couldn't load skybox texture");
+        }
+        Material skyMat = new Material(tex,1);
+        skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
+        scene.skybox.mesh.material = skyMat;
+
         hints.convertToLines = false;
 
-        models.add(robot);
-        models.add(grid);
-        models.add(flag);
-        models.add(h1);
-        models.add(h2);
-        models.add(h3);
-        models.add(h4);
+        scene.models.add(robot);
+        scene.models.add(grid);
+        scene.models.add(flag);
+        scene.models.add(h1);
+        scene.models.add(h2);
+        scene.models.add(h3);
+        scene.models.add(h4);
 
         initCrates();
 
@@ -320,7 +327,7 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{platScaleX,platScaleY,platScaleZ}));
-                models.add(platform);
+                scene.models.add(platform);
 
                 Integer currZone = getZone(r,c);
 
@@ -363,7 +370,7 @@ public class Simulation extends Game {
             }
         }
 
-        models.addAll(boxesToBeSearched);
+        scene.models.addAll(boxesToBeSearched);
 
     }
 
@@ -479,7 +486,7 @@ public class Simulation extends Game {
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(Model m:models) {
+        for(Model m: scene.models) {
             m.cleanUp();
         }
     }
@@ -508,7 +515,7 @@ public class Simulation extends Game {
             Model.ModelTickInput params = new Model.ModelTickInput();
             params.timeDelta = timeDelta;
 
-            models
+            scene.models
                     .stream()
                     .filter(m -> m != robot)
                     .forEach(m -> m.tick(params));
@@ -529,7 +536,7 @@ public class Simulation extends Game {
         int[][] collisionArray = new int[simWidth][simDepth];
         List<Vector> boundData = new ArrayList<>();
 
-        for(Model m:models) {
+        for(Model m: scene.models) {
             if(m.isCollidable && modelsToAvoidChecking.indexOf(m) == -1) {  //Model is collidable and also not in avoid list
                 if(shouldOnlyOutline) {
                    boundData.addAll(getModelOutlineCollisionData(m));
@@ -796,15 +803,18 @@ public class Simulation extends Game {
 
     @Override
     public void render() {
-        List<Model> drawModels = new ArrayList<>(models);
+        boolean hasAddedPath = false;
         if(robot.pathModel!= null && robot.shouldShowPath) {
-            drawModels.add(robot.pathModel);
+           scene.models.add(robot.pathModel);
+           List<Model> tempList = new ArrayList<>();
+           tempList.add(robot.pathModel);
+           scene.modelMap.put(robot.pathModel.mesh,tempList);
+           hasAddedPath = true;
         }
-        if(isGameRunning) {
-            renderingEngine.render(drawModels, null);
-        }
-        else {
-            renderingEngine.render(drawModels, hud);
+        renderingEngine.render(scene,isGameRunning ? null:hud);
+        if(hasAddedPath) {
+            scene.modelMap.remove(robot.pathModel.mesh);
+            scene.models.remove(scene.models.size()-1);
         }
 
         glfwSwapBuffers(display.getWindow());
@@ -834,6 +844,6 @@ public class Simulation extends Game {
 
     @Override
     public List<Model> getModels() {
-        return models;
+        return scene.models;
     }
 }

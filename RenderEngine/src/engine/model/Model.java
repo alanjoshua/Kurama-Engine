@@ -30,6 +30,7 @@ public class Model {
 	protected MiniBehaviour miniBehaviourObj;
 	protected Quaternion orientation;
 	protected Matrix transformedVertices;
+	protected Matrix cacheViewMatrix;
 	protected boolean isChanged = true;
 	protected Vector boundMin;
 	protected  Vector boundMax;
@@ -273,14 +274,17 @@ public class Model {
 	}
 
 	public Matrix getObjectToWorldMatrix() {
+		if(isChanged) {
+			Matrix rotationMatrix = this.orientation.getRotationMatrix();
+			Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
+			Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
-		Matrix rotationMatrix = this.orientation.getRotationMatrix();
-		Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
-		Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-
-		Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
-		transformationMatrix = transformationMatrix.addRow(new Vector(new float[] { 0, 0, 0, 1 }));
-		return transformationMatrix;
+			Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
+			transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+			isChanged = false;
+			cacheViewMatrix = transformationMatrix;
+		}
+		return cacheViewMatrix;
 	}
 
 	public Matrix getWorldToObject() {

@@ -1,6 +1,7 @@
 package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Scene;
 import engine.GUI.Text;
 import engine.HUD;
 import engine.Math.Matrix;
@@ -14,7 +15,11 @@ import engine.game.Game;
 import engine.model.Model;
 import org.lwjgl.system.CallbackI;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -22,6 +27,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public ShaderProgram sceneShaderProgram;
     public ShaderProgram hudShaderProgram;
+    public ShaderProgram skyBoxShaderProgram;
     protected Mesh axes;
 
     public void init() {
@@ -34,12 +40,16 @@ public class RenderingEngineGL extends RenderingEngine {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        setupSceneShader();
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        setupSceneShader(game.scene);
         setupHUDShader();
+        setupSkybox();
 
     }
 
-    public void setupSceneShader() {
+    public void setupSceneShader(Scene scene) {
         try {
             sceneShaderProgram = new ShaderProgram();
             sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/VertexShader.vs"));
@@ -55,9 +65,9 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createUniform("specularPower");
             sceneShaderProgram.createUniform("ambientLight");
 
-            sceneShaderProgram.createPointLightListUniform("pointLights",game.pointLights.size());
-            sceneShaderProgram.createDirectionalLightListUniform("directionalLights",game.directionalLights.size());
-            sceneShaderProgram.createSpotLightListUniform("spotLights",game.spotLights.size());
+            sceneShaderProgram.createPointLightListUniform("pointLights",scene.pointLights.size());
+            sceneShaderProgram.createDirectionalLightListUniform("directionalLights",scene.directionalLights.size());
+            sceneShaderProgram.createSpotLightListUniform("spotLights",scene.spotLights.size());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,6 +90,23 @@ public class RenderingEngineGL extends RenderingEngine {
         }
     }
 
+    public void setupSkybox() {
+        try {
+            skyBoxShaderProgram = new ShaderProgram();
+            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/shaders/SkyBoxVertexShader.vs"));
+            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/shaders/SkyBoxFragmentShader.fs"));
+            skyBoxShaderProgram.link();
+
+            skyBoxShaderProgram.createUniform("projectionMatrix");
+            skyBoxShaderProgram.createUniform("modelViewMatrix");
+            skyBoxShaderProgram.createUniform("texture_sampler");
+            skyBoxShaderProgram.createUniform("ambientLight");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public RenderingEngineGL(Game game) {
         super(game);
     }
@@ -96,13 +123,14 @@ public class RenderingEngineGL extends RenderingEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(List<Model> models, HUD hud) {
+    public void render(Scene scene, HUD hud) {
         clear();
-        renderScene(models);
+        renderScene(scene);
+        renderSkyBox(scene);
         renderHUD(hud);
     }
 
-    public void renderScene(List<Model> models) {
+    public void renderScene(Scene scene) {
         sceneShaderProgram.bind();
 
         Matrix worldToCam = game.getCamera().getWorldToCam();
@@ -114,31 +142,67 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("ambientLight",game.ambientLight);
         sceneShaderProgram.setUniform("specularPower",game.specularPower);
 
-        LightDataPackage lights = processLights(game.pointLights, game.spotLights, game.directionalLights, worldToCam);
+        LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
         sceneShaderProgram.setUniform("pointLights",lights.pointLights);
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
 
+        Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
 
-        for(Model model: models) {
-            sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
-            sceneShaderProgram.setUniform("material", model.mesh.material);
+        for(Mesh mesh:scene.modelMap.keySet()) {
+            sceneShaderProgram.setUniform("material", mesh.material);
+            mesh.initRender();
+            for(Model model:scene.modelMap.get(mesh)) {
+                sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+                mesh.justRender();
 
-            model.mesh.render();
-
-            sceneShaderProgram.setUniform("material.hasTexture", 0);
-
-            if(model.shouldShowCollisionBox && model.boundingbox != null) {
-                sceneShaderProgram.setUniform("material", model.boundingbox.material);
-                model.boundingbox.render();
+                if(model.shouldShowCollisionBox && model.boundingbox != null) {
+                    List<Model> l = accessoryModels.get(model.boundingbox);
+                    if(l == null) {
+                        l = new ArrayList<>();
+                        accessoryModels.put(model.boundingbox,l);
+                    }
+                    l.add(model);
+                }
+                if(model.shouldShowAxes && axes != null) {
+                    List<Model> l = accessoryModels.get(axes);
+                    if(l == null) {
+                        l = new ArrayList<>();
+                        accessoryModels.put(axes,l);
+                    }
+                    l.add(model);
+                }
             }
-
-            if(model.shouldShowAxes && axes != null) {
-                sceneShaderProgram.setUniform("material", axes.material);
-                axes.render();
-            }
-
+            mesh.endRender();
         }
+
+        for(Mesh mesh:accessoryModels.keySet()) {
+            sceneShaderProgram.setUniform("material", mesh.material);
+            mesh.initRender();
+            for(Model model:accessoryModels.get(mesh)) {
+                sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+                mesh.justRender();
+            }
+            mesh.endRender();
+        }
+
+//        for(Model model: scene.models) {
+//            sceneShaderProgram.setUniform("material", model.mesh.material);
+//            sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
+//           // sceneShaderProgram.setUniform("material.hasTexture", model.shouldDisplayTexture?1:0);
+//            model.mesh.initRender();
+//            model.mesh.justRender();
+//            model.mesh.endRender();
+//            sceneShaderProgram.setUniform("material.hasTexture", 0);
+//            if(model.shouldShowCollisionBox && model.boundingbox != null) {
+//                sceneShaderProgram.setUniform("material", model.boundingbox.material);
+//                model.boundingbox.render();
+//            }
+//            if(model.shouldShowAxes && axes != null) {
+//                sceneShaderProgram.setUniform("material", axes.material);
+//                axes.render();
+//            }
+//        }
 
         sceneShaderProgram.unbind();
     }
@@ -165,6 +229,26 @@ public class RenderingEngineGL extends RenderingEngine {
 
         hudShaderProgram.unbind();
 
+    }
+
+    public void renderSkyBox(Scene scene) {
+        skyBoxShaderProgram.bind();
+
+        skyBoxShaderProgram.setUniform("texture_sampler", 0);
+
+        // Update projection Matrix
+        Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
+        skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+
+        Model skyBox = scene.skybox;
+        skyBox.setPos(game.getCamera().getPos());
+        Matrix modelViewMatrix = game.getCamera().getWorldToCam().matMul(skyBox.getObjectToWorldMatrix());
+        skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+        skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.material.ambientColor);
+
+        scene.skybox.getMesh().render();
+
+        skyBoxShaderProgram.unbind();
     }
 
     public void cleanUp() {
