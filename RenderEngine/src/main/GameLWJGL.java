@@ -172,14 +172,24 @@ public class GameLWJGL extends Game implements Runnable {
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
         Random random = new Random();
 
+        Model[][] cubes = new Model[(int)(skyBoxScale*2/(boxScale*2))][(int)(skyBoxScale*2/(boxScale*2))];
+        float y;
+        float prevXY;
+        float prevZY;
+
         for(int i = 0;i < skyBoxScale*2/(boxScale*2);i++) {
             for(int j = 0;j < skyBoxScale*2/(boxScale*2);j++) {
-                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,random.nextFloat() > 0.7f ? boxScale*2:0f,j*boxScale*2}));
+
+                //y = random.nextFloat() > 0.7f ? boxScale*2:0f;
+                //y = random.nextFloat() < 0.8f ? 0f:(random.nextFloat() < 0.9f ? boxScale*-2 : boxScale*2);
+
+                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,0,j*boxScale*2}));
                 Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
                 cube.setScale(boxScale);
                 cube.setPos(pos);
                 cube.mesh.material = cubeMat;
                 scene.models.add(cube);
+                cubes[i][j] = cube;
                 cubeCount++;
             }
         }
