@@ -10,7 +10,7 @@ import java.util.Random;
 
 public class GameSR_ESL extends GameSR {
 
-    public int MODELCOUNT = 0;
+    public int MODELCOUNT = 10;
     public long seed = 123456789;
     public int gridWidth = 100;
     public int gridDepth = 100;

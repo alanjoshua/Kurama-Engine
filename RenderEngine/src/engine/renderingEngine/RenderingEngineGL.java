@@ -232,6 +232,11 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void renderSkyBox(Scene scene) {
+
+        if(scene.skybox == null) {
+            return;
+        }
+
         skyBoxShaderProgram.bind();
 
         skyBoxShaderProgram.setUniform("texture_sampler", 0);

@@ -7,8 +7,10 @@ import java.util.List;
 import engine.DataStructure.Scene;
 import engine.GUI.Text;
 import engine.HUD;
+import engine.Math.Perlin;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.Terrain.Terrain;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.font.FontTexture;
@@ -77,20 +79,20 @@ public class GameLWJGL extends Game implements Runnable {
     public void init() {
         scene = new Scene();
 
-        Vector lightColor = new Vector(new float[]{1f,1f,1f});
-        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-        float lightIntensity = 1f;
-        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
-        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
-        scene.pointLights.add(pointLight);
-
-        lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, lightIntensity);
-        sl_pointLight.attenuation = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
-        Vector coneDir = new Vector(new float[]{0, 0, -1});
-        float cutoff = (float) Math.cos(Math.toRadians(140));
-        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
-        scene.spotLights.add(spotLight);
+//        Vector lightColor = new Vector(new float[]{1f,0f,1f});
+//        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
+//        float lightIntensity = 1f;
+//        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+//        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
+//        scene.pointLights.add(pointLight);
+//
+//        lightPos = new Vector(new float[]{0,0,10});
+//        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, lightIntensity);
+//        sl_pointLight.attenuation = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
+//        Vector coneDir = new Vector(new float[]{0, 0, -1});
+//        float cutoff = (float) Math.cos(Math.toRadians(140));
+//        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
+//        scene.spotLights.add(spotLight);
 
         scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
@@ -101,7 +103,7 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 display.getWidth(), display.getHeight());
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -127,7 +129,6 @@ public class GameLWJGL extends Game implements Runnable {
         cam.updateValues();
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
         hud = new TestHUD(this);
-
     }
 
     public void initModels() {
@@ -149,11 +150,13 @@ public class GameLWJGL extends Game implements Runnable {
             e.printStackTrace();
         }
 
-        float reflectance = 1f;
+        float reflectance = 0f;
         Material cubeMat = new Material(tex,reflectance);
 
-        float skyBoxScale = 50;
-        float boxScale = 1f;
+        float skyBoxScale = 1000;
+        float boxScale = 0.5f;
+        int boxCount = 100;
+        float yRange = 20;
 
         hints.shouldBakeVertexAttributes = true;
         scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
@@ -174,16 +177,13 @@ public class GameLWJGL extends Game implements Runnable {
 
         Model[][] cubes = new Model[(int)(skyBoxScale*2/(boxScale*2))][(int)(skyBoxScale*2/(boxScale*2))];
         float y;
-        float prevXY;
-        float prevZY;
 
-        for(int i = 0;i < skyBoxScale*2/(boxScale*2);i++) {
-            for(int j = 0;j < skyBoxScale*2/(boxScale*2);j++) {
+        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.4f);
 
-                //y = random.nextFloat() > 0.7f ? boxScale*2:0f;
-                //y = random.nextFloat() < 0.8f ? 0f:(random.nextFloat() < 0.9f ? boxScale*-2 : boxScale*2);
-
-                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,0,j*boxScale*2}));
+        for(int i = 0;i < heightMap.length;i++) {
+            for(int j = 0;j < heightMap[i].length;j++) {
+                y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
                 Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
                 cube.setScale(boxScale);
                 cube.setPos(pos);
@@ -193,6 +193,30 @@ public class GameLWJGL extends Game implements Runnable {
                 cubeCount++;
             }
         }
+
+//        for(int i = 0;i < skyBoxScale*2/(boxScale*2);i++) {
+//            for(int j = 0;j < skyBoxScale*2/(boxScale*2);j++) {
+
+//                for(int i = 0;i < boxCount;i++) {
+//                    for(int j = 0;j < boxCount;j++) {
+//
+//                //y = random.nextFloat() > 0.7f ? boxScale*2:0f;
+//                //y = random.nextFloat() < 0.8f ? 0f:(random.nextFloat() < 0.9f ? boxScale*-2 : boxScale*2);
+////                        float noise = (float)(Perlin.octavePerlin(i/(skyBoxScale*2/(boxScale*2)),0,j/(skyBoxScale*2/(boxScale*2)),6,0.3f));
+//                float noise = (float)(Perlin.octavePerlin(i/boxCount,0,j/boxCount,6,0.3f));
+//                y = (int)((noise-0.5f)*10 * yRange) * boxScale*2;
+//                //System.out.println(y);
+//
+//                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+//                Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
+//                cube.setScale(boxScale);
+//                cube.setPos(pos);
+//                cube.mesh.material = cubeMat;
+//                scene.models.add(cube);
+//                cubes[i][j] = cube;
+//                cubeCount++;
+//            }
+//        }
 
         scene.buildModelMap();
 

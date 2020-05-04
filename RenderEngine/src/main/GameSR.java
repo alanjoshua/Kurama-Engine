@@ -153,13 +153,22 @@ public class GameSR extends Game implements Runnable {
 		pot.setMiniBehaviourObj(tempRot);
 //		pot.triangulate();
 
+//		ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
+//		hints.shouldTriangulate = true;
+//		hints.convertToLines = true;
+////		hints.shouldTriangulate = true;
+////		hints.convertToLines = true;
+//		hints.initLWJGLAttribs = false;
+//
+//		Model cube = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/cube.obj",meshInstances,hints),"cube");
+
 //		models.add(deer);
 		models.add(mill);
 //		models.add(pot);
 //		models.add(grid);
 
 		modelsOnlyOutline.add(grid);
-//		modelsOldRenderMethod.add(pot);
+//		modelsOnlyOutline.add(mill);
 
 	}
 
