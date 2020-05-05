@@ -28,7 +28,7 @@ public class DisplayLWJGL extends Display {
 
     @Override
     public void init() {
-        System.setProperty("java.awt.headless", "true"); //To ensure fonttexture loading works properly in OSX
+        //System.setProperty("java.awt.headless", "true"); //To ensure fonttexture loading works properly in OSX
         startGLFW();
         initWindow();
     }

@@ -29,7 +29,6 @@ public class Texture {
                     (fileName,w,h,channels,4);
 
             if(buff == null) {
-//                System.out.println(url.getPath());
                 throw new Exception("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
             }
 

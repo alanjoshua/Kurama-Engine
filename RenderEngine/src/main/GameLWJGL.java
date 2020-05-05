@@ -28,6 +28,7 @@ import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
+import engine.utils.Utils;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -94,7 +95,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,1}),1));
 
         meshInstances = new HashMap<>();
 
@@ -133,7 +134,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void initModels() {
         MiniBehaviour tempRot = ((m, params) -> {
-            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
+            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {-1,1,0}), 50* timeDelta);
             Quaternion newQ = rot.multiply(m.getOrientation());
             m.setOrientation(newQ);
         });
@@ -150,13 +151,13 @@ public class GameLWJGL extends Game implements Runnable {
             e.printStackTrace();
         }
 
-        float reflectance = 0f;
+        float reflectance = 0.3f;
         Material cubeMat = new Material(tex,reflectance);
 
         float skyBoxScale = 1000;
         float boxScale = 0.5f;
-        int boxCount = 100;
-        float yRange = 20;
+        int boxCount = 500;
+        float yRange = 40;
 
         hints.shouldBakeVertexAttributes = true;
         scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
@@ -171,53 +172,33 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox.mesh.material = skyMat;
 
         hints.shouldBakeVertexAttributes = false;
-        int cubeCount = 0;
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
-        Random random = new Random();
 
-        Model[][] cubes = new Model[(int)(skyBoxScale*2/(boxScale*2))][(int)(skyBoxScale*2/(boxScale*2))];
-        float y;
+        long seed = Utils.generateSeed("UchihaConan");
+        System.out.println("seed: "+seed);
+        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.03f,seed);
 
-        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.4f);
-
-        for(int i = 0;i < heightMap.length;i++) {
-            for(int j = 0;j < heightMap[i].length;j++) {
-                y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-                Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
-                cube.setScale(boxScale);
-                cube.setPos(pos);
-                cube.mesh.material = cubeMat;
-                scene.models.add(cube);
-                cubes[i][j] = cube;
-                cubeCount++;
-            }
-        }
-
-//        for(int i = 0;i < skyBoxScale*2/(boxScale*2);i++) {
-//            for(int j = 0;j < skyBoxScale*2/(boxScale*2);j++) {
-
-//                for(int i = 0;i < boxCount;i++) {
-//                    for(int j = 0;j < boxCount;j++) {
-//
-//                //y = random.nextFloat() > 0.7f ? boxScale*2:0f;
-//                //y = random.nextFloat() < 0.8f ? 0f:(random.nextFloat() < 0.9f ? boxScale*-2 : boxScale*2);
-////                        float noise = (float)(Perlin.octavePerlin(i/(skyBoxScale*2/(boxScale*2)),0,j/(skyBoxScale*2/(boxScale*2)),6,0.3f));
-//                float noise = (float)(Perlin.octavePerlin(i/boxCount,0,j/boxCount,6,0.3f));
-//                y = (int)((noise-0.5f)*10 * yRange) * boxScale*2;
-//                //System.out.println(y);
-//
+//        for(int i = 0;i < heightMap.length;i++) {
+//            for(int j = 0;j < heightMap[i].length;j++) {
+//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
 //                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
 //                Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
 //                cube.setScale(boxScale);
 //                cube.setPos(pos);
 //                cube.mesh.material = cubeMat;
 //                scene.models.add(cube);
-//                cubes[i][j] = cube;
-//                cubeCount++;
 //            }
 //        }
 
+        Mesh ter = Terrain.createMeshFromHeightMap(heightMap,"textures/terrain.png",boxCount);
+        ter.material = new Material();
+//        ter = ModelBuilder.convertToLines(ter,null);
+//        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
+        ter.initOpenGLMeshData();
+
+        Model terrain = new Model(this,ter,"terrain");
+        terrain.setScale(boxCount,yRange,boxCount);
+        scene.models.add(terrain);
         scene.buildModelMap();
 
     }
@@ -336,7 +317,7 @@ public class GameLWJGL extends Game implements Runnable {
 
             scene.models.forEach(m -> m.tick(params));
 
-            //DirectionalLight directionalLight = directionalLights.get(0);
+//            DirectionalLight directionalLight = scene.directionalLights.get(0);
 //            lightAngle += 10f * timeDelta;
 //            if (lightAngle > 90) {
 //                directionalLight.intensity = 0;

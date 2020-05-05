@@ -174,7 +174,9 @@ public class RenderingEngineGL extends RenderingEngine {
                 }
             }
             mesh.endRender();
+
         }
+
 
         for(Mesh mesh:accessoryModels.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.material);

@@ -1,5 +1,6 @@
 package engine.utils;
 
+import engine.Math.Perlin;
 import engine.game.Game;
 import engine.DataStructure.LinkedList.DoublyLinkedList;
 import engine.DataStructure.Mesh.Face;
@@ -12,6 +13,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Utils {
 	
@@ -95,24 +97,29 @@ public class Utils {
 		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
 
 	}
-	
-	public static boolean isPointInsideTriangle(Vector v1 , Vector v2, Vector v3, Vector p, boolean shouldProject) {
-		boolean res = false;
-		Vector point = p;
-	
-		if(shouldProject) {
-			point = projectPointToPlane(v2.sub(v1),v2.sub(v3),p);
-		}
-		
-		float w1 = edge(v2, v3, point);
-		float w2 = edge(v1, v3, point);
-		float w3 = edge(v1, v2, point);
 
-		if(w1 >= 0 && w2 >= 0 && w3 >= 0) {
-			res = true;
+	public static long generateSeed(String in) {
+		long seed = 0;
+
+		StringBuilder binary = new StringBuilder();
+		for (byte b : in.getBytes())
+		{
+			int val = b;
+			for (int i = 0; i < 8; i++)
+			{
+				binary.append((val & 128) == 0 ? 0 : 1);
+				val <<= 1;
+			}
 		}
-		
-		return res;
+
+		seed = 0;
+		int counter = 1;
+		for(int c: in.toCharArray()) {
+			seed += c * (13 *Perlin.octavePerlin(c*counter*0.1f,c*counter*0.1f,c*counter*0.1f,5,0.4f));
+			counter++;
+		}
+
+		return seed;
 	}
 
 //	from the paper "Generalized Barycentric Coordinates on Irregular Polygons"
@@ -205,43 +212,5 @@ public class Utils {
 		res[1] = max;
 		return res;
 	}
-
-//	public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, GameLWJGL game) {
-//
-//		Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
-//		Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
-//
-//		for(Vertex v: f.vertices) {
-//			Vector curr = projectedVectors.get(v.getAttribute(Vertex.POSITION));
-//			if(curr.get(2) > 0) {
-//				if (curr.get(0) < bbMin.get(0)) {
-//					bbMin.setDataElement(0, curr.get(0));
-//				}
-//				if (curr.get(1) < bbMin.get(1)) {
-//					bbMin.setDataElement(1, curr.get(1));
-//				}
-//				if (curr.get(0) > bbMax.get(0)) {
-//					bbMax.setDataElement(0, curr.get(0));
-//				}
-//				if (curr.get(1) > bbMax.get(1)) {
-//					bbMax.setDataElement(1, curr.get(1));
-//				}
-//			}
-//		}
-//
-//		int xMin = (int) engine.Math.max(0, engine.Math.min(game.getCamera().getImageWidth() - 1, engine.Math.floor(bbMin.get(0))));
-//		int yMin = (int) engine.Math.max(0, engine.Math.min(game.getCamera().getImageHeight() - 1, engine.Math.floor(bbMin.get(1))));
-//		int xMax = (int) engine.Math.max(0, engine.Math.min(game.getCamera().getImageWidth() - 1, engine.Math.floor(bbMax.get(0))));
-//		int yMax = (int) engine.Math.max(0, engine.Math.min(game.getCamera().getImageHeight() - 1, engine.Math.floor(bbMax.get(1))));
-//
-//		Vector min = new Vector(new float[]{xMin,yMin});
-//		Vector max = new Vector(new float[]{xMax,yMax});
-//		List<Vector> res = new ArrayList<>();
-//		res.add(min);
-//		res.add(max);
-//
-//		return res;
-//
-//	}
 	
 }
