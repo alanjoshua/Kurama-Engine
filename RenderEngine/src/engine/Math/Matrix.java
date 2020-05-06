@@ -71,7 +71,14 @@ public class Matrix {
 	}
 
 	public Matrix(List<Vector> v) {
-		int r = v.get(0).getNumberOfDimensions();
+		int r;
+		if(v.size() != 0) {
+			r = v.get(0).getNumberOfDimensions();
+		}
+		else {
+			r = 0;
+		}
+
 		int count = 0;
 
 		try {

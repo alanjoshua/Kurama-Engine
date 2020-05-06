@@ -2,6 +2,7 @@ package engine.Math;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Vector {
 
@@ -341,6 +342,32 @@ public class Vector {
 		res[1] = -((u.get(0) * v.get(2)) - (u.get(2) * v.get(0)));
 		res[2] = (u.get(0) * v.get(1)) - (u.get(1) * v.get(0));
 		return new Vector(res);
+	}
+
+	public static Vector getRandomVector(Vector min, Vector max, Random random) {
+		if(min.numberOfDimensions != max.numberOfDimensions) {
+			throw new RuntimeException("Min and max should be of same size to generate random number");
+		}
+
+		int dimensions =  min.getNumberOfDimensions();
+		Vector p = new Vector(dimensions,0);
+		for (int i = 0; i < dimensions; i++) {
+			float deltaVal = max.get(i) - min.get(i);
+			float start = min.get(i);
+			float randVal = start + deltaVal*random.nextFloat();
+			p.setDataElement(i,randVal);
+		}
+
+		return p;
+	}
+
+	public static Vector getAverage(List<Vector> list) {
+		Vector avg = new Vector(list.get(0).getNumberOfDimensions(),0);
+		for(Vector v: list) {
+			avg = avg.add(v);
+		}
+		avg = avg.scalarMul(1f / (float)list.size());
+		return avg;
 	}
 
 	public static Vector cross(Vector u, Vector v) {
