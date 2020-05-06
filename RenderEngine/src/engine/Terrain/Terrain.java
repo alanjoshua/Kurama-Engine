@@ -27,7 +27,7 @@ public class Terrain {
         return heightMap;
     }
 
-    public static Mesh createMeshFromHeightMap(float[][] heightMap,String textureFile, int textInc) {
+    public static Mesh createMeshFromHeightMap(float[][] heightMap, int textInc) {
         List<Vector> positions = new ArrayList<>();
         List<Vector> texCoords = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
@@ -38,14 +38,6 @@ public class Terrain {
 
         float STARTX = -0.5f;
         float STARTZ = -0.5f;
-
-        Texture texture = null;
-
-        try {
-            texture = new Texture(textureFile);
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
 
         float incx = Math.abs(STARTX * 2) / (w - 1);
         float incz = Math.abs(STARTZ * 2) / (h - 1);
@@ -120,7 +112,6 @@ public class Terrain {
         vertAttribs.add(calcNormals(positions,w,h));
 
         Mesh resMesh = new Mesh(indices,faces,vertAttribs);
-        resMesh.material = new Material(texture,0f);
         return resMesh;
     }
 

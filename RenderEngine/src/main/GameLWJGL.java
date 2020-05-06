@@ -157,7 +157,7 @@ public class GameLWJGL extends Game implements Runnable {
         float skyBoxScale = 1000;
         float boxScale = 0.5f;
         int boxCount = 500;
-        float yRange = 40;
+        float yRange = 60;
 
         hints.shouldBakeVertexAttributes = true;
         scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
@@ -176,7 +176,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
-        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.03f,seed);
+        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
 
 //        for(int i = 0;i < heightMap.length;i++) {
 //            for(int j = 0;j < heightMap[i].length;j++) {
@@ -190,8 +190,14 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        Mesh ter = Terrain.createMeshFromHeightMap(heightMap,"textures/terrain.png",boxCount);
-        ter.material = new Material();
+        Mesh ter = Terrain.createMeshFromHeightMap(heightMap,boxCount/10);
+        try {
+            tex = new Texture("textures/terrain.png");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        ter.material.texture = tex;
+
 //        ter = ModelBuilder.convertToLines(ter,null);
 //        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
         ter.initOpenGLMeshData();
@@ -351,6 +357,8 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tickInput() {
 
+        Vector posDelta = new Vector(3,0);
+
         if(input.keyDown(input.W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -358,7 +366,8 @@ public class GameLWJGL extends Game implements Runnable {
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add((z.scalarMul(-cameraSpeed)));
+//            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.S)) {
@@ -368,7 +377,8 @@ public class GameLWJGL extends Game implements Runnable {
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add(z.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.A)) {
@@ -376,7 +386,8 @@ public class GameLWJGL extends Game implements Runnable {
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add(v.scalarMul(-cameraSpeed));
+//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.D)) {
@@ -384,21 +395,24 @@ public class GameLWJGL extends Game implements Runnable {
             Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add(v.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.SPACE)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add(v.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.LEFT_SHIFT)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+            posDelta = posDelta.add(v.scalarMul(-cameraSpeed));
+//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(input.ESCAPE)) {
@@ -408,6 +422,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(isGameRunning) {
             if(input.keyDownOnce(input.R)) {
                 cam.lookAtModel( scene.models.get(lookAtIndex));
+                posDelta = new Vector(3,0);
             }
 
             if(input.keyDownOnce(input.LEFT_CONTROL)) {
@@ -432,7 +447,11 @@ public class GameLWJGL extends Game implements Runnable {
             if(input.keyDownOnce(input.V)) {
                 display.toggleWindowModes();
             }
+
+            cam.setPos(cam.getPos().add(posDelta));
+
         }
+
     }
 
     public void calculate3DCamMovement() {
