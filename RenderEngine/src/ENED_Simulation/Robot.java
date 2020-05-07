@@ -321,7 +321,7 @@ public class Robot extends Movable {
                 boxPicked.isCollidable = false;
                 boxBeingPathFounded = null;
                 shouldTurn90ToPickBox = true;
-                boxPicked.boundingbox.material = game.boxRequiredMat;
+                boxPicked.getBoundingBox().material = game.boxRequiredMat;
             }
             else {
                 System.out.println("Barcodes did not match. This is not the required box");
@@ -329,7 +329,7 @@ public class Robot extends Movable {
                 currBox.shouldShowCollisionBox = true;
                 boxBeingPathFounded = null;
                 game.addBoxToSearched(currBox);
-                currBox.boundingbox.material = game.boxWrongMat;
+                currBox.getBoundingBox().material = game.boxWrongMat;
             }
 
         }
@@ -452,7 +452,7 @@ public class Robot extends Movable {
     }
 
     public Vector getDirectionToFrontFromCentre(Model search) {
-        Vector[] bounds = Model.getBounds(search.boundingbox);
+        Vector[] bounds = Model.getBounds(search.getBoundingBox());
         float deltaZ = (bounds[1].get(2) - bounds[0].get(2)) / 2f;
 
         Vector z = search.getOrientation().getRotationMatrix().getColumn(2);
@@ -823,7 +823,7 @@ public class Robot extends Movable {
 
     public boolean isCollidingModel(Vector v, Model m) {
 
-        Vector[] bounds = Model.getBounds(m.getObjectToWorldMatrix().matMul(m.boundingbox.getVertices()).convertToColumnVectorList());
+        Vector[] bounds = Model.getBounds(m.getObjectToWorldMatrix().matMul(m.getBoundingBox().getVertices()).convertToColumnVectorList());
         Vector boundMin = bounds[0];
         Vector boundMax = bounds[1];
 

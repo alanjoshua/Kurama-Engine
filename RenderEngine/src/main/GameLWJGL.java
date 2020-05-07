@@ -4,16 +4,14 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+import engine.DataStructure.Mesh.Face;
+import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Scene;
-import engine.GUI.Text;
-import engine.HUD;
-import engine.Math.Perlin;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.Terrain.Terrain;
+import engine.Terrain.TerrainUtils;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
-import engine.font.FontTexture;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
@@ -21,12 +19,11 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
-import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
 import engine.camera.Camera;
+import engine.model.Terrain;
 import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 
@@ -61,6 +58,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     Map<String, Mesh> meshInstances;
     float lightAngle = 0;
+    Terrain terrain;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -155,8 +153,8 @@ public class GameLWJGL extends Game implements Runnable {
         Material cubeMat = new Material(tex,reflectance);
 
         float skyBoxScale = 1000;
-        float boxScale = 0.5f;
-        int boxCount = 500;
+        float boxScale = 1f;
+        int boxCount = 100;
         float yRange = 60;
 
         hints.shouldBakeVertexAttributes = true;
@@ -172,11 +170,10 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox.mesh.material = skyMat;
 
         hints.shouldBakeVertexAttributes = false;
-        Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
-        float[][] heightMap = Terrain.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
+        float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
 
 //        for(int i = 0;i < heightMap.length;i++) {
 //            for(int j = 0;j < heightMap[i].length;j++) {
@@ -190,21 +187,27 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        Mesh ter = Terrain.createMeshFromHeightMap(heightMap,boxCount/10);
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
         try {
             tex = new Texture("textures/terrain.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
-        ter.material.texture = tex;
+        terrain.mesh.material.texture = tex;
 
 //        ter = ModelBuilder.convertToLines(ter,null);
 //        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
-        ter.initOpenGLMeshData();
+        terrain.mesh.initOpenGLMeshData();
 
-        Model terrain = new Model(this,ter,"terrain");
         terrain.setScale(boxCount,yRange,boxCount);
+        //terrain.setPos(100,0,100);
         scene.models.add(terrain);
+
+        Model marker = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"marker");
+        marker.setScale(0.1f);
+        marker.setPos(terrain.getPos());
+        scene.models.add(marker);
+
         scene.buildModelMap();
 
     }
@@ -447,9 +450,33 @@ public class GameLWJGL extends Game implements Runnable {
             if(input.keyDownOnce(input.V)) {
                 display.toggleWindowModes();
             }
+        }
 
-            cam.setPos(cam.getPos().add(posDelta));
-
+        Vector newPos = cam.getPos().add(posDelta);
+       // System.out.print("newPOs: ");newPos.display();
+        List<Vector> trig = terrain.getFaceAtPos(newPos);
+        Vector avg = Vector.getAverage(trig);
+        if(avg != null) {
+            if(avg.getNumberOfDimensions() == 5) {
+                cam.setPos(newPos);
+            }
+            else {
+                scene.models.get(1).setPos(avg);
+                float interPolatedHeight = TerrainUtils.interpolateHeightFromTriangle(trig,newPos);
+                //System.out.println(interPolatedHeight);
+                if(newPos.get(1)-1 > interPolatedHeight) {
+                    cam.setPos(newPos);
+                }
+                else {
+                    Vector tAvg = new Vector(avg);
+                    tAvg.setDataElement(1, interPolatedHeight + 2);
+                    cam.setPos(tAvg);
+                }
+            }
+        }
+        else {
+            cam.setPos(newPos);
+            //System.out.println("out of bounds");
         }
 
     }

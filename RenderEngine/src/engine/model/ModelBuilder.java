@@ -182,6 +182,11 @@ public class ModelBuilder {
 	}
 
 	public static Mesh dumbBake(Mesh mesh, ModelBuilderHints hints) {
+
+		if(mesh.indices != null) {
+			return mesh;
+		}
+
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
 		List<Integer> indices = new ArrayList<>();
 		List<Face> newFaces = new ArrayList<>();

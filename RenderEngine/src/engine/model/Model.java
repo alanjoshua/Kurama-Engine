@@ -8,6 +8,7 @@ import engine.Math.Vector;
 import engine.DataStructure.Mesh.Mesh;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
+import engine.utils.Utils;
 import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
@@ -32,13 +33,11 @@ public class Model {
 	protected Matrix transformedVertices;
 	protected Matrix cacheViewMatrix;
 	protected boolean isChanged = true;
-	protected Vector boundMin;
-	protected  Vector boundMax;
 	public boolean isCollidable = true;
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
 	public boolean shouldShowAxes = false;
-	public Mesh boundingbox;
+	private Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
 
@@ -128,6 +127,10 @@ public class Model {
 		return res;
 	}
 
+	public Mesh getBoundingBox() {
+		return boundingbox;
+	}
+
 	public void setBoundingBoxColor(Vector color) {
 		this.boundingBoxColor = color;
 		ModelBuilder.addColor(boundingbox,boundingBoxColor);
@@ -147,8 +150,8 @@ public class Model {
 		}
 
 		Vector[] bounds = Model.getBounds(mesh);
-		boundMin = bounds[0];
-		boundMax = bounds[1];
+		Vector boundMin = bounds[0];
+		Vector boundMax = bounds[1];
 
 //		Code to create bounding box mesh
 
@@ -299,14 +302,6 @@ public class Model {
 		mesh.displayMeshInformation();
 	}
 
-	public void triangulate() {
-		this.mesh = ModelBuilder.triangulate(mesh,false);
-	}
-
-	public void triangulate(boolean forceUseEarClipping) {
-		mesh = ModelBuilder.triangulate(mesh,forceUseEarClipping);
-	}
-
 	public Mesh getMesh() {return mesh;}
 
 	public MiniBehaviour getMiniBehaviourObj() {
@@ -332,13 +327,13 @@ public class Model {
 		isChanged = true;
 	}
 
-	public Vector getBoundMin() {
-		return boundMin;
-	}
-
-	public Vector getBoundMax() {
-		return boundMax;
-	}
+//	public Vector getBoundMin() {
+//		return boundMin;
+//	}
+//
+//	public Vector getBoundMax() {
+//		return boundMax;
+//	}
 
 	public Vector getScale() {
 		return scale;

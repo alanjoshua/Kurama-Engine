@@ -430,7 +430,7 @@ public class Simulation extends Game {
                if(optional.isPresent()) {
                    Box ret = optional.get();
                    ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
-                   ret.boundingbox.material = boxRequiredMat;
+                   ret.getBoundingBox().material = boxRequiredMat;
                    ret.shouldShowCollisionBox = true;
 
                    if (mode == Display.DisplayMode.FULLSCREEN) {
@@ -465,7 +465,7 @@ public class Simulation extends Game {
             Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
             ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
             ret.shouldShowCollisionBox = true;
-            ret.boundingbox.material = boxRequiredMat;
+            ret.getBoundingBox().material = boxRequiredMat;
             return ret;
         }
 
@@ -562,10 +562,10 @@ public class Simulation extends Game {
         List<Vector> boundData = new ArrayList<>();
 
         List<Vector> vertices = new ArrayList<>();
-        vertices.add(m.boundingbox.getVertices().get(0));
-        vertices.add(m.boundingbox.getVertices().get(2));
-        vertices.add(m.boundingbox.getVertices().get(4));
-        vertices.add(m.boundingbox.getVertices().get(6));
+        vertices.add(m.getBoundingBox().getVertices().get(0));
+        vertices.add(m.getBoundingBox().getVertices().get(2));
+        vertices.add(m.getBoundingBox().getVertices().get(4));
+        vertices.add(m.getBoundingBox().getVertices().get(6));
 
         vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
 
@@ -603,10 +603,10 @@ public class Simulation extends Game {
         List<Vector> boundData = new ArrayList<>();
 
         List<Vector> vertices = new ArrayList<>();
-        vertices.add(m.boundingbox.getVertices().get(0));
-        vertices.add(m.boundingbox.getVertices().get(2));
-        vertices.add(m.boundingbox.getVertices().get(4));
-        vertices.add(m.boundingbox.getVertices().get(6));
+        vertices.add(m.getBoundingBox().getVertices().get(0));
+        vertices.add(m.getBoundingBox().getVertices().get(2));
+        vertices.add(m.getBoundingBox().getVertices().get(4));
+        vertices.add(m.getBoundingBox().getVertices().get(6));
 
         vertices = m.getObjectToWorldMatrix().matMul(vertices).convertToColumnVectorList();
 

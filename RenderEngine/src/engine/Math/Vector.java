@@ -362,6 +362,15 @@ public class Vector {
 	}
 
 	public static Vector getAverage(List<Vector> list) {
+		if(list == null) {
+			return null;
+		}
+		
+		if(list.size() == 0) {
+//			throw new RuntimeException("List size is zero. Could not create average");
+			return null;
+		}
+
 		Vector avg = new Vector(list.get(0).getNumberOfDimensions(),0);
 		for(Vector v: list) {
 			avg = avg.add(v);

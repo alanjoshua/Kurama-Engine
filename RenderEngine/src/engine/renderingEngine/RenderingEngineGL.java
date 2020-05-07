@@ -156,11 +156,11 @@ public class RenderingEngineGL extends RenderingEngine {
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
                 mesh.justRender();
 
-                if(model.shouldShowCollisionBox && model.boundingbox != null) {
-                    List<Model> l = accessoryModels.get(model.boundingbox);
+                if(model.shouldShowCollisionBox && model.getBoundingBox() != null) {
+                    List<Model> l = accessoryModels.get(model.getBoundingBox());
                     if(l == null) {
                         l = new ArrayList<>();
-                        accessoryModels.put(model.boundingbox,l);
+                        accessoryModels.put(model.getBoundingBox(),l);
                     }
                     l.add(model);
                 }

@@ -98,6 +98,27 @@ public class Utils {
 
 	}
 
+	public static boolean isPointInsideTriangle(Vector v0, Vector v1, Vector v2, Vector p) {
+		Vector e1 = v0.sub(v1);
+		Vector e2 = v2.sub(v1);
+
+		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
+		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
+		Vector p_ = proj1.add(proj2);
+
+		float pa = (v0.sub(p_)).getNorm();
+		float pb = (v1.sub(p_)).getNorm();
+		float pc = (v2.sub(p_)).getNorm();
+		float totalArea = e1.getNorm() * e2.getNorm() / 2.0f;
+
+		float alpha = pa * pb / (2.0f * totalArea);
+		float beta = pb * pc / (2.0f * totalArea);
+		float gamma = 1 - alpha - beta;
+
+		return alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && alpha + beta + gamma == 1;
+
+	}
+
 	public static long generateSeed(String in) {
 		long seed = 0;
 
@@ -211,6 +232,13 @@ public class Utils {
 		res[0] = min;
 		res[1] = max;
 		return res;
+	}
+
+	public static boolean areVectors2DApproximatelyEqual(Vector v1, Vector v2) {
+		Vector a = new Vector(new float[]{(int)v1.get(0),(int)v1.get(2)});
+		Vector b = new Vector(new float[]{(int)v2.get(0),(int)v2.get(2)});
+//		return a.sub(b).getNorm() < 2;
+		return a.equals(b);
 	}
 	
 }

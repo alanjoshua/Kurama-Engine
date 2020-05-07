@@ -6,28 +6,28 @@ import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Texture;
 import engine.Math.Perlin;
 import engine.Math.Vector;
+import engine.game.Game;
 import engine.lighting.Material;
+import engine.model.Terrain;
 import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Terrain {
+public class TerrainUtils {
 
     public static float[][] generateRandomHeightMap(int w, int h, int octaves, float persistence, float roughness, long seed) {
         float[][] heightMap = new float[w][h];
-        Random random = new Random();
         for(int i = 0;i < w;i++) {
             for (int j = 0; j < h; j++) {
-//                heightMap[i][j] = (float) ((Perlin.octavePerlin((float)i / (float)w, 0, (float)j / (float)h, octaves, persistence))*2f - 1f);
                 heightMap[i][j] = (float) ((Perlin.octavePerlin(i*roughness, seed, j*roughness, octaves, persistence))*2f - 1f);
             }
         }
         return heightMap;
     }
 
-    public static Mesh createMeshFromHeightMap(float[][] heightMap, int textInc) {
+    public static Terrain createTerrainFromHeightMap(float[][] heightMap, int textInc, Game game, String identifier) {
         List<Vector> positions = new ArrayList<>();
         List<Vector> texCoords = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
@@ -57,10 +57,10 @@ public class Terrain {
 
 
                 if (i < w - 1 && j < h - 1) {
-                    int leftTop = j * w + i;
-                    int leftBottom = (j + 1) * w + i;
-                    int rightBottom = (j + 1) * w + i + 1;
-                    int rightTop = j * w + i + 1;
+                    int leftTop = i * h + j;
+                    int leftBottom = (i + 1) * h + j;
+                    int rightBottom = (i + 1) * h + j + 1;
+                    int rightTop = i * h + j + 1;
 
                     v1.setAttribute(rightTop,Vertex.POSITION);
                     v1.setAttribute(rightTop,Vertex.TEXTURE);
@@ -112,7 +112,40 @@ public class Terrain {
         vertAttribs.add(calcNormals(positions,w,h));
 
         Mesh resMesh = new Mesh(indices,faces,vertAttribs);
-        return resMesh;
+
+//        for(Face f: resMesh.faces) {
+//            resMesh.getVertices().get(f.get(0, Vertex.POSITION)).display();
+//        }
+
+        return new Terrain(game,resMesh,identifier,w,h,2);
+    }
+
+    public static float interpolateHeightFromTriangle(List<Vector> trig, Vector pos) {
+        if(trig.size() != 3) {
+            System.out.println("trig coords:");
+            for(Vector v: trig) {
+                v.display();
+            }
+            throw new RuntimeException("Error, 3 coords were not provided to trivangle height interpolate method");
+        }
+        Vector pA = trig.get(0);
+        Vector pB = trig.get(1);
+        Vector pC = trig.get(2);
+
+        float a = (pB.get(1) - pA.get(1)) * (pC.get(2) - pA.get(2)) - (pC.get(1) - pA.get(1)) * (pB.get(2) - pA.get(2));
+        float b = (pB.get(2) - pA.get(2)) * (pC.get(0) - pA.get(0)) - (pC.get(2) - pA.get(2)) * (pB.get(0) - pA.get(0));
+        float c = (pB.get(0) - pA.get(0)) * (pC.get(1) - pA.get(1)) - (pC.get(0) - pA.get(0)) * (pB.get(1) - pA.get(1));
+        float d = -(a * pA.get(0) + b * pA.get(1) + c * pA.get(2));
+        // y = (-d -ax -cz) / b
+        float y = (-d - a * pos.get(0) - c * pos.get(2)) / b;
+        return y;
+    }
+
+    public static boolean areVectors2DApproximatelyEqual(Vector v1, Vector v2) {
+        Vector a = new Vector(new float[]{(int)v1.get(0),(int)v1.get(2)});
+        Vector b = new Vector(new float[]{(int)v2.get(0),(int)v2.get(2)});
+		return a.sub(b).getNorm() < 2;
+//        return a.equals(b);
     }
 
     private static List<Vector> calcNormals(List<Vector> posArr, int width, int height) {
