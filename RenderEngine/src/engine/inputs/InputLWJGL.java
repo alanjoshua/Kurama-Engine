@@ -134,7 +134,6 @@ public class InputLWJGL extends Input {
         GLFWKeyCallback keyCallback = new GLFWKeyCallback() {
             @Override
             public void invoke(long window, int key, int scancode, int action, int mods) {
-
 //                Making sure keys is within range
                 if(key > 0 && key < keys.size()) {
                     currentKeys[key] = action;

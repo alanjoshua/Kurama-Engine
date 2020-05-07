@@ -464,12 +464,12 @@ public class GameLWJGL extends Game implements Runnable {
                 scene.models.get(1).setPos(avg);
                 float interPolatedHeight = TerrainUtils.interpolateHeightFromTriangle(trig,newPos);
                 //System.out.println(interPolatedHeight);
-                if(newPos.get(1)-1 > interPolatedHeight) {
+                if(newPos.get(1)-2 >= interPolatedHeight) {
                     cam.setPos(newPos);
                 }
                 else {
                     Vector tAvg = new Vector(avg);
-                    tAvg.setDataElement(1, interPolatedHeight + 2);
+                    tAvg.setDataElement(1, interPolatedHeight + 2 + 0.2f);
                     cam.setPos(tAvg);
                 }
             }
