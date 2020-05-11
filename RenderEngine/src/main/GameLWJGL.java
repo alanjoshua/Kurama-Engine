@@ -168,6 +168,7 @@ public class GameLWJGL extends Game implements Runnable {
         Material skyMat = new Material(tex,1);
         skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
         scene.skybox.mesh.material = skyMat;
+        Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
         hints.shouldBakeVertexAttributes = false;
 
@@ -461,7 +462,7 @@ public class GameLWJGL extends Game implements Runnable {
                 cam.setPos(newPos);
             }
             else {
-                scene.models.get(1).setPos(avg);
+                //scene.models.get(1).setPos(avg);
                 float interPolatedHeight = TerrainUtils.interpolateHeightFromTriangle(trig,newPos);
                 //System.out.println(interPolatedHeight);
                 if(newPos.get(1)-2 >= interPolatedHeight) {
@@ -478,6 +479,9 @@ public class GameLWJGL extends Game implements Runnable {
             cam.setPos(newPos);
             //System.out.println("out of bounds");
         }
+
+//        Vector newPos = cam.getPos().add(posDelta);
+//        cam.setPos(newPos);
 
     }
 

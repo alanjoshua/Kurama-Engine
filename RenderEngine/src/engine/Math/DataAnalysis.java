@@ -5,6 +5,7 @@ import engine.model.Model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 public class DataAnalysis {
 
@@ -185,5 +186,247 @@ public class DataAnalysis {
 
         return dist;
     }
+
+//    public static List<Matrix> performMatrixFactorisation(Matrix y, int loopCount, float learningRate) {
+//        int userCount = y.getRows();
+//        int movieCount = y.getCols();
+//        int featureCount = Math.min(userCount,movieCount);
+//
+//        Matrix m1 = Matrix.createRandomMatrix(userCount,featureCount,null);
+//        Matrix m2 = Matrix.createRandomMatrix(featureCount,movieCount,null);
+//
+//        for(int i = 0;i < loopCount;i++) {
+//            Matrix yHat = m1.matMul(m2);
+//            Matrix delEdelYHat = yHat.sub(y);
+//            Matrix delEDelM1 = delEdelYHat.matMul(m2.transpose());
+//            Matrix delEDelM2 = m1.transpose().matMul(delEdelYHat);
+//            Matrix deltaM1 = delEDelM1.scalarMul(-learningRate);
+//            Matrix deltaM2 = delEDelM2.scalarMul(-learningRate);
+//            m1 = m1.add(deltaM1);
+//            m2 = m2.add(deltaM2);
+//        }
+//
+//        List<Matrix> res = new ArrayList<>();
+//        res.add(m1);
+//        res.add(m2);
+//
+//        return res;
+//    }
+
+    public static List<Matrix> NMTF(Matrix data, int loopCount, int k1, int k2) {
+        Random random = new Random();
+        random.setSeed(System.nanoTime());
+        Supplier<Float> randomGen = () -> random.nextFloat();
+
+        Matrix R = Matrix.createRandomMatrix(data.getRows(),k1,randomGen);
+        Matrix C = Matrix.createRandomMatrix(k2, data.getCols(),randomGen);
+        Matrix B = new Matrix(k1,k2,data.getAverage());
+
+        for(int i = 0;i < loopCount;i++) {
+//            Matrix tempRNum = data.matMul(C.transpose().matMul(B.transpose()));
+//            Matrix tempRDenom = R.matMul(B.matMul(C.matMul(C.transpose().matMul(B.transpose()))));
+//
+//            Matrix tempBNum = R.transpose().matMul(data.matMul(C.transpose()));
+//            Matrix tempBDenom = R.transpose().matMul(R.matMul(B.matMul(C.matMul(C.transpose()))));
+//
+//            Matrix tempCNum = B.transpose().matMul(R.transpose().matMul(data));
+//            Matrix tempCDenom = B.transpose().matMul(R.transpose().matMul(R.matMul(B.matMul(C))));
+//
+////            tempRNum.display();
+////            System.out.println();
+//
+//            float[][] newR = new float[R.getRows()][R.getCols()];
+//            float[][] newB = new float[B.getRows()][B.getCols()];
+//            float[][] newC = new float[C.getRows()][C.getCols()];
+//
+//            for(int r = 0; r < newR.length;r++) {
+//                for(int c = 0; c < newR[r].length;c++) {
+//                    newR[r][c] = R.get(r,c) * ((tempRNum.get(r,c) / tempRDenom.get(r,c)));
+//                }
+//            }
+//
+//            for(int r = 0; r < newB.length;r++) {
+//                for(int c = 0; c < newB[r].length;c++) {
+//                    newB[r][c] = B.get(r,c) * ((tempBNum.get(r,c) / tempBDenom.get(r,c)));
+//                }
+//            }
+//
+//            for(int r = 0; r < newC.length;r++) {
+//                for(int c = 0; c < newC[r].length;c++) {
+//                    newC[r][c] = C.get(r,c) * ((tempCNum.get(r,c) / tempCDenom.get(r,c)));
+//                }
+//            }
+//
+//            R = new Matrix(newR);
+//            B = new Matrix(newB);
+//            C = new Matrix(newC);
+
+            R = R.mul((data.matMul(C.transpose().matMul(B.transpose()))).divide(R.matMul(B.matMul(C.matMul(C.transpose().matMul(B.transpose()))))));
+            C = C.mul(((data.transpose().matMul(R.matMul(B))).divide(C.transpose().matMul(B.transpose().matMul(R.transpose().matMul(R.matMul(B)))))).transpose());
+            B = B.mul((R.transpose().matMul(data.matMul(C.transpose()))).divide(R.transpose().matMul(R.matMul(B.matMul(C.matMul(C.transpose()))))));
+
+           // R = R.orthogonalizeRows();
+            B = B.orthogonalizeColumns();
+            //C = C.orthogonalizeColumns();
+        }
+
+        List<Matrix> res = new ArrayList<>();
+        res.add(R);
+        res.add(B);
+        res.add(C);
+        return res;
+    }
+
+    //Non negative matrix factorisation
+    public static List<Matrix> performMatrixFactorization(Matrix data, Integer ft, int loopCount, float learningRate, Float lowerBound, Float upperBound) {
+        int userCount = data.getRows();
+        int movieCount = data.getCols();
+        int featureCount;
+        if(ft == null) {
+            featureCount = Math.min(userCount,movieCount);
+        }
+        else {
+            featureCount = ft;
+        }
+
+        Random random = new Random();
+        random.setSeed(System.nanoTime());
+        Supplier<Float> randomGen = () -> random.nextFloat();
+
+        Matrix m1 = Matrix.createRandomMatrix(userCount,featureCount,randomGen);
+        Matrix m2 = Matrix.createRandomMatrix(featureCount,movieCount,randomGen);
+
+//        Matrix previousDelta = null;
+//        Matrix newM1 = null;
+//        Matrix newM2 = null;
+//        float learningRate = 1;
+
+        for(int i = 0;i < loopCount;i++) {
+
+            Matrix yHat = m1.matMul(m2);
+            Matrix deltaY = yHat.sub(data);
+            Matrix delEDelM1 = deltaY.matMul(m2.transpose());
+            Matrix delEDelM2 = m1.transpose().matMul(deltaY);
+            Matrix deltaM1 = delEDelM1.scalarMul(-learningRate);
+            Matrix deltaM2 = delEDelM2.scalarMul(-learningRate);
+            m1 = m1.add(deltaM1);
+            m2 = m2.add(deltaM2);
+
+            if(lowerBound != null || upperBound != null) {
+
+                for (int r = 0; r < m1.getRows(); r++) {
+                    for (int c = 0; c < m1.getCols(); c++) {
+                        if (lowerBound != null) {
+                            m1.getData()[r][c] = Math.max(m1.getData()[r][c], lowerBound);
+                        }
+                        if (upperBound != null) {
+                            m1.getData()[r][c] = Math.min(m1.getData()[r][c], upperBound);
+                        }
+                        //m1.getData()[r][c] = m1.getData()[r][c]< lowerBound ? lowerBound: Math.min(m1.getData()[r][c], upperBound);
+                    }
+                }
+
+                for (int r = 0; r < m2.getRows(); r++) {
+                    for (int c = 0; c < m2.getCols(); c++) {
+                        if (lowerBound != null) {
+                            m2.getData()[r][c] = Math.max(m2.getData()[r][c], lowerBound);
+                        }
+                        if (upperBound != null) {
+                            m2.getData()[r][c] = Math.min(m2.getData()[r][c], upperBound);
+                        }
+                        //m2.getData()[r][c] = m2.getData()[r][c]< lowerBound ? lowerBound: Math.min(m2.getData()[r][c], upperBound);
+                    }
+                }
+
+            }
+
+//            if(previousDelta == null) {
+//                Matrix yHat = m1.matMul(m2);
+//                previousDelta = yHat.sub(y);
+//            }
+//
+//            Boolean shouldIncreaseLock = null;
+//            boolean shouldStopLooping = false;
+//            Matrix tempPrevM1 = null, tempPrevM2 = null;
+//
+//            while(!shouldStopLooping) {
+//                Matrix delEDelM1 = previousDelta.matMul(m2.transpose());
+//                Matrix delEDelM2 = m1.transpose().matMul(previousDelta);
+//
+//                Matrix deltaM1 = delEDelM1.scalarMul(-learningRate);
+//                Matrix deltaM2 = delEDelM2.scalarMul(-learningRate);
+//                newM1 = m1.add(deltaM1);
+//                newM2 = m2.add(deltaM2);
+//
+//                for(int r = 0;r < newM1.getRows();r++) {
+//                    for(int c = 0;c < newM1.getCols();c++) {
+//                        newM1.getData()[r][c] = newM1.getData()[r][c]< lowerBound ? lowerBound: Math.min(newM1.getData()[r][c], upperBound);
+//                    }
+//                }
+//
+//                for(int r = 0;r < newM2.getRows();r++) {
+//                    for(int c = 0;c < newM2.getCols();c++) {
+//                        newM2.getData()[r][c] = newM2.getData()[r][c]< lowerBound ? lowerBound: Math.min(newM2.getData()[r][c], upperBound);
+//                    }
+//                }
+//
+//                if (shouldIncreaseLock == null) {
+//                    shouldIncreaseLock = doesLearningRateSatisfy(m1, delEDelM1, m2, delEDelM2, previousDelta, newM1, newM2, sigma);
+//                }
+//                if(shouldIncreaseLock == true) {
+//                    if(tempPrevM1!= null && tempPrevM2!= null) {
+//                        if(tempPrevM1.sub(newM1).getNorm() == 0 || tempPrevM2.sub(newM2).getNorm() == 0) {
+//                            shouldStopLooping = true;
+//                            break;
+//                        }
+//                    }
+//
+//                    learningRate = learningRate/beta;
+//                    if(doesLearningRateSatisfy(m1, delEDelM1, m2, delEDelM2, previousDelta, newM1, newM2, sigma)) {
+//                        shouldStopLooping = false;
+//                    }
+//                    else {
+//                        shouldStopLooping = true;
+//                    }
+//                }
+//                else {
+//                    learningRate = learningRate*beta;
+//                    if(!doesLearningRateSatisfy(m1, delEDelM1, m2, delEDelM2, previousDelta, newM1, newM2, sigma)) {
+//                        shouldStopLooping = false;
+//                    }
+//                    else {
+//                        shouldStopLooping = true;
+//                    }
+//                }
+//                tempPrevM1 = newM1;
+//                tempPrevM2 = newM2;
+//            }
+//
+//            m1 = newM1;
+//            m2 = newM2;
+//            System.out.println("outside");
+//
+        }
+
+        List<Matrix> res = new ArrayList<>();
+        res.add(m1);
+        res.add(m2);
+
+        return res;
+    }
+
+//    private static boolean doesLearningRateSatisfy(Matrix m1, Matrix deltaM1, Matrix m2, Matrix deltaM2, Matrix previousDelta, Matrix newM1, Matrix newM2, float sigma) {
+//        Matrix newError = newM1.matMul(newM2);
+//        float temporalError = newError.sub(previousDelta).getNorm();
+//        float m1TemporalError = deltaM1.transpose().matMul(newM1.sub(m1)).scalarMul(sigma).getNorm();
+//        float m2TemporalError = deltaM2.transpose().matMul(newM2.sub(m2)).scalarMul(sigma).getNorm();
+//        if(temporalError <= m1TemporalError+m2TemporalError) {
+//           // System.out.println(temporalError);
+//            return true;
+//        }
+//        else {
+//            return false;
+//        }
+//    }
 
 }

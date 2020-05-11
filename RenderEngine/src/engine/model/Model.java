@@ -86,32 +86,16 @@ public class Model {
 	}
 
 	public static Vector[] getBounds(Mesh mesh) {
-		Vector boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
-		Vector boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
-
-		for(Vector v: mesh.getVertices()) {
-			for(int i = 0;i < 3;i++) {
-				if(v.get(i) < boundMin.get(i)) {
-					boundMin.setDataElement(i,v.get(i));
-				}
-				if(v.get(i) > boundMax.get(i)) {
-					boundMax.setDataElement(i,v.get(i));
-				}
-			}
-		}
-
-		Vector[] res = new Vector[2];
-		res[0] = boundMin;
-		res[1] = boundMax;
-		return res;
+		return Model.getBounds(mesh.getVertices());
 	}
 
 	public static Vector[] getBounds(List<Vector> verts) {
-		Vector boundMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
-		Vector boundMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
+		int dimensions = verts.get(0).getNumberOfDimensions();
+		Vector boundMin = new Vector(dimensions,Float.POSITIVE_INFINITY);
+		Vector boundMax = new Vector(dimensions,Float.NEGATIVE_INFINITY);
 
 		for(Vector v: verts) {
-			for(int i = 0;i < 3;i++) {
+			for(int i = 0;i < dimensions;i++) {
 				if(v.get(i) < boundMin.get(i)) {
 					boundMin.setDataElement(i,v.get(i));
 				}

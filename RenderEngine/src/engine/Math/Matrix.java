@@ -3,6 +3,9 @@ package engine.Math;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Matrix {
 
@@ -37,6 +40,21 @@ public class Matrix {
 				data[i][j] = val;
 			}
 		}
+	}
+
+	public static Matrix createRandomMatrix(int r, int c, Supplier<Float> randGenerator) {
+		if(randGenerator == null) {
+			Random random = new Random();
+			random.setSeed(System.nanoTime());
+			randGenerator = () -> random.nextFloat()*2 - 1;
+		}
+		float[][] data = new float[r][c];
+		for(int i = 0; i < r;i++) {
+			for(int j = 0;j < c;j++) {
+				data[i][j] = randGenerator.get();
+			}
+		}
+		return new Matrix(data);
 	}
 
 	public Matrix(Vector[] v) {
@@ -357,7 +375,7 @@ public class Matrix {
 			}
 
 			else {
-				throw new Exception("Size of Matrix A and B should be the same");
+				throw new Exception("Size of Matrix A and B should be the same. Size of left mat is rows-"+rows+":cols "+cols+". Size of right mat is rows-"+b.rows+":cols-"+b.cols);
 //			System.err.println("Size of Matrix A and B should be the same");
 //			System.out.println("Returning Matrix of size A with values 1");
 //			res = new Matrix(rows, cols, 1f);
@@ -628,6 +646,10 @@ public class Matrix {
 		return data;
 	}
 
+	public float get(int r, int c) {
+		return data[r][c];
+	}
+
 	public void setData(float[][] data) {
 		this.data = data;
 		rows = data.length;
@@ -865,6 +887,20 @@ public class Matrix {
 
 		return v;
 	}
+	public List<Vector> convertToRowVectorList() {
+		List<Vector> v = new ArrayList<>(rows);
+
+		for (int i = 0; i < rows; i++) {
+			float[] vecData = new float[cols];
+			for (int j = 0; j < cols; j++) {
+				vecData[j] = data[i][j];
+			}
+			v.add(new Vector(vecData));
+		}
+
+		return v;
+	}
+
 
 	public static Matrix getRotateX(double x) {
 
@@ -999,6 +1035,106 @@ public class Matrix {
 			}
 		}
 		fb.flip();
+	}
+
+	public float getNorm() {
+		float res = 0;
+		for(float[] r: this.getData()) {
+			for(float val: r) {
+				res += val * val;
+			}
+		}
+		return (float) Math.sqrt(res);
+	}
+
+	public static Matrix convertMatrixToBinaryByRow(Matrix mat) {
+		float[][] resData = new float[mat.rows][mat.cols];
+		for(int r = 0; r<mat.rows;r++) {
+			int maxInd = 0;
+			float maxVal = Float.NEGATIVE_INFINITY;
+			for(int c = 0; c< mat.cols;c++) {
+				if(mat.get(r,c) > maxVal) {
+					maxInd = c;
+					maxVal = mat.get(r,c);
+				}
+			}
+			resData[r][maxInd] = 1f;
+		}
+		return new Matrix(resData);
+	}
+
+	public static Matrix convertMatrixToBinaryByColumn(Matrix mat) {
+		float[][] resData = new float[mat.rows][mat.cols];
+		for(int c = 0; c< mat.cols;c++) {
+			int maxInd = 0;
+			float maxVal = Float.NEGATIVE_INFINITY;
+			for(int r = 0; r<mat.rows;r++) {
+				if(mat.get(r,c) > maxVal) {
+					maxInd = r;
+					maxVal = mat.get(r,c);
+				}
+			}
+			resData[maxInd][c] = 1f;
+		}
+		return new Matrix(resData);
+	}
+
+	public Matrix convertMatrixToBinaryByRow() {
+		float[][] resData = new float[this.rows][this.cols];
+		for(int r = 0; r<this.rows;r++) {
+			int maxInd = 0;
+			float maxVal = Float.NEGATIVE_INFINITY;
+			for(int c = 0; c< this.cols;c++) {
+				if(this.get(r,c) > maxVal) {
+					maxInd = c;
+					maxVal = this.get(r,c);
+				}
+			}
+			resData[r][maxInd] = 1f;
+		}
+		return new Matrix(resData);
+	}
+
+	public Matrix convertMatrixToBinaryByColumn() {
+		float[][] resData = new float[this.rows][this.cols];
+		for(int c = 0;c < this.cols;c++) {
+			int maxInd = 0;
+			float maxVal = Float.NEGATIVE_INFINITY;
+			for(int r = 0; r<this.rows;r++) {
+				if(this.get(r,c) > maxVal) {
+					maxInd = r;
+					maxVal = this.get(r,c);
+				}
+			}
+			resData[maxInd][c] = 1f;
+		}
+		return new Matrix(resData);
+	}
+
+	public float getAverage() {
+		float val = 0;
+		for(int i = 0;i < rows;i++) {
+			for(int j = 0;j < cols;j++) {
+				val+=data[i][j];
+			}
+		}
+		return val / (rows*cols);
+	}
+
+	public Matrix orthogonalizeColumns() {
+		List<Vector> res = new ArrayList<>();
+		for(Vector v:this.convertToColumnVectorList()) {
+			res.add(v.normalise());
+		}
+		return new Matrix(res);
+	}
+
+	public Matrix orthogonalizeRows() {
+		List<Vector> res = new ArrayList<>();
+		for(Vector v:this.convertToRowVectorList()) {
+			res.add(v.normalise());
+		}
+		return new Matrix(res).transpose();
 	}
 
 }
