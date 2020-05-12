@@ -443,45 +443,16 @@ public class GameLWJGL extends Game implements Runnable {
                 }
             }
 
-//            if(input.keyDownOnce(GLFW_KEY_Q)) {
-//                if(renderingEngine.getRenderPipeline() == RenderingEngineLWJGL.RenderPipeline.Quat) renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Matrix);
-//                else renderingEngine.setRenderPipeline(RenderingEngineLWJGL.RenderPipeline.Quat);
-//            }
-
             if(input.keyDownOnce(input.V)) {
                 display.toggleWindowModes();
             }
         }
 
         Vector newPos = cam.getPos().add(posDelta);
-       // System.out.print("newPOs: ");newPos.display();
-        List<Vector> trig = terrain.getFaceAtPos(newPos);
-        Vector avg = Vector.getAverage(trig);
-        if(avg != null) {
-            if(avg.getNumberOfDimensions() == 5) {
-                cam.setPos(newPos);
-            }
-            else {
-                //scene.models.get(1).setPos(avg);
-                float interPolatedHeight = TerrainUtils.interpolateHeightFromTriangle(trig,newPos);
-                //System.out.println(interPolatedHeight);
-                if(newPos.get(1)-2 >= interPolatedHeight) {
-                    cam.setPos(newPos);
-                }
-                else {
-                    Vector tAvg = new Vector(avg);
-                    tAvg.setDataElement(1, interPolatedHeight + 2 + 0.2f);
-                    cam.setPos(tAvg);
-                }
-            }
+        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
+        if(terrainCollisionData.isValid) {
+            this.cam.setPos(terrainCollisionData.validPosition);
         }
-        else {
-            cam.setPos(newPos);
-            //System.out.println("out of bounds");
-        }
-
-//        Vector newPos = cam.getPos().add(posDelta);
-//        cam.setPos(newPos);
 
     }
 

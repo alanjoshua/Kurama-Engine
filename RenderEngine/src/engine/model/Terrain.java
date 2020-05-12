@@ -7,7 +7,6 @@ import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Terrain.TerrainUtils;
 import engine.game.Game;
-import engine.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,7 @@ public class Terrain extends Model {
     public int width, height,facesPerCell;
     private List<Vector> lastKnownTrig = new ArrayList<>();
     private int searchMaxLimit = 40;
+    public int minimumProximity = 2;
 
     public Terrain(Game game, Mesh mesh, String identifier,int width, int height, int facesPerCell) {
         super(game, mesh, identifier);
@@ -25,7 +25,51 @@ public class Terrain extends Model {
         this.facesPerCell = facesPerCell;
     }
 
-    public List<Vector> getFaceAtPos(Vector reqPos) {
+    public class TerrainMovementDataPack {
+        public boolean isValid;
+        public Vector validPosition;
+        TerrainMovementDataPack(boolean isValid, Vector mostRecentValidPosition) {
+            this.isValid = isValid;
+            this.validPosition = mostRecentValidPosition;
+        }
+    }
+
+    public TerrainMovementDataPack isPositionValid(Vector newPos) {
+
+        Vector updatedPos = null;
+        boolean isValid = false;
+
+        List<Vector> trig = this.getFaceAtPos(newPos);
+        Vector avg = Vector.getAverage(trig);
+        if(avg != null) {
+            if(avg.getNumberOfDimensions() == 5) {
+                updatedPos = newPos;
+                isValid = true;
+            }
+            else {
+                float interPolatedHeight = TerrainUtils.interpolateHeightFromTriangle(trig,newPos);
+                if(newPos.get(1)-minimumProximity >= interPolatedHeight) {
+                    updatedPos = newPos;
+                    isValid = true;
+                }
+                else {
+                    Vector tAvg = new Vector(avg);
+                    tAvg.setDataElement(1, interPolatedHeight + minimumProximity + 0.2f);
+                    updatedPos = tAvg;
+                    isValid = true;
+                }
+            }
+        }
+        else {
+           updatedPos = newPos;
+            isValid = true;
+        }
+
+        return new TerrainMovementDataPack(isValid,updatedPos);
+
+    }
+
+    private List<Vector> getFaceAtPos(Vector reqPos) {
         Vector orig = new Vector(reqPos);
 
         Vector min = this.getBoundingBox().getVertices().get(0);
