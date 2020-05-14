@@ -19,6 +19,8 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
 import engine.lighting.Material;
+import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
@@ -28,6 +30,7 @@ import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.glGetInteger;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 public class GameLWJGL extends Game implements Runnable {
@@ -80,20 +83,20 @@ public class GameLWJGL extends Game implements Runnable {
 
 //        Vector lightColor = new Vector(new float[]{1f,0f,1f});
 //        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-//        float lightIntensity = 1f;
+//        float lightIntensity = 1000f;
 //        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
 //        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
-//        scene.pointLights.add(pointLight);
-//
+////        scene.pointLights.add(pointLight);
+////
 //        lightPos = new Vector(new float[]{0,0,10});
-//        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, lightIntensity);
-//        sl_pointLight.attenuation = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
+//        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 0, 0}), lightPos, 100);
+//        sl_pointLight.attenuation = new PointLight.Attenuation(0, 0.01f, 0);
 //        Vector coneDir = new Vector(new float[]{0, 0, -1});
-//        float cutoff = (float) Math.cos(Math.toRadians(140));
+//        float cutoff = (float) Math.cos(Math.toRadians(200));
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,1}),1));
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
 
         meshInstances = new HashMap<>();
 
@@ -326,26 +329,29 @@ public class GameLWJGL extends Game implements Runnable {
             params.timeDelta = timeDelta;
 
             scene.models.forEach(m -> m.tick(params));
+//            scene.spotLights.get(0).pointLight.pos = cam.getPos();
+//            scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(1);
 
-//            DirectionalLight directionalLight = scene.directionalLights.get(0);
-//            lightAngle += 10f * timeDelta;
-//            if (lightAngle > 90) {
-//                directionalLight.intensity = 0;
-//                if (lightAngle >= 360) {
-//                    lightAngle = -90;
-//                }
-//            } else if (lightAngle <= -80 || lightAngle >= 80) {
-//                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
-//                directionalLight.intensity = factor;
-//                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
-//                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
-//            } else {
-//                directionalLight.intensity = 1;
-//                directionalLight.color = new Vector(3,1);
-//            }
-//            double angRad = Math.toRadians(lightAngle);
-//            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
-//            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+            DirectionalLight directionalLight = scene.directionalLights.get(0);
+            lightAngle += 5f * timeDelta;
+            if (lightAngle > 90) {
+                directionalLight.intensity = 0;
+                if (lightAngle >= 360) {
+                    lightAngle = -90;
+                }
+            } else if (lightAngle <= -80 || lightAngle >= 80) {
+                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
+                directionalLight.intensity = factor;
+                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
+                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
+            } else {
+                directionalLight.intensity = 1;
+                directionalLight.color = new Vector(3,1);
+            }
+            double angRad = Math.toRadians(lightAngle);
+            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
 
         }
 
@@ -449,10 +455,11 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         Vector newPos = cam.getPos().add(posDelta);
-        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
-        if(terrainCollisionData.isValid) {
-            this.cam.setPos(terrainCollisionData.validPosition);
-        }
+        cam.setPos(newPos);
+//        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
+//        if(terrainCollisionData.isValid) {
+//            this.cam.setPos(terrainCollisionData.validPosition);
+//        }
 
     }
 

@@ -184,10 +184,10 @@ public class TerrainUtils {
                     v4 = posArr.get(i4);
                     v4 = v4.sub(v0);
 
-                    v12 = v1.cross(v2).normalise();
-                    v23 = v2.cross(v3).normalise();
-                    v34 = v3.cross(v4).normalise();
-                    v41 = v4.cross(v1).normalise();
+                    v12 = v2.cross(v1).normalise();
+                    v23 = v3.cross(v2).normalise();
+                    v34 = v4.cross(v3).normalise();
+                    v41 = v1.cross(v4).normalise();
 
                     normal = v12.add(v23).add(v34).add(v41).normalise();
 
