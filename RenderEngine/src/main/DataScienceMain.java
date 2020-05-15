@@ -16,31 +16,31 @@ public class DataScienceMain {
                 {4,3,5,4,4}};
         Matrix y = new Matrix(yData);
 
-//        List<Matrix> trif = DataAnalysis.NMTF(y,1000,2,2);
-//        Matrix B = trif.get(1);
-//        Matrix R = trif.get(0);
-//        Matrix C = trif.get(2);
+        List<Matrix> trif = DataAnalysis.NMTF(y,0,2,2);
+        Matrix B = trif.get(1);
+        Matrix R = trif.get(0);
+        Matrix C = trif.get(2);
+
+        System.out.println("Row Matrix (multiplied with block matrix)");
+        R.matMul(B).convertMatrixToBinaryByRow().display();
+        System.out.println("\nBlock structure matrix");
+        B.display();
+        System.out.println();
+        System.out.println("Column matrix (multiplied with block matrix)");
+        B.matMul(C).convertMatrixToBinaryByColumn().display();
+        System.out.println();
+        R.matMul(B.matMul(C)).display();
+
+//        List<Matrix> res = DataAnalysis.performMatrixFactorization(y,2,10000,0.01f,0f,null);
 //
-//        System.out.println("Row Matrix (multiplied with block matrix)");
-//        R.matMul(B).convertMatrixToBinaryByRow().display();
-//        System.out.println("\nBlock structure matrix");
-//        B.display();
-//        System.out.println();
-//        System.out.println("Column matrix (multiplied with block matrix)");
-//        B.matMul(C).convertMatrixToBinaryByColumn().display();
-//        System.out.println();
-//        R.matMul(B.matMul(C)).display();
-
-        List<Matrix> res = DataAnalysis.performMatrixFactorization(y,2,10000,0.01f,0f,null);
-
-        Matrix m1 = res.get(0);
-        Matrix m2 = res.get(1);
-        System.out.println("M1");
-        m1.convertMatrixToBinaryByRow().display();
-        System.out.println("M2");
-        m2.convertMatrixToBinaryByColumn().display();
-        System.out.println("yHat");
-        m1.matMul(m2).display();
+//        Matrix m1 = res.get(0);
+//        Matrix m2 = res.get(1);
+//        System.out.println("M1");
+//        m1.convertMatrixToBinaryByRow().display();
+//        System.out.println("M2");
+//        m2.convertMatrixToBinaryByColumn().display();
+//        System.out.println("yHat");
+//        m1.matMul(m2).display();
 
 //        float[][] data =   {{20,1,2,3,6,10,11,12},
 //                            {20,1,2,3,6,10,11,12},

@@ -5,8 +5,7 @@ import java.nio.IntBuffer;
 import java.util.*;
 
 import engine.Math.Vector;
-import engine.DataStructure.Texture;
-import engine.lighting.Material;
+import engine.Effects.Material;
 import org.lwjgl.system.MemoryUtil;
 
 import static org.lwjgl.opengl.GL15.*;

@@ -1,4 +1,4 @@
-package engine.lighting;
+package engine.Effects;
 
 import engine.DataStructure.Texture;
 import engine.Math.Vector;

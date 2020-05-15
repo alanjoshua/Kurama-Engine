@@ -2,24 +2,21 @@ package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Scene;
-import engine.GUI.Text;
 import engine.HUD;
 import engine.Math.Matrix;
-import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.lighting.Material;
+import engine.Effects.Material;
+import engine.lighting.DirectionalLight;
 import engine.model.ModelBuilder;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
 import engine.model.Model;
-import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -68,6 +65,9 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createPointLightListUniform("pointLights",scene.pointLights.size());
             sceneShaderProgram.createDirectionalLightListUniform("directionalLights",scene.directionalLights.size());
             sceneShaderProgram.createSpotLightListUniform("spotLights",scene.spotLights.size());
+
+            sceneShaderProgram.createFogUniform("fog");
+            sceneShaderProgram.createUniform("allDirectionalLightStatic");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -139,19 +139,29 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("texture_sampler",0);
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
-        sceneShaderProgram.setUniform("ambientLight",game.ambientLight);
-        sceneShaderProgram.setUniform("specularPower",game.specularPower);
+        sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
+        sceneShaderProgram.setUniform("specularPower",scene.specularPower);
 
         LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
         sceneShaderProgram.setUniform("pointLights",lights.pointLights);
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
 
+        sceneShaderProgram.setUniform("fog", scene.fog);
+        Vector c = new Vector(3,0);
+        for(DirectionalLight l:scene.directionalLights) {
+            c = c.add(l.color.scalarMul(l.intensity));
+        }
+        sceneShaderProgram.setUniform("allDirectionalLightStatic", c);
+
         Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
+
+        int indvRenderCalls = 0;
 
         for(Mesh mesh:scene.modelMap.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.material);
             mesh.initRender();
+            indvRenderCalls++;
             for(Model model:scene.modelMap.get(mesh)) {
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
                 mesh.justRender();
@@ -180,6 +190,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
         for(Mesh mesh:accessoryModels.keySet()) {
             sceneShaderProgram.setUniform("material", mesh.material);
+            indvRenderCalls++;
             mesh.initRender();
             for(Model model:accessoryModels.get(mesh)) {
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(model.getObjectToWorldMatrix()));
@@ -187,6 +198,8 @@ public class RenderingEngineGL extends RenderingEngine {
             }
             mesh.endRender();
         }
+
+//        System.out.println("indv render valls: "+indvRenderCalls);
 
 //        for(Model model: scene.models) {
 //            sceneShaderProgram.setUniform("material", model.mesh.material);

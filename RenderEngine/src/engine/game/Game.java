@@ -36,9 +36,6 @@ public abstract class Game implements Runnable {
     protected Thread gameLoopThread;
     protected BufferedWriter bw;
 
-    public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
-    public float specularPower = 10f;
-
     public HUD hud;
     public Scene scene;
 

@@ -4,9 +4,8 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Scene;
+import engine.Effects.Fog;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Terrain.TerrainUtils;
@@ -18,9 +17,7 @@ import engine.inputs.InputLWJGL;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
-import engine.lighting.Material;
-import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
+import engine.Effects.Material;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
@@ -30,7 +27,6 @@ import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.glGetInteger;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 public class GameLWJGL extends Game implements Runnable {
@@ -96,7 +92,10 @@ public class GameLWJGL extends Game implements Runnable {
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
+        scene.ambientLight = new Vector(new float[]{0.2f,0.2f,0.2f});
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),1));
+        scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
+        scene.fog = Fog.NOFOG;
 
         meshInstances = new HashMap<>();
 
@@ -157,8 +156,8 @@ public class GameLWJGL extends Game implements Runnable {
 
         float skyBoxScale = 1000;
         float boxScale = 1f;
-        int boxCount = 100;
-        float yRange = 60;
+        int boxCount = 200;
+        float yRange = 20;
 
         hints.shouldBakeVertexAttributes = true;
         scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
@@ -178,39 +177,40 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
+        Mesh cubeMesh = ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints);
 
-//        for(int i = 0;i < heightMap.length;i++) {
-//            for(int j = 0;j < heightMap[i].length;j++) {
-//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-//                Vector pos = bounds[0].add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-//                Model cube = new Model(this, ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints), "cube");
-//                cube.setScale(boxScale);
-//                cube.setPos(pos);
-//                cube.mesh.material = cubeMat;
-//                scene.models.add(cube);
-//            }
-//        }
-
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
-        try {
-            tex = new Texture("textures/terrain.png");
-        }catch (Exception e) {
-            e.printStackTrace();
+        for(int i = 0;i < heightMap.length;i++) {
+            for(int j = 0;j < heightMap[i].length;j++) {
+                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+                Model cube = new Model(this,cubeMesh , "cube");
+                cube.setScale(boxScale);
+                cube.setPos(pos);
+                cube.mesh.material = cubeMat;
+                scene.models.add(cube);
+            }
         }
-        terrain.mesh.material.texture = tex;
 
-//        ter = ModelBuilder.convertToLines(ter,null);
-//        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
-        terrain.mesh.initOpenGLMeshData();
-
-        terrain.setScale(boxCount,yRange,boxCount);
-        //terrain.setPos(100,0,100);
-        scene.models.add(terrain);
-
-        Model marker = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"marker");
-        marker.setScale(0.1f);
-        marker.setPos(terrain.getPos());
-        scene.models.add(marker);
+//        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
+//        try {
+//            tex = new Texture("textures/terrain.png");
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        terrain.mesh.material.texture = tex;
+//
+////        ter = ModelBuilder.convertToLines(ter,null);
+////        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
+//        terrain.mesh.initOpenGLMeshData();
+//
+//        terrain.setScale(boxCount,yRange,boxCount);
+//        //terrain.setPos(100,0,100);
+//        scene.models.add(terrain);
+//
+//        Model marker = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"marker");
+//        marker.setScale(0.1f);
+//        marker.setPos(terrain.getPos());
+//        scene.models.add(marker);
 
         scene.buildModelMap();
 
@@ -332,26 +332,26 @@ public class GameLWJGL extends Game implements Runnable {
 //            scene.spotLights.get(0).pointLight.pos = cam.getPos();
 //            scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(1);
 
-            DirectionalLight directionalLight = scene.directionalLights.get(0);
-            lightAngle += 5f * timeDelta;
-            if (lightAngle > 90) {
-                directionalLight.intensity = 0;
-                if (lightAngle >= 360) {
-                    lightAngle = -90;
-                }
-            } else if (lightAngle <= -80 || lightAngle >= 80) {
-                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
-                directionalLight.intensity = factor;
-                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
-                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
-            } else {
-                directionalLight.intensity = 1;
-                directionalLight.color = new Vector(3,1);
-            }
-            double angRad = Math.toRadians(lightAngle);
-            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
-            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
-            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
+//            DirectionalLight directionalLight = scene.directionalLights.get(0);
+//            lightAngle += 5f * timeDelta;
+//            if (lightAngle > 90) {
+//                directionalLight.intensity = 0;
+//                if (lightAngle >= 360) {
+//                    lightAngle = -90;
+//                }
+//            } else if (lightAngle <= -80 || lightAngle >= 80) {
+//                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
+//                directionalLight.intensity = factor;
+//                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
+//                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
+//            } else {
+//                directionalLight.intensity = 1;
+//                directionalLight.color = new Vector(3,1);
+//            }
+//            double angRad = Math.toRadians(lightAngle);
+//            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+//            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+//            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
 
         }
 

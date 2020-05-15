@@ -3,10 +3,12 @@ package engine.shader;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
+
+import engine.Effects.Fog;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.lighting.DirectionalLight;
-import engine.lighting.Material;
+import engine.Effects.Material;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import org.lwjgl.system.MemoryStack;
@@ -85,6 +87,12 @@ public class ShaderProgram {
         }
     }
 
+    public void createFogUniform(String uniformName) throws Exception {
+        createUniform(uniformName+".active");
+        createUniform(uniformName+".color");
+        createUniform(uniformName+".density");
+    }
+
     public void setUniform(String uniformName, PointLight[] pointLights) {
         int numLights = pointLights != null ? pointLights.length : 0;
         for (int i = 0; i < numLights; i++) {
@@ -154,6 +162,12 @@ public class ShaderProgram {
             value.setValuesToFloatBuffer(fb);
             glUniformMatrix4fv(uniforms.get(uniformName),false,fb);
         }
+    }
+
+    public void setUniform(String uniformName, Fog fog) {
+        setUniform(uniformName+".active", fog.active?1:0);
+        setUniform(uniformName+".color", fog.color);
+        setUniform(uniformName+".density", fog.density);
     }
 
     public void setUniform(String uniformName,int value) {

@@ -11,7 +11,7 @@ import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
-import engine.lighting.Material;
+import engine.Effects.Material;
 import engine.lighting.PointLight;
 import engine.model.Model;
 import engine.model.ModelBuilder;

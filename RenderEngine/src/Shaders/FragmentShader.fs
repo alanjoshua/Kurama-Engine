@@ -34,6 +34,13 @@ struct Material {
     float reflectance;
 };
 
+struct Fog {
+    int active;
+    vec3 color;
+    float density;
+};
+
+
 const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 10;
@@ -46,6 +53,8 @@ uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
 uniform vec3 camera_pos;
+uniform Fog fog;
+uniform vec3 allDirectionalLightStatic;
 
 in vec4 exColor;
 in vec2 outTex;
@@ -123,6 +132,16 @@ vec4 calculateSpotLight(SpotLight light, vec3 pos, vec3 normal) {
      return color;
 }
 
+vec4 calculateFog(vec3 pos, vec4 color, Fog fog, vec3 ambientColor) {
+    vec3 fogColor = fog.color * (ambientLight + allDirectionalLightStatic);
+    float dist = length(pos);
+    float fogFactor = 1.0 / exp((dist * fog.density) * (dist * fog.density));
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+    vec3 resultColor = mix(fogColor, color.xyz, fogFactor);
+    return vec4(resultColor, color.w);
+}
+
 void main() {
      setupColors(material, outTex);
      vec4 color = vec4(0,0,0,0);
@@ -151,4 +170,8 @@ void main() {
     // vec4 diffuseSpecularComp = pointColor + dirColor + spotColor;
 
     fragColor = (ambientC * vec4(ambientLight, 1)) + color;
+    if(fog.active == 1) {
+        fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
+    }
+
 }
