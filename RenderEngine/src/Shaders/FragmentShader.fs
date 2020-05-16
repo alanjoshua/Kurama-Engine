@@ -32,6 +32,7 @@ struct Material {
     vec4 specular;
     int hasTexture;
     float reflectance;
+    int hasNormalMap;
 };
 
 struct Fog {
@@ -46,6 +47,7 @@ const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 10;
 
 uniform sampler2D texture_sampler;
+uniform sampler2D normalMap;
 uniform vec3 ambientLight;
 uniform float specularPower;
 uniform Material material;
@@ -60,6 +62,7 @@ in vec4 exColor;
 in vec2 outTex;
 in vec3 vertNormal;
 in vec3 vertPos;
+in mat4 outModelViewMatrix;
 
 vec4 ambientC;
 vec4 diffuseC;
@@ -142,25 +145,38 @@ vec4 calculateFog(vec3 pos, vec4 color, Fog fog, vec3 ambientColor) {
     return vec4(resultColor, color.w);
 }
 
+vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord, mat4 modelViewMatrix) {
+    vec3 newNormal = normal;
+    if(material.hasNormalMap == 1) {
+        newNormal = texture(normalMap, texCoord).rgb;
+        newNormal = normalize(newNormal * 2 - 1);
+        newNormal.z*=-1;
+        newNormal = normalize(modelViewMatrix * vec4(newNormal, 0.0)).xyz;
+        newNormal = normalize(newNormal + normal);
+    }
+    return newNormal;
+}
+
 void main() {
      setupColors(material, outTex);
      vec4 color = vec4(0,0,0,0);
+     vec3 normal = calculateNormal(material, vertNormal, outTex, outModelViewMatrix);
 
      for(int i = 0;i < MAX_POINT_LIGHTS;i++) {
         if(pointLights[i].intensity > 0) {
-            color += calculatePointLight(pointLights[i],vertPos,vertNormal);
+            color += calculatePointLight(pointLights[i],vertPos,normal);
         }
      }
 
      for(int i = 0;i < MAX_SPOT_LIGHTS;i++) {
         if(spotLights[i].pl.intensity > 0) {
-            color += calculateSpotLight(spotLights[i],vertPos,vertNormal);
+            color += calculateSpotLight(spotLights[i],vertPos,normal);
         }
      }
 
      for(int i = 0;i < MAX_DIRECTIONAL_LIGHTS;i++) {
         if(directionalLights[i].intensity > 0) {
-            color += calculateDirectionalLight(directionalLights[i],vertPos,vertNormal);
+            color += calculateDirectionalLight(directionalLights[i],vertPos,normal);
         }
      }
 

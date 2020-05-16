@@ -18,6 +18,8 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
 import engine.Effects.Material;
+import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.ModelBuilder;
@@ -77,22 +79,22 @@ public class GameLWJGL extends Game implements Runnable {
     public void init() {
         scene = new Scene();
 
-//        Vector lightColor = new Vector(new float[]{1f,0f,1f});
-//        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-//        float lightIntensity = 1000f;
-//        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
-//        pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
-////        scene.pointLights.add(pointLight);
+        Vector lightColor = new Vector(new float[]{1f,1f,1f});
+        Vector lightPos = new Vector(new float[]{-1f,0f,0f});
+        float lightIntensity = 1f;
+        PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
+        pointLight.attenuation = new PointLight.Attenuation(0f,0f,0.01f);
+        scene.pointLights.add(pointLight);
 ////
 //        lightPos = new Vector(new float[]{0,0,10});
-//        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 0, 0}), lightPos, 100);
-//        sl_pointLight.attenuation = new PointLight.Attenuation(0, 0.01f, 0);
-//        Vector coneDir = new Vector(new float[]{0, 0, -1});
-//        float cutoff = (float) Math.cos(Math.toRadians(200));
+//        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 0, 0}), lightPos, 10000);
+//        sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 1f);
+//        Vector coneDir = new Vector(new float[]{0, -1, 0});
+//        float cutoff = (float) Math.cos(Math.toRadians(180));
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.ambientLight = new Vector(new float[]{0.2f,0.2f,0.2f});
+        scene.ambientLight = new Vector(new float[]{0.0f,0.0f,0.0f});
         scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),1));
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         scene.fog = Fog.NOFOG;
@@ -157,7 +159,7 @@ public class GameLWJGL extends Game implements Runnable {
         float skyBoxScale = 1000;
         float boxScale = 1f;
         int boxCount = 200;
-        float yRange = 20;
+        float yRange = 60;
 
         hints.shouldBakeVertexAttributes = true;
         scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
@@ -179,33 +181,39 @@ public class GameLWJGL extends Game implements Runnable {
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints);
 
-        for(int i = 0;i < heightMap.length;i++) {
-            for(int j = 0;j < heightMap[i].length;j++) {
-                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-                Model cube = new Model(this,cubeMesh , "cube");
-                cube.setScale(boxScale);
-                cube.setPos(pos);
-                cube.mesh.material = cubeMat;
-                scene.models.add(cube);
-            }
+//        for(int i = 0;i < heightMap.length;i++) {
+//            for(int j = 0;j < heightMap[i].length;j++) {
+//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+//                Model cube = new Model(this,cubeMesh , "cube");
+//                cube.setScale(boxScale);
+//                cube.setPos(pos);
+//                cube.mesh.material = cubeMat;
+//                scene.models.add(cube);
+//            }
+//        }
+
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/5,this,"terrain");
+        try {
+            tex = new Texture("textures/rockTexture.png");
+            terrain.mesh.material.texture = tex;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            tex = new Texture("textures/rockNormals.png");
+            terrain.mesh.material.normalMap = tex;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-//        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
-//        try {
-//            tex = new Texture("textures/terrain.png");
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        terrain.mesh.material.texture = tex;
-//
-////        ter = ModelBuilder.convertToLines(ter,null);
-////        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
-//        terrain.mesh.initOpenGLMeshData();
-//
-//        terrain.setScale(boxCount,yRange,boxCount);
-//        //terrain.setPos(100,0,100);
-//        scene.models.add(terrain);
+//        ter = ModelBuilder.convertToLines(ter,null);
+//        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
+        terrain.mesh.initOpenGLMeshData();
+
+        terrain.setScale(boxCount,yRange,boxCount);
+        //terrain.setPos(100,0,100);
+        scene.models.add(terrain);
 //
 //        Model marker = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"marker");
 //        marker.setScale(0.1f);
@@ -329,29 +337,29 @@ public class GameLWJGL extends Game implements Runnable {
             params.timeDelta = timeDelta;
 
             scene.models.forEach(m -> m.tick(params));
-//            scene.spotLights.get(0).pointLight.pos = cam.getPos();
-//            scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(1);
+            scene.pointLights.get(0).pos = cam.getPos();
+            //scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(1);
 
-//            DirectionalLight directionalLight = scene.directionalLights.get(0);
-//            lightAngle += 5f * timeDelta;
-//            if (lightAngle > 90) {
-//                directionalLight.intensity = 0;
-//                if (lightAngle >= 360) {
-//                    lightAngle = -90;
-//                }
-//            } else if (lightAngle <= -80 || lightAngle >= 80) {
-//                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
-//                directionalLight.intensity = factor;
-//                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
-//                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
-//            } else {
-//                directionalLight.intensity = 1;
-//                directionalLight.color = new Vector(3,1);
-//            }
-//            double angRad = Math.toRadians(lightAngle);
-//            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
-//            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
-//            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
+            DirectionalLight directionalLight = scene.directionalLights.get(0);
+            lightAngle += 5f * timeDelta;
+            if (lightAngle > 90) {
+                directionalLight.intensity = 0;
+                if (lightAngle >= 360) {
+                    lightAngle = -90;
+                }
+            } else if (lightAngle <= -80 || lightAngle >= 80) {
+                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
+                directionalLight.intensity = factor;
+                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
+                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
+            } else {
+                directionalLight.intensity = 1;
+                directionalLight.color = new Vector(3,1);
+            }
+            double angRad = Math.toRadians(lightAngle);
+            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
 
         }
 

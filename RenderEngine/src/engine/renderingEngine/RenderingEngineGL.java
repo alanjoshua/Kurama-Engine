@@ -56,6 +56,7 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createUniform("projectionMatrix");
             sceneShaderProgram.createUniform("modelViewMatrix");
             sceneShaderProgram.createUniform("texture_sampler");
+            sceneShaderProgram.createUniform("normalMap");
 
             sceneShaderProgram.createMaterialUniform("material");
 
@@ -137,6 +138,7 @@ public class RenderingEngineGL extends RenderingEngine {
         Matrix projectionMatrix = game.getCamera().getPerspectiveProjectionMatrix();
 
         sceneShaderProgram.setUniform("texture_sampler",0);
+        sceneShaderProgram.setUniform("normalMap",1);
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);

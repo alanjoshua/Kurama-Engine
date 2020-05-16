@@ -12,6 +12,7 @@ out vec4 exColor;
 out vec2 outTex;
 out vec3 vertNormal;
 out vec3 vertPos;
+out mat4 outModelViewMatrix;
 
 void main() {
     vec4 tempPos = modelViewMatrix * position;
@@ -22,4 +23,5 @@ void main() {
 
     vertNormal = normalize(modelViewMatrix * vec4(normal, 0.0)).xyz;
     vertPos = tempPos.xyz;
+    outModelViewMatrix = modelViewMatrix;
 }

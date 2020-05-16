@@ -85,12 +85,18 @@ public class Mesh {
             glBindTexture(GL_TEXTURE_2D, material.texture.getId());
         }
 
+        if(material.normalMap != null) {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+        }
+
         glBindVertexArray(vaoId);
     }
 
     public void endRender() {
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D,0);
+        glBindTexture(GL_TEXTURE_2D,1);
     }
 
     public void initOpenGLMeshData() {
