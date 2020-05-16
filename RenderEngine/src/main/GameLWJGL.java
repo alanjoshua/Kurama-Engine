@@ -60,6 +60,7 @@ public class GameLWJGL extends Game implements Runnable {
     Map<String, Mesh> meshInstances;
     float lightAngle = 0;
     Terrain terrain;
+    private boolean shouldDayNight = false;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -81,7 +82,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-        float lightIntensity = 1f;
+        float lightIntensity = 0f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,0.01f);
         scene.pointLights.add(pointLight);
@@ -94,10 +95,11 @@ public class GameLWJGL extends Game implements Runnable {
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.ambientLight = new Vector(new float[]{0.0f,0.0f,0.0f});
+        scene.ambientLight = new Vector(new float[]{0.2f,0.2f,0.2f});
         scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),1));
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
-        scene.fog = Fog.NOFOG;
+        //scene.fog = Fog.NOFOG;
+        shouldDayNight = true;
 
         meshInstances = new HashMap<>();
 
@@ -193,15 +195,15 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/5,this,"terrain");
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
         try {
-            tex = new Texture("textures/rockTexture.png");
+            tex = new Texture("textures/sandTexture.jpg");
             terrain.mesh.material.texture = tex;
         }catch (Exception e) {
             e.printStackTrace();
         }
         try {
-            tex = new Texture("textures/rockNormals.png");
+            tex = new Texture("textures/sandNormalMap.jpg");
             terrain.mesh.material.normalMap = tex;
         } catch (Exception e) {
             e.printStackTrace();
@@ -340,26 +342,28 @@ public class GameLWJGL extends Game implements Runnable {
             scene.pointLights.get(0).pos = cam.getPos();
             //scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(1);
 
-            DirectionalLight directionalLight = scene.directionalLights.get(0);
-            lightAngle += 5f * timeDelta;
-            if (lightAngle > 90) {
-                directionalLight.intensity = 0;
-                if (lightAngle >= 360) {
-                    lightAngle = -90;
+            if(shouldDayNight) {
+                DirectionalLight directionalLight = scene.directionalLights.get(0);
+                lightAngle += 5f * timeDelta;
+                if (lightAngle > 90) {
+                    directionalLight.intensity = 0;
+                    if (lightAngle >= 360) {
+                        lightAngle = -90;
+                    }
+                } else if (lightAngle <= -80 || lightAngle >= 80) {
+                    float factor = 1 - (float) (Math.abs(lightAngle) - 80) / 10.0f;
+                    directionalLight.intensity = factor;
+                    directionalLight.color.setDataElement(1, Math.max(factor, 0.9f));
+                    directionalLight.color.setDataElement(2, Math.max(factor, 0.5f));
+                } else {
+                    directionalLight.intensity = 1;
+                    directionalLight.color = new Vector(3, 1);
                 }
-            } else if (lightAngle <= -80 || lightAngle >= 80) {
-                float factor = 1 - (float)(Math.abs(lightAngle) - 80)/ 10.0f;
-                directionalLight.intensity = factor;
-                directionalLight.color.setDataElement(1,Math.max(factor, 0.9f));
-                directionalLight.color.setDataElement(2,Math.max(factor, 0.5f));
-            } else {
-                directionalLight.intensity = 1;
-                directionalLight.color = new Vector(3,1);
+                double angRad = Math.toRadians(lightAngle);
+                directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
+                directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
+                scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
             }
-            double angRad = Math.toRadians(lightAngle);
-            directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
-            directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
-            scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
 
         }
 
