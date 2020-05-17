@@ -91,6 +91,16 @@ public class Mesh {
             glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
         }
 
+        if(material.diffuseMap != null) {
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+        }
+
+        if(material.specularMap != null) {
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+        }
+
         glBindVertexArray(vaoId);
     }
 
@@ -98,6 +108,8 @@ public class Mesh {
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D,0);
         glBindTexture(GL_TEXTURE_2D,1);
+        glBindTexture(GL_TEXTURE_2D,2);
+        glBindTexture(GL_TEXTURE_2D,3);
     }
 
     public void initOpenGLMeshData() {

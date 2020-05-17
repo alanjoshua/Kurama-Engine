@@ -57,6 +57,8 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createUniform("modelViewMatrix");
             sceneShaderProgram.createUniform("texture_sampler");
             sceneShaderProgram.createUniform("normalMap");
+            sceneShaderProgram.createUniform("diffuseMap");
+            sceneShaderProgram.createUniform("specularMap");
 
             sceneShaderProgram.createMaterialUniform("material");
 
@@ -139,6 +141,8 @@ public class RenderingEngineGL extends RenderingEngine {
 
         sceneShaderProgram.setUniform("texture_sampler",0);
         sceneShaderProgram.setUniform("normalMap",1);
+        sceneShaderProgram.setUniform("diffuseMap",2);
+        sceneShaderProgram.setUniform("specularMap",3);
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
 
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);

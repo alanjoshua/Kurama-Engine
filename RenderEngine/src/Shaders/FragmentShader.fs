@@ -33,6 +33,8 @@ struct Material {
     int hasTexture;
     float reflectance;
     int hasNormalMap;
+    int hasDiffuseMap;
+    int hasSpecularMap;
 };
 
 struct Fog {
@@ -48,6 +50,8 @@ const int MAX_DIRECTIONAL_LIGHTS = 10;
 
 uniform sampler2D texture_sampler;
 uniform sampler2D normalMap;
+uniform sampler2D diffuseMap;
+uniform sampler2D specularMap;
 uniform vec3 ambientLight;
 uniform float specularPower;
 uniform Material material;
@@ -68,20 +72,43 @@ in mat3 TBN;
 vec4 ambientC;
 vec4 diffuseC;
 vec4 speculrC;
+float specPower;
 
 out vec4 fragColor;
 
 void setupColors(Material material, vec2 textCoord) {
+
+    specPower = specularPower;
+
     if (material.hasTexture == 1) {
         ambientC = texture(texture_sampler, textCoord);
-        diffuseC = ambientC;
-        speculrC = ambientC;
     }
     else {
         ambientC = material.ambient  + exColor;
-        diffuseC = material.diffuse  + exColor;
-        speculrC = material.specular + exColor;
     }
+
+    if(material.hasDiffuseMap == 1) {
+        diffuseC = texture(diffuseMap,textCoord);
+    }
+    else {
+        //diffuseC = material.diffuse  + exColor;
+        diffuseC = ambientC + material.diffuse*0.00001;
+    }
+
+     if(material.hasSpecularMap == 1) {
+
+        speculrC = texture(specularMap,textCoord);
+        specPower = speculrC.w;
+        speculrC = vec4(speculrC.xyz,1.0);
+
+     }
+     else {
+       //speculrC = material.specular  + exColor;
+       speculrC = ambientC + material.specular*0.00001;
+     }
+
+   // speculrC = ambientC;
+    //speculrC = material.specular + exColor;
 }
 
 vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, vec3 normal) {
@@ -98,7 +125,7 @@ vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, v
     vec3 fromLightDir = -lightDir;
     vec3 reflectedLight = normalize(reflect(fromLightDir, normal));
     float specularFactor = max(dot(cameraDir, reflectedLight),0);
-    specularFactor = pow(specularFactor, specularPower);
+    specularFactor = pow(specularFactor, specPower);
     specularColor = speculrC * intensity * specularFactor * material.reflectance * vec4(lightColor,1);
 
     return diffuseColor + specularColor;

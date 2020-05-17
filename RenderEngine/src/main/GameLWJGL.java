@@ -81,7 +81,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-        float lightIntensity = 0f;
+        float lightIntensity = 1f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0.1f,0f,0.01f);
         scene.pointLights.add(pointLight);
@@ -94,11 +94,11 @@ public class GameLWJGL extends Game implements Runnable {
 //        SpotLight spotLight = new SpotLight(sl_pointLight, coneDir, cutoff);
 //        scene.spotLights.add(spotLight);
 
-        scene.ambientLight = new Vector(new float[]{0.2f,0.2f,0.2f});
+        scene.ambientLight = new Vector(new float[]{0f,0f,0f});
         scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),0));
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         //scene.fog = Fog.NOFOG;
-        shouldDayNight = true;
+        shouldDayNight = false;
 
         meshInstances = new HashMap<>();
 
@@ -175,6 +175,8 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox.mesh.material = skyMat;
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
+        scene.skybox = null;
+
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = true;
 
@@ -195,19 +197,28 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/5,this,"terrain");
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
         try {
-            tex = new Texture("textures/rockTexture.png");
+            tex = new Texture("textures/crystalTexture.jpg");
             terrain.mesh.material.texture = tex;
         }catch (Exception e) {
             e.printStackTrace();
         }
         try {
-            tex = new Texture("textures/rockNormals.png");
+            tex = new Texture("textures/crystalNormalMap.jpg");
             terrain.mesh.material.normalMap = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        try {
+            tex = new Texture("textures/crystalSpecularMap.jpg");
+            terrain.mesh.material.specularMap = tex;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        terrain.mesh.material.reflectance = 1f;
+
         terrain.mesh.initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
         scene.models.add(terrain);
