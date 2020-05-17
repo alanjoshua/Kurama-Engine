@@ -6,6 +6,8 @@ import engine.DataStructure.Mesh.Vertex;
 import engine.Math.Perlin;
 import engine.Math.Vector;
 import engine.game.Game;
+import engine.model.MeshBuilder;
+import engine.model.Model;
 import engine.model.Terrain;
 
 import java.util.ArrayList;
@@ -108,6 +110,7 @@ public class TerrainUtils {
         vertAttribs.add(calcNormals(positions,w,h));
 
         Mesh resMesh = new Mesh(indices,faces,vertAttribs);
+        resMesh = MeshBuilder.generateTangentAndBiTangentVectors(resMesh);
 
 //        for(Face f: resMesh.faces) {
 //            resMesh.getVertices().get(f.get(0, Vertex.POSITION)).display();

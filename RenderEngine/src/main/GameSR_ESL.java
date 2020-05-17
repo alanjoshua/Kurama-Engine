@@ -1,7 +1,7 @@
 package main;
 
 import engine.model.Model;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 import engine.Math.Vector;
 import engine.Math.Quaternion;
 import engine.renderingEngine.RenderingEngine;
@@ -33,7 +33,7 @@ public class GameSR_ESL extends GameSR {
         Random random = new Random();
         random.setSeed(seed);
 
-        Model grid = new Model(this,ModelBuilder.buildGridDeprecated(gridWidth, gridDepth),"grid");
+        Model grid = new Model(this, MeshBuilder.buildGridDeprecated(gridWidth, gridDepth),"grid");
         modelsOnlyOutline.add(grid);
         grid.displayMeshInformation();
 
@@ -43,7 +43,9 @@ public class GameSR_ESL extends GameSR {
             int y = (int) (5 + grid.getPos().get(1));
             int z = (int) (random.nextInt(gridDepth) - gridDepth / 2 + grid.getPos().get(2));
 
-            Model deer = new Model(this,ModelBuilder.buildModelFromFile(testModel,meshInstances),"deer: +i");
+            MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+
+            Model deer = new Model(this, MeshBuilder.buildModelFromFileGL(testModel,meshInstances,hints),"deer: +i");
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
             deer.setPos(x,y,z);
 

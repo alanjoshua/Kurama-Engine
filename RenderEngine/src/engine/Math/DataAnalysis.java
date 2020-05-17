@@ -222,9 +222,6 @@ public class DataAnalysis {
         Matrix C = Matrix.createRandomMatrix(k2, data.getCols(),randomGen);
         Matrix B = new Matrix(k1,k2,data.getAverage());
 
-        Matrix BInv = B.getInverse();
-        BInv.display();
-
         for(int i = 0;i < loopCount;i++) {
 //            Matrix tempRNum = data.matMul(C.transpose().matMul(B.transpose()));
 //            Matrix tempRDenom = R.matMul(B.matMul(C.matMul(C.transpose().matMul(B.transpose()))));

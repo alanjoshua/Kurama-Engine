@@ -1,11 +1,9 @@
 package engine.model;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.*;
 import java.util.List;
 
@@ -17,50 +15,21 @@ import engine.DataStructure.LinkedList.Node;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
-import org.lwjgl.system.CallbackI;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
-public class ModelBuilder {
+public class MeshBuilder {
 
 	public static class ModelBuilderHints {
-		public boolean shouldBakeVertexAttributes = false;
+		public boolean shouldSmartBakeVertexAttributes = false;
 		public boolean shouldTriangulate = true;
 		public boolean forceEarClipping = false;
 		public boolean initLWJGLAttribs = false;
 		public boolean addRandomColor = false;
+		public boolean shouldGenerateTangentBiTangent = false;
 		public Vector addConstantColor;
 		public boolean convertToLines = false;
-	}
-
-	public static Mesh buildModelFromFile(String loc, Map<String,Mesh> meshInstances) {
-		Model res;
-		Mesh resMesh = null;
-
-		if(meshInstances != null) {
-			resMesh = meshInstances.get(loc);
-		}
-
-		if(resMesh != null) {
-			resMesh.meshIdentifier = loc;
-			return resMesh;
-//			return new Model(resMesh,loc);
-		}
-		else {
-			resMesh = loadRawData(loc);
-			resMesh = triangulate(resMesh,false);
-			resMesh = dumbBake(resMesh,null);
-
-			if(meshInstances != null) {
-				meshInstances.put(loc, resMesh);
-			}
-
-			resMesh.meshIdentifier = loc;
-			return resMesh;
-//			res = new Model(resMesh,loc);
-//			return res;
-		}
 	}
 
 	public static Mesh buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
@@ -92,7 +61,11 @@ public class ModelBuilder {
 					resMesh = triangulate(resMesh, hints.forceEarClipping);
 				}
 
-				if(hints.shouldBakeVertexAttributes) {
+				if(hints.shouldGenerateTangentBiTangent) {
+					resMesh = generateTangentAndBiTangentVectors(resMesh);
+				}
+
+				if(hints.shouldSmartBakeVertexAttributes) {
 					resMesh = bakeMesh(resMesh,hints);
 				}
 				else {
@@ -197,6 +170,11 @@ public class ModelBuilder {
 		}
 
 		for(Face f: mesh.faces) {
+
+			if(f.vertices.size() != 3) {
+				throw new RuntimeException("This method only works forn triangles");
+			}
+
 			for(Vertex v: f.vertices) {
 				indices.add(counter);
 				counter++;
@@ -271,7 +249,7 @@ public class ModelBuilder {
 
 		for(Face f:mesh.faces) {
 			if(f.vertices.size() != 3) {
-				throw new IllegalArgumentException("only triangles could be baked: "+mesh.meshIdentifier);
+				throw new IllegalArgumentException("only triangles could be baked in this method: "+mesh.meshIdentifier);
 			}
 			for(Vertex v: f.vertices) {
 				indexList.add(uniqueVertices.indexOf(v));
@@ -297,13 +275,70 @@ public class ModelBuilder {
 		return retMesh;
 	}
 
-//	public static Mesh addRandomColor() {
-//
-//	}
+	public static Mesh generateTangentAndBiTangentVectors(Mesh inMesh) {
+		if(inMesh.getAttributeList(Mesh.TEXTURE) == null) {
+			throw new RuntimeException("Cannot generate tangent and biTangent vectors if texture coordinates are not present: "+inMesh.meshIdentifier);
+		}
+
+		List<Face> faces = new ArrayList<>(inMesh.faces);
+		List<Vector> tangents = new ArrayList<>();
+		List<Vector> biTangents = new ArrayList<>();
+
+		for(Face f:faces) {
+			if(f.vertices.size() != 3) {
+				throw new RuntimeException("Cannot generate tangent and biTangent vectors if face is not a triangle: "+inMesh.meshIdentifier);
+			}
+
+			Vertex v0 = f.getVertex(0);
+			Vertex v1 = f.getVertex(1);
+			Vertex v2 = f.getVertex(2);
+
+			Vector edge1 = inMesh.getVertices().get(v1.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
+			Vector edge2 = inMesh.getVertices().get(v2.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
+
+			Vector deltaUV1 = inMesh.getAttributeList(Mesh.TEXTURE).get(v1.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
+			Vector deltaUV2 = inMesh.getAttributeList(Mesh.TEXTURE).get(v2.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
+
+			Vector tangent = new Vector(3,0);
+			Vector biTangent = new Vector(3,0);
+			float[] tanData = new float[3];
+			float[] biTanData = new float[3];
+			float determinantInv = 1.0f / (deltaUV1.get(0) * deltaUV2.get(1) - deltaUV2.get(0) * deltaUV1.get(1));
+
+			tanData[0] = determinantInv * (deltaUV2.get(1) * edge1.get(0) - deltaUV1.get(1) * edge2.get(0));
+			tanData[1] = determinantInv * (deltaUV2.get(1) * edge1.get(1)- deltaUV1.get(1) * edge2.get(1));
+			tanData[2] = determinantInv * (deltaUV2.get(1) * edge1.get(2)- deltaUV1.get(1) * edge2.get(2));
+			tangent = new Vector(tanData).normalise();
+
+			biTanData[0] = determinantInv * (-deltaUV2.get(0) * edge1.get(0) + deltaUV1.get(0) * edge2.get(0));
+			biTanData[1] = determinantInv * (-deltaUV2.get(0) * edge1.get(1) + deltaUV1.get(0) * edge2.get(1));
+			biTanData[2] = determinantInv * (-deltaUV2.get(0) * edge1.get(2) + deltaUV1.get(0) * edge2.get(2));
+			biTangent = new Vector(biTanData).normalise();
+
+			tangents.add(tangent);
+			biTangents.add(biTangent);
+
+			v0.setAttribute(tangents.size()-1,Vertex.TANGENT);
+			v1.setAttribute(tangents.size()-1,Vertex.TANGENT);
+			v2.setAttribute(tangents.size()-1,Vertex.TANGENT);
+
+			v0.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+			v1.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+			v2.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+		}
+
+		List<List<Vector>> newVertAttribs = new ArrayList<>(inMesh.vertAttributes);
+		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs);
+		retMesh.setAttribute(tangents,Mesh.TANGENT);
+		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
+		retMesh.meshIdentifier = inMesh.meshIdentifier;
+		retMesh.drawMode = inMesh.drawMode;
+		return retMesh;
+	}
 
 	public static Mesh loadRawData(String loc) {
 
-		ModelBuilder m = new ModelBuilder();
+		MeshBuilder m = new MeshBuilder();
 		InputStream url = m.getClass().getResourceAsStream(loc);
 
 		Mesh resMesh = null;

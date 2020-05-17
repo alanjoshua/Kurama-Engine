@@ -9,10 +9,9 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 import engine.model.Movable;
 
-import javax.swing.text.html.Option;
 import java.util.*;
 
 import static org.lwjgl.opengl.GL11C.GL_LINES;
@@ -931,7 +930,7 @@ public class Robot extends Movable {
         vertAttribs.add(path);
         Mesh pathMesh = new Mesh(indices,faces,vertAttribs);
         pathMesh.drawMode = GL_LINES;
-        ModelBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
+        MeshBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
         pathMesh.initOpenGLMeshData();
         pathMesh.material = game.pathMat;
         return pathMesh;

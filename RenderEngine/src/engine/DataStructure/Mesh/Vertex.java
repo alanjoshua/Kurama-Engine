@@ -9,6 +9,8 @@ public class Vertex {
     public static final int TEXTURE = 1;
     public static final int NORMAL = 2;
     public static final int COLOR = 3;
+    public static final int TANGENT = 4;
+    public static final int BITANGENT = 5;
 
     public List<Integer> vertAttributes;
 

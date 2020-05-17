@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Random;
 
 import engine.Math.Matrix;
-import engine.renderingEngine.RenderingEngine;
 import engine.utils.Utils;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
@@ -14,7 +13,7 @@ import engine.game.Game;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Vertex;
 import engine.model.Model;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 import engine.camera.Camera;
 
 public class RenderingEngineSR extends RenderingEngine {
@@ -190,7 +189,7 @@ public class RenderingEngineSR extends RenderingEngine {
                 if (!(f.vertices.size() < 3)) {
 
                     List<Face> tempFaces = new ArrayList<>();
-                    tempFaces.addAll(ModelBuilder.triangulate(f,m.mesh.getVertices(),false));
+                    tempFaces.addAll(MeshBuilder.triangulate(f,m.mesh.getVertices(),false));
 
                     for (Face currFace : tempFaces) {
 

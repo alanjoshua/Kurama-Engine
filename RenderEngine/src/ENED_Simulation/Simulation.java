@@ -14,7 +14,7 @@ import engine.lighting.DirectionalLight;
 import engine.Effects.Material;
 import engine.lighting.PointLight;
 import engine.model.Model;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 
 import java.util.*;
 
@@ -156,44 +156,44 @@ public class Simulation extends Game {
     }
 
     public void initModels() {
-        ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
-        hints.shouldBakeVertexAttributes = false;
+        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        hints.shouldSmartBakeVertexAttributes = false;
         hints.addRandomColor = true;
         hints.initLWJGLAttribs = true;
 
         hints.addConstantColor = new Vector(new float[]{1f,1,1f,1f});
-        Model grid = new Model(this,ModelBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
+        Model grid = new Model(this, MeshBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
         grid.isCollidable = false;
         grid.mesh.material.ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
-        flag = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
+        flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
         flag.isCollidable = false;
 
         hints.addConstantColor = null;
         hints.addRandomColor = true;
-        Model h1 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h1");
+        Model h1 = new Model(this, MeshBuilder.buildGridTrigs(12,12,hints),"h1");
         h1.setPos(0,0.1f,-12);
         h1.isCollidable = false;
 //        h1.shouldUseMaterial = false;
 
-        Model h2 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h2");
+        Model h2 = new Model(this, MeshBuilder.buildGridTrigs(12,12,hints),"h2");
         h2.setPos(96,0.1f,-12);
         h2.isCollidable = false;
 
-        Model h3 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h3");
+        Model h3 = new Model(this, MeshBuilder.buildGridTrigs(12,12,hints),"h3");
         h3.setPos(0,0.1f,-132);
         h3.isCollidable = false;
 
-        Model h4 = new Model(this,ModelBuilder.buildGridTrigs(12,12,hints),"h4");
+        Model h4 = new Model(this, MeshBuilder.buildGridTrigs(12,12,hints),"h4");
         h4.setPos(96,0.1f,-132);
         h4.isCollidable = false;
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
-        robot = new Robot(this,ModelBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
+        robot = new Robot(this, MeshBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
         robot.shouldShowCollisionBox = false;
         robot.shouldShowPath = true;
         robot.home = towerA;
@@ -208,9 +208,9 @@ public class Simulation extends Game {
 
         float skyBoxScale = 500;
 
-        hints.shouldBakeVertexAttributes = true;
+        hints.shouldSmartBakeVertexAttributes = true;
         hints.convertToLines = false;
-        scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
         Texture tex = null;
         try {
@@ -271,11 +271,11 @@ public class Simulation extends Game {
             m.setOrientation(newQ);
         });
 
-        ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
-        hints.shouldBakeVertexAttributes = false;
+        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        hints.shouldSmartBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 
-        boxMesh = ModelBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
+        boxMesh = MeshBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
         try {
             Texture tex = new Texture(boxTextureLoc);
             boxMesh.material.texture = tex;
@@ -283,7 +283,7 @@ public class Simulation extends Game {
             e.printStackTrace();
         }
 
-        platformMesh = ModelBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
+        platformMesh = MeshBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
         try {
             Texture tex = new Texture("textures/oldwood.jpg");
             platformMesh.material.texture = tex;

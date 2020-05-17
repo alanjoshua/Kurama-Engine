@@ -7,7 +7,7 @@ import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Effects.Material;
 import engine.lighting.DirectionalLight;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 import engine.utils.Utils;
 import engine.shader.ShaderProgram;
 import engine.game.Game;
@@ -29,7 +29,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void init() {
 
-        axes = ModelBuilder.buildAxes();
+        axes = MeshBuilder.buildAxes();
         axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing

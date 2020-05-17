@@ -3,16 +3,14 @@ package engine.GUI;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
-import engine.DataStructure.Texture;
 import engine.font.FontTexture;
 import engine.game.Game;
 import engine.model.Model;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import engine.Math.Vector;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 
 public class Text extends Model {
 
@@ -116,8 +114,8 @@ public class Text extends Model {
         vertAttribs.add(textCoords);
 
         Mesh res = new Mesh(null,faces,vertAttribs);
-        res = ModelBuilder.triangulate(res,false);
-        res = ModelBuilder.bakeMesh(res,null);
+        res = MeshBuilder.triangulate(res,false);
+        res = MeshBuilder.bakeMesh(res,null);
         res.initOpenGLMeshData();
         res.material.texture = fontTexture.texture;
         return res;

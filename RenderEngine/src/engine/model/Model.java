@@ -8,8 +8,6 @@ import engine.Math.Vector;
 import engine.DataStructure.Mesh.Mesh;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
-import engine.utils.Utils;
-import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,13 +115,13 @@ public class Model {
 
 	public void setBoundingBoxColor(Vector color) {
 		this.boundingBoxColor = color;
-		ModelBuilder.addColor(boundingbox,boundingBoxColor);
+		MeshBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
 		boundingbox.initOpenGLMeshData();
 	}
 
 	public void setRandomColorToBoundingBox() {
-		ModelBuilder.addRandomColor(boundingbox);
+		MeshBuilder.addRandomColor(boundingbox);
 		boundingbox.drawMode = GL_LINES;
 		boundingbox.initOpenGLMeshData();
 	}
@@ -252,7 +250,7 @@ public class Model {
 		vertAttribs.add(vertices);
 
 		boundingbox = new Mesh(null,faces,vertAttribs);
-		ModelBuilder.addColor(boundingbox,boundingBoxColor);
+		MeshBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
 
 		if(game.getDisplay() instanceof DisplayLWJGL) {

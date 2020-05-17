@@ -19,6 +19,8 @@ public class Mesh {
     public static final int TEXTURE = 1;
     public static final int NORMAL = 2;
     public static final int COLOR = 3;
+    public static final int TANGENT = 4;
+    public static final int BITANGENT = 5;
 
     public List<Face> faces;
     public List<List<Vector>> vertAttributes;
@@ -43,10 +45,9 @@ public class Mesh {
 
     public void cleanUp() {
         try {
-            glDisableVertexAttribArray(0);
-            glDisableVertexAttribArray(1);
-            glDisableVertexAttribArray(2);
-            glDisableVertexAttribArray(3);
+            for(int i = 0;i < vertAttributes.size();i++) {
+                glDisableVertexAttribArray(i);
+            }
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             for (Integer vbo : vboIdList) {
@@ -140,7 +141,6 @@ public class Mesh {
         }
         offsets.remove(offsets.size() - 1);
 
-        FloatBuffer verticesBuffer = null;
         FloatBuffer colorBuffer = null;
 
         int vboId;

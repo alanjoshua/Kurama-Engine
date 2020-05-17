@@ -63,6 +63,7 @@ in vec2 outTex;
 in vec3 vertNormal;
 in vec3 vertPos;
 in mat4 outModelViewMatrix;
+in mat3 TBN;
 
 vec4 ambientC;
 vec4 diffuseC;
@@ -150,9 +151,7 @@ vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord, mat4 modelVi
     if(material.hasNormalMap == 1) {
         newNormal = texture(normalMap, texCoord).rgb;
         newNormal = normalize(newNormal * 2 - 1);
-        newNormal.z*=-1;
-        newNormal = normalize(modelViewMatrix * vec4(newNormal, 0.0)).xyz;
-        newNormal = normalize(newNormal + normal);
+        newNormal = normalize(TBN * newNormal);
     }
     return newNormal;
 }

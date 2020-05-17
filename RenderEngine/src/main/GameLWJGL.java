@@ -19,10 +19,9 @@ import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
 import engine.Effects.Material;
 import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
-import engine.model.ModelBuilder;
+import engine.model.MeshBuilder;
 import engine.camera.Camera;
 import engine.model.Terrain;
 import engine.renderingEngine.RenderingEngine;
@@ -84,7 +83,7 @@ public class GameLWJGL extends Game implements Runnable {
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
         float lightIntensity = 0f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
-        pointLight.attenuation = new PointLight.Attenuation(0f,0f,0.01f);
+        pointLight.attenuation = new PointLight.Attenuation(0.1f,0f,0.01f);
         scene.pointLights.add(pointLight);
 ////
 //        lightPos = new Vector(new float[]{0,0,10});
@@ -96,7 +95,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        scene.spotLights.add(spotLight);
 
         scene.ambientLight = new Vector(new float[]{0.2f,0.2f,0.2f});
-        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),1));
+        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{1,1,0}),0));
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         //scene.fog = Fog.NOFOG;
         shouldDayNight = true;
@@ -143,8 +142,8 @@ public class GameLWJGL extends Game implements Runnable {
             m.setOrientation(newQ);
         });
 
-        ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
-        hints.shouldBakeVertexAttributes = false;
+        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        hints.shouldSmartBakeVertexAttributes = true;
         hints.addRandomColor = false;
         hints.initLWJGLAttribs = true;
 
@@ -163,8 +162,8 @@ public class GameLWJGL extends Game implements Runnable {
         int boxCount = 200;
         float yRange = 60;
 
-        hints.shouldBakeVertexAttributes = true;
-        scene.skybox = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        hints.shouldSmartBakeVertexAttributes = true;
+        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
         try {
             tex = new Texture("textures/skybox.png");
@@ -176,12 +175,13 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox.mesh.material = skyMat;
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
-        hints.shouldBakeVertexAttributes = false;
+        hints.shouldSmartBakeVertexAttributes = false;
+        hints.shouldGenerateTangentBiTangent = true;
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = ModelBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints);
+        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints);
 
 //        for(int i = 0;i < heightMap.length;i++) {
 //            for(int j = 0;j < heightMap[i].length;j++) {
@@ -195,32 +195,22 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/10,this,"terrain");
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/5,this,"terrain");
         try {
-            tex = new Texture("textures/sandTexture.jpg");
+            tex = new Texture("textures/rockTexture.png");
             terrain.mesh.material.texture = tex;
         }catch (Exception e) {
             e.printStackTrace();
         }
         try {
-            tex = new Texture("textures/sandNormalMap.jpg");
+            tex = new Texture("textures/rockNormals.png");
             terrain.mesh.material.normalMap = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-//        ter = ModelBuilder.convertToLines(ter,null);
-//        ter = ModelBuilder.addColor(ter,new Vector(new float[]{1,1,1,1}));
         terrain.mesh.initOpenGLMeshData();
-
         terrain.setScale(boxCount,yRange,boxCount);
-        //terrain.setPos(100,0,100);
         scene.models.add(terrain);
-//
-//        Model marker = new Model(this,ModelBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"marker");
-//        marker.setScale(0.1f);
-//        marker.setPos(terrain.getPos());
-//        scene.models.add(marker);
 
         scene.buildModelMap();
 
