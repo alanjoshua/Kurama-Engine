@@ -16,8 +16,8 @@ public class TestHUD extends HUD {
 
     public TestHUD(Game game) {
         super(game);
-        demoText = new Text(game, "", new FontTexture(FONT,CHARSET), "text");
-        //hudElements.add(demoText);
+        demoText = new Text(game, "", new FontTexture(FONT,CHARSET), "Hello");
+        hudElements.add(demoText);
     }
 
     public void tick() {

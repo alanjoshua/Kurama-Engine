@@ -1129,12 +1129,38 @@ public class Matrix {
 		return new Matrix(res);
 	}
 
-	public Matrix orthogonalizeRows() {
-		List<Vector> res = new ArrayList<>();
-		for(Vector v:this.convertToRowVectorList()) {
-			res.add(v.normalise());
-		}
-		return new Matrix(res).transpose();
+	public static Matrix buildOrthographicProjectionMatrix(float n, float f, float l, float r, float b, float t) {
+		float[][] data = new float[][] {
+				{ (2) / (r - l), 0, 0, -(r + l) / (r - l) },
+				{ 0, (2) / (t - b), 0, -(t + b) / (t - b) },
+				{ 0, 0, -(2) / (f - n), -(f + n) / (f - n) },
+				{ 0, 0, 0, 1 } };
+		return new Matrix(data);
+	}
+
+	public static Matrix buildPerspectiveProjectionMatrix(float n, float f, float l, float r, float t, float b) {
+		float[][] data = new float[][] {{ (2 * n) / (r - l), 0,				   (r + l) / (r - l),   0 },
+				{ 0, 				(2 * n) / (t - b), (t + b) / (t - b),   0 },
+				{ 0,				 0, 			   -(f + n) / (f - n), -(2 * f * n) / (f - n) },
+				{ 0, 				 0, 			   -1,                  0 } };
+		return new Matrix(data);
+	}
+
+	public static Matrix buildOrtho2D(float left, float right, float bottom, float top) {
+		float n = -1;
+		float r = right;
+		float l = left;
+		float t = top;
+		float b = bottom;
+		float f = 1;
+
+		float[][] data = new float[][] {
+				{ (2) / (r - l), 0, 0, -(r + l) / (r - l) },
+				{ 0, (2) / (t - b), 0, -(t + b) / (t - b) },
+				{ 0, 0, -(2) / (f - n), -(f + n) / (f - n) },
+				{ 0, 0, 0, 1 } };
+
+		return new Matrix(data);
 	}
 
 }

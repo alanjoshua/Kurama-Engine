@@ -95,7 +95,7 @@ public class Simulation extends Game {
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
         scene.pointLights.add(pointLight);
 
-        scene.directionalLights.add(new DirectionalLight(new Vector(new float[]{1,1,1}),new Vector(new float[]{0,1,0}),1));
+        scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getQuaternionFromEuler(90,0,0),1,null,"light"));
 
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
@@ -811,7 +811,7 @@ public class Simulation extends Game {
            scene.modelMap.put(robot.pathModel.mesh,tempList);
            hasAddedPath = true;
         }
-        renderingEngine.render(scene,isGameRunning ? null:hud);
+        renderingEngine.render(scene,isGameRunning ? null:hud,cam);
         if(hasAddedPath) {
             scene.modelMap.remove(robot.pathModel.mesh);
             scene.models.remove(scene.models.size()-1);

@@ -125,8 +125,7 @@ public class Camera {
 				fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
 				canvasWidth = right * 2;
 				canvasHeight = top * 2;
-
-				buildPerspectiveProjectionMatrix();
+				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 			}
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
@@ -145,8 +144,7 @@ public class Camera {
 			    fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
 				canvasWidth = right * 2;
 				canvasHeight = top * 2;
-
-				buildOrthographicProjectionMatrix();
+				this.orthographicProjectionMatrix = Matrix.buildOrthographicProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 			}
 		}
 	}
@@ -260,37 +258,6 @@ public class Camera {
 		res[2] = z;
 		
 		return res;
-	}
-
-	public void buildPerspectiveProjectionMatrix() {
-		float n = this.getNearClippingPlane();
-		float r = this.getRight();
-		float l = this.getLeft();
-		float t = this.getTop();
-		float b = this.getBottom();
-		float f = this.getFarClippingPlane();
-
-		float[][] data = new float[][] {{ (2 * n) / (r - l), 0,				   (r + l) / (r - l),   0 },
-										{ 0, 				(2 * n) / (t - b), (t + b) / (t - b),   0 }, 
-										{ 0,				 0, 			   -(f + n) / (f - n), -(2 * f * n) / (f - n) },
-										{ 0, 				 0, 			   -1,                  0 } };
-		this.perspectiveProjectionMatrix = new Matrix(data);
-	}
-
-	public void buildOrthographicProjectionMatrix() {
-		float n = this.getNearClippingPlane();
-		float r = this.getRight();
-		float l = this.getLeft();
-		float t = this.getTop();
-		float b = this.getBottom();
-		float f = this.getFarClippingPlane();
-
-		float[][] data = new float[][] { 
-				{ (2) / (r - l), 0, 0, -(r + l) / (r - l) },
-				{ 0, (2) / (t - b), 0, -(t + b) / (t - b) }, 
-				{ 0, 0, -(2) / (f - n), -(f + n) / (f - n) },
-				{ 0, 0, 0, 1 } };
-		this.orthographicProjectionMatrix = new Matrix(data);
 	}
 
 	public Matrix getPerspectiveProjectionMatrix() {

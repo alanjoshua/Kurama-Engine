@@ -8,7 +8,7 @@ import engine.model.Terrain;
 
 public class Material {
 
-    public static Vector DEFAULTCOLOR = new Vector(new float[]{0,0,0,1});
+    public static Vector DEFAULTCOLOR = new Vector(new float[]{1,1,1,1});
     public Texture texture;
     public Texture normalMap;
     public Texture diffuseMap;

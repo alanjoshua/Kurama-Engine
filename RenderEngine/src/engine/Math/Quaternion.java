@@ -1,5 +1,8 @@
 package engine.Math;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Quaternion {
 
 	private Vector coordinate;
@@ -22,6 +25,10 @@ public class Quaternion {
 		}
 	}
 
+	public Quaternion(Quaternion copy) {
+		coordinate = new Vector(copy.coordinate);
+	}
+
 	public void normalise() {
 		this.coordinate = this.coordinate.normalise();
 	}
@@ -37,10 +44,16 @@ public class Quaternion {
 	public static Quaternion getAxisAsQuat(Vector v, float angle) {
 		
 		float a = (float) Math.toRadians(angle / 2f);
-		float[] data = new float[] { (float) Math.cos(a), (float) (Math.sin(a) * v.get(0)),
-				(float) (Math.sin(a) * v.get(1)), (float) (Math.sin(a) * v.get(2)) };
-		
+		float sin = (float)Math.sin(a);
+		float[] data = new float[] { (float) Math.cos(a), sin * v.get(0), sin * v.get(1), sin * v.get(2) };
 		return new Quaternion(new Vector(data));
+	}
+
+	public static Quaternion getQuaternionFromEuler(float pitch, float yaw, float roll) {
+		Quaternion p = Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),pitch);
+		Quaternion y = Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),yaw);
+		Quaternion r = Quaternion.getAxisAsQuat(new Vector(new float[]{0,0,1}),roll);
+		return r.multiply(y.multiply(p));
 	}
 
 	public Quaternion multiply(Quaternion r) {
@@ -136,6 +149,31 @@ public class Quaternion {
 			Vector p = new Vector(new float[]{v.get(0),v.get(1),v.get(2)});
 			res[i] = p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
 			i++;
+		}
+
+		return res;
+	}
+
+	public List<Vector> rotatePoints(List<Vector> vList) {
+
+//		Quaternion q_ = getInverse();
+		List<Vector> res = new ArrayList<>(vList.size());
+//		Vector tempV = null;
+
+		Vector w = this.getPureVec();
+		float w2 = (float)Math.pow(w.getNorm(),2);
+
+		for (Vector v : vList) {
+
+//			Old method
+//			Quaternion temp = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
+//			temp = this.multiply(temp);
+//			res[i] = temp.getPureVec();
+//			i++;
+
+//			New method
+			Vector p = new Vector(new float[]{v.get(0),v.get(1),v.get(2)});
+			res.add(p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0))));
 		}
 
 		return res;

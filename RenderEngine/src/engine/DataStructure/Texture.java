@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 import static org.lwjgl.stb.STBImage.*;
 
@@ -17,7 +18,7 @@ public class Texture {
     public final int width;
     public final int height;
 
-    public Texture(String fileName) throws Exception {
+    public Texture(String fileName) {
         ByteBuffer buff;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -29,7 +30,7 @@ public class Texture {
                     (fileName,w,h,channels,4);
 
             if(buff == null) {
-                throw new Exception("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+                throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
             }
 
             width = w.get();
@@ -38,7 +39,7 @@ public class Texture {
        this.id = createTexture(buff);
     }
 
-    public Texture(ByteBuffer imageBuffer) throws Exception {
+    public Texture(ByteBuffer imageBuffer) {
         ByteBuffer buf;
         // Load Texture file
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -48,7 +49,7 @@ public class Texture {
 
             buf = stbi_load_from_memory(imageBuffer, w, h, channels, 4);
             if (buf == null) {
-                throw new Exception("Image file not loaded: " + stbi_failure_reason());
+                throw new RuntimeException("Image file not loaded: " + stbi_failure_reason());
             }
 
             width = w.get();
@@ -58,6 +59,18 @@ public class Texture {
         this.id = createTexture(buf);
 
         stbi_image_free(buf);
+    }
+
+    public Texture(int width, int height, int pixelFormat) {
+        this.id = glGenTextures();
+        this.width = width;
+        this.height = height;
+        glBindTexture(GL_TEXTURE_2D,this.id);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,this.width,this.height,0,pixelFormat,GL_FLOAT,(ByteBuffer) null);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
     }
 
     private int createTexture(ByteBuffer buf) {

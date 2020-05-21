@@ -52,6 +52,7 @@ uniform sampler2D texture_sampler;
 uniform sampler2D normalMap;
 uniform sampler2D diffuseMap;
 uniform sampler2D specularMap;
+uniform sampler2D shadowMap;
 uniform vec3 ambientLight;
 uniform float specularPower;
 uniform Material material;
@@ -68,6 +69,7 @@ in vec3 vertNormal;
 in vec3 vertPos;
 in mat4 outModelViewMatrix;
 in mat3 TBN;
+in vec4 mLightViewVertexPos;
 
 vec4 ambientC;
 vec4 diffuseC;
@@ -109,6 +111,27 @@ void setupColors(Material material, vec2 textCoord) {
 
    // speculrC = ambientC;
     //speculrC = material.specular + exColor;
+}
+
+float calculateShadow(vec4 position) {
+     vec3 projCoords = position.xyz;
+        // Transform from screen coordinates to texture coordinates
+        projCoords = projCoords * 0.5 + 0.5;
+        float bias = 0.05;
+
+        float shadowFactor = 1;
+        vec2 inc = 1.0 / textureSize(shadowMap, 0);
+        for(int row = -1; row <= 1; ++row) {
+            for(int col = -1; col <= 1; ++col) {
+                float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
+                shadowFactor += projCoords.z - bias > textDepth ? 1.0 : 0.0;
+            }
+        }
+        shadowFactor /= 9.0;
+        if(projCoords.z > 1.0) {
+            shadowFactor = 1.0;
+        }
+        return (1-shadowFactor);
 }
 
 vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, vec3 normal) {
@@ -211,9 +234,11 @@ void main() {
     // vec4 spotColor = calculateSpotLight(spotLight, vertPos, vertNormal);
     // vec4 diffuseSpecularComp = pointColor + dirColor + spotColor;
 
-    fragColor = (ambientC * vec4(ambientLight, 1)) + color;
+    float shadowFactor = calculateShadow(mLightViewVertexPos);
+    fragColor = (ambientC * vec4(ambientLight, 1)) + (color*(shadowFactor));
     if(fog.active == 1) {
         fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
     }
+    fragColor = clamp(fragColor, 0,1);
 
 }

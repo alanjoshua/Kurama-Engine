@@ -50,6 +50,21 @@ public class Vector {
 		}
 	}
 
+	public Vector (float x, float y, float z) {
+		this.numberOfDimensions = 3;
+		data = new float[3];
+		data[0] = x;
+		data[1] = y;
+		data[2] = z;
+	}
+
+	public Vector (float x, float y) {
+		this.numberOfDimensions = 2;
+		data = new float[2];
+		data[0] = x;
+		data[1] = y;
+	}
+
 	public Vector add(Vector v) {
 		float[] res = null;
 

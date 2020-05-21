@@ -24,23 +24,23 @@ public class ShaderProgram {
     private int fragmentShaderID;
     private final Map<String,Integer> uniforms;
 
-    public ShaderProgram() throws Exception {
+    public ShaderProgram() {
         programID = glCreateProgram();
         if(programID == 0) {
-            throw new Exception("Could not create Shader");
+            throw new RuntimeException("Could not create Shader");
         }
         uniforms = new HashMap<>();
     }
 
-    public void createUniform(String uniformName) throws Exception {
+    public void createUniform(String uniformName) {
         int uniformLocation = glGetUniformLocation(programID, uniformName);
         if(uniformLocation < 0) {
-            throw new Exception("Could not find uniform: " + uniformName);
+            throw new RuntimeException("Could not find uniform: " + uniformName);
         }
         uniforms.put(uniformName,uniformLocation);
     }
 
-    public void createPointLightUniform(String uniformName) throws Exception {
+    public void createPointLightUniform(String uniformName) {
         createUniform(uniformName + ".color");
         createUniform(uniformName + ".pos");
         createUniform(uniformName + ".intensity");
@@ -49,19 +49,19 @@ public class ShaderProgram {
         createUniform(uniformName + ".att.exponent");
     }
 
-    public void createDirectionalLightUniform(String uniformName) throws Exception {
+    public void createDirectionalLightUniform(String uniformName) {
         createUniform(uniformName + ".color");
         createUniform(uniformName + ".direction");
         createUniform(uniformName + ".intensity");
     }
 
-    public void createSpotLightUniform(String uniformName) throws Exception {
+    public void createSpotLightUniform(String uniformName) {
         createPointLightUniform(uniformName + ".pl");
         createUniform(uniformName + ".coneDir");
         createUniform(uniformName + ".cutOff");
     }
 
-    public void createMaterialUniform(String uniformName) throws Exception {
+    public void createMaterialUniform(String uniformName) {
         createUniform(uniformName + ".ambient");
         createUniform(uniformName + ".diffuse");
         createUniform(uniformName + ".specular");
@@ -72,25 +72,25 @@ public class ShaderProgram {
         createUniform(uniformName + ".reflectance");
     }
 
-    public void createPointLightListUniform(String uniformName, int size) throws Exception {
+    public void createPointLightListUniform(String uniformName, int size) {
         for (int i = 0; i < size; i++) {
             createPointLightUniform(uniformName + "[" + i + "]");
         }
     }
 
-    public void createSpotLightListUniform(String uniformName, int size) throws Exception {
+    public void createSpotLightListUniform(String uniformName, int size) {
         for (int i = 0; i < size; i++) {
             createSpotLightUniform(uniformName + "[" + i + "]");
         }
     }
 
-    public void createDirectionalLightListUniform(String uniformName, int size) throws Exception {
+    public void createDirectionalLightListUniform(String uniformName, int size) {
         for (int i = 0; i < size; i++) {
             createDirectionalLightUniform(uniformName + "[" + i + "]");
         }
     }
 
-    public void createFogUniform(String uniformName) throws Exception {
+    public void createFogUniform(String uniformName) {
         createUniform(uniformName+".active");
         createUniform(uniformName+".color");
         createUniform(uniformName+".density");
@@ -141,7 +141,7 @@ public class ShaderProgram {
 
     public void setUniform(String uniformName, DirectionalLight dirLight) {
         setUniform(uniformName + ".color", dirLight.color);
-        setUniform(uniformName + ".direction", dirLight.direction);
+        setUniform(uniformName + ".direction", dirLight.direction_Vector);
         setUniform(uniformName + ".intensity", dirLight.intensity);
     }
 
@@ -199,25 +199,25 @@ public class ShaderProgram {
     }
 
 
-    public void createVertexShader(String shaderCode) throws Exception {
+    public void createVertexShader(String shaderCode) {
         vertexShaderID = createShader(shaderCode,GL_VERTEX_SHADER);
     }
 
-    public void createFragmentShader(String shaderCode) throws Exception {
+    public void createFragmentShader(String shaderCode) {
         fragmentShaderID = createShader(shaderCode,GL_FRAGMENT_SHADER);
     }
 
-    public int createShader(String shaderCode, int shaderType) throws Exception {
+    public int createShader(String shaderCode, int shaderType) {
         int shaderID = glCreateShader(shaderType);
         if(shaderID == 0) {
-            throw new Exception("Error creating shader. Type: " + shaderType);
+            throw new RuntimeException("Error creating shader. Type: " + shaderType);
         }
 
         glShaderSource(shaderID,shaderCode);
         glCompileShader(shaderID);
 
         if(glGetShaderi(shaderID,GL_COMPILE_STATUS) == 0) {
-            throw new Exception("Error compiling shader code: "+glGetShaderInfoLog(shaderID,1024));
+            throw new RuntimeException("Error compiling shader code: "+glGetShaderInfoLog(shaderID,1024));
         }
 
         glAttachShader(programID,shaderID);
@@ -226,10 +226,10 @@ public class ShaderProgram {
 
     }
 
-    public void link() throws Exception {
+    public void link() {
         glLinkProgram(programID);
         if(glGetProgrami(programID,GL_LINK_STATUS) == 0) {
-            throw new Exception("Error linking Shader code: "+ glGetProgramInfoLog(programID,1024));
+            throw new RuntimeException("Error linking Shader code: "+ glGetProgramInfoLog(programID,1024));
         }
 
         if(vertexShaderID != 0) {

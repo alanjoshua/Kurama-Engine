@@ -38,11 +38,11 @@ public class Model {
 	private Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
-
+	public boolean isOpaque = true;
 	public String identifier;
 
 	public Mesh mesh;
-	protected Game game;
+	public Game game;
 
 	public Model(Game game, Mesh mesh, String identifier) {
 		this.mesh = mesh;
@@ -67,6 +67,9 @@ public class Model {
 		this.identifier = identifier;
 
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
+		if(shouldCreateBoundingBox) {
+			calculateBoundingBox();
+		}
 	}
 
 	public void tick(ModelTickInput params) {

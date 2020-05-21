@@ -63,13 +63,13 @@ public class Mesh {
         }
     }
 
-    public void render() {
+    public void initToEndFullRender() {
         initRender();
-        justRender();
+        render();
         endRender();
     }
 
-    public void justRender() {
+    public void render() {
         if(indices != null) {
             glDrawElements(drawMode, indices.size(), GL_UNSIGNED_INT, 0);
         }
@@ -110,6 +110,7 @@ public class Mesh {
         glBindTexture(GL_TEXTURE_2D,1);
         glBindTexture(GL_TEXTURE_2D,2);
         glBindTexture(GL_TEXTURE_2D,3);
+        glBindTexture(GL_TEXTURE_2D,4);
     }
 
     public void initOpenGLMeshData() {
