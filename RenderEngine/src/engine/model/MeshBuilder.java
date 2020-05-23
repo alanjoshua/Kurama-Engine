@@ -1,9 +1,7 @@
 package engine.model;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 
@@ -299,8 +297,8 @@ public class MeshBuilder {
 			Vector deltaUV1 = inMesh.getAttributeList(Mesh.TEXTURE).get(v1.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
 			Vector deltaUV2 = inMesh.getAttributeList(Mesh.TEXTURE).get(v2.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
 
-			Vector tangent = new Vector(3,0);
-			Vector biTangent = new Vector(3,0);
+			Vector tangent;
+			Vector biTangent;
 			float[] tanData = new float[3];
 			float[] biTanData = new float[3];
 			float determinantInv = 1.0f / (deltaUV1.get(0) * deltaUV2.get(1) - deltaUV2.get(0) * deltaUV1.get(1));
@@ -339,100 +337,171 @@ public class MeshBuilder {
 	public static Mesh loadRawData(String loc) {
 
 		MeshBuilder m = new MeshBuilder();
-		InputStream url = m.getClass().getResourceAsStream(loc);
+		Mesh resMesh;
 
-		Mesh resMesh = null;
-
-		List<Vector> vertex = new ArrayList<Vector>();
-		List<Vector> vn = new ArrayList<Vector>();
-		List<Vector> vt = new ArrayList<Vector>();
+		List<Vector> vertex = new ArrayList<>();
+		List<Vector> vn = new ArrayList<>();
+		List<Vector> vt = new ArrayList<>();
 		List<int[]> faces = new ArrayList<>();
 		List<int[]> textureFaces = new ArrayList<>();
 		List<int[]> normalFaces = new ArrayList<>();
 
-		// noinspection StringOperationCanBeSimplified
-		if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
+//		try {
+//			FileInputStream file = new FileInputStream(loc);
+//			System.out.println(file.getFD().valid());
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
-				String line;
+		if(!loc.substring(loc.length() - 3).equalsIgnoreCase("obj")) {
+			String[] split = loc.split("/");
+			loc = loc+"/"+split[split.length-1]+".obj";
+		}
+
+		System.out.println(loc);
+		URL url = m.getClass().getResource(loc);
+		BufferedReader br = null;
+
+		if(loc.charAt(0)=='/') {
+			try {
+				br = new BufferedReader(new InputStreamReader(url.openStream()));
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			try {
+				br = new BufferedReader(new FileReader(new File(loc)));
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+//		// noinspection StringOperationCanBeSimplified
+//		else if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
+//			System.out.println("here");
+//		}
+//		else {
+//			throw new IllegalArgumentException("This file type cannot be opened. Specify a directory which contains the obj file. The file you tried to open was: "+loc);
+//		}
+
+		try {
+			String line;
 //				BufferedReader br = new BufferedReader(new InputStreamReader(url));
 
-				while ((line = br.readLine()) != null) {
+			while ((line = br.readLine()) != null) {
 
-					String[] split = line.split("\\s+");
+				String[] split = line.split("\\s+");
 
-					if (split.length > 1) {
+				if (split.length > 1) {
 
 //						Reads lines which start with "v" and stores the vertex data in the vertex list.
 //						If the fourth coordinate "w" is not given, it is given a default value of 1.0
 
-						if (split[0].equalsIgnoreCase("v")) {
-							float[] data = new float[4];
-							for (int i = 0; i < 3; i++) {
-								data[i] = Float.parseFloat(split[i + 1]);
-							}
-							if (split.length == 4) {
-								data[3] = 1.0f;
-							} else if (split.length == 5) {
-								data[3] = Float.parseFloat(split[4]);
-							}
-							vertex.add(new Vector(data));
+					if (split[0].equalsIgnoreCase("v")) {
+						float[] data = new float[4];
+						for (int i = 0; i < 3; i++) {
+							data[i] = Float.parseFloat(split[i + 1]);
+						}
+						if (split.length == 4) {
+							data[3] = 1.0f;
+						} else if (split.length == 5) {
+							data[3] = Float.parseFloat(split[4]);
+						}
+						vertex.add(new Vector(data));
+					}
+
+					if (split[0].equalsIgnoreCase("vn")) {
+						float[] data = new float[4];
+						for (int i = 0; i < 3; i++) {
+							data[i] = Float.parseFloat(split[i + 1]);
+						}
+						if (split.length == 4) {
+							data[3] = 1.0f;
+						} else if (split.length == 5) {
+							data[3] = Float.parseFloat(split[4]);
+						}
+						vn.add(new Vector(data));
+					}
+
+					if (split[0].equalsIgnoreCase("vt")) {
+						float[] data = new float[3];
+						data[0] = Float.parseFloat(split[1]);
+						if (split.length == 2) {
+							data[1] = 0f;
+							data[2] = 0f;
+						} else if (split.length == 3) {
+							data[1] = 1 - Float.parseFloat(split[2]);
+							data[2] = 0f;
+						} else if (split.length == 4) {
+							data[1] = 1 - Float.parseFloat(split[2]);
+							data[2] = Float.parseFloat(split[3]);
 						}
 
-						if (split[0].equalsIgnoreCase("vn")) {
-							float[] data = new float[4];
-							for (int i = 0; i < 3; i++) {
-								data[i] = Float.parseFloat(split[i + 1]);
-							}
-							if (split.length == 4) {
-								data[3] = 1.0f;
-							} else if (split.length == 5) {
-								data[3] = Float.parseFloat(split[4]);
-							}
-							vn.add(new Vector(data));
-						}
+						vt.add(new Vector(data));
+					}
 
-						if (split[0].equalsIgnoreCase("vt")) {
-							float[] data = new float[3];
-							data[0] = Float.parseFloat(split[1]);
-							if (split.length == 2) {
-								data[1] = 0f;
-								data[2] = 0f;
-							} else if (split.length == 3) {
-								data[1] = 1 - Float.parseFloat(split[2]);
-								data[2] = 0f;
-							} else if (split.length == 4) {
-								data[1] = 1 - Float.parseFloat(split[2]);
-								data[2] = Float.parseFloat(split[3]);
-							}
+					if (split[0].equalsIgnoreCase("f")) {
 
-							vt.add(new Vector(data));
-						}
+						int[] fdata = new int[split.length - 1];
+						int[] tdata = new int[split.length - 1];
+						int[] ndata = new int[split.length - 1];
 
-						if (split[0].equalsIgnoreCase("f")) {
+						String[] doubleSplitTest = split[1].split("/");
 
-							int[] fdata = new int[split.length - 1];
-							int[] tdata = new int[split.length - 1];
-							int[] ndata = new int[split.length - 1];
-
-							String[] doubleSplitTest = split[1].split("/");
-
-							if (doubleSplitTest.length == 1) {
-								tdata = null;
-								ndata = null;
-								for (int i = 1; i < split.length; i++) {
-									int ind = Integer.parseInt(split[i]) - 1;
-									if(ind < -1) {
-										ind = vertex.size() - ind + 1;
-									}
-									fdata[i - 1] = ind;
+						if (doubleSplitTest.length == 1) {
+							tdata = null;
+							ndata = null;
+							for (int i = 1; i < split.length; i++) {
+								int ind = Integer.parseInt(split[i]) - 1;
+								if(ind < -1) {
+									ind = vertex.size() - ind + 1;
 								}
-							} else if (doubleSplitTest.length == 2) {
-								ndata = null;
+								fdata[i - 1] = ind;
+							}
+						} else if (doubleSplitTest.length == 2) {
+							ndata = null;
+							for (int i = 1; i < split.length; i++) {
+
+								int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
+								int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
+
+								if(fInd < -1) {
+									fInd = vertex.size() - fInd + 1;
+								}
+								if(tInd < -1) {
+									tInd = vt.size() - tInd + 1;
+								}
+
+								fdata[i - 1] = fInd;
+								tdata[i - 1] = tInd;
+							}
+						} else if (doubleSplitTest.length == 3) {
+
+							if (doubleSplitTest[1].equalsIgnoreCase("")) {
+								tdata = null;
+								for (int i = 1; i < split.length; i++) {
+
+									int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
+									int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
+
+									if(fInd < -1) {
+										fInd = vertex.size() - fInd + 1;
+									}
+									if(nInd < -1) {
+										nInd = vn.size() - nInd + 1;
+									}
+
+									fdata[i - 1] = fInd;
+									ndata[i - 1] = nInd;
+								}
+							} else {
 								for (int i = 1; i < split.length; i++) {
 
 									int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
 									int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
+									int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
 
 									if(fInd < -1) {
 										fInd = vertex.size() - fInd + 1;
@@ -440,161 +509,121 @@ public class MeshBuilder {
 									if(tInd < -1) {
 										tInd = vt.size() - tInd + 1;
 									}
+									if(nInd < -1) {
+										nInd = vn.size() - nInd + 1;
+									}
 
 									fdata[i - 1] = fInd;
 									tdata[i - 1] = tInd;
-								}
-							} else if (doubleSplitTest.length == 3) {
-
-								if (doubleSplitTest[1].equalsIgnoreCase("")) {
-									tdata = null;
-									for (int i = 1; i < split.length; i++) {
-
-										int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
-
-										if(fInd < -1) {
-											fInd = vertex.size() - fInd + 1;
-										}
-										if(nInd < -1) {
-											nInd = vn.size() - nInd + 1;
-										}
-
-										fdata[i - 1] = fInd;
-										ndata[i - 1] = nInd;
-									}
-								} else {
-									for (int i = 1; i < split.length; i++) {
-
-										int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
-										int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
-										int nInd = (Integer.parseInt(split[i].split("/")[2]) - 1);
-
-										if(fInd < -1) {
-											fInd = vertex.size() - fInd + 1;
-										}
-										if(tInd < -1) {
-											tInd = vt.size() - tInd + 1;
-										}
-										if(nInd < -1) {
-											nInd = vn.size() - nInd + 1;
-										}
-
-										fdata[i - 1] = fInd;
-										tdata[i - 1] = tInd;
-										ndata[i - 1] = nInd;
-									}
+									ndata[i - 1] = nInd;
 								}
 							}
-
-							faces.add(fdata);
-							textureFaces.add(tdata);
-							normalFaces.add(ndata);
 						}
 
+						faces.add(fdata);
+						textureFaces.add(tdata);
+						normalFaces.add(ndata);
 					}
+
 				}
-
-				float[] dataMin = new float[4];
-				dataMin[0] = Float.POSITIVE_INFINITY;
-				dataMin[1] = Float.POSITIVE_INFINITY;
-				dataMin[2] = Float.POSITIVE_INFINITY;
-				dataMin[3] = 0;
-
-				float[] dataMax = new float[4];
-				dataMax[0] = Float.NEGATIVE_INFINITY;
-				dataMax[1] = Float.NEGATIVE_INFINITY;
-				dataMax[2] = Float.NEGATIVE_INFINITY;
-				dataMax[3] = 0;
-
-				for (Vector v : vertex) {
-					if (v.get(0) < dataMin[0]) {
-						dataMin[0] = v.get(0);
-					}
-					if (v.get(1) < dataMin[1]) {
-						dataMin[1] = v.get(1);
-					}
-					if (v.get(2) < dataMin[2]) {
-						dataMin[2] = v.get(2);
-					}
-
-					if (v.get(0) > dataMax[0]) {
-						dataMax[0] = v.get(0);
-					}
-					if (v.get(1) > dataMax[1]) {
-						dataMax[1] = v.get(1);
-					}
-					if (v.get(2) > dataMax[2]) {
-						dataMax[2] = v.get(2);
-					}
-				}
-
-				Vector min = new Vector(dataMin);
-				Vector max = new Vector(dataMax);
-
-				Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
-
-				Vector[] vertArr = new Vector[vertex.size()];
-				for (int i = 0; i < vertArr.length; i++) {
-					vertArr[i] = vertex.get(i).sub(change);
-				}
-
-				Vector[] vnArray = new Vector[vn.size()];
-				for (int i = 0; i < vnArray.length; i++) {
-					vnArray[i] = vn.get(i);
-				}
-
-				Vector[] vtArray = new Vector[vt.size()];
-				for (int i = 0; i < vtArray.length; i++) {
-					vtArray[i] = vt.get(i);
-				}
-
-				List<Face> facesListObj = new ArrayList<>(faces.size());
-
-				for (int i = 0; i < faces.size(); i++) {
-
-					Face tempFace = new Face();
-
-					for (int j = 0; j < faces.get(i).length; j++) {
-
-						Vertex temp = new Vertex();
-						temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
-
-						if (vtArray != null) {
-							if (textureFaces.get(i) != null) {
-								temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
-							}
-						}
-						if (vnArray != null) {
-							if (normalFaces.get(i) != null) {
-								temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
-							}
-						}
-//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
-						tempFace.vertices.add(temp);
-					}
-//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
-					facesListObj.add(tempFace);
-				}
-
-				List<List<Vector>> vertAttributes = new ArrayList<>(3);
-				vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
-				vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
-				vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
-
-				resMesh = new Mesh(null,facesListObj, vertAttributes);
-				resMesh.trimEverything();
-				resMesh.meshIdentifier = loc;
-				return resMesh;
-
-			} catch (IOException e) {
-				throw new IllegalArgumentException("The file could not be opened. The file you tried to open was: "+loc);
 			}
 
+			float[] dataMin = new float[4];
+			dataMin[0] = Float.POSITIVE_INFINITY;
+			dataMin[1] = Float.POSITIVE_INFINITY;
+			dataMin[2] = Float.POSITIVE_INFINITY;
+			dataMin[3] = 0;
+
+			float[] dataMax = new float[4];
+			dataMax[0] = Float.NEGATIVE_INFINITY;
+			dataMax[1] = Float.NEGATIVE_INFINITY;
+			dataMax[2] = Float.NEGATIVE_INFINITY;
+			dataMax[3] = 0;
+
+			for (Vector v : vertex) {
+				if (v.get(0) < dataMin[0]) {
+					dataMin[0] = v.get(0);
+				}
+				if (v.get(1) < dataMin[1]) {
+					dataMin[1] = v.get(1);
+				}
+				if (v.get(2) < dataMin[2]) {
+					dataMin[2] = v.get(2);
+				}
+
+				if (v.get(0) > dataMax[0]) {
+					dataMax[0] = v.get(0);
+				}
+				if (v.get(1) > dataMax[1]) {
+					dataMax[1] = v.get(1);
+				}
+				if (v.get(2) > dataMax[2]) {
+					dataMax[2] = v.get(2);
+				}
+			}
+
+			Vector min = new Vector(dataMin);
+			Vector max = new Vector(dataMax);
+
+			Vector change = ((max.sub(min)).scalarMul(0.5f)).add(min);
+
+			Vector[] vertArr = new Vector[vertex.size()];
+			for (int i = 0; i < vertArr.length; i++) {
+				vertArr[i] = vertex.get(i).sub(change);
+			}
+
+			Vector[] vnArray = new Vector[vn.size()];
+			for (int i = 0; i < vnArray.length; i++) {
+				vnArray[i] = vn.get(i);
+			}
+
+			Vector[] vtArray = new Vector[vt.size()];
+			for (int i = 0; i < vtArray.length; i++) {
+				vtArray[i] = vt.get(i);
+			}
+
+			List<Face> facesListObj = new ArrayList<>(faces.size());
+
+			for (int i = 0; i < faces.size(); i++) {
+
+				Face tempFace = new Face();
+
+				for (int j = 0; j < faces.get(i).length; j++) {
+
+					Vertex temp = new Vertex();
+					temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
+
+					if (textureFaces.get(i) != null) {
+						temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
+					}
+
+					if (normalFaces.get(i) != null) {
+						temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
+					}
+					//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
+					tempFace.vertices.add(temp);
+				}
+//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
+				facesListObj.add(tempFace);
+			}
+
+			List<List<Vector>> vertAttributes = new ArrayList<>(3);
+			vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
+			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
+			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
+
+			resMesh = new Mesh(null,facesListObj, vertAttributes);
+			resMesh.trimEverything();
+			resMesh.meshIdentifier = loc;
+			return resMesh;
+
+		} catch (IOException e) {
+//			e.printStackTrace();
+//			System.err.println("The file could not be opened. The file you tried to open was: "+loc+" .Returning null...");
+//			return null;
+			throw new IllegalArgumentException("The file could not be opened. The file you tried to open was: "+loc);
 		}
-		else {
-			throw new IllegalArgumentException("This file type cannot be opened. Only .obj files can be opened. The file you tried to open was: "+loc);
-		}
+
 	}
 
 	public static Mesh addRandomColor(Mesh inMesh) {

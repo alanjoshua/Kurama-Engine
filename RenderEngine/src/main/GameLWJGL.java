@@ -1,6 +1,7 @@
 package main;
 
 import java.awt.*;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 
@@ -142,6 +143,7 @@ public class GameLWJGL extends Game implements Runnable {
         display.setClearColor(0,0,0,1);
         cam.updateValues();
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
+
     }
 
     public void initModels() {
@@ -158,7 +160,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Texture tex = null;
         try {
-            tex = new Texture("textures/grassblock.png");
+            tex = new Texture("res/misc/grassblock.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -171,17 +173,17 @@ public class GameLWJGL extends Game implements Runnable {
         int boxCount = 100;
         float yRange = 60;
 
-        Mesh temp = buildModelFromFileGL("/Resources/pointer.obj",meshInstances,hints);
+        Mesh temp = buildModelFromFileGL("res/misc/pointer.obj",meshInstances,hints);
         List<List<Vector>> vertLists = temp.vertAttributes;
         vertLists.set(0, Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),90).rotatePoints(temp.getVertices()));
         scene.directionalLights.get(0).mesh = new Mesh(temp.indices,temp.faces,vertLists);
         scene.directionalLights.get(0).mesh.initOpenGLMeshData();
 
         hints.shouldSmartBakeVertexAttributes = true;
-        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
 
-        Material skyMat = new Material(new Texture("textures/skybox.png"),1);
+        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1);
         skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
         scene.skybox.mesh.material = skyMat;
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
@@ -191,7 +193,7 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = true;
 
-        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("/Resources/quad.obj",meshInstances,hints),"quad");
+        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
         testQuad.setPos(testQuad.getPos().add(new Vector(new float[]{0,30,50})));
         testQuad.setScale(10);
         testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,90,0));
@@ -200,7 +202,7 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("/Resources/cube.obj", meshInstances, hints);
+        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", meshInstances, hints);
 
         for(int i = 0;i < 1;i++) {
             for(int j = 0;j < 10;j++) {
@@ -218,9 +220,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
 
-        terrain.mesh.material.texture = new Texture("textures/crystalTexture.jpg");
-        terrain.mesh.material.normalMap = new Texture("textures/crystalNormalMap.jpg");
-        terrain.mesh.material.specularMap = new Texture("textures/crystalSpecularMap.jpg");
+        terrain.mesh.material.texture = new Texture("res/misc/crystalTexture.jpg");
+        terrain.mesh.material.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
+        terrain.mesh.material.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
         terrain.mesh.material.reflectance = 1f;
 
         terrain.mesh.initOpenGLMeshData();

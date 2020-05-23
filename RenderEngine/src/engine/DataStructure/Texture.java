@@ -10,7 +10,7 @@ import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 import static org.lwjgl.stb.STBImage.*;
 
-//Class stolen from lwjgl gitbook
+//Class taken from lwjgl gitbook
 
 public class Texture {
 

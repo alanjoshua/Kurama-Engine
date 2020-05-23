@@ -121,8 +121,8 @@ float calculateShadow(vec4 position) {
 
         float shadowFactor = 1;
         vec2 inc = 1.0 / textureSize(shadowMap, 0);
-        for(int row = -1; row <= 1; ++row) {
-            for(int col = -1; col <= 1; ++col) {
+        for(int row = -1; row <= 1; row++) {
+            for(int col = -1; col <= 1; col++) {
                 float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
                 shadowFactor += projCoords.z - bias > textDepth ? 1.0 : 0.0;
             }

@@ -58,6 +58,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void setupShadowMaps() {
         shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*2);
+        ortho = Matrix.buildOrthographicProjectionMatrix(1,-100,50,-50,-50,50);
     }
 
     public void setupSceneShader(Scene scene) {
@@ -320,7 +321,6 @@ public class RenderingEngineGL extends RenderingEngine {
         temp.setPos(light.getPos());
 
         worldToLight = light.getWorldToObject();
-        ortho = Matrix.buildOrthographicProjectionMatrix(1,-100,50,-50,-50,50);
 
         directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix",ortho);
         for(Mesh mesh: scene.modelMap.keySet()) {
