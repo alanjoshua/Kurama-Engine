@@ -38,7 +38,6 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void init() {
         axes = MeshBuilder.buildAxes();
-        axes.material = new Material(new Vector(new float[]{1,1,1,1}),1);
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
@@ -57,8 +56,8 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void setupShadowMaps() {
-        shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*2);
-        ortho = Matrix.buildOrthographicProjectionMatrix(1,-100,50,-50,-50,50);
+        shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*4,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*4);
+        ortho = Matrix.buildOrthographicProjectionMatrix(1,-200,50,-50,-50,50);
     }
 
     public void setupSceneShader(Scene scene) {
@@ -73,14 +72,14 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createUniform("modelLightViewMatrix");
             sceneShaderProgram.createUniform("shadowMap");
             sceneShaderProgram.createUniform("modelViewMatrix");
-            sceneShaderProgram.createUniform("texture_sampler");
-            sceneShaderProgram.createUniform("normalMap");
-            sceneShaderProgram.createUniform("diffuseMap");
-            sceneShaderProgram.createUniform("specularMap");
+//            sceneShaderProgram.createUniform("texture_sampler");
+//            sceneShaderProgram.createUniform("normalMap");
+//            sceneShaderProgram.createUniform("diffuseMap");
+//            sceneShaderProgram.createUniform("specularMap");
 
             sceneShaderProgram.createMaterialUniform("material");
 
-            sceneShaderProgram.createUniform("specularPower");
+//            sceneShaderProgram.createUniform("specularPower");
             sceneShaderProgram.createUniform("ambientLight");
 
             sceneShaderProgram.createPointLightListUniform("pointLights",scene.pointLights.size());
@@ -156,7 +155,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void render(Scene scene, HUD hud, Camera camera) {
         renderDepthMap(((DisplayLWJGL)game.getDisplay()).getWindow(),camera,scene,hud);
-       scene.models.get(1).mesh.material.texture = shadowMap.depthMap;
+        scene.models.get(1).mesh.materials.get(0).texture = shadowMap.depthMap;
         glViewport(0,0,game.getDisplay().getWidth(),game.getDisplay().getHeight());
         clear();
         renderScene(scene,camera);
@@ -170,16 +169,11 @@ public class RenderingEngineGL extends RenderingEngine {
         Matrix worldToCam = camera.getWorldToCam();
         Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
 
-        sceneShaderProgram.setUniform("texture_sampler",0);
-        sceneShaderProgram.setUniform("normalMap",1);
-        sceneShaderProgram.setUniform("diffuseMap",2);
-        sceneShaderProgram.setUniform("specularMap",3);
-        sceneShaderProgram.setUniform("shadowMap",4);
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
         sceneShaderProgram.setUniform("orthoProjectionMatrix",ortho);
 
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
-        sceneShaderProgram.setUniform("specularPower",scene.specularPower);
+        //sceneShaderProgram.setUniform("specularPower",scene.specularPower);
 
         LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
@@ -187,7 +181,7 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
 
         sceneShaderProgram.setUniform("fog", scene.fog);
-        glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap.getId());
+        //glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap.getId());
 
         Vector c = new Vector(3,0);
         for(DirectionalLight l:scene.directionalLights) {
@@ -196,14 +190,20 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("allDirectionalLightStatic", c);
 
         Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
-        int indvRenderCalls = 0;
 
         for(Mesh mesh:scene.modelMap.keySet()) {
-            sceneShaderProgram.setUniform("material", mesh.material);
-            mesh.initRender();
-            glActiveTexture(GL_TEXTURE4);
+
+            int index = 0;
+            for(Material material:mesh.materials) {
+                index = sceneShaderProgram.setUniform("material",material, index);
+            }
+
+            sceneShaderProgram.setUniform("shadowMap",index);
+            glActiveTexture(index+GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D,shadowMap.depthMap.getId());
-            indvRenderCalls++;
+
+            mesh.initRender();
+
             for(Model model:scene.modelMap.get(mesh)) {
                 Matrix objectToWorld =  model.getObjectToWorldMatrix();
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(objectToWorld));
@@ -227,12 +227,16 @@ public class RenderingEngineGL extends RenderingEngine {
                     l.add(model);
                 }
             }
-            mesh.endRender();
-
+            int shadowMapInd = mesh.endRender();
+            glBindTexture(GL_TEXTURE_2D,shadowMapInd);
         }
+
         for(Mesh mesh:accessoryModels.keySet()) {
-            sceneShaderProgram.setUniform("material", mesh.material);
-            indvRenderCalls++;
+            int index = 0;
+            for(Material material:mesh.materials) {
+                index = sceneShaderProgram.setUniform("material", material, index);
+            }
+
             mesh.initRender();
             for(Model model:accessoryModels.get(mesh)) {
                 Matrix objectToWorld =  model.getObjectToWorldMatrix();
@@ -260,9 +264,9 @@ public class RenderingEngineGL extends RenderingEngine {
             Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
 
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-            hudShaderProgram.setUniform("color", m.mesh.material.ambientColor);
+            hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
 
-            m.mesh.initToEndFullRender();
+            m.mesh.initToEndFullRender(0);
         }
 
         hudShaderProgram.unbind();
@@ -287,9 +291,9 @@ public class RenderingEngineGL extends RenderingEngine {
         skyBox.setPos(camera.getPos());
         Matrix modelViewMatrix = camera.getWorldToCam().matMul(skyBox.getObjectToWorldMatrix());
         skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-        skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.material.ambientColor);
+        skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.materials.get(0).ambientColor);
 
-        scene.skybox.getMesh().initToEndFullRender();
+        scene.skybox.getMesh().initToEndFullRender(0);
 
         skyBoxShaderProgram.unbind();
     }
@@ -302,20 +306,6 @@ public class RenderingEngineGL extends RenderingEngine {
         directionalLightDepthShaderProgram.bind();
 
         DirectionalLight light = scene.directionalLights.get(0);
-//        float angleX = (float)Math.toDegrees(Math.acos(rotMatrix.getColumn(2).get(2)));
-//        float angleY = (float)Math.toDegrees(Math.asin(rotMatrix.getColumn(2).get(0)));
-//        float angleZ = 0;
-
-//        float scale = 50;
-
-//        light.direction.scalarMul(scale).display();
-//        Quaternion qt = Quaternion.getQuaternionFromEuler(angleX,angleY,angleZ);
-//        Vector pos = new Vector(new float[]{0,10,0});
-//        Matrix m_ = qt.getRotationMatrix();
-//        Vector pos_ = (m_.matMul(light.direction.scalarMul(scale)).toVector().scalarMul(-1));
-//        lightViewMatrix = m_.addColumn(pos_);
-//        lightViewMatrix = lightViewMatrix.addRow(new Vector(new float[]{0,0,0,1}));
-
         Model temp = new Model(light.game,light.mesh,light.identifier);
         temp.setOrientation(light.getOrientation().getInverse());
         temp.setPos(light.getPos());

@@ -117,7 +117,7 @@ public class Text extends Model {
         res = MeshBuilder.triangulate(res,false);
         res = MeshBuilder.bakeMesh(res,null);
         res.initOpenGLMeshData();
-        res.material.texture = fontTexture.texture;
+        res.materials.get(0).texture = fontTexture.texture;
         return res;
     }
 

@@ -70,6 +70,11 @@ public class ShaderProgram {
         createUniform(uniformName + ".hasDiffuseMap");
         createUniform(uniformName + ".hasSpecularMap");
         createUniform(uniformName + ".reflectance");
+        createUniform(uniformName + ".normalMap");
+        createUniform(uniformName + ".diffuseMap");
+        createUniform(uniformName + ".texture");
+        createUniform(uniformName + ".specularMap");
+        createUniform(uniformName + ".specularPower");
     }
 
     public void createPointLightListUniform(String uniformName, int size) {
@@ -151,7 +156,7 @@ public class ShaderProgram {
         setUniform(uniformName+".cutOff",spotLight.cutOff);
     }
 
-    public void setUniform(String uniformName, Material material) {
+    public int setUniform(String uniformName, Material material,int offset) {
         setUniform(uniformName + ".ambient", material.ambientColor);
         setUniform(uniformName + ".diffuse", material.diffuseColor);
         setUniform(uniformName + ".specular", material.specularColor);
@@ -160,6 +165,33 @@ public class ShaderProgram {
         setUniform(uniformName + ".hasDiffuseMap", material.diffuseMap == null ? 0 : 1);
         setUniform(uniformName + ".hasSpecularMap", material.specularMap == null ? 0 : 1);
         setUniform(uniformName + ".reflectance", material.reflectance);
+        setUniform(uniformName+".specularPower",material.specularPower);
+
+        this.setUniform(uniformName+".texture",offset);
+        this.setUniform(uniformName+".normalMap",offset+1);
+        this.setUniform(uniformName+".diffuseMap",offset+2);
+        this.setUniform(uniformName+".specularMap",offset+3);
+
+        if (material.texture != null) {
+            glActiveTexture(offset+GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+        }
+
+        if (material.normalMap != null) {
+            glActiveTexture(offset+GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+        }
+
+        if (material.diffuseMap != null) {
+            glActiveTexture(offset+GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+        }
+
+        if (material.specularMap != null) {
+            glActiveTexture(offset+GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+        }
+        return (offset + 4);
     }
 
     public void setUniform(String uniformName, Matrix value) {

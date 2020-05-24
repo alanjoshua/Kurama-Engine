@@ -28,6 +28,7 @@ public class MeshBuilder {
 		public boolean shouldGenerateTangentBiTangent = false;
 		public Vector addConstantColor;
 		public boolean convertToLines = false;
+		public boolean shouldInvertNormals = false;
 	}
 
 	public static Mesh buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
@@ -57,6 +58,10 @@ public class MeshBuilder {
 			else {
 				if(hints.shouldTriangulate) {
 					resMesh = triangulate(resMesh, hints.forceEarClipping);
+				}
+
+				if(hints.shouldInvertNormals) {
+					resMesh = reverseNormals(resMesh);
 				}
 
 				if(hints.shouldGenerateTangentBiTangent) {
@@ -334,6 +339,19 @@ public class MeshBuilder {
 		return retMesh;
 	}
 
+	public static Mesh reverseNormals(Mesh inMesh) {
+		List<List<Vector>> vertList = inMesh.vertAttributes;
+		List<Vector> newNormals = new ArrayList<>();
+		for(Vector n:inMesh.getAttributeList(Mesh.NORMAL)) {
+			newNormals.add(n.scalarMul(-1));
+		}
+		vertList.set(Mesh.NORMAL,newNormals);
+		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList);
+		res.drawMode = inMesh.drawMode;
+		res.meshIdentifier = inMesh.meshIdentifier;
+		return res;
+	}
+
 	public static Mesh loadRawData(String loc) {
 
 		MeshBuilder m = new MeshBuilder();
@@ -358,7 +376,6 @@ public class MeshBuilder {
 			loc = loc+"/"+split[split.length-1]+".obj";
 		}
 
-		System.out.println(loc);
 		URL url = m.getClass().getResource(loc);
 		BufferedReader br = null;
 
@@ -618,12 +635,10 @@ public class MeshBuilder {
 			return resMesh;
 
 		} catch (IOException e) {
-//			e.printStackTrace();
-//			System.err.println("The file could not be opened. The file you tried to open was: "+loc+" .Returning null...");
-//			return null;
-			throw new IllegalArgumentException("The file could not be opened. The file you tried to open was: "+loc);
+			e.printStackTrace();
+			System.err.println("The file could not be opened. The file you tried to open was: "+loc);
+			return null;
 		}
-
 	}
 
 	public static Mesh addRandomColor(Mesh inMesh) {

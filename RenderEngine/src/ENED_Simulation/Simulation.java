@@ -165,7 +165,7 @@ public class Simulation extends Game {
         Model grid = new Model(this, MeshBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
         grid.isCollidable = false;
-        grid.mesh.material.ambientColor = new Vector(new float[]{1,1,1,1});
+        grid.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
         flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
@@ -201,7 +201,7 @@ public class Simulation extends Game {
 
         try {
             Texture tex = new Texture(robotTextureLoc);
-            robot.mesh.material.texture = tex;
+            robot.mesh.materials.get(0).texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -220,7 +220,7 @@ public class Simulation extends Game {
         }
         Material skyMat = new Material(tex,1);
         skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
-        scene.skybox.mesh.material = skyMat;
+        scene.skybox.mesh.materials.set(0,skyMat);
 
         hints.convertToLines = false;
 
@@ -278,7 +278,7 @@ public class Simulation extends Game {
         boxMesh = MeshBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
         try {
             Texture tex = new Texture(boxTextureLoc);
-            boxMesh.material.texture = tex;
+            boxMesh.materials.get(0).texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -286,7 +286,7 @@ public class Simulation extends Game {
         platformMesh = MeshBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
         try {
             Texture tex = new Texture("textures/oldwood.jpg");
-            platformMesh.material.texture = tex;
+            platformMesh.materials.get(0).texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -430,7 +430,7 @@ public class Simulation extends Game {
                if(optional.isPresent()) {
                    Box ret = optional.get();
                    ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
-                   ret.getBoundingBox().material = boxRequiredMat;
+                   ret.getBoundingBox().materials.set(0,boxRequiredMat);
                    ret.shouldShowCollisionBox = true;
 
                    if (mode == Display.DisplayMode.FULLSCREEN) {
@@ -465,7 +465,7 @@ public class Simulation extends Game {
             Box ret = boxesToBeSearched.get(rand.nextInt(boxesToBeSearched.size()));
             ret.setBoundingBoxColor(new Vector(new float[]{0, 1, 0, 1}));
             ret.shouldShowCollisionBox = true;
-            ret.getBoundingBox().material = boxRequiredMat;
+            ret.getBoundingBox().materials.set(0,boxRequiredMat);
             return ret;
         }
 

@@ -32,15 +32,14 @@ public class Mesh {
 
     public int vaoId;
     public List<Integer> vboIdList;
-    public Material material;
-//    public Texture texture;
+    public List<Material> materials = new ArrayList<>();
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
         vboIdList = new ArrayList<>();
         this.indices = indices;
-        material = new Material();
+        materials.add(new Material());
     }
 
     public void cleanUp() {
@@ -54,7 +53,9 @@ public class Mesh {
                 glDeleteBuffers(vbo);
             }
 
-            material.texture.cleanUp();
+            for(Material material:materials) {
+                material.texture.cleanUp();
+            }
 
             glBindVertexArray(0);
             glDeleteVertexArrays(vaoId);
@@ -63,8 +64,30 @@ public class Mesh {
         }
     }
 
-    public void initToEndFullRender() {
-        initRender();
+    public void initToEndFullRender(int offset) {
+        for(Material material:materials) {
+            if (material.texture != null) {
+                glActiveTexture(offset+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+            }
+
+            if (material.normalMap != null) {
+                glActiveTexture(offset+1+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+            }
+
+            if (material.diffuseMap != null) {
+                glActiveTexture(offset+2+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+            }
+
+            if (material.specularMap != null) {
+                glActiveTexture(offset+3+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+            }
+            offset+=4;
+        }
+        glBindVertexArray(vaoId);
         render();
         endRender();
     }
@@ -79,38 +102,20 @@ public class Mesh {
     }
 
     public void initRender() {
-        if(material.texture != null) {
-//              Activate first texture
-            glActiveTexture(GL_TEXTURE0);
-//                Bind texture
-            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
-        }
-
-        if(material.normalMap != null) {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
-        }
-
-        if(material.diffuseMap != null) {
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
-        }
-
-        if(material.specularMap != null) {
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
-        }
-
         glBindVertexArray(vaoId);
     }
 
-    public void endRender() {
+    public int endRender() {
         glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D,0);
-        glBindTexture(GL_TEXTURE_2D,1);
-        glBindTexture(GL_TEXTURE_2D,2);
-        glBindTexture(GL_TEXTURE_2D,3);
-        glBindTexture(GL_TEXTURE_2D,4);
+        int ind = 0;
+        for(Material material:materials) {
+            glBindTexture(GL_TEXTURE_2D,ind);
+            glBindTexture(GL_TEXTURE_2D,ind+1);
+            glBindTexture(GL_TEXTURE_2D,ind+2);
+            glBindTexture(GL_TEXTURE_2D,ind+3);
+            ind+=4;
+        }
+        return ind;
     }
 
     public void initOpenGLMeshData() {

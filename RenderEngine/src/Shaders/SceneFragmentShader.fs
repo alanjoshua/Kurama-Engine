@@ -30,11 +30,16 @@ struct Material {
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
+    float specularPower;
     int hasTexture;
     float reflectance;
     int hasNormalMap;
     int hasDiffuseMap;
     int hasSpecularMap;
+    sampler2D texture;
+    sampler2D normalMap;
+    sampler2D diffuseMap;
+    sampler2D specularMap;
 };
 
 struct Fog {
@@ -48,13 +53,8 @@ const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 10;
 
-uniform sampler2D texture_sampler;
-uniform sampler2D normalMap;
-uniform sampler2D diffuseMap;
-uniform sampler2D specularMap;
 uniform sampler2D shadowMap;
 uniform vec3 ambientLight;
-uniform float specularPower;
 uniform Material material;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
@@ -80,33 +80,33 @@ out vec4 fragColor;
 
 void setupColors(Material material, vec2 textCoord) {
 
-    specPower = specularPower;
+    specPower = material.specularPower;
 
     if (material.hasTexture == 1) {
-        ambientC = texture(texture_sampler, textCoord);
+        ambientC = texture(material.texture, textCoord);
     }
     else {
-        ambientC = material.ambient  + exColor;
+        ambientC = material.ambient;
     }
 
     if(material.hasDiffuseMap == 1) {
-        diffuseC = texture(diffuseMap,textCoord);
+        diffuseC = texture(material.diffuseMap,textCoord);
     }
     else {
-        //diffuseC = material.diffuse  + exColor;
-        diffuseC = ambientC + material.diffuse*0.00001;
+        //material.diffuse = ambientC + vec4(0,0,0,0) * 0.0000001;
+        diffuseC =  material.diffuse*0.000001 + ambientC;
     }
 
      if(material.hasSpecularMap == 1) {
 
-        speculrC = texture(specularMap,textCoord);
+        speculrC = texture(material.specularMap,textCoord);
         specPower = speculrC.w;
         speculrC = vec4(speculrC.xyz,1.0);
 
      }
      else {
        //speculrC = material.specular  + exColor;
-       speculrC = ambientC + material.specular*0.00001;
+       speculrC = material.specular*0.000001;
      }
 
    // speculrC = ambientC;
@@ -147,7 +147,7 @@ vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, v
     vec3 cameraDir = normalize(-pos);
     vec3 fromLightDir = -lightDir;
     vec3 reflectedLight = normalize(reflect(fromLightDir, normal));
-    float specularFactor = max(dot(cameraDir, reflectedLight),0);
+    float specularFactor = max(dot(cameraDir, reflectedLight), 0);
     specularFactor = pow(specularFactor, specPower);
     specularColor = speculrC * intensity * specularFactor * material.reflectance * vec4(lightColor,1);
 
@@ -196,10 +196,10 @@ vec4 calculateFog(vec3 pos, vec4 color, Fog fog, vec3 ambientColor) {
     return vec4(resultColor, color.w);
 }
 
-vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord, mat4 modelViewMatrix) {
+vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord) {
     vec3 newNormal = normal;
     if(material.hasNormalMap == 1) {
-        newNormal = texture(normalMap, texCoord).rgb;
+        newNormal = texture(material.normalMap, texCoord).rgb;
         newNormal = normalize(newNormal * 2 - 1);
         newNormal = normalize(TBN * newNormal);
     }
@@ -209,7 +209,7 @@ vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord, mat4 modelVi
 void main() {
      setupColors(material, outTex);
      vec4 color = vec4(0,0,0,0);
-     vec3 normal = calculateNormal(material, vertNormal, outTex, outModelViewMatrix);
+     vec3 normal = calculateNormal(material, vertNormal, outTex);
 
      for(int i = 0;i < MAX_POINT_LIGHTS;i++) {
         if(pointLights[i].intensity > 0) {
@@ -223,19 +223,24 @@ void main() {
         }
      }
 
+     float shadowFactor = calculateShadow(mLightViewVertexPos);
+     //shadowFactor = 1;
+     vec4 temp = vec4(0,0,0,0);
      for(int i = 0;i < MAX_DIRECTIONAL_LIGHTS;i++) {
         if(directionalLights[i].intensity > 0) {
-            color += calculateDirectionalLight(directionalLights[i],vertPos,normal);
+            color += shadowFactor*calculateDirectionalLight(directionalLights[i],vertPos,normal);
         }
      }
+     //color += vec4(temp.xyz*shadowFactor,1);
+     //color+=temp;
 
     // vec4 dirColor = calculateDirectionalLight(directionalLight, vertPos, vertNormal);
     // vec4 pointColor = calculatePointLight(pointLight, vertPos, vertNormal);
     // vec4 spotColor = calculateSpotLight(spotLight, vertPos, vertNormal);
     // vec4 diffuseSpecularComp = pointColor + dirColor + spotColor;
 
-    float shadowFactor = calculateShadow(mLightViewVertexPos);
-    fragColor = (ambientC * vec4(ambientLight, 1)) + (color*(shadowFactor));
+
+    fragColor = (ambientC * vec4(ambientLight, 1)) + (color);
     if(fog.active == 1) {
         fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
     }

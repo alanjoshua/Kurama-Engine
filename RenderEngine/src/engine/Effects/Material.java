@@ -17,6 +17,7 @@ public class Material {
     public Vector diffuseColor;
     public Vector specularColor;
     public float reflectance;
+    public float specularPower;
 
     public Material() {
         this.ambientColor = DEFAULTCOLOR;
@@ -26,7 +27,8 @@ public class Material {
         this.normalMap = null;
         this.diffuseMap = null;
         this.specularMap = null;
-        this.reflectance = 0;
+        this.reflectance = 0.5f;
+        this.specularPower = 10;
     }
 
     public Material(Vector colour, float reflectance) {

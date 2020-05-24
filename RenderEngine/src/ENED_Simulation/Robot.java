@@ -320,7 +320,7 @@ public class Robot extends Movable {
                 boxPicked.isCollidable = false;
                 boxBeingPathFounded = null;
                 shouldTurn90ToPickBox = true;
-                boxPicked.getBoundingBox().material = game.boxRequiredMat;
+                boxPicked.getBoundingBox().materials.set(0,game.boxRequiredMat);
             }
             else {
                 System.out.println("Barcodes did not match. This is not the required box");
@@ -328,7 +328,7 @@ public class Robot extends Movable {
                 currBox.shouldShowCollisionBox = true;
                 boxBeingPathFounded = null;
                 game.addBoxToSearched(currBox);
-                currBox.getBoundingBox().material = game.boxWrongMat;
+                currBox.getBoundingBox().materials.set(0,game.boxWrongMat);
             }
 
         }
@@ -932,7 +932,7 @@ public class Robot extends Movable {
         pathMesh.drawMode = GL_LINES;
         MeshBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
         pathMesh.initOpenGLMeshData();
-        pathMesh.material = game.pathMat;
+        pathMesh.materials.set(0,game.pathMat);
         return pathMesh;
     }
 
