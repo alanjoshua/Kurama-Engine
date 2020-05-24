@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 
+import engine.Effects.Material;
 import engine.Math.Vector;
 import engine.utils.Utils;
 import engine.DataStructure.LinkedList.CircularDoublyLinkedList;
@@ -355,22 +356,6 @@ public class MeshBuilder {
 	public static Mesh loadRawData(String loc) {
 
 		MeshBuilder m = new MeshBuilder();
-		Mesh resMesh;
-
-		List<Vector> vertex = new ArrayList<>();
-		List<Vector> vn = new ArrayList<>();
-		List<Vector> vt = new ArrayList<>();
-		List<int[]> faces = new ArrayList<>();
-		List<int[]> textureFaces = new ArrayList<>();
-		List<int[]> normalFaces = new ArrayList<>();
-
-//		try {
-//			FileInputStream file = new FileInputStream(loc);
-//			System.out.println(file.getFD().valid());
-//		}catch (Exception e) {
-//			e.printStackTrace();
-//		}
-
 		if(!loc.substring(loc.length() - 3).equalsIgnoreCase("obj")) {
 			String[] split = loc.split("/");
 			loc = loc+"/"+split[split.length-1]+".obj";
@@ -395,22 +380,24 @@ public class MeshBuilder {
 			}
 		}
 
-//		// noinspection StringOperationCanBeSimplified
-//		else if (loc.substring(loc.length() - 3, loc.length()).equalsIgnoreCase("obj")) {
-//			System.out.println("here");
-//		}
-//		else {
-//			throw new IllegalArgumentException("This file type cannot be opened. Specify a directory which contains the obj file. The file you tried to open was: "+loc);
-//		}
+		Mesh resMesh;
+
+		List<Vector> vertex = new ArrayList<>();
+		List<Vector> vn = new ArrayList<>();
+		List<Vector> vt = new ArrayList<>();
+		List<Material> matsList = new ArrayList<>();
+		List<int[]> faces = new ArrayList<>();
+		List<int[]> textureFaces = new ArrayList<>();
+		List<int[]> normalFaces = new ArrayList<>();
+		List<int[]> materialFaces = new ArrayList<>();
+		int currentMaterialInd = 0;
 
 		try {
 			String line;
 //				BufferedReader br = new BufferedReader(new InputStreamReader(url));
-
 			while ((line = br.readLine()) != null) {
 
 				String[] split = line.split("\\s+");
-
 				if (split.length > 1) {
 
 //						Reads lines which start with "v" and stores the vertex data in the vertex list.
@@ -464,6 +451,10 @@ public class MeshBuilder {
 						int[] fdata = new int[split.length - 1];
 						int[] tdata = new int[split.length - 1];
 						int[] ndata = new int[split.length - 1];
+						int[] materialIndData = new int[split.length - 1];
+						for(int i = 0;i < split.length-1;i++) {
+							materialIndData[i] = currentMaterialInd;
+						}
 
 						String[] doubleSplitTest = split[1].split("/");
 
@@ -540,6 +531,7 @@ public class MeshBuilder {
 						faces.add(fdata);
 						textureFaces.add(tdata);
 						normalFaces.add(ndata);
+						materialFaces.add(materialIndData);
 					}
 
 				}
@@ -598,6 +590,10 @@ public class MeshBuilder {
 			for (int i = 0; i < vtArray.length; i++) {
 				vtArray[i] = vt.get(i);
 			}
+			Vector[] matArray = new Vector[currentMaterialInd+1];
+			for(int i  =0;i < matArray.length;i++) {
+				matArray[i] = new Vector(new float[]{i});
+			}
 
 			List<Face> facesListObj = new ArrayList<>(faces.size());
 
@@ -609,6 +605,7 @@ public class MeshBuilder {
 
 					Vertex temp = new Vertex();
 					temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
+					temp.setAttribute(materialFaces.get(i)[j],Vertex.MATERIAL);
 
 					if (textureFaces.get(i) != null) {
 						temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
@@ -628,9 +625,10 @@ public class MeshBuilder {
 			vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
 			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
+			//vertAttributes.add(Mesh.MATERIAL,new ArrayList<>(Arrays.asList(matArray)));
 
 			resMesh = new Mesh(null,facesListObj, vertAttributes);
-			resMesh.trimEverything();
+			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
 			resMesh.meshIdentifier = loc;
 			return resMesh;
 

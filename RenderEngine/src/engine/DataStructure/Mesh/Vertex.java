@@ -11,6 +11,7 @@ public class Vertex {
     public static final int COLOR = 3;
     public static final int TANGENT = 4;
     public static final int BITANGENT = 5;
+    public static final int MATERIAL = 6;
 
     public List<Integer> vertAttributes;
 

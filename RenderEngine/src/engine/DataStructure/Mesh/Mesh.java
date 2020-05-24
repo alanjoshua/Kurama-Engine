@@ -21,6 +21,7 @@ public class Mesh {
     public static final int COLOR = 3;
     public static final int TANGENT = 4;
     public static final int BITANGENT = 5;
+    public static final int MATERIAL = 6;
 
     public List<Face> faces;
     public List<List<Vector>> vertAttributes;
@@ -135,7 +136,7 @@ public class Mesh {
 
             if(curr == null) {
 //                break;
-                if(vertAttributes.get(i)!= null) {
+                if(vertAttributes.get(i)!= null && i != Mesh.MATERIAL) {
                     for (int j = 0; j < vertAttributes.get(i).size(); j++) {
                         curr = vertAttributes.get(i).get(j);
                         if (curr != null) {
@@ -282,28 +283,28 @@ public class Mesh {
     }
 
     //This functions assumes everything within it is stored as arrayLists
-    public void trimEverything() {
-
-        //First trim the vertex attribute lists
-        for(List<Vector> l: vertAttributes) {
-            if(l != null || l.size() > 0) {
-                ((ArrayList<Vector>)l).trimToSize();
-            }
-            else {
-                l = null;
-            }
-        }
-        ((ArrayList<List<Vector>>)vertAttributes).trimToSize();
-
-        for(Face f : faces) {
-            for(Vertex v: f.vertices) {
-                ((ArrayList<Integer>)v.vertAttributes).trimToSize();
-            }
-            ((ArrayList<Vertex>)f.vertices).trimToSize();
-        }
-        ((ArrayList<Face>)faces).trimToSize();
-
-    }
+//    public void trimEverything() {
+//
+//        //First trim the vertex attribute lists
+//        for(List<Vector> l: vertAttributes) {
+//            if(l != null || l.size() > 0) {
+//                ((ArrayList<Vector>)l).trimToSize();
+//            }
+//            else {
+//                l = null;
+//            }
+//        }
+//        ((ArrayList<List<Vector>>)vertAttributes).trimToSize();
+//
+//        for(Face f : faces) {
+//            for(Vertex v: f.vertices) {
+//                ((ArrayList<Integer>)v.vertAttributes).trimToSize();
+//            }
+//            ((ArrayList<Vertex>)f.vertices).trimToSize();
+//        }
+//        ((ArrayList<Face>)faces).trimToSize();
+//
+//    }
 
     public List<Face> getFaces() {return faces;}
 
