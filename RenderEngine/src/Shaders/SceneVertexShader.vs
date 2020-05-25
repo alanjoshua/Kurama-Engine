@@ -6,6 +6,7 @@ layout (location = 1) in vec2 texCoord;
 layout (location = 2) in vec3 normal;
 layout (location = 4) in vec3 tangent;
 layout (location = 5) in vec3 biTangent;
+layout (location = 6) in int materialIndex;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -19,6 +20,7 @@ out vec3 vertPos;
 out mat4 outModelViewMatrix;
 out mat3 TBN;
 out vec4 mLightViewVertexPos;
+flat out int materialInd;
 
 void main() {
     vec4 tempPos = modelViewMatrix * position;
@@ -37,4 +39,6 @@ void main() {
     TBN = mat3(T, B, N);
 
     mLightViewVertexPos = orthoProjectionMatrix * modelLightViewMatrix * position;
+    materialInd = materialIndex;
+
 }

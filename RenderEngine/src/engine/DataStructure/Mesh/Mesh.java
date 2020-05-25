@@ -136,7 +136,7 @@ public class Mesh {
 
             if(curr == null) {
 //                break;
-                if(vertAttributes.get(i)!= null && i != Mesh.MATERIAL) {
+                if(vertAttributes.get(i)!= null) {
                     for (int j = 0; j < vertAttributes.get(i).size(); j++) {
                         curr = vertAttributes.get(i).get(j);
                         if (curr != null) {

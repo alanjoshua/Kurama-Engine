@@ -77,7 +77,12 @@ public class RenderingEngineGL extends RenderingEngine {
 //            sceneShaderProgram.createUniform("diffuseMap");
 //            sceneShaderProgram.createUniform("specularMap");
 
-            sceneShaderProgram.createMaterialUniform("material");
+//            sceneShaderProgram.createMaterialUniform("material");
+            sceneShaderProgram.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",5);
+//            sceneShaderProgram.createUniformArray("mat_textures",5);
+//            sceneShaderProgram.createUniformArray("mat_normalMaps",5);
+//            sceneShaderProgram.createUniformArray("mat_diffuseMaps",5);
+//            sceneShaderProgram.createUniformArray("mat_specularMaps",5);
 
 //            sceneShaderProgram.createUniform("specularPower");
             sceneShaderProgram.createUniform("ambientLight");
@@ -112,6 +117,7 @@ public class RenderingEngineGL extends RenderingEngine {
         hudShaderProgram.link();
 
         // Create uniforms for Orthographic-model projection matrix and base colour
+        hudShaderProgram.createUniform("texture_sampler");
         hudShaderProgram.createUniform("projModelMatrix");
         hudShaderProgram.createUniform("color");
 
@@ -193,13 +199,9 @@ public class RenderingEngineGL extends RenderingEngine {
 
         for(Mesh mesh:scene.modelMap.keySet()) {
 
-            int index = 0;
-            for(Material material:mesh.materials) {
-                index = sceneShaderProgram.setUniform("material",material, index);
-            }
-
-            sceneShaderProgram.setUniform("shadowMap",index);
-            glActiveTexture(index+GL_TEXTURE0);
+            int offset = sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,0);
+            sceneShaderProgram.setUniform("shadowMap",offset);
+            glActiveTexture(offset+GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D,shadowMap.depthMap.getId());
 
             mesh.initRender();
@@ -232,10 +234,7 @@ public class RenderingEngineGL extends RenderingEngine {
         }
 
         for(Mesh mesh:accessoryModels.keySet()) {
-            int index = 0;
-            for(Material material:mesh.materials) {
-                index = sceneShaderProgram.setUniform("material", material, index);
-            }
+            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,0);
 
             mesh.initRender();
             for(Model model:accessoryModels.get(mesh)) {
@@ -257,12 +256,13 @@ public class RenderingEngineGL extends RenderingEngine {
         }
 
         hudShaderProgram.bind();
+        hudShaderProgram.setUniform("texture_sampler", 0);
+
         for(Model m: hud.hudElements) {
             Matrix ortho = Matrix.buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(), 0);
 
             // Set orthographic and model matrix for this HUD item
             Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
-
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
             hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
 
