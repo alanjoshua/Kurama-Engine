@@ -31,8 +31,8 @@ struct Material {
     vec4 diffuse;
     vec4 specular;
     float specularPower;
-    int hasTexture;
     float reflectance;
+    int hasTexture;
     int hasNormalMap;
     int hasDiffuseMap;
     int hasSpecularMap;
@@ -88,29 +88,29 @@ void setupColors(Material material, vec2 textCoord) {
 
     specPower = material.specularPower;
 
-    if (material.hasTexture == 1) {
+    if (material.hasTexture == 1f) {
         ambientC = texture(mat_textures[matInd], textCoord);
     }
     else {
         ambientC = material.ambient;
     }
 
-    if(material.hasDiffuseMap == 1) {
+    if(material.hasDiffuseMap == 1f) {
         diffuseC = texture(mat_diffuseMaps[matInd],textCoord);
     }
     else {
         //material.diffuse = ambientC + vec4(0,0,0,0) *  0.0000001;
-        diffuseC = ambientC;
+        diffuseC = material.diffuse;
     }
 
-     if(material.hasSpecularMap == 1) {
+     if(material.hasSpecularMap == 1f) {
         speculrC = texture(mat_specularMaps[matInd],textCoord);
         specPower = speculrC.w;
         speculrC = vec4(speculrC.xyz,1.0);
      }
      else {
        //speculrC = material.specular  + exColor;
-       speculrC = ambientC;
+       speculrC = material.specular;
      }
 
    // speculrC = ambientC;

@@ -86,7 +86,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-        float lightIntensity = 0f;
+        float lightIntensity = 1f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0,0f,0.01f);
         scene.pointLights.add(pointLight);
@@ -170,6 +170,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         float reflectance = 0.3f;
         Material cubeMat = new Material(tex,reflectance);
+        cubeMat.diffuseMap = cubeMat.texture;
         cubeMat.specularPower = 10;
         cubeMat.reflectance = 0f;
 
