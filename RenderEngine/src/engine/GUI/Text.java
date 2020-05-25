@@ -47,6 +47,10 @@ public class Text extends Model {
             Vertex tr = new Vertex();
             Vertex bl = new Vertex();
             Vertex br = new Vertex();
+            tl.setAttribute(0,Vertex.MATERIAL);
+            tr.setAttribute(0,Vertex.MATERIAL);
+            bl.setAttribute(0,Vertex.MATERIAL);
+            br.setAttribute(0,Vertex.MATERIAL);
             Face f1 = new Face();
 
             // Build a character tile composed by two triangles
@@ -113,7 +117,7 @@ public class Text extends Model {
         vertAttribs.add(positions);
         vertAttribs.add(textCoords);
 
-        Mesh res = new Mesh(null,faces,vertAttribs);
+        Mesh res = new Mesh(null,faces,vertAttribs,null);
         res = MeshBuilder.triangulate(res,false);
         res = MeshBuilder.bakeMesh(res,null);
         res.initOpenGLMeshData();

@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 
+import engine.DataStructure.Texture;
 import engine.Effects.Material;
 import engine.Math.Vector;
 import engine.utils.Utils;
@@ -15,6 +16,7 @@ import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
 import org.lwjgl.system.CallbackI;
+import org.w3c.dom.ls.LSOutput;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -23,6 +25,7 @@ public class MeshBuilder {
 
 	public static class ModelBuilderHints {
 		public boolean shouldSmartBakeVertexAttributes = false;
+		public boolean shouldDumbBakeVertexAttributes = true;
 		public boolean shouldTriangulate = true;
 		public boolean forceEarClipping = false;
 		public boolean initLWJGLAttribs = false;
@@ -74,7 +77,9 @@ public class MeshBuilder {
 					resMesh = bakeMesh(resMesh,hints);
 				}
 				else {
-					resMesh = dumbBake(resMesh,hints);
+					if(hints.shouldDumbBakeVertexAttributes) {
+						resMesh = dumbBake(resMesh, hints);
+					}
 				}
 
 				if(hints.addRandomColor) {
@@ -151,7 +156,7 @@ public class MeshBuilder {
 			newFaces.add(line3);
 		}
 
-		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes);
+		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes,mesh.materials);
 		retMesh.drawMode = GL_LINES;
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 
@@ -205,14 +210,14 @@ public class MeshBuilder {
 			for(int k = 0;k < 3;k++) {
 				Vertex v = new Vertex();
 				for (int j = 0; j < newVertAttribs.size(); j++) {
-					v.setAttribute(i+k, j);
+					v.setAttribute(i + k, j);
 				}
 				temp.addVertex(v);
 			}
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs);
+		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs,mesh.materials);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
@@ -267,14 +272,14 @@ public class MeshBuilder {
 			for(int k = 0;k < 3;k++) {
 				Vertex v = new Vertex();
 				for (int j = 0; j < newVertAttribs.size(); j++) {
-					v.setAttribute(indexList.get(i+k), j);
+					v.setAttribute(indexList.get(i + k), j);
 				}
 				temp.addVertex(v);
 			}
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs);
+		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
@@ -333,7 +338,7 @@ public class MeshBuilder {
 		}
 
 		List<List<Vector>> newVertAttribs = new ArrayList<>(inMesh.vertAttributes);
-		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs);
+		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials);
 		retMesh.setAttribute(tangents,Mesh.TANGENT);
 		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
@@ -348,7 +353,7 @@ public class MeshBuilder {
 			newNormals.add(n.scalarMul(-1));
 		}
 		vertList.set(Mesh.NORMAL,newNormals);
-		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList);
+		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials);
 		res.drawMode = inMesh.drawMode;
 		res.meshIdentifier = inMesh.meshIdentifier;
 		return res;
@@ -386,12 +391,13 @@ public class MeshBuilder {
 		List<Vector> vertex = new ArrayList<>();
 		List<Vector> vn = new ArrayList<>();
 		List<Vector> vt = new ArrayList<>();
-		Map<String,Material> matsList = new HashMap<>();
+		Map<String,Material> matsList = new LinkedHashMap<>();
 		List<int[]> faces = new ArrayList<>();
 		List<int[]> textureFaces = new ArrayList<>();
 		List<int[]> normalFaces = new ArrayList<>();
-		List<int[]> materialFaces = new ArrayList<>();
-		int currentMaterialInd = 0;
+		List<String[]> materialFaces = new ArrayList<>();
+		String currentMaterialName = "DEFAULT";
+		matsList.put(currentMaterialName,new Material());
 
 		String[] splitTempDir = loc.split("/");
 		StringBuilder dirName = new StringBuilder();
@@ -408,13 +414,31 @@ public class MeshBuilder {
 //				BufferedReader br = new BufferedReader(new InputStreamReader(url));
 			while ((line = br.readLine()) != null) {
 
-				String[] split = line.split("\\s+");
+				String[] split = line.trim().split("\\s+");
 				if (split.length > 1) {
 
 					if(split[0].equalsIgnoreCase("mtllib")) {
 						for(int i = 1;i < split.length;i++) {
 							String location = parentDir + split[i];
-							Map<String,Material> mats = parseMaterialLibrary(location);
+							Map<String,Material> mats = parseMaterialLibrary(location,parentDir);
+							if(mats!=null) {
+								for(String key:mats.keySet()) {
+									Material mat = mats.get(key);
+									matsList.put(key,mat);
+//									System.out.println(key);
+//									mat.ambientColor.display();
+								}
+							}
+						}
+					}
+
+					if(split[0].equalsIgnoreCase("usemtl")) {
+						Material temp = matsList.get(split[1]);
+						if(temp != null) {
+							currentMaterialName = split[1];
+						}
+						else {
+							System.err.println("Could not find mtl: "+split[1] + " while loading model: "+loc);
 						}
 					}
 
@@ -469,9 +493,9 @@ public class MeshBuilder {
 						int[] fdata = new int[split.length - 1];
 						int[] tdata = new int[split.length - 1];
 						int[] ndata = new int[split.length - 1];
-						int[] materialIndData = new int[split.length - 1];
+						String[] materialIndData = new String[split.length - 1];
 						for(int i = 0;i < split.length-1;i++) {
-							materialIndData[i] = currentMaterialInd;
+							materialIndData[i] = currentMaterialName;
 						}
 
 						String[] doubleSplitTest = split[1].split("/");
@@ -608,9 +632,16 @@ public class MeshBuilder {
 			for (int i = 0; i < vtArray.length; i++) {
 				vtArray[i] = vt.get(i);
 			}
-			Vector[] matArray = new Vector[currentMaterialInd+1];
+
+			Vector[] matArray = new Vector[matsList.size()];
 			for(int i  =0;i < matArray.length;i++) {
 				matArray[i] = new Vector(new float[]{i});
+			}
+			List<Material> matList = new ArrayList<>();
+			List<String> keys = new ArrayList<>(matsList.keySet());
+			for(String key: keys) {
+				Material mat = matsList.get(key);
+				matList.add(mat);
 			}
 
 			List<Face> facesListObj = new ArrayList<>(faces.size());
@@ -623,7 +654,13 @@ public class MeshBuilder {
 
 					Vertex temp = new Vertex();
 					temp.setAttribute(faces.get(i)[j], Vertex.POSITION);
-					temp.setAttribute(materialFaces.get(i)[j],Vertex.MATERIAL);
+					int index = 0;
+					for(int k = 0;k < keys.size();k++) {
+						if(materialFaces.get(i)[j].equals(keys.get(k))) {
+							index = k;
+						}
+					}
+					temp.setAttribute(index,Vertex.MATERIAL);
 
 					if (textureFaces.get(i) != null) {
 						temp.setAttribute(textureFaces.get(i)[j], Vertex.TEXTURE);
@@ -632,10 +669,8 @@ public class MeshBuilder {
 					if (normalFaces.get(i) != null) {
 						temp.setAttribute(normalFaces.get(i)[j], Vertex.NORMAL);
 					}
-					//						((ArrayList<Integer>)temp.vertAttributes).trimToSize();
 					tempFace.vertices.add(temp);
 				}
-//					((ArrayList<Vertex>)tempFace.vertices).trimToSize();
 				facesListObj.add(tempFace);
 			}
 
@@ -643,9 +678,8 @@ public class MeshBuilder {
 			vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
 			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
-			//vertAttributes.add(Mesh.MATERIAL,new ArrayList<>(Arrays.asList(matArray)));
 
-			resMesh = new Mesh(null,facesListObj, vertAttributes);
+			resMesh = new Mesh(null,facesListObj, vertAttributes,matList);
 			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
 			resMesh.meshIdentifier = loc;
 			return resMesh;
@@ -657,11 +691,13 @@ public class MeshBuilder {
 		}
 	}
 
-	public static Map<String,Material> parseMaterialLibrary(String fileName) throws IOException {
+	public static Map<String,Material> parseMaterialLibrary(String fileName,String parentDirectory) throws IOException {
 		MeshBuilder m = new MeshBuilder();
 		URL urlNew = m.getClass().getResource(fileName);
 		BufferedReader reader = null;
 		boolean isOpenedSuccessfully = false;
+
+		Map<String,Material> map = new LinkedHashMap<>();
 
 		if (fileName.charAt(0) == '/') {
 			try {
@@ -680,12 +716,67 @@ public class MeshBuilder {
 		}
 
 		if (isOpenedSuccessfully) {
+			//System.out.println("successffully opened mtl lib file: "+fileName);
 			String tempLine = "";
+			String currentMatName = null;
+			Material currentMaterial = null;
+
 			while((tempLine = reader.readLine()) != null) {
-				String[] newSplit = tempLine.split("\\s+");
+				String[] newSplit = tempLine.trim().split("\\s+");
+
+//				First newMtl in library
+				if(newSplit[0].equalsIgnoreCase("newmtl") && currentMatName == null) {
+					currentMatName = newSplit[1];
+					currentMaterial = new Material();
+				}
+
+//				New mtl is started. Add current mtl to map
+				else if(currentMatName != null && newSplit[0].equalsIgnoreCase("newmtl")) {
+					map.put(currentMatName,currentMaterial);
+					currentMatName = newSplit[1];
+					currentMaterial = new Material();
+				}
+
+//				Currently reading a mtl
+				else if(currentMatName != null && !newSplit[0].equalsIgnoreCase("newmtl")) {
+					//System.out.println(newSplit[0]);
+					if(newSplit[0].equalsIgnoreCase("ka")) {
+						currentMaterial.ambientColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+					}
+					if(newSplit[0].equalsIgnoreCase("kd")) {
+						currentMaterial.diffuseColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+					}
+					if(newSplit[0].equalsIgnoreCase("ks")) {
+						currentMaterial.specularColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+					}
+					if(newSplit[0].equalsIgnoreCase("ns")) {
+						currentMaterial.specularPower = Float.parseFloat(newSplit[1]);
+					}
+					if(newSplit[0].equalsIgnoreCase("map_ka")) {
+						currentMaterial.texture = new Texture(parentDirectory+""+newSplit[1]);
+					}
+					if(newSplit[0].equalsIgnoreCase("map_kd")) {
+						currentMaterial.diffuseMap = new Texture(parentDirectory+""+newSplit[1]);
+					}
+					if(newSplit[0].equalsIgnoreCase("map_ks")) {
+						currentMaterial.specularMap = new Texture(parentDirectory+""+newSplit[1]);
+					}
+					if(newSplit[0].equalsIgnoreCase("map_ns")) { //Specular highlight
+//
+					}
+					if(newSplit[0].equalsIgnoreCase("map_bump") || newSplit[0].equalsIgnoreCase("bump")) {
+						currentMaterial.normalMap = new Texture(parentDirectory+""+newSplit[1]);
+					}
+
+				}
+
 			}
+			map.put(currentMatName,currentMaterial);
+			return map;
 		}
-		return null;
+		else {
+			return null;
+		}
 	}
 
 	public static Mesh addRandomColor(Mesh inMesh) {
@@ -732,7 +823,7 @@ public class MeshBuilder {
 		for(Face f: inMesh.faces) {
 			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
-		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes);
+		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = GL_TRIANGLES;
 		return retMesh;
@@ -900,7 +991,9 @@ public class MeshBuilder {
 		for (int[] con : cons) {
 			tempVertList = new ArrayList<>(con.length);
 			for (int i : con) {
-				tempVertList.add(new Vertex(i));
+				Vertex vert = new Vertex(i);
+				vert.setAttribute(0,Vertex.MATERIAL);
+				tempVertList.add(vert);
 			}
 			facesListObj.add(new Face(tempVertList));
 		}
@@ -908,7 +1001,7 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttributes = new ArrayList<>(1);
 		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
 
-		resMesh = new Mesh(null,facesListObj, vertAttributes);
+		resMesh = new Mesh(null,facesListObj, vertAttributes,null);
 		resMesh.meshIdentifier = "grid";
 		return resMesh;
 //		return new Model(resMesh,"grid");
@@ -933,7 +1026,7 @@ public class MeshBuilder {
 			newFaces.add(newFace);
 		}
 
-		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes);
+		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials);
 		resMesh.drawMode = mesh.drawMode;
 		return resMesh;
 	}
@@ -976,8 +1069,10 @@ public class MeshBuilder {
 		Vertex v1 = new Vertex();
 		v0.setAttribute(0,Vertex.POSITION);
 		v0.setAttribute(0,Vertex.COLOR);
+		v0.setAttribute(0,Vertex.MATERIAL);
 		v1.setAttribute(1,Vertex.POSITION);
 		v1.setAttribute(1,Vertex.COLOR);
+		v1.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(v0);
 		tempFace.addVertex(v1);
 		faces.add(tempFace);
@@ -987,8 +1082,10 @@ public class MeshBuilder {
 		v1 = new Vertex();
 		v0.setAttribute(0,Vertex.POSITION);
 		v0.setAttribute(0,Vertex.COLOR);
+		v0.setAttribute(0,Vertex.MATERIAL);
 		v1.setAttribute(2,Vertex.POSITION);
 		v1.setAttribute(2,Vertex.COLOR);
+		v1.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(v0);
 		tempFace.addVertex(v1);
 		faces.add(tempFace);
@@ -998,8 +1095,10 @@ public class MeshBuilder {
 		v1 = new Vertex();
 		v0.setAttribute(0,Vertex.POSITION);
 		v0.setAttribute(0,Vertex.COLOR);
+		v0.setAttribute(0,Vertex.MATERIAL);
 		v1.setAttribute(3,Vertex.POSITION);
 		v1.setAttribute(3,Vertex.COLOR);
+		v1.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(v0);
 		tempFace.addVertex(v1);
 		faces.add(tempFace);
@@ -1007,7 +1106,7 @@ public class MeshBuilder {
 		List<List<Vector>> attribs = new ArrayList<>();
 		attribs.add(vertices);
 
-		Mesh ret = new Mesh(indices,faces,attribs);
+		Mesh ret = new Mesh(indices,faces,attribs,null);
 		ret.setAttribute(colors,Mesh.COLOR);
 		ret.drawMode = GL_LINES;
 		ret.initOpenGLMeshData();
@@ -1054,21 +1153,25 @@ public class MeshBuilder {
 					Vertex vert = new Vertex();
 					vert.setAttribute(0,Vertex.POSITION);
 					vert.setAttribute(0,Vertex.NORMAL);
+					vert.setAttribute(0,Vertex.MATERIAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(1,Vertex.POSITION);
 					vert.setAttribute(1,Vertex.NORMAL);
+					vert.setAttribute(0,Vertex.MATERIAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(2,Vertex.POSITION);
 					vert.setAttribute(2,Vertex.NORMAL);
+					vert.setAttribute(0,Vertex.MATERIAL);
 					tempFace.addVertex(vert);
 
 					vert = new Vertex();
 					vert.setAttribute(3,Vertex.POSITION);
 					vert.setAttribute(3,Vertex.NORMAL);
+					vert.setAttribute(0,Vertex.MATERIAL);
 					tempFace.addVertex(vert);
 
 					faces.add(tempFace);
@@ -1098,6 +1201,7 @@ public class MeshBuilder {
 						Vertex vert = new Vertex();
 						vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
 						vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
+						vert.setAttribute(0,Vertex.MATERIAL);
 						tempFace.addVertex(vert);
 					}
 					faces.add(tempFace);
@@ -1130,6 +1234,7 @@ public class MeshBuilder {
 							Vertex vert = new Vertex();
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
+							vert.setAttribute(0,Vertex.MATERIAL);
 							tempFace.addVertex(vert);
 						}
 						faces.add(tempFace);
@@ -1157,6 +1262,7 @@ public class MeshBuilder {
 							Vertex vert = new Vertex();
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.POSITION);
 							vert.setAttribute(indices.get(indices.size() - 4 + k), Vertex.NORMAL);
+							vert.setAttribute(0,Vertex.MATERIAL);
 							tempFace.addVertex(vert);
 						}
 						faces.add(tempFace);
@@ -1174,7 +1280,7 @@ public class MeshBuilder {
 		vertAttribs.add(null);
 		vertAttribs.add(normals);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null);
 		resMesh = triangulate(resMesh,false);
 
 		List<Integer> newIndices = new ArrayList<>();
@@ -1236,6 +1342,8 @@ public class MeshBuilder {
 
 			vert1.setAttribute(vertices.size() - 2,Vertex.POSITION);
 			vert2.setAttribute(vertices.size() - 1,Vertex.POSITION);
+			vert1.setAttribute(0,Vertex.MATERIAL);
+			vert2.setAttribute(0,Vertex.MATERIAL);
 
 			Face tempFace = new Face();
 			tempFace.addVertex(vert1);
@@ -1255,6 +1363,8 @@ public class MeshBuilder {
 
 			vert1.setAttribute(vertices.size() - 2,Vertex.POSITION);
 			vert2.setAttribute(vertices.size() - 1,Vertex.POSITION);
+			vert1.setAttribute(0,Vertex.MATERIAL);
+			vert2.setAttribute(0,Vertex.MATERIAL);
 
 			Face tempFace = new Face();
 			tempFace.addVertex(vert1);
@@ -1266,7 +1376,7 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttribs = new ArrayList<>();
 		vertAttribs.add(vertices);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null);
 
 		if(hints != null) {
 

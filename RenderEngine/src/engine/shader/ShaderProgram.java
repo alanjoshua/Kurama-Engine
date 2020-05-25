@@ -71,10 +71,6 @@ public class ShaderProgram {
         createUniform(uniformName + ".hasDiffuseMap");
         createUniform(uniformName + ".hasSpecularMap");
         createUniform(uniformName + ".reflectance");
-//        createUniform(uniformName + ".normalMap");
-//        createUniform(uniformName + ".diffuseMap");
-//        createUniform(uniformName + ".texture");
-//        createUniform(uniformName + ".specularMap");
         createUniform(uniformName + ".specularPower");
     }
 
@@ -88,11 +84,11 @@ public class ShaderProgram {
         }
     }
 
-    public void createUniformArray(String uniformName, int size) {
-        for(int i = 0;i < size;i++) {
-            createUniform(uniformName+"["+i+"]");
-        }
-    }
+//    public void createUniformArray(String uniformName, int size) {
+//        for(int i = 0;i < size;i++) {
+//            createUniform(uniformName+"["+i+"]");
+//        }
+//    }
 
     public void createPointLightListUniform(String uniformName, int size) {
         for (int i = 0; i < size; i++) {
@@ -173,7 +169,8 @@ public class ShaderProgram {
         setUniform(uniformName+".cutOff",spotLight.cutOff);
     }
 
-    public int setAndActivateMaterials(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int offset) {
+    public int setAndActivateMaterials(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
+        int offset = off;
         for(int i = 0;i < materials.size();i++) {
             offset = setUniform(uniformName+"["+i+"]",textureName+"["+i+"]",normalName+"["+i+"]",diffuseName+"["+i+"]",specularName+"["+i+"]",materials.get(i),offset);
         }
@@ -190,11 +187,6 @@ public class ShaderProgram {
         setUniform(uniformName + ".hasSpecularMap", material.specularMap == null ? 0 : 1);
         setUniform(uniformName + ".reflectance", material.reflectance);
         setUniform(uniformName+".specularPower",material.specularPower);
-
-        this.setUniform(textureName,offset);
-        this.setUniform(normalName,offset+1);
-        this.setUniform(diffuseName,offset+2);
-        this.setUniform(specularName,offset+3);
 
         if (material.texture != null) {
             glActiveTexture(offset+GL_TEXTURE0);
@@ -215,6 +207,11 @@ public class ShaderProgram {
             glActiveTexture(offset+GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
         }
+        this.setUniform(textureName,offset);
+        this.setUniform(normalName,offset+1);
+        this.setUniform(diffuseName,offset+2);
+        this.setUniform(specularName,offset+3);
+
         return (offset + 4);
     }
 

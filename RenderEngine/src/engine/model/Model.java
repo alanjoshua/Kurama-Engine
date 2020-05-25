@@ -188,9 +188,13 @@ public class Model {
 			if(i != 3) {
 				vert1.setAttribute(i,Vertex.POSITION);
 				vert2.setAttribute(i+1,Vertex.POSITION);
+				vert1.setAttribute(0,Vertex.MATERIAL);
+				vert2.setAttribute(0,Vertex.MATERIAL);
 			}else {
 				vert1.setAttribute(i,Vertex.POSITION);
 				vert2.setAttribute(0,Vertex.POSITION);
+				vert1.setAttribute(0,Vertex.MATERIAL);
+				vert2.setAttribute(0,Vertex.MATERIAL);
 			}
 			tempFace.addVertex(vert1);
 			tempFace.addVertex(vert2);
@@ -204,9 +208,13 @@ public class Model {
 			if(i != 7) {
 				vert1.setAttribute(i, Vertex.POSITION);
 				vert2.setAttribute(i+1,Vertex.POSITION);
+				vert1.setAttribute(0,Vertex.MATERIAL);
+				vert2.setAttribute(0,Vertex.MATERIAL);
 			}else {
 				vert1.setAttribute(i,Vertex.POSITION);
 				vert2.setAttribute(i+4,Vertex.POSITION);
+				vert1.setAttribute(0,Vertex.MATERIAL);
+				vert2.setAttribute(0,Vertex.MATERIAL);
 			}
 			tempFace.addVertex(vert1);
 			tempFace.addVertex(vert2);
@@ -218,6 +226,8 @@ public class Model {
 		Vertex vert2 = new Vertex();
 		vert1.setAttribute(0,Vertex.POSITION);
 		vert2.setAttribute(4,Vertex.POSITION);
+		vert1.setAttribute(0,Vertex.MATERIAL);
+		vert2.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(vert1);
 		tempFace.addVertex(vert2);
 		faces.add(tempFace);
@@ -227,6 +237,8 @@ public class Model {
 		vert2 = new Vertex();
 		vert1.setAttribute(1,Vertex.POSITION);
 		vert2.setAttribute(5,Vertex.POSITION);
+		vert1.setAttribute(0,Vertex.MATERIAL);
+		vert2.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(vert1);
 		tempFace.addVertex(vert2);
 		faces.add(tempFace);
@@ -236,6 +248,8 @@ public class Model {
 		vert2 = new Vertex();
 		vert1.setAttribute(2,Vertex.POSITION);
 		vert2.setAttribute(6,Vertex.POSITION);
+		vert1.setAttribute(0,Vertex.MATERIAL);
+		vert2.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(vert1);
 		tempFace.addVertex(vert2);
 		faces.add(tempFace);
@@ -245,6 +259,8 @@ public class Model {
 		vert2 = new Vertex();
 		vert1.setAttribute(3,Vertex.POSITION);
 		vert2.setAttribute(7,Vertex.POSITION);
+		vert1.setAttribute(0,Vertex.MATERIAL);
+		vert2.setAttribute(0,Vertex.MATERIAL);
 		tempFace.addVertex(vert1);
 		tempFace.addVertex(vert2);
 		faces.add(tempFace);
@@ -252,7 +268,7 @@ public class Model {
 		List<List<Vector>> vertAttribs = new ArrayList<>(1);
 		vertAttribs.add(vertices);
 
-		boundingbox = new Mesh(null,faces,vertAttribs);
+		boundingbox = new Mesh(null,faces,vertAttribs,null);
 		MeshBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
 

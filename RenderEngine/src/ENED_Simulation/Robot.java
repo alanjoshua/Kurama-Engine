@@ -921,6 +921,8 @@ public class Robot extends Movable {
 
             v1.setAttribute(i,Vertex.POSITION);
             v2.setAttribute(i+1,Vertex.POSITION);
+            v1.setAttribute(0,Vertex.MATERIAL);
+            v2.setAttribute(0,Vertex.MATERIAL);
 
             tempFace.addVertex(v1);
             tempFace.addVertex(v2);
@@ -928,7 +930,7 @@ public class Robot extends Movable {
         }
         List<List<Vector>> vertAttribs = new ArrayList<>();
         vertAttribs.add(path);
-        Mesh pathMesh = new Mesh(indices,faces,vertAttribs);
+        Mesh pathMesh = new Mesh(indices,faces,vertAttribs,null);
         pathMesh.drawMode = GL_LINES;
         MeshBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
         pathMesh.initOpenGLMeshData();

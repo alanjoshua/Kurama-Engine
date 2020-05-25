@@ -16,7 +16,7 @@ public class Material {
     public Vector ambientColor;
     public Vector diffuseColor;
     public Vector specularColor;
-    public float reflectance = 0.5f;
+    public float reflectance = 1f;
     public float specularPower = 10;
 
     public Material() {

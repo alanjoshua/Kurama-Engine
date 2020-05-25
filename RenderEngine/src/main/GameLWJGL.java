@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.*;
 import java.util.List;
 
+import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Scene;
 import engine.Effects.Fog;
 import engine.Math.Quaternion;
@@ -169,21 +170,29 @@ public class GameLWJGL extends Game implements Runnable {
 
         float reflectance = 0.3f;
         Material cubeMat = new Material(tex,reflectance);
-        cubeMat.specularPower = 20;
-        cubeMat.reflectance = 1;
+        cubeMat.specularPower = 10;
+        cubeMat.reflectance = 0f;
 
         float skyBoxScale = 1000;
         float boxScale = 1f;
         int boxCount = 100;
-        float yRange = 60;
+        float yRange = 20;
 
-        Mesh temp = buildModelFromFileGL("res/misc/pointer.obj",meshInstances,hints);
-        List<List<Vector>> vertLists = temp.vertAttributes;
-        vertLists.set(0, Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),90).rotatePoints(temp.getVertices()));
-        scene.directionalLights.get(0).mesh = new Mesh(temp.indices,temp.faces,vertLists);
-        //scene.directionalLights.get(0).setScale(10);
-        scene.directionalLights.get(0).mesh.initOpenGLMeshData();
+        hints.shouldSmartBakeVertexAttributes = false;
+        hints.shouldGenerateTangentBiTangent = true;
+        Model apricot2 = new Model(this,buildModelFromFileGL("res/apricot/Apricot_02_hi_poly.obj",meshInstances,hints),"apricot2");
+        apricot2.setPos(apricot2.getPos().add(new Vector(0,50,0)));
+        scene.directionalLights.get(0).mesh = apricot2.mesh;
+        scene.directionalLights.get(0).setScale(10);
 
+//        Mesh temp = buildModelFromFileGL("res/misc/pointer.obj",meshInstances,hints);
+//        List<List<Vector>> vertLists = temp.vertAttributes;
+//        vertLists.set(0, Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),90).rotatePoints(temp.getVertices()));
+//        scene.directionalLights.get(0).mesh = new Mesh(temp.indices,temp.faces,vertLists,temp.materials);
+//        //scene.directionalLights.get(0).setScale(10);
+//        scene.directionalLights.get(0).mesh.initOpenGLMeshData();
+
+        hints.shouldGenerateTangentBiTangent = false;
         hints.shouldSmartBakeVertexAttributes = true;
         scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
@@ -193,7 +202,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox.mesh.materials.set(0,skyMat);
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
-        //scene.skybox = null;
+        scene.skybox = null;
 
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = true;
@@ -210,14 +219,14 @@ public class GameLWJGL extends Game implements Runnable {
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", meshInstances, hints);
 
-        for(int i = 0;i < 10;i++) {
-            for(int j = 0;j < 1;j++) {
+        for(int i = 0;i < heightMap.length;i++) {
+            for(int j = 0;j < heightMap[i].length;j++) {
                 float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
                 Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
                 Model cube = new Model(this,cubeMesh , "cube");
                 cube.setScale(boxScale);
-//                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
-                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
+//                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
                 //cube.setMiniBehaviourObj(tempRot);
 //               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
                 cube.mesh.materials.set(0,cubeMat);
@@ -225,17 +234,17 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-        Material ter = new Material();
-        ter.texture = new Texture("res/misc/crystalTexture.jpg");
-        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
-        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
-        ter.reflectance = 1f;
-        terrain.mesh.materials.set(0,ter);
-
-        terrain.mesh.initOpenGLMeshData();
-        terrain.setScale(boxCount,yRange,boxCount);
-        scene.models.add(terrain);
+//        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
+//        Material ter = new Material();
+//        ter.texture = new Texture("res/misc/crystalTexture.jpg");
+//        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
+//        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
+//        ter.reflectance = 1f;
+//        terrain.mesh.materials.set(0,ter);
+//
+//        terrain.mesh.initOpenGLMeshData();
+//        terrain.setScale(boxCount,yRange,boxCount);
+//        scene.models.add(terrain);
 
         scene.buildModelMap();
 

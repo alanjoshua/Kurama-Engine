@@ -36,10 +36,6 @@ struct Material {
     int hasNormalMap;
     int hasDiffuseMap;
     int hasSpecularMap;
-    //sampler2D texture;
-    //sampler2D normalMap;
-    //sampler2D diffuseMap;
-    //sampler2D specularMap;
 };
 
 struct Fog {
@@ -62,7 +58,6 @@ uniform sampler2D mat_specularMaps[MAX_MATERIALS];
 
 uniform sampler2D shadowMap;
 uniform vec3 ambientLight;
-//uniform Material material;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 uniform DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
@@ -78,13 +73,14 @@ in vec3 vertPos;
 in mat4 outModelViewMatrix;
 in mat3 TBN;
 in vec4 mLightViewVertexPos;
-flat in int materialInd;
+flat in float materialInd;
 
 vec4 ambientC;
 vec4 diffuseC;
 vec4 speculrC;
 float specPower;
 Material material;
+int matInd;
 
 out vec4 fragColor;
 
@@ -93,30 +89,28 @@ void setupColors(Material material, vec2 textCoord) {
     specPower = material.specularPower;
 
     if (material.hasTexture == 1) {
-        ambientC = texture(mat_textures[materialInd], textCoord);
+        ambientC = texture(mat_textures[matInd], textCoord);
     }
     else {
         ambientC = material.ambient;
     }
 
     if(material.hasDiffuseMap == 1) {
-        diffuseC = texture(mat_diffuseMaps[materialInd],textCoord);
+        diffuseC = texture(mat_diffuseMaps[matInd],textCoord);
     }
     else {
-        //material.diffuse = ambientC + vec4(0,0,0,0) * 0.0000001;
-        diffuseC =  material.diffuse*0.000001 + ambientC;
+        //material.diffuse = ambientC + vec4(0,0,0,0) *  0.0000001;
+        diffuseC = ambientC;
     }
 
      if(material.hasSpecularMap == 1) {
-
-        speculrC = texture(mat_specularMaps[materialInd],textCoord);
+        speculrC = texture(mat_specularMaps[matInd],textCoord);
         specPower = speculrC.w;
         speculrC = vec4(speculrC.xyz,1.0);
-
      }
      else {
        //speculrC = material.specular  + exColor;
-       speculrC = material.specular*0.000001;
+       speculrC = ambientC;
      }
 
    // speculrC = ambientC;
@@ -127,7 +121,7 @@ float calculateShadow(vec4 position) {
      vec3 projCoords = position.xyz;
         // Transform from screen coordinates to texture coordinates
         projCoords = projCoords * 0.5 + 0.5;
-        float bias = 0.05;
+        float bias = 0.001;
 
         float shadowFactor = 1;
         vec2 inc = 1.0 / textureSize(shadowMap, 0);
@@ -209,7 +203,7 @@ vec4 calculateFog(vec3 pos, vec4 color, Fog fog, vec3 ambientColor) {
 vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord) {
     vec3 newNormal = normal;
     if(material.hasNormalMap == 1) {
-        newNormal = texture(mat_normalMaps[materialInd], texCoord).rgb;
+        newNormal = texture(mat_normalMaps[matInd], texCoord).rgb;
         newNormal = normalize(newNormal * 2 - 1);
         newNormal = normalize(TBN * newNormal);
     }
@@ -217,7 +211,8 @@ vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord) {
 }
 
 void main() {
-     material = materials[materialInd];
+     matInd = int(materialInd);
+     material = materials[matInd];
      setupColors(material, outTex);
      vec4 color = vec4(0,0,0,0);
      vec3 normal = calculateNormal(material, vertNormal, outTex);
@@ -255,6 +250,7 @@ void main() {
     if(fog.active == 1) {
         fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
     }
+    //fragColor = clamp(fragColor, 0,1)*0.00001 + material.ambient;
     fragColor = clamp(fragColor, 0,1);
 
 }

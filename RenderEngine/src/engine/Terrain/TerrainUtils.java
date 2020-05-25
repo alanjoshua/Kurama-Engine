@@ -51,6 +51,9 @@ public class TerrainUtils {
                 Vertex v1 = new Vertex();
                 Vertex v2 = new Vertex();
                 Vertex v3 = new Vertex();
+                v1.setAttribute(0,Vertex.MATERIAL);
+                v2.setAttribute(0,Vertex.MATERIAL);
+                v3.setAttribute(0,Vertex.MATERIAL);
                 Face f = new Face();
 
 
@@ -109,7 +112,7 @@ public class TerrainUtils {
         vertAttribs.add(texCoords);
         vertAttribs.add(calcNormals(positions,w,h));
 
-        Mesh resMesh = new Mesh(indices,faces,vertAttribs);
+        Mesh resMesh = new Mesh(indices,faces,vertAttribs,null);
         resMesh = MeshBuilder.generateTangentAndBiTangentVectors(resMesh);
 
 //        for(Face f: resMesh.faces) {
