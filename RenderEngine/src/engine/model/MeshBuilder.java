@@ -14,6 +14,7 @@ import engine.DataStructure.LinkedList.Node;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import org.lwjgl.system.CallbackI;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -385,12 +386,22 @@ public class MeshBuilder {
 		List<Vector> vertex = new ArrayList<>();
 		List<Vector> vn = new ArrayList<>();
 		List<Vector> vt = new ArrayList<>();
-		List<Material> matsList = new ArrayList<>();
+		Map<String,Material> matsList = new HashMap<>();
 		List<int[]> faces = new ArrayList<>();
 		List<int[]> textureFaces = new ArrayList<>();
 		List<int[]> normalFaces = new ArrayList<>();
 		List<int[]> materialFaces = new ArrayList<>();
 		int currentMaterialInd = 0;
+
+		String[] splitTempDir = loc.split("/");
+		StringBuilder dirName = new StringBuilder();
+		if(splitTempDir[0]=="") {
+			dirName.append("/");
+		}
+		for(int i  =0;i < splitTempDir.length-1;i++) {
+			dirName.append(splitTempDir[i]+"/");
+		}
+		String parentDir = dirName.toString();
 
 		try {
 			String line;
@@ -399,6 +410,13 @@ public class MeshBuilder {
 
 				String[] split = line.split("\\s+");
 				if (split.length > 1) {
+
+					if(split[0].equalsIgnoreCase("mtllib")) {
+						for(int i = 1;i < split.length;i++) {
+							String location = parentDir + split[i];
+							Map<String,Material> mats = parseMaterialLibrary(location);
+						}
+					}
 
 //						Reads lines which start with "v" and stores the vertex data in the vertex list.
 //						If the fourth coordinate "w" is not given, it is given a default value of 1.0
@@ -637,6 +655,37 @@ public class MeshBuilder {
 			System.err.println("The file could not be opened. The file you tried to open was: "+loc);
 			return null;
 		}
+	}
+
+	public static Map<String,Material> parseMaterialLibrary(String fileName) throws IOException {
+		MeshBuilder m = new MeshBuilder();
+		URL urlNew = m.getClass().getResource(fileName);
+		BufferedReader reader = null;
+		boolean isOpenedSuccessfully = false;
+
+		if (fileName.charAt(0) == '/') {
+			try {
+				reader = new BufferedReader(new InputStreamReader(urlNew.openStream()));
+				isOpenedSuccessfully = true;
+			} catch (Exception e) {
+				System.err.println("Could not find material library file: " + fileName);
+			}
+		} else {
+			try {
+				reader = new BufferedReader(new FileReader(new File(fileName)));
+				isOpenedSuccessfully = true;
+			} catch (Exception e) {
+				System.err.println("Could not find material library file: " + fileName);
+			}
+		}
+
+		if (isOpenedSuccessfully) {
+			String tempLine = "";
+			while((tempLine = reader.readLine()) != null) {
+				String[] newSplit = tempLine.split("\\s+");
+			}
+		}
+		return null;
 	}
 
 	public static Mesh addRandomColor(Mesh inMesh) {
