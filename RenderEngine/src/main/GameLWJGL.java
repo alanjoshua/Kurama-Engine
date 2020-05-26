@@ -86,7 +86,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
-        float lightIntensity = 1f;
+        float lightIntensity = 0f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
         pointLight.attenuation = new PointLight.Attenuation(0,0f,0.01f);
         scene.pointLights.add(pointLight);
@@ -105,7 +105,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.shouldShowAxes = true;
-        directionalLight.lightPosScale = 200;
+        directionalLight.lightPosScale = 500;
         directionalLight.isOpaque = false;
         scene.models.add(directionalLight);
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -234,6 +234,9 @@ public class GameLWJGL extends Game implements Runnable {
                 scene.models.add(cube);
             }
         }
+        Model apricot = new Model(this,buildModelFromFileGL("res/apricot/Apricot_02_hi_poly.obj",meshInstances,hints),"apricot2");
+        apricot.setPos(apricot.getPos().add(new Vector(0,50,0)));
+        scene.models.add(apricot);
 
 //        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
 //        Material ter = new Material();
@@ -374,13 +377,14 @@ public class GameLWJGL extends Game implements Runnable {
 
                 float lightAngle = currentPitch + delta;
                 if (lightAngle > 180 || lightAngle < 0) {
-                    directionalLight.intensity = 0;
+                   // directionalLight.intensity = 0;
 //                    if (lightAngle >= 360) {
 //                        lightAngle = -90;
 //                    }
                 } else if (lightAngle <= 10 || lightAngle >= 170) {
                     float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
-                    directionalLight.intensity = factor;
+                    //directionalLight.intensity = factor;
+                    directionalLight.intensity = 1;
 //                    directionalLight.color.setDataElement(1, Math.min(factor, 0.9f));
 //                    directionalLight.color.setDataElement(2, Math.max(factor, 0.5f));
                 } else {

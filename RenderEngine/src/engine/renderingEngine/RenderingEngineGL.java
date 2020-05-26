@@ -56,8 +56,8 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void setupShadowMaps() {
-        shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*4,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*4);
-        ortho = Matrix.buildOrthographicProjectionMatrix(1,-200,50,-50,-50,50);
+        shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*5,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*5);
+        ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
     }
 
     public void setupSceneShader(Scene scene) {
@@ -303,13 +303,10 @@ public class RenderingEngineGL extends RenderingEngine {
         glBindFramebuffer(GL_FRAMEBUFFER,shadowMap.depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         glViewport(0,0,shadowMap.shadowMapWidth,shadowMap.shadowMapHeight);
+        glCullFace(GL_FRONT);
         directionalLightDepthShaderProgram.bind();
 
         DirectionalLight light = scene.directionalLights.get(0);
-        Model temp = new Model(light.game,light.mesh,light.identifier);
-        temp.setOrientation(light.getOrientation().getInverse());
-        temp.setPos(light.getPos());
-
         worldToLight = light.getWorldToObject();
 
         directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix",ortho);
@@ -327,6 +324,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
         directionalLightDepthShaderProgram.unbind();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCullFace(GL_BACK);
     }
 
     public void cleanUp() {

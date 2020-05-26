@@ -117,13 +117,14 @@ void setupColors(Material material, vec2 textCoord) {
     //speculrC = material.specular + exColor;
 }
 
-float calculateShadow(vec4 position) {
+float calculateShadow(vec4 position,vec3 normal,vec3 lightDir) {
      vec3 projCoords = position.xyz;
         // Transform from screen coordinates to texture coordinates
         projCoords = projCoords * 0.5 + 0.5;
-        float bias = 0.001;
+        //float bias = 0.001;
+        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 
-        float shadowFactor = 1;
+        float shadowFactor = 0;
         vec2 inc = 1.0 / textureSize(shadowMap, 0);
         for(int row = -1; row <= 1; row++) {
             for(int col = -1; col <= 1; col++) {
@@ -133,7 +134,7 @@ float calculateShadow(vec4 position) {
         }
         shadowFactor /= 9.0;
         if(projCoords.z > 1.0) {
-            shadowFactor = 1.0;
+            shadowFactor = 0;
         }
         return (1-shadowFactor);
 }
@@ -229,7 +230,7 @@ void main() {
         }
      }
 
-     float shadowFactor = calculateShadow(mLightViewVertexPos);
+     float shadowFactor = calculateShadow(mLightViewVertexPos,normal, directionalLights[0].direction);
      //shadowFactor = 1;
      vec4 temp = vec4(0,0,0,0);
      for(int i = 0;i < MAX_DIRECTIONAL_LIGHTS;i++) {
