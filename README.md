@@ -19,6 +19,9 @@
 * Input handling
 * Built-in simple benchmarking tool
 
+<br>
+<br>
+
 ![Image of a scene rendering by Kurama Engine](https://github.com/alanjoshua/Kurama-Engine/blob/master/images/java.exe%20Screenshot%202020.05.27%20-%2017.23.05.63.png)
 
 ## Test Program
