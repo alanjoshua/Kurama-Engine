@@ -11,6 +11,7 @@
 * Directional shadow mapping
 * Random terrain generation
 * Normal, diffuse and specular mapping
+* Sky box
 * Multiple materials for a single mesh (one draw call)
 * Capable of triangulating n-gons (polygons with number of sides greater than 3) and other 3D modelling features
 * Switching between Matrix and Quaternion rotation mode (Only in Pure Java Rendering Mode)
