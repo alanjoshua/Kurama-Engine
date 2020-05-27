@@ -22,7 +22,7 @@ public class Material {
     public Material() {
         this.ambientColor = DEFAULTCOLOR;
         this.diffuseColor = DEFAULTCOLOR;
-        this.specularColor = DEFAULTCOLOR;
+        this.specularColor = new Vector(0,0,0,1);
         this.texture = null;
         this.normalMap = null;
         this.diffuseMap = null;

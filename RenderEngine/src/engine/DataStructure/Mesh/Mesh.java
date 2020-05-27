@@ -115,17 +115,16 @@ public class Mesh {
         glBindVertexArray(vaoId);
     }
 
-    public int endRender() {
+    public void endRender() {
         glBindVertexArray(0);
-        int ind = 0;
-        for(Material material:materials) {
-            glBindTexture(GL_TEXTURE_2D,ind);
-            glBindTexture(GL_TEXTURE_2D,ind+1);
-            glBindTexture(GL_TEXTURE_2D,ind+2);
-            glBindTexture(GL_TEXTURE_2D,ind+3);
-            ind+=4;
-        }
-        return ind;
+//        int ind = 0;
+//        for(Material material:materials) {
+//            glBindTexture(GL_TEXTURE_2D,ind);
+//            glBindTexture(GL_TEXTURE_2D,ind+1);
+//            glBindTexture(GL_TEXTURE_2D,ind+2);
+//            glBindTexture(GL_TEXTURE_2D,ind+3);
+//            ind+=4;
+//        }
     }
 
     public void initOpenGLMeshData() {

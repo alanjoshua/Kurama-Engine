@@ -9,6 +9,7 @@ import engine.game.Game;
 import engine.model.MeshBuilder;
 import engine.model.Model;
 import engine.model.Terrain;
+import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +84,10 @@ public class TerrainUtils {
                     v1 = new Vertex();
                     v2 = new Vertex();
                     v3 = new Vertex();
+
+                    v1.setAttribute(0,Vertex.MATERIAL);
+                    v2.setAttribute(0,Vertex.MATERIAL);
+                    v3.setAttribute(0,Vertex.MATERIAL);
 
                     v1.setAttribute(rightBottom,Vertex.POSITION);
                     v1.setAttribute(rightBottom,Vertex.TEXTURE);

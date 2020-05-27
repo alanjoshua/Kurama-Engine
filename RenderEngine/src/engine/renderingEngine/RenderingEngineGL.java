@@ -5,9 +5,7 @@ import engine.DataStructure.Scene;
 import engine.Effects.ShadowMap;
 import engine.HUD;
 import engine.Math.Matrix;
-import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.Effects.Material;
 import engine.camera.Camera;
 import engine.display.DisplayLWJGL;
 import engine.lighting.DirectionalLight;
@@ -31,13 +29,14 @@ public class RenderingEngineGL extends RenderingEngine {
     public ShaderProgram hudShaderProgram;
     public ShaderProgram skyBoxShaderProgram;
     public ShaderProgram directionalLightDepthShaderProgram;
-    public ShadowMap shadowMap;
+    //public List<ShadowMap> directionalShadowMaps;
     protected Mesh axes;
-    public Matrix ortho;
-    public Matrix worldToLight;
+    public Matrix ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
+    public List<Matrix> worldToDirectionalLights;
 
     public void init() {
         axes = MeshBuilder.buildAxes();
+        worldToDirectionalLights = new ArrayList<>();
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
@@ -47,7 +46,6 @@ public class RenderingEngineGL extends RenderingEngine {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-        setupShadowMaps();
         setupSceneShader(game.scene);
         setupDirectionalLightDepthShader();
         setupHUDShader();
@@ -55,10 +53,13 @@ public class RenderingEngineGL extends RenderingEngine {
 
     }
 
-    public void setupShadowMaps() {
-        shadowMap = new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*5,ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*5);
-        ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-    }
+//    public void setupShadowMaps(Scene scene) {
+////        directionalShadowMaps = new ArrayList<>();
+////        for(int i = 0;i < scene.directionalLights.size();i++) {
+////            ShadowMap temp =
+////            directionalShadowMaps.add(temp);
+////        }
+//    }
 
     public void setupSceneShader(Scene scene) {
         try {
@@ -69,22 +70,12 @@ public class RenderingEngineGL extends RenderingEngine {
 
             sceneShaderProgram.createUniform("projectionMatrix");
             sceneShaderProgram.createUniform("orthoProjectionMatrix");
-            sceneShaderProgram.createUniform("modelLightViewMatrix");
-            sceneShaderProgram.createUniform("shadowMap");
+            sceneShaderProgram.createUniformArray("modelLightViewMatrix",5);
+            sceneShaderProgram.createUniformArray("directionalShadowMaps",5);
             sceneShaderProgram.createUniform("modelViewMatrix");
-//            sceneShaderProgram.createUniform("texture_sampler");
-//            sceneShaderProgram.createUniform("normalMap");
-//            sceneShaderProgram.createUniform("diffuseMap");
-//            sceneShaderProgram.createUniform("specularMap");
+            sceneShaderProgram.createUniform("numDirectionalLights");
+            sceneShaderProgram.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",10);
 
-//            sceneShaderProgram.createMaterialUniform("material");
-            sceneShaderProgram.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",5);
-//            sceneShaderProgram.createUniformArray("mat_textures",5);
-//            sceneShaderProgram.createUniformArray("mat_normalMaps",5);
-//            sceneShaderProgram.createUniformArray("mat_diffuseMaps",5);
-//            sceneShaderProgram.createUniformArray("mat_specularMaps",5);
-
-//            sceneShaderProgram.createUniform("specularPower");
             sceneShaderProgram.createUniform("ambientLight");
 
             sceneShaderProgram.createPointLightListUniform("pointLights",scene.pointLights.size());
@@ -161,7 +152,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void render(Scene scene, HUD hud, Camera camera) {
         renderDepthMap(((DisplayLWJGL)game.getDisplay()).getWindow(),camera,scene,hud);
-        scene.models.get(1).mesh.materials.get(0).texture = shadowMap.depthMap;
+        scene.models.get(1).mesh.materials.get(0).texture = scene.directionalLights.get(0).shadowMap.depthMap;
         glViewport(0,0,game.getDisplay().getWidth(),game.getDisplay().getHeight());
         clear();
         renderScene(scene,camera);
@@ -185,9 +176,9 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
         sceneShaderProgram.setUniform("pointLights",lights.pointLights);
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
+        sceneShaderProgram.setUniform("numDirectionalLights",scene.directionalLights.size());
 
         sceneShaderProgram.setUniform("fog", scene.fog);
-        //glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap.getId());
 
         Vector c = new Vector(3,0);
         for(DirectionalLight l:scene.directionalLights) {
@@ -196,20 +187,23 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.setUniform("allDirectionalLightStatic", c);
 
         Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
+        //int offset = 0;
+        int offset = sceneShaderProgram.setAndActivateShadowMaps("directionalShadowMaps", scene.directionalLights,0);
 
         for(Mesh mesh:scene.modelMap.keySet()) {
-
-            int offset = sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,0);
-            sceneShaderProgram.setUniform("shadowMap",offset);
-            glActiveTexture(offset+GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D,shadowMap.depthMap.getId());
+            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
+//            sceneShaderProgram.setUniform("directionalShadowMaps[0]",offset);
+//            glActiveTexture(offset+GL_TEXTURE0);
+//            glBindTexture(GL_TEXTURE_2D, lights.directionalLights[0].shadowMap.depthMap.getId());
 
             mesh.initRender();
 
             for(Model model:scene.modelMap.get(mesh)) {
                 Matrix objectToWorld =  model.getObjectToWorldMatrix();
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(objectToWorld));
-                sceneShaderProgram.setUniform("modelLightViewMatrix", worldToLight.matMul(objectToWorld));
+                for(int i = 0;i < scene.directionalLights.size();i++) {
+                    sceneShaderProgram.setUniform("modelLightViewMatrix["+i+"]", worldToDirectionalLights.get(i).matMul(objectToWorld));
+                }
                 mesh.render();
 
                 if(model.shouldShowCollisionBox && model.getBoundingBox() != null) {
@@ -229,18 +223,22 @@ public class RenderingEngineGL extends RenderingEngine {
                     l.add(model);
                 }
             }
-            int shadowMapInd = mesh.endRender();
-            glBindTexture(GL_TEXTURE_2D,shadowMapInd);
+            mesh.endRender();
+            //int shadowMapInd = mesh.endRender();
+            //glBindTexture(GL_TEXTURE_2D,shadowMapInd);
         }
 
         for(Mesh mesh:accessoryModels.keySet()) {
-            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,0);
+            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
 
             mesh.initRender();
             for(Model model:accessoryModels.get(mesh)) {
                 Matrix objectToWorld =  model.getObjectToWorldMatrix();
                 sceneShaderProgram.setUniform("modelViewMatrix",worldToCam.matMul(objectToWorld));
-                sceneShaderProgram.setUniform("modelLightViewMatrix", worldToLight.matMul(objectToWorld));
+                for(int i = 0;i < scene.directionalLights.size();i++){
+                    sceneShaderProgram.setUniform("modelLightViewMatrix["+i+"]", worldToDirectionalLights.get(i).matMul(objectToWorld));
+                }
+               // sceneShaderProgram.setUniform("modelLightViewMatrix", worldToDirectionalLights.matMul(objectToWorld));
                 mesh.render();
             }
             mesh.endRender();
@@ -293,37 +291,43 @@ public class RenderingEngineGL extends RenderingEngine {
         skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
         skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.materials.get(0).ambientColor);
 
-        scene.skybox.getMesh().initToEndFullRender(0);
+        scene.skybox.getMesh().initToEndFullRender(1);
 
         skyBoxShaderProgram.unbind();
     }
 
     public void renderDepthMap(long window, Camera camera, Scene scene, HUD hud) {
 
-        glBindFramebuffer(GL_FRAMEBUFFER,shadowMap.depthMapFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0,0,shadowMap.shadowMapWidth,shadowMap.shadowMapHeight);
-        glCullFace(GL_FRONT);
+        glCullFace(GL_BACK);
         directionalLightDepthShaderProgram.bind();
+        worldToDirectionalLights = new ArrayList<>();
+        directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix", ortho);
 
-        DirectionalLight light = scene.directionalLights.get(0);
-        worldToLight = light.getWorldToObject();
+        for(int i =0;i < scene.directionalLights.size();i++) {
 
-        directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix",ortho);
-        for(Mesh mesh: scene.modelMap.keySet()) {
-            mesh.initRender();
-            for(Model m:scene.modelMap.get(mesh)) {
-                if(m.isOpaque) {
-                    Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                    directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                    mesh.render();
+            DirectionalLight light = scene.directionalLights.get(i);
+            glViewport(0,0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
+            glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            Matrix worldToLight = light.getWorldToObject();
+            worldToDirectionalLights.add(worldToLight);
+
+            for (Mesh mesh : scene.modelMap.keySet()) {
+                mesh.initRender();
+                for (Model m : scene.modelMap.get(mesh)) {
+                    if (m.isOpaque) {
+                        Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
+                        directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                        mesh.render();
+                    }
                 }
+                mesh.endRender();
             }
-            mesh.endRender();
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
         directionalLightDepthShaderProgram.unbind();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glCullFace(GL_BACK);
     }
 

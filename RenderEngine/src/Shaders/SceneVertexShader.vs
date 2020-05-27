@@ -8,10 +8,13 @@ layout (location = 4) in vec3 tangent;
 layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
 
+const int MAX_DIRECTIONAL_LIGHTS = 5;
+
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
-uniform mat4 modelLightViewMatrix;
+uniform mat4 modelLightViewMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 orthoProjectionMatrix;
+uniform int numDirectionalLights;
 
 out vec4 exColor;
 out vec2 outTex;
@@ -19,8 +22,9 @@ out vec3 vertNormal;
 out vec3 vertPos;
 out mat4 outModelViewMatrix;
 out mat3 TBN;
-out vec4 mLightViewVertexPos;
+out vec4 mLightViewVertexPos[MAX_DIRECTIONAL_LIGHTS];
 flat out float materialInd;
+flat out int numDirLight;
 
 void main() {
     vec4 tempPos = modelViewMatrix * position;
@@ -38,7 +42,9 @@ void main() {
     vec3 N = normalize(vec3(modelViewMatrix * vec4(normal, 0.0)));
     TBN = mat3(T, B, N);
 
-    mLightViewVertexPos = orthoProjectionMatrix * modelLightViewMatrix * position;
+    for(int i = 0;i < numDirectionalLights;i++) {
+        mLightViewVertexPos[i] = orthoProjectionMatrix * modelLightViewMatrix[i] * position;
+    }
     materialInd = materialIndex;
-
+    numDirLight = numDirectionalLights;
 }

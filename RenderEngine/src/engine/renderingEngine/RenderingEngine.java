@@ -6,7 +6,6 @@ import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import main.RenderingEngineLWJGL;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +38,7 @@ public abstract class RenderingEngine {
     public abstract void init();
     public abstract void cleanUp();
 
-    public RenderingEngineLWJGL.LightDataPackage processLights(List<PointLight> pointLights, List<SpotLight> spotLights, List<DirectionalLight> directionalLights, Matrix worldToCam) {
+    public RenderingEngine.LightDataPackage processLights(List<PointLight> pointLights, List<SpotLight> spotLights, List<DirectionalLight> directionalLights, Matrix worldToCam) {
         List<PointLight> pointLightsRes;
         List<SpotLight> spotLightsRes;
         List<DirectionalLight> directionalLightsRes;

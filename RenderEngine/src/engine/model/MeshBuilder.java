@@ -303,6 +303,10 @@ public class MeshBuilder {
 			Vertex v1 = f.getVertex(1);
 			Vertex v2 = f.getVertex(2);
 
+			if(v2.getAttribute(Vertex.TEXTURE) == null) {
+				throw new RuntimeException("Cannot generate tangent and biTangent vectors. Vertex did not have texture coords: "+inMesh.meshIdentifier);
+			}
+
 			Vector edge1 = inMesh.getVertices().get(v1.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
 			Vector edge2 = inMesh.getVertices().get(v2.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
 
@@ -420,6 +424,7 @@ public class MeshBuilder {
 					if(split[0].equalsIgnoreCase("mtllib")) {
 						for(int i = 1;i < split.length;i++) {
 							String location = parentDir + split[i];
+							System.out.println("Searching for material file: "+location);
 							Map<String,Material> mats = parseMaterialLibrary(location,parentDir);
 							if(mats!=null) {
 								for(String key:mats.keySet()) {
@@ -498,7 +503,7 @@ public class MeshBuilder {
 							materialIndData[i] = currentMaterialName;
 						}
 
-						String[] doubleSplitTest = split[1].split("/");
+						String[] doubleSplitTest = split[1].trim().split("/");
 
 						if (doubleSplitTest.length == 1) {
 							tdata = null;
@@ -513,7 +518,6 @@ public class MeshBuilder {
 						} else if (doubleSplitTest.length == 2) {
 							ndata = null;
 							for (int i = 1; i < split.length; i++) {
-
 								int fInd = (Integer.parseInt(split[i].split("/")[0]) - 1);
 								int tInd = (Integer.parseInt(split[i].split("/")[1]) - 1);
 
@@ -753,19 +757,39 @@ public class MeshBuilder {
 						currentMaterial.specularPower = Float.parseFloat(newSplit[1]);
 					}
 					if(newSplit[0].equalsIgnoreCase("map_ka")) {
-						currentMaterial.texture = new Texture(parentDirectory+""+newSplit[1]);
+						try {
+							currentMaterial.texture = new Texture(parentDirectory + "" + newSplit[1]);
+						}catch (Exception e) {
+							e.printStackTrace();
+							currentMaterial.texture = null;
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("map_kd")) {
-						currentMaterial.diffuseMap = new Texture(parentDirectory+""+newSplit[1]);
+						try {
+							currentMaterial.diffuseMap = new Texture(parentDirectory+""+newSplit[1]);
+						}catch (Exception e) {
+							e.printStackTrace();
+							currentMaterial.diffuseMap = null;
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("map_ks")) {
-						currentMaterial.specularMap = new Texture(parentDirectory+""+newSplit[1]);
+						try {
+							currentMaterial.specularMap = new Texture(parentDirectory+""+newSplit[1]);
+						}catch (Exception e) {
+							e.printStackTrace();
+							currentMaterial.specularMap = null;
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("map_ns")) { //Specular highlight
 //
 					}
 					if(newSplit[0].equalsIgnoreCase("map_bump") || newSplit[0].equalsIgnoreCase("bump")) {
-						currentMaterial.normalMap = new Texture(parentDirectory+""+newSplit[1]);
+						try {
+							currentMaterial.normalMap = new Texture(parentDirectory+""+newSplit[1]);
+						}catch (Exception e) {
+							e.printStackTrace();
+							currentMaterial.normalMap = null;
+						}
 					}
 
 				}

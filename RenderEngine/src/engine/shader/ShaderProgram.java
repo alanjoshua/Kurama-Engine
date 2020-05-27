@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import engine.Effects.Fog;
+import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.lighting.DirectionalLight;
@@ -74,21 +75,22 @@ public class ShaderProgram {
         createUniform(uniformName + ".specularPower");
     }
 
-    public void createMaterialListUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName, int size) {
+    public void createMaterialListUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName,int size) {
         for(int i = 0;i < size;i++) {
             createMaterialUniform(uniformName+"["+i+"]");
             createUniform(textureName+"["+i+"]");
             createUniform(normalName+"["+i+"]");
             createUniform(diffuseName+"["+i+"]");
             createUniform(specularName+"["+i+"]");
+            //createUniform(reflectionName+"["+i+"]");
         }
     }
 
-//    public void createUniformArray(String uniformName, int size) {
-//        for(int i = 0;i < size;i++) {
-//            createUniform(uniformName+"["+i+"]");
-//        }
-//    }
+    public void createUniformArray(String uniformName, int size) {
+        for(int i = 0;i < size;i++) {
+            createUniform(uniformName+"["+i+"]");
+        }
+    }
 
     public void createPointLightListUniform(String uniformName, int size) {
         for (int i = 0; i < size; i++) {
@@ -177,6 +179,15 @@ public class ShaderProgram {
         return offset;
     }
 
+    public int setAndActivateShadowMaps(String uniformName, List<DirectionalLight> shadowMaps, int off) {
+        for(int i = 0;i < shadowMaps.size();i++) {
+            glActiveTexture(off+i+GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,shadowMaps.get(i).shadowMap.depthMap.getId());
+            setUniform(uniformName+"["+i+"]",off+i);
+        }
+        return off+shadowMaps.size();
+    }
+
     public int setUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName, Material material,int offset) {
         setUniform(uniformName + ".ambient", material.ambientColor);
         setUniform(uniformName + ".diffuse", material.diffuseColor);
@@ -185,6 +196,7 @@ public class ShaderProgram {
         setUniform(uniformName + ".hasNormalMap", material.normalMap == null ? 0 : 1);
         setUniform(uniformName + ".hasDiffuseMap", material.diffuseMap == null ? 0 : 1);
         setUniform(uniformName + ".hasSpecularMap", material.specularMap == null ? 0 : 1);
+       // setUniform(uniformName + ".hasReflectionMap", material.reflectionMap == null ? 0 : 1);
         setUniform(uniformName + ".reflectance", material.reflectance);
         setUniform(uniformName+".specularPower",material.specularPower);
 
@@ -207,10 +219,16 @@ public class ShaderProgram {
             glActiveTexture(offset+GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
         }
+//        if (material.reflectionMap != null) {
+//            glActiveTexture(offset+GL_TEXTURE4);
+//            glBindTexture(GL_TEXTURE_2D, material.reflectionMap.getId());
+//        }
+
         this.setUniform(textureName,offset);
         this.setUniform(normalName,offset+1);
         this.setUniform(diffuseName,offset+2);
         this.setUniform(specularName,offset+3);
+        //this.setUniform(reflectionName,offset+4);
 
         return (offset + 4);
     }

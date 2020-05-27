@@ -47,8 +47,8 @@ struct Fog {
 
 const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
-const int MAX_DIRECTIONAL_LIGHTS = 10;
-const int MAX_MATERIALS = 5;
+const int MAX_DIRECTIONAL_LIGHTS = 5;
+const int MAX_MATERIALS = 10;
 
 uniform Material materials[MAX_MATERIALS];
 uniform sampler2D mat_textures[MAX_MATERIALS];
@@ -56,7 +56,7 @@ uniform sampler2D mat_normalMaps[MAX_MATERIALS];
 uniform sampler2D mat_diffuseMaps[MAX_MATERIALS];
 uniform sampler2D mat_specularMaps[MAX_MATERIALS];
 
-uniform sampler2D shadowMap;
+uniform sampler2D directionalShadowMaps[MAX_DIRECTIONAL_LIGHTS];
 uniform vec3 ambientLight;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
@@ -72,8 +72,9 @@ in vec3 vertNormal;
 in vec3 vertPos;
 in mat4 outModelViewMatrix;
 in mat3 TBN;
-in vec4 mLightViewVertexPos;
+in vec4 mLightViewVertexPos[MAX_DIRECTIONAL_LIGHTS];
 flat in float materialInd;
+flat in int numDirLight;
 
 vec4 ambientC;
 vec4 diffuseC;
@@ -88,14 +89,14 @@ void setupColors(Material material, vec2 textCoord) {
 
     specPower = material.specularPower;
 
-    if (material.hasTexture == 1f) {
+    if (material.hasTexture == 1) {
         ambientC = texture(mat_textures[matInd], textCoord);
     }
     else {
         ambientC = material.ambient;
     }
 
-    if(material.hasDiffuseMap == 1f) {
+    if(material.hasDiffuseMap == 1) {
         diffuseC = texture(mat_diffuseMaps[matInd],textCoord);
     }
     else {
@@ -103,7 +104,7 @@ void setupColors(Material material, vec2 textCoord) {
         diffuseC = material.diffuse;
     }
 
-     if(material.hasSpecularMap == 1f) {
+     if(material.hasSpecularMap == 1) {
         speculrC = texture(mat_specularMaps[matInd],textCoord);
         specPower = speculrC.w;
         speculrC = vec4(speculrC.xyz,1.0);
@@ -111,13 +112,12 @@ void setupColors(Material material, vec2 textCoord) {
      else {
        //speculrC = material.specular  + exColor;
        speculrC = material.specular;
+        //speculrC = ambientC;
      }
 
-   // speculrC = ambientC;
-    //speculrC = material.specular + exColor;
 }
 
-float calculateShadow(vec4 position,vec3 normal,vec3 lightDir) {
+float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDir) {
      vec3 projCoords = position.xyz;
         // Transform from screen coordinates to texture coordinates
         projCoords = projCoords * 0.5 + 0.5;
@@ -134,9 +134,9 @@ float calculateShadow(vec4 position,vec3 normal,vec3 lightDir) {
         }
         shadowFactor /= 9.0;
         if(projCoords.z > 1.0) {
-            shadowFactor = 0;
+            shadowFactor = 1;
         }
-        return (1-shadowFactor);
+        return (shadowFactor);
 }
 
 vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, vec3 normal) {
@@ -153,7 +153,9 @@ vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, v
     vec3 fromLightDir = -lightDir;
     vec3 reflectedLight = normalize(reflect(fromLightDir, normal));
     float specularFactor = max(dot(cameraDir, reflectedLight), 0);
-    specularFactor = pow(specularFactor, specPower);
+    if(specularFactor > 1) {
+        specularFactor = pow(specularFactor, specPower);
+    }
     specularColor = speculrC * intensity * specularFactor * material.reflectance * vec4(lightColor,1);
 
     return diffuseColor + specularColor;
@@ -230,28 +232,16 @@ void main() {
         }
      }
 
-     float shadowFactor = calculateShadow(mLightViewVertexPos,normal, directionalLights[0].direction);
-     //shadowFactor = 1;
-     vec4 temp = vec4(0,0,0,0);
-     for(int i = 0;i < MAX_DIRECTIONAL_LIGHTS;i++) {
+     for(int i = 0;i < numDirLight;i++) {
         if(directionalLights[i].intensity > 0) {
-            color += shadowFactor*calculateDirectionalLight(directionalLights[i],vertPos,normal);
+            float shadowFactor = calculateShadow(mLightViewVertexPos[i],directionalShadowMaps[i], normal, directionalLights[i].direction);
+            color += (1-shadowFactor)*calculateDirectionalLight(directionalLights[i],vertPos,normal);
         }
      }
-     //color += vec4(temp.xyz*shadowFactor,1);
-     //color+=temp;
-
-    // vec4 dirColor = calculateDirectionalLight(directionalLight, vertPos, vertNormal);
-    // vec4 pointColor = calculatePointLight(pointLight, vertPos, vertNormal);
-    // vec4 spotColor = calculateSpotLight(spotLight, vertPos, vertNormal);
-    // vec4 diffuseSpecularComp = pointColor + dirColor + spotColor;
-
 
     fragColor = (ambientC * vec4(ambientLight, 1)) + (color);
     if(fog.active == 1) {
         fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
     }
-    //fragColor = clamp(fragColor, 0,1)*0.00001 + material.ambient;
     fragColor = clamp(fragColor, 0,1);
-
 }

@@ -58,11 +58,26 @@ public class Vector {
 		data[2] = z;
 	}
 
+	public Vector (float x, float y, float z,float w) {
+		this.numberOfDimensions = 4;
+		data = new float[4];
+		data[0] = x;
+		data[1] = y;
+		data[2] = z;
+		data[3] = w;
+	}
+
 	public Vector (float x, float y) {
 		this.numberOfDimensions = 2;
 		data = new float[2];
 		data[0] = x;
 		data[1] = y;
+	}
+
+	public Vector (float x) {
+		this.numberOfDimensions = 1;
+		data = new float[1];
+		data[0] = x;
 	}
 
 	public Vector add(Vector v) {
