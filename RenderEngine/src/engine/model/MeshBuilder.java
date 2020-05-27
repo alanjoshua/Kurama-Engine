@@ -402,6 +402,8 @@ public class MeshBuilder {
 		List<String[]> materialFaces = new ArrayList<>();
 		String currentMaterialName = "DEFAULT";
 		matsList.put(currentMaterialName,new Material());
+		List<String> materialsBeingUsedNames = new ArrayList<>();
+		materialsBeingUsedNames.add(currentMaterialName);
 
 		String[] splitTempDir = loc.split("/");
 		StringBuilder dirName = new StringBuilder();
@@ -441,6 +443,7 @@ public class MeshBuilder {
 						Material temp = matsList.get(split[1]);
 						if(temp != null) {
 							currentMaterialName = split[1];
+							materialsBeingUsedNames.add(split[1]);
 						}
 						else {
 							System.err.println("Could not find mtl: "+split[1] + " while loading model: "+loc);
@@ -637,14 +640,21 @@ public class MeshBuilder {
 				vtArray[i] = vt.get(i);
 			}
 
-			Vector[] matArray = new Vector[matsList.size()];
+			Map<String,Material> onlyUsedMats = new LinkedHashMap<>();
+			for(Map.Entry<String, Material> entry: matsList.entrySet()) {
+				if(materialsBeingUsedNames.contains(entry.getKey())) {
+					onlyUsedMats.put(entry.getKey(),entry.getValue());
+				}
+			}
+
+			Vector[] matArray = new Vector[onlyUsedMats.size()];
 			for(int i  =0;i < matArray.length;i++) {
 				matArray[i] = new Vector(new float[]{i});
 			}
 			List<Material> matList = new ArrayList<>();
-			List<String> keys = new ArrayList<>(matsList.keySet());
+			List<String> keys = new ArrayList<>(onlyUsedMats.keySet());
 			for(String key: keys) {
-				Material mat = matsList.get(key);
+				Material mat = onlyUsedMats.get(key);
 				matList.add(mat);
 			}
 

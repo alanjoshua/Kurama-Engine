@@ -1,4 +1,4 @@
-package engine;
+package engine.model;
 
 import engine.game.Game;
 import engine.model.Model;

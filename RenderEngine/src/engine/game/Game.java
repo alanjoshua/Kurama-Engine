@@ -2,13 +2,10 @@ package engine.game;
 
 import engine.DataStructure.GridNode;
 import engine.DataStructure.Scene;
-import engine.HUD;
+import engine.model.HUD;
 import engine.Math.Vector;
 import engine.display.Display;
 import engine.inputs.Input;
-import engine.lighting.DirectionalLight;
-import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;

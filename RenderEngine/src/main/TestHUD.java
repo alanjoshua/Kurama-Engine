@@ -1,7 +1,7 @@
 package main;
 
 import engine.GUI.Text;
-import engine.HUD;
+import engine.model.HUD;
 import engine.Math.Vector;
 import engine.font.FontTexture;
 import engine.game.Game;

@@ -2,8 +2,7 @@ package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Scene;
-import engine.Effects.ShadowMap;
-import engine.HUD;
+import engine.model.HUD;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.camera.Camera;
