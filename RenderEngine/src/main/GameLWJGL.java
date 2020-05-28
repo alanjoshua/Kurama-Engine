@@ -102,7 +102,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.models.add(directionalLight);
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         scene.fog = Fog.NOFOG;
-        shouldDayNight = false;
+        shouldDayNight = true;
 
         DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),60),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light2");
         scene.directionalLights.add(directionalLight2);
@@ -119,11 +119,14 @@ public class GameLWJGL extends Game implements Runnable {
         scene.pointLights.add(pointLight);
 ////
         lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1);
+        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 2);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.001f);
-        Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
-        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),null,"spotlight 1");
+        Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(-90,0,0);
+        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 25,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),null,"spotlight 1");
         scene.spotLights.add(spotLight);
+        scene.models.add(spotLight);
+        spotLight.setPos(new Vector(new float[]{0,55,5}));
+        spotLight.isOpaque = false;
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 display.getWidth(), display.getHeight());
@@ -187,11 +190,12 @@ public class GameLWJGL extends Game implements Runnable {
 
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = false;
-        Model sun = new Model(this,buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints),"glassball");
-        scene.directionalLights.get(0).mesh = sun.mesh;
+        Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
+        scene.directionalLights.get(0).mesh = sun;
         scene.directionalLights.get(0).setScale(100);
-        scene.directionalLights.get(1).mesh = sun.mesh;
+        scene.directionalLights.get(1).mesh = sun;
         scene.directionalLights.get(1).setScale(100);
+        scene.spotLights.get(0).mesh = sun;
 
         hints.shouldGenerateTangentBiTangent = true;
         hints.shouldGenerateTangentBiTangent = false;
@@ -400,35 +404,39 @@ public class GameLWJGL extends Game implements Runnable {
 
             scene.models.forEach(m -> m.tick(params));
             scene.pointLights.get(0).pos = cam.getPos();
-            scene.spotLights.get(0).setPos(cam.getPos());
-           // scene.spotLights.get(0).coneDirection = cam.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-1);
-            scene.spotLights.get(0).setOrientation(cam.getOrientation());
+//            scene.spotLights.get(0).setPos(cam.getPos());
+//            scene.spotLights.get(0).setOrientation(cam.getOrientation());
 
             if(shouldDayNight) {
                 DirectionalLight directionalLight = scene.directionalLights.get(0);
+                SpotLight spotLight = scene.spotLights.get(0);
                 float delta = (10f * timeDelta);
-                float currentPitch = directionalLight.getOrientation().getPitchYawRoll().get(0);
+                float currentPitch = spotLight.getOrientation().getPitchYawRoll().get(0);
 
                 float lightAngle = currentPitch + delta;
                 if (lightAngle > 180 || lightAngle < 0) {
-                    directionalLight.intensity = 0;
+                    //directionalLight.intensity = 0;
+                    //spotLight.pointLight.intensity = 0;
 //                    if (lightAngle >= 360) {
 //                        lightAngle = -90;
 //                    }
                 } else if (lightAngle <= 10 || lightAngle >= 170) {
                     float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
-                    directionalLight.intensity = factor;
+                    //directionalLight.intensity = factor;
+                    spotLight.pointLight.intensity = 1;
 //                    directionalLight.color.setDataElement(1, Math.min(factor, 0.9f));
 //                    directionalLight.color.setDataElement(2, Math.max(factor, 0.5f));
                 } else {
-                    directionalLight.intensity = 1;
+                    //directionalLight.intensity = 1;
+                    spotLight.pointLight.intensity = 1;
 //                    directionalLight.color = new Vector(3, 1);
                 }
                 double angRad = Math.toRadians(lightAngle);
 //                directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
 //                directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
                 Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
-                directionalLight.setOrientation(rot.multiply(directionalLight.getOrientation()));
+                //directionalLight.setOrientation(rot.multiply(directionalLight.getOrientation()));
+                spotLight.setOrientation(rot.multiply(spotLight.getOrientation()));
 
 //                scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
 

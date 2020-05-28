@@ -125,7 +125,7 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
         // Transform from screen coordinates to texture coordinates
         projCoords = projCoords * 0.5 + 0.5;
         if(shouldInvertY == 1) {
-            projCoords.y = 1-projCoords.y;
+            projCoords.y = projCoords.y;
         }
        // float z = position.z;
         //float bias = 0.001;
