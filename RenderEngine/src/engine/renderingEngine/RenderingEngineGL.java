@@ -290,7 +290,7 @@ public class RenderingEngineGL extends RenderingEngine {
         skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
         skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.materials.get(0).ambientColor);
 
-        scene.skybox.getMesh().initToEndFullRender(1);
+        scene.skybox.getMesh().initToEndFullRender(0);
 
         skyBoxShaderProgram.unbind();
     }
