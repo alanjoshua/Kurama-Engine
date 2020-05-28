@@ -179,7 +179,15 @@ public class ShaderProgram {
         return offset;
     }
 
-    public int setAndActivateShadowMaps(String uniformName, List<DirectionalLight> shadowMaps, int off) {
+    public int setAndActivateDirectionalShadowMaps(String uniformName, List<DirectionalLight> shadowMaps, int off) {
+        for(int i = 0;i < shadowMaps.size();i++) {
+            glActiveTexture(off+i+GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,shadowMaps.get(i).shadowMap.depthMap.getId());
+            setUniform(uniformName+"["+i+"]",off+i);
+        }
+        return off+shadowMaps.size();
+    }
+    public int setAndActivateSpotLightShadowMaps(String uniformName, List<SpotLight> shadowMaps, int off) {
         for(int i = 0;i < shadowMaps.size();i++) {
             glActiveTexture(off+i+GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D,shadowMaps.get(i).shadowMap.depthMap.getId());

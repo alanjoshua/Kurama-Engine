@@ -15,7 +15,7 @@ public class DirectionalLight extends Model {
     public float lightPosScale = 100;
     public ShadowMap shadowMap;
 
-    public DirectionalLight(Game game, Vector color, Quaternion direction, float intensity, ShadowMap shadowMap, Mesh mesh, String identifier) {
+    public DirectionalLight(Game game,Vector color, Quaternion direction, float intensity, ShadowMap shadowMap, Mesh mesh, String identifier) {
         super(game,mesh,identifier);
         this.color = color;
         this.orientation = direction;

@@ -1163,4 +1163,21 @@ public class Matrix {
 		return new Matrix(data);
 	}
 
+	public static Matrix buildPerspectiveMatrix(float fovX, float imageAspectRatio, float nearClippingPlane, float farClippingPlane, float xDir, float yDir) {
+		float left,right,top,bottom;
+
+		right = (float) Math.tan(Math.toRadians(fovX / 2f)) * nearClippingPlane;
+		if (imageAspectRatio >= 1) {
+			top = right;
+			right = top * imageAspectRatio;
+		} else {
+			top = right * (1 / imageAspectRatio);
+		}
+		right*=xDir;
+		top*=yDir;
+		left = -right;
+		bottom = -top;
+		return Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
+	}
+
 }

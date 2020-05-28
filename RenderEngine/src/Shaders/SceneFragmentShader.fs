@@ -57,6 +57,7 @@ uniform sampler2D mat_diffuseMaps[MAX_MATERIALS];
 uniform sampler2D mat_specularMaps[MAX_MATERIALS];
 
 uniform sampler2D directionalShadowMaps[MAX_DIRECTIONAL_LIGHTS];
+uniform sampler2D spotLightShadowMaps[MAX_SPOT_LIGHTS];
 uniform vec3 ambientLight;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
@@ -73,8 +74,10 @@ in vec3 vertPos;
 in mat4 outModelViewMatrix;
 in mat3 TBN;
 in vec4 mLightViewVertexPos[MAX_DIRECTIONAL_LIGHTS];
+in vec4 mSpotLightViewVertexPos[MAX_SPOT_LIGHTS];
 flat in float materialInd;
 flat in int numDirLight;
+flat in int numSpotLights;
 
 vec4 ambientC;
 vec4 diffuseC;
@@ -117,10 +120,14 @@ void setupColors(Material material, vec2 textCoord) {
 
 }
 
-float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDir) {
-     vec3 projCoords = position.xyz;
+float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDir, int shouldInvertY) {
+     vec3 projCoords = position.xyz/position.w;
         // Transform from screen coordinates to texture coordinates
         projCoords = projCoords * 0.5 + 0.5;
+        if(shouldInvertY == 1) {
+            projCoords.y = 1-projCoords.y;
+        }
+       // float z = position.z;
         //float bias = 0.001;
         float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 
@@ -226,15 +233,16 @@ void main() {
         }
      }
 
-     for(int i = 0;i < MAX_SPOT_LIGHTS;i++) {
+     for(int i = 0;i < numSpotLights;i++) {
         if(spotLights[i].pl.intensity > 0) {
-            color += calculateSpotLight(spotLights[i],vertPos,normal);
+            float shadowFactor = calculateShadow(mSpotLightViewVertexPos[i],spotLightShadowMaps[i], normal, spotLights[i].coneDir,1);
+            color += (1-shadowFactor)*calculateSpotLight(spotLights[i],vertPos,normal);
         }
      }
 
      for(int i = 0;i < numDirLight;i++) {
         if(directionalLights[i].intensity > 0) {
-            float shadowFactor = calculateShadow(mLightViewVertexPos[i],directionalShadowMaps[i], normal, directionalLights[i].direction);
+            float shadowFactor = calculateShadow(mLightViewVertexPos[i],directionalShadowMaps[i], normal, directionalLights[i].direction,0);
             color += (1-shadowFactor)*calculateDirectionalLight(directionalLights[i],vertPos,normal);
         }
      }
