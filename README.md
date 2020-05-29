@@ -5,6 +5,7 @@
 
 ## Features
 * OpenGL support
+* Custom functional-style linear algebra library
 * software rendering mode (Pure Java mode) if the user does not want to use openGL
 * Reading .OBJ files and rendering the models as a mesh
 * Support for directional, point and spot lights, with Phong Shading
