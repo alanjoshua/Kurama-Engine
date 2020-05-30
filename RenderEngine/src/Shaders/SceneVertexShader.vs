@@ -52,6 +52,7 @@ void main() {
     }
     for(int i = 0;i < numberOfSpotLights;i++) {
         mSpotLightViewVertexPos[i] = modelSpotLightViewMatrix[i] * position;
+        mSpotLightViewVertexPos[i].xyz = mSpotLightViewVertexPos[i].xyz/mSpotLightViewVertexPos[i].w;
     }
     materialInd = materialIndex;
     numDirLight = numDirectionalLights;

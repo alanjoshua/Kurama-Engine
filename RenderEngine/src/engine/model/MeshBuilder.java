@@ -303,8 +303,20 @@ public class MeshBuilder {
 			Vertex v1 = f.getVertex(1);
 			Vertex v2 = f.getVertex(2);
 
-			if(v2.getAttribute(Vertex.TEXTURE) == null) {
-				throw new RuntimeException("Cannot generate tangent and biTangent vectors. Vertex did not have texture coords: "+inMesh.meshIdentifier);
+			if(v0.getAttribute(Vertex.TEXTURE) == null || v1.getAttribute(Vertex.TEXTURE) == null || v2.getAttribute(Vertex.TEXTURE) == null) {
+				tangents.add(null);
+				biTangents.add(null);
+
+				v0.setAttribute(tangents.size()-1,Vertex.TANGENT);
+				v1.setAttribute(tangents.size()-1,Vertex.TANGENT);
+				v2.setAttribute(tangents.size()-1,Vertex.TANGENT);
+
+				v0.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+				v1.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+				v2.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
+
+				System.err.println("Error during generation of tangent and biTangent vectors. Vertex did not have texture coords: "+inMesh.meshIdentifier);
+				continue;
 			}
 
 			Vector edge1 = inMesh.getVertices().get(v1.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));

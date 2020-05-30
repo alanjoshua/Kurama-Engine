@@ -1173,8 +1173,8 @@ public class Matrix {
 		} else {
 			top = right * (1 / imageAspectRatio);
 		}
-		right*=xDir;
-		top*=yDir;
+		right*= Math.signum(xDir);
+		top*= Math.signum(yDir);
 		left = -right;
 		bottom = -top;
 		return Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);

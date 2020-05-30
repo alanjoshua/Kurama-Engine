@@ -65,7 +65,7 @@ public class RenderingEngineGL extends RenderingEngine {
             sceneShaderProgram.createUniform("modelViewMatrix");
             sceneShaderProgram.createUniform("numDirectionalLights");
             sceneShaderProgram.createUniform("numberOfSpotLights");
-            sceneShaderProgram.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",10);
+            sceneShaderProgram.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",26);
 
             sceneShaderProgram.createUniform("ambientLight");
 
@@ -252,12 +252,11 @@ public class RenderingEngineGL extends RenderingEngine {
             return;
         }
 
+        Matrix ortho = Matrix.buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(), 0);
         hudShaderProgram.bind();
         hudShaderProgram.setUniform("texture_sampler", 0);
 
         for(Model m: hud.hudElements) {
-            Matrix ortho = Matrix.buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(), 0);
-
             // Set orthographic and model matrix for this HUD item
             Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
@@ -330,7 +329,7 @@ public class RenderingEngineGL extends RenderingEngine {
             SpotLight light = scene.spotLights.get(i);
             float aspectRatio = (float)light.shadowMap.shadowMapWidth/(float)light.shadowMap.shadowMapHeight;
             //ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,1f,-100,1,1);
+            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,0.5f,20,1,1);
             directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix", projMatrix);
             glViewport(0,0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
