@@ -93,8 +93,8 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.ambientLight = new Vector(0f,0f,0f);
-        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light");
+        scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
+        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light");
         scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
@@ -105,7 +105,7 @@ public class GameLWJGL extends Game implements Runnable {
         shouldDayNight = false;
 
         DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),-180),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light2");
-        scene.directionalLights.add(directionalLight2);
+        //scene.directionalLights.add(directionalLight2);
         directionalLight2.setPos(new Vector(-0.2f,1.5f,-20.26f));
         directionalLight2.lightPosScale = 500;
         directionalLight2.isOpaque = false;
@@ -193,8 +193,8 @@ public class GameLWJGL extends Game implements Runnable {
         Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
         scene.directionalLights.get(0).mesh = sun;
         scene.directionalLights.get(0).setScale(100);
-        scene.directionalLights.get(1).mesh = sun;
-        scene.directionalLights.get(1).setScale(100);
+//        scene.directionalLights.get(1).mesh = sun;
+//        scene.directionalLights.get(1).setScale(100);
         scene.spotLights.get(0).mesh = sun;
 
         hints.shouldGenerateTangentBiTangent = true;
@@ -213,13 +213,13 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = true;
 
-        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
-        testQuad.setPos(new Vector(-0.2f,1.5f,-38.26f));
-        testQuad.setScale(5);
-        testQuad.isOpaque=false;
-        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
-        scene.models.add(testQuad);
-        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
+//        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
+//        testQuad.setPos(new Vector(-0.2f,1.5f,-38.26f));
+//        testQuad.setScale(5);
+//        testQuad.isOpaque=false;
+//        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
+//        scene.models.add(testQuad);
+//        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);

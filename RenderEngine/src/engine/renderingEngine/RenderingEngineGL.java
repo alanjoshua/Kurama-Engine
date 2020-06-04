@@ -30,6 +30,7 @@ public class RenderingEngineGL extends RenderingEngine {
     public ShaderProgram directionalLightDepthShaderProgram;
     protected Mesh axes;
     public Matrix ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
+    //public Matrix ortho = Matrix.buildOrthographicProjectionMatrix(1,700,-100,100,-100,100);
 
     public void init() {
         axes = MeshBuilder.buildAxes();
@@ -83,8 +84,8 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void setupDirectionalLightDepthShader() {
         directionalLightDepthShaderProgram = new ShaderProgram();
-        directionalLightDepthShaderProgram.createVertexShader(Utils.loadResourceAsString("/shaders/depthDirectionalLightVertexShader.vs"));
-        directionalLightDepthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/shaders/depthDirectionalLightFragmentShader.fs"));
+        directionalLightDepthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.vs"));
+        directionalLightDepthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.fs"));
         directionalLightDepthShaderProgram.link();
 
         directionalLightDepthShaderProgram.createUniform("orthoProjectionMatrix");
@@ -97,8 +98,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public void setupHUDShader() {
         try {
         hudShaderProgram = new ShaderProgram();
-        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/shaders/HUDVertexShader.vs"));
-        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/shaders/HUDFragmentShader.fs"));
+        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/HUDVertexShader.vs"));
+        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/HUDFragmentShader.fs"));
         hudShaderProgram.link();
 
         // Create uniforms for Orthographic-model projection matrix and base colour
@@ -114,8 +115,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public void setupSkybox() {
         try {
             skyBoxShaderProgram = new ShaderProgram();
-            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/shaders/SkyBoxVertexShader.vs"));
-            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/shaders/SkyBoxFragmentShader.fs"));
+            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SkyBoxVertexShader.vs"));
+            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SkyBoxFragmentShader.fs"));
             skyBoxShaderProgram.link();
 
             skyBoxShaderProgram.createUniform("projectionMatrix");
@@ -329,7 +330,7 @@ public class RenderingEngineGL extends RenderingEngine {
             SpotLight light = scene.spotLights.get(i);
             float aspectRatio = (float)light.shadowMap.shadowMapWidth/(float)light.shadowMap.shadowMapHeight;
             //ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,0.5f,20,1,1);
+            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,1f,15000,1,1);
             directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix", projMatrix);
             glViewport(0,0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
