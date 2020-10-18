@@ -93,7 +93,7 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
+        scene.ambientLight = new Vector(1f,1f,1f);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light");
         scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
@@ -210,58 +210,58 @@ public class GameLWJGL extends Game implements Runnable {
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
         scene.skybox = null;
 
-        hints.shouldSmartBakeVertexAttributes = false;
+        hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
 
-//        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
-//        testQuad.setPos(new Vector(-0.2f,1.5f,-38.26f));
-//        testQuad.setScale(5);
-//        testQuad.isOpaque=false;
-//        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
-//        scene.models.add(testQuad);
-//        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
+        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
+        testQuad.setPos(new Vector(-0.2f,1.5f,-38.26f));
+        testQuad.setScale(5);
+        testQuad.isOpaque=false;
+        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
+        scene.models.add(testQuad);
+        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", meshInstances, hints);
 
-//        for(int i = 0;i < heightMap.length;i++) {
-//            for(int j = 0;j < heightMap[i].length;j++) {
-//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-//                Model cube = new Model(this,cubeMesh , "cube");
-//                cube.setScale(boxScale);
-//                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
-////                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-//                //cube.setMiniBehaviourObj(tempRot);
-////               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
-//                cube.mesh.materials.set(0,cubeMat);
-//                scene.models.add(cube);
-//            }
-//        }
-//        for(int i = 0;i < 10;i++) {
-//            for(int j = 0;j < 1;j++) {
-//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-//                Model cube = new Model(this,cubeMesh , "cube");
-//                cube.setScale(boxScale);
-////                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
+        for(int i = 0;i < heightMap.length;i++) {
+            for(int j = 0;j < heightMap[i].length;j++) {
+                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+                Model cube = new Model(this,cubeMesh , "cube");
+                cube.setScale(boxScale);
+                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
 //                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-//                //cube.setMiniBehaviourObj(tempRot);
-////               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
-//                cube.mesh.materials.set(0,cubeMat);
-//                scene.models.add(cube);
-//            }
-//        }
+                //cube.setMiniBehaviourObj(tempRot);
+//               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
+                cube.mesh.materials.set(0,cubeMat);
+                scene.models.add(cube);
+            }
+        }
+        for(int i = 0;i < 10;i++) {
+            for(int j = 0;j < 1;j++) {
+                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+                Model cube = new Model(this,cubeMesh , "cube");
+                cube.setScale(boxScale);
+//                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
+                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+                //cube.setMiniBehaviourObj(tempRot);
+//               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
+                cube.mesh.materials.set(0,cubeMat);
+                scene.models.add(cube);
+            }
+        }
 //
 //        Model apricot = new Model(this,buildModelFromFileGL("res/apricot/Apricot_02_hi_poly.obj",meshInstances,hints),"apricot2");
 //        apricot.setPos(apricot.getPos().add(new Vector(10,50,0)));
 //        scene.models.add(apricot);
 //
-        Model plane = new Model(this,buildModelFromFileGL("res/E-45-Aircraft/E 45 Aircraft_obj.obj",meshInstances,hints),"plane");
-        plane.setPos(plane.getPos().add(new Vector(5,-5,-15)));
-        scene.models.add(plane);
+//        Model plane = new Model(this,buildModelFromFileGL("res/E-45-Aircraft/E 45 Aircraft_obj.obj",meshInstances,hints),"plane");
+//        plane.setPos(plane.getPos().add(new Vector(5,-5,-15)));
+//        scene.models.add(plane);
 //
 //        Model wolf = new Model(this,buildModelFromFileGL("res/wolf/Wolf_One_obj.obj",meshInstances,hints),"wolf");
 //        scene.models.add(wolf);
@@ -286,10 +286,10 @@ public class GameLWJGL extends Game implements Runnable {
 //        terrain.setScale(boxCount,yRange,boxCount);
 //        scene.models.add(terrain);
 
-        Model livingRoom = new Model(this,buildModelFromFileGL("res/livingRoom/luxuryHouseInterior.obj",meshInstances,hints),"livingRoom");
-        livingRoom.setScale(0.1f);
-        scene.models.add(livingRoom);
-        System.out.println(livingRoom.mesh.materials.size());
+//        Model livingRoom = new Model(this,buildModelFromFileGL("res/livingRoom/luxuryHouseInterior.obj",meshInstances,hints),"livingRoom");
+//        livingRoom.setScale(0.1f);
+//        scene.models.add(livingRoom);
+//        System.out.println(livingRoom.mesh.materials.size());
 
         scene.buildModelMap();
 
@@ -602,7 +602,6 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void render() {
         renderingEngine.render(scene,hud,cam);
-
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
         input.poll();

@@ -53,8 +53,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public void setupSceneShader(Scene scene) {
         try {
             sceneShaderProgram = new ShaderProgram();
-            sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SceneVertexShader.vs"));
-            sceneShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SceneFragmentShader.fs"));
+            sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SceneVertexShader.glsl"));
+            sceneShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SceneFragmentShader.glsl"));
             sceneShaderProgram.link();
 
             sceneShaderProgram.createUniform("projectionMatrix");
@@ -84,8 +84,8 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void setupDirectionalLightDepthShader() {
         directionalLightDepthShaderProgram = new ShaderProgram();
-        directionalLightDepthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.vs"));
-        directionalLightDepthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.fs"));
+        directionalLightDepthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.glsl"));
+        directionalLightDepthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.glsl"));
         directionalLightDepthShaderProgram.link();
 
         directionalLightDepthShaderProgram.createUniform("orthoProjectionMatrix");
@@ -98,8 +98,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public void setupHUDShader() {
         try {
         hudShaderProgram = new ShaderProgram();
-        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/HUDVertexShader.vs"));
-        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/HUDFragmentShader.fs"));
+        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/HUDVertexShader.glsl"));
+        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/HUDFragmentShader.glsl"));
         hudShaderProgram.link();
 
         // Create uniforms for Orthographic-model projection matrix and base colour
@@ -115,8 +115,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public void setupSkybox() {
         try {
             skyBoxShaderProgram = new ShaderProgram();
-            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SkyBoxVertexShader.vs"));
-            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SkyBoxFragmentShader.fs"));
+            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SkyBoxVertexShader.glsl"));
+            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SkyBoxFragmentShader.glsl"));
             skyBoxShaderProgram.link();
 
             skyBoxShaderProgram.createUniform("projectionMatrix");
@@ -183,7 +183,7 @@ public class RenderingEngineGL extends RenderingEngine {
         Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
         //int offset = 0;
         int offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,0);
-        offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights,offset);
+        offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
         for(Mesh mesh:scene.modelMap.keySet()) {
             sceneShaderProgram.setAndActivateMaterials("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);

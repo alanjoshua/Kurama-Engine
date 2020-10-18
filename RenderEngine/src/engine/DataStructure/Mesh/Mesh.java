@@ -128,7 +128,7 @@ public class Mesh {
     }
 
     public void initOpenGLMeshData() {
-
+        System.out.println("initing model: "+meshIdentifier);
         IntBuffer indicesBuffer = null;
         List<Integer> offsets = new ArrayList<>(vertAttributes.size());
         List<Integer> sizePerAttrib = new ArrayList<>(vertAttributes.size());
@@ -184,12 +184,19 @@ public class Mesh {
                     for (Vector v : vertAttributes.get(i)) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
+//                            v.display();
                         } else {    //Hack to handle nulls
+                            float[] t = new float[sizePerAttrib.get(i) / sizeOfFloat];
                             for (int j = 0; j < sizePerAttrib.get(i) / sizeOfFloat; j++) {
-                                tempBuffer.put(0);
+//                                tempBuffer.put(0);
+//                                System.out.println(0);
+                                t[j] = 0f;
                             }
+                            tempBuffer.put(t);
+//                            new Vector(t).display();
                         }
                     }
+
                     tempBuffer.flip();
 
                     vboId = glGenBuffers();
@@ -222,7 +229,10 @@ public class Mesh {
             glBindBuffer(GL_ARRAY_BUFFER,0);
             glBindVertexArray(0);
 
-        }finally  {
+        }
+        catch(Exception e) {
+            System.out.println("caught exception here");
+        }finally{
             if(colorBuffer != null) {
                 MemoryUtil.memFree((colorBuffer));
             }

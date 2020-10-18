@@ -1,4 +1,4 @@
-#version 330
+#version 460
 
 // From LWJGL book
 struct Attenuation {
@@ -39,7 +39,7 @@ struct Material {
 };
 
 struct Fog {
-    int active;
+    int isActive;
     vec3 color;
     float density;
 };
@@ -268,7 +268,7 @@ void main() {
      }
 
     fragColor = (ambientC * vec4(ambientLight, 1)) + (color);
-    if(fog.active == 1) {
+    if(fog.isActive == 1) {
         fragColor = calculateFog(vertPos, fragColor, fog, ambientLight.xyz);
     }
     fragColor = clamp(fragColor, 0,1);

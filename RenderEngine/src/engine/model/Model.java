@@ -52,7 +52,6 @@ public class Model {
 		miniBehaviourObj = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
-
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 		calculateBoundingBox();
 	}

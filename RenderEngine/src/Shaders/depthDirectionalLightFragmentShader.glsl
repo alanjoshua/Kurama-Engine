@@ -1,4 +1,4 @@
-#version 330
+#version 460
 
 //uniform int shouldLinearizeDepth;
 //uniform float nearZ;

@@ -1,4 +1,4 @@
-#version 330
+#version 460
 
 layout (location = 0) in vec4 position;
 layout (location = 3) in vec4 color;

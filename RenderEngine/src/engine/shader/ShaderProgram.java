@@ -111,7 +111,7 @@ public class ShaderProgram {
     }
 
     public void createFogUniform(String uniformName) {
-        createUniform(uniformName+".active");
+        createUniform(uniformName+".isActive");
         createUniform(uniformName+".color");
         createUniform(uniformName+".density");
     }
@@ -250,7 +250,7 @@ public class ShaderProgram {
     }
 
     public void setUniform(String uniformName, Fog fog) {
-        setUniform(uniformName+".active", fog.active?1:0);
+        setUniform(uniformName+".isActive", fog.active?1:0);
         setUniform(uniformName+".color", fog.color);
         setUniform(uniformName+".density", fog.density);
     }
