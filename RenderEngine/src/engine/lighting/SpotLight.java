@@ -15,16 +15,19 @@ public class SpotLight extends Model {
     public Vector coneDirection;
     public ShadowMap shadowMap;
 
-    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap, Mesh mesh, String identifier) {
-        super(game,mesh, identifier);
+    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
+                     Mesh mesh, Mesh boundingBox, String identifier) {
+        super(game,mesh, identifier, false);
         this.pointLight = pointLight;
         this.angle = angle;
         this.cutOff = (float)Math.cos(Math.toRadians(angle));
         this.shadowMap = shadowMap;
         this.orientation = orientation;
+        this.boundingbox = boundingBox;
     }
     public SpotLight(SpotLight spotLight) {
-        this(spotLight.game,new PointLight(spotLight.pointLight),spotLight.orientation,spotLight.angle,spotLight.shadowMap,spotLight.mesh,spotLight.identifier);
+        this(spotLight.game,new PointLight(spotLight.pointLight),spotLight.orientation,spotLight.angle,
+                spotLight.shadowMap,spotLight.mesh, spotLight.boundingbox, spotLight.identifier);
         cutOff = spotLight.cutOff;
     }
 

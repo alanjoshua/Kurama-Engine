@@ -128,7 +128,7 @@ public class Mesh {
     }
 
     public void initOpenGLMeshData() {
-        System.out.println("initing model: "+meshIdentifier);
+
         IntBuffer indicesBuffer = null;
         List<Integer> offsets = new ArrayList<>(vertAttributes.size());
         List<Integer> sizePerAttrib = new ArrayList<>(vertAttributes.size());

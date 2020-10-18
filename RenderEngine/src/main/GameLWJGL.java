@@ -94,7 +94,7 @@ public class GameLWJGL extends Game implements Runnable {
         display.startScreen();
 
         scene.ambientLight = new Vector(1f,1f,1f);
-        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light");
+        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null,"light");
         scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
@@ -104,7 +104,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.fog = Fog.NOFOG;
         shouldDayNight = false;
 
-        DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),-180),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null,"light2");
+        DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),-180),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null, "light2");
         //scene.directionalLights.add(directionalLight2);
         directionalLight2.setPos(new Vector(-0.2f,1.5f,-20.26f));
         directionalLight2.lightPosScale = 500;
@@ -122,7 +122,7 @@ public class GameLWJGL extends Game implements Runnable {
         PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(-65,0,0);
-        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 30,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2, ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2),null,"spotlight 1");
+        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 30,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2, ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2),null, null, "spotlight 1");
         scene.spotLights.add(spotLight);
 //        scene.models.add(spotLight);
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
@@ -192,10 +192,12 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldGenerateTangentBiTangent = false;
         Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
         scene.directionalLights.get(0).mesh = sun;
+        scene.directionalLights.get(0).calculateBoundingBox();
         scene.directionalLights.get(0).setScale(100);
 //        scene.directionalLights.get(1).mesh = sun;
 //        scene.directionalLights.get(1).setScale(100);
         scene.spotLights.get(0).mesh = sun;
+        scene.spotLights.get(0).calculateBoundingBox();
 
         hints.shouldGenerateTangentBiTangent = true;
         hints.shouldGenerateTangentBiTangent = false;

@@ -35,7 +35,7 @@ public class Model {
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
 	public boolean shouldShowAxes = false;
-	private Mesh boundingbox;
+	protected Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
 	public boolean isOpaque = true;

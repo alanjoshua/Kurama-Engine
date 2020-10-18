@@ -96,7 +96,7 @@ public class Simulation extends Game {
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
         scene.pointLights.add(pointLight);
 
-        scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getQuaternionFromEuler(90,0,0),1,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 1, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1),null,"light"));
+        scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getQuaternionFromEuler(90,0,0),1,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 1, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1),null, null, "light"));
 
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
