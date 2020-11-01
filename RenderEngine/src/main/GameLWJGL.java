@@ -93,13 +93,13 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.ambientLight = new Vector(1f,1f,1f);
-        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null,"light");
+        scene.ambientLight = new Vector(0f,0f,0f);
+        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null,"light");
         scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
         directionalLight.isOpaque = false;
-        scene.models.add(directionalLight);
+//        scene.models.add(directionalLight);
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         scene.fog = Fog.NOFOG;
         shouldDayNight = false;
@@ -115,14 +115,15 @@ public class GameLWJGL extends Game implements Runnable {
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
         float lightIntensity = 0f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
-        pointLight.attenuation = new PointLight.Attenuation(0,0f,0.01f);
+        pointLight.attenuation = new PointLight.Attenuation(0,0f,0.1f);
+        pointLight.pos = new Vector(-0.2f,30f,-10.26f);
         scene.pointLights.add(pointLight);
 ////
         lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
+        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 2f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(-65,0,0);
-        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 30,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2, ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2),null, null, "spotlight 1");
+        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 20,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2, ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2),null, null, "spotlight 1");
         scene.spotLights.add(spotLight);
 //        scene.models.add(spotLight);
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
@@ -148,7 +149,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         pauseButtons = new ArrayList<>();
         hud = new TestHUD(this);
-        hud.hudElements.get(1).mesh.materials.get(0).texture = spotLight.shadowMap.depthMap;
+        hud.hudElements.get(0).mesh.materials.get(0).texture = spotLight.shadowMap.depthMap;
         initModels();
         initPauseScreen();
 
@@ -196,8 +197,8 @@ public class GameLWJGL extends Game implements Runnable {
         scene.directionalLights.get(0).setScale(100);
 //        scene.directionalLights.get(1).mesh = sun;
 //        scene.directionalLights.get(1).setScale(100);
-        scene.spotLights.get(0).mesh = sun;
-        scene.spotLights.get(0).calculateBoundingBox();
+//        scene.spotLights.get(0).mesh = sun;
+//        scene.spotLights.get(0).calculateBoundingBox();
 
         hints.shouldGenerateTangentBiTangent = true;
         hints.shouldGenerateTangentBiTangent = false;
@@ -207,41 +208,41 @@ public class GameLWJGL extends Game implements Runnable {
 
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1);
         //skyMat.texture = scene.spotLights.get(0).shadowMap.depthMap;
-        skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
+        skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
         scene.skybox.mesh.materials.set(0,skyMat);
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
-        scene.skybox = null;
+//        scene.skybox = null;
 
         hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
 
-        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
-        testQuad.setPos(new Vector(-0.2f,1.5f,-38.26f));
-        testQuad.setScale(5);
-        testQuad.isOpaque=false;
-        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
-        scene.models.add(testQuad);
-        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
+//        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
+//        testQuad.setPos(new Vector(-0.2f,30f,-15.26f));
+//        testQuad.setScale(5);
+//        testQuad.isOpaque=false;
+//        testQuad.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
+//        scene.models.add(testQuad);
+//        testQuad.mesh.materials.get(0).texture = scene.spotLights.get(0).shadowMap.depthMap;
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", meshInstances, hints);
 
-        for(int i = 0;i < heightMap.length;i++) {
-            for(int j = 0;j < heightMap[i].length;j++) {
-                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
-                Model cube = new Model(this,cubeMesh , "cube");
-                cube.setScale(boxScale);
-                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
-//                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-                //cube.setMiniBehaviourObj(tempRot);
-//               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
-                cube.mesh.materials.set(0,cubeMat);
-                scene.models.add(cube);
-            }
-        }
+//        for(int i = 0;i < heightMap.length;i++) {
+//            for(int j = 0;j < heightMap[i].length;j++) {
+//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+//                Model cube = new Model(this,cubeMesh , "cube");
+//                cube.setScale(boxScale);
+//                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
+////                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+//                //cube.setMiniBehaviourObj(tempRot);
+////               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
+//                cube.mesh.materials.set(0,cubeMat);
+//                scene.models.add(cube);
+//            }
+//        }
         for(int i = 0;i < 10;i++) {
             for(int j = 0;j < 1;j++) {
                 float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
@@ -275,18 +276,19 @@ public class GameLWJGL extends Game implements Runnable {
 //        spider.setPos(spider.getPos().add(new Vector(0,50,10)));
 //        spider.setScale(0.1f);
 //
-//        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-//        Material ter = terrain.mesh.materials.get(0);
-//        ter.texture = new Texture("res/misc/crystalTexture.jpg");
-//        ter.diffuseMap = ter.texture;
-//        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
-//        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
-//        ter.reflectance = 1f;
-//        terrain.mesh.materials.set(0,ter);
-//
-//        terrain.mesh.initOpenGLMeshData();
-//        terrain.setScale(boxCount,yRange,boxCount);
-//        scene.models.add(terrain);
+
+        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
+        Material ter = terrain.mesh.materials.get(0);
+        ter.texture = new Texture("res/misc/crystalTexture.jpg");
+        ter.diffuseMap = ter.texture;
+        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
+        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
+        ter.reflectance = 1f;
+        terrain.mesh.materials.set(0,ter);
+
+        terrain.mesh.initOpenGLMeshData();
+        terrain.setScale(boxCount,yRange,boxCount);
+        scene.models.add(terrain);
 
 //        Model livingRoom = new Model(this,buildModelFromFileGL("res/livingRoom/luxuryHouseInterior.obj",meshInstances,hints),"livingRoom");
 //        livingRoom.setScale(0.1f);
@@ -410,7 +412,7 @@ public class GameLWJGL extends Game implements Runnable {
             params.timeDelta = timeDelta;
 
             scene.models.forEach(m -> m.tick(params));
-            scene.pointLights.get(0).pos = cam.getPos();
+//            scene.pointLights.get(0).pos = cam.getPos();
             scene.spotLights.get(0).setPos(cam.getPos());
             scene.spotLights.get(0).setOrientation(cam.getOrientation());
 //            scene.models.get(1).setPos(cam.getPos().sub(new Vector(2,0,0)));
@@ -420,35 +422,35 @@ public class GameLWJGL extends Game implements Runnable {
                 DirectionalLight directionalLight = scene.directionalLights.get(0);
                 SpotLight spotLight = scene.spotLights.get(0);
                 float delta = (10f * timeDelta);
-                float currentPitch = spotLight.getOrientation().getPitchYawRoll().get(0);
+                float currentPitch = directionalLight.getOrientation().getPitchYawRoll().get(0);
 
                 float lightAngle = currentPitch + delta;
                 if (lightAngle > 180 || lightAngle < 0) {
-                    //directionalLight.intensity = 0;
+                    directionalLight.intensity = 0;
                     //spotLight.pointLight.intensity = 0;
 //                    if (lightAngle >= 360) {
 //                        lightAngle = -90;
 //                    }
                 } else if (lightAngle <= 10 || lightAngle >= 170) {
                     float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
-                    //directionalLight.intensity = factor;
+                    directionalLight.intensity = factor;
                     //spotLight.pointLight.intensity = 1;
 //                    directionalLight.color.setDataElement(1, Math.min(factor, 0.9f));
 //                    directionalLight.color.setDataElement(2, Math.max(factor, 0.5f));
                 } else {
-                    //directionalLight.intensity = 1;
+                    directionalLight.intensity = 1;
                     //spotLight.pointLight.intensity = 1;
-//                    directionalLight.color = new Vector(3, 1);
+                    directionalLight.color = new Vector(3, 1);
                 }
                 double angRad = Math.toRadians(lightAngle);
 //                directionalLight.direction.setDataElement(0, (float) Math.sin(angRad));
 //                directionalLight.direction.setDataElement(1, (float) Math.cos(angRad));
                 Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
-                //directionalLight.setOrientation(rot.multiply(directionalLight.getOrientation()));
-                spotLight.setOrientation(rot.multiply(spotLight.getOrientation()));
+                directionalLight.setOrientation(rot.multiply(directionalLight.getOrientation()));
+//                spotLight.setOrientation(rot.multiply(spotLight.getOrientation()));
 //                spotLight.setPos(spotLight.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-10).add(new Vector(0,50,0)));
 
-//                scene.skybox.mesh.material.ambientColor = new Vector(4, directionalLight.intensity);
+                scene.skybox.mesh.materials.get(0).ambientColor = new Vector(4, directionalLight.intensity);
 
 //                System.out.println(currentPitch);
 //                directionalLight.direction = cam.getOrientation().getRotationMatrix().getColumn(2);
@@ -558,6 +560,7 @@ public class GameLWJGL extends Game implements Runnable {
                 else {
                     targetFPS = display.getRefreshRate();
                 }
+                System.out.println("Changed target resolution"+targetFPS);
             }
 
             if(input.keyDownOnce(input.V)) {
