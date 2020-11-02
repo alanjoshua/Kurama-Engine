@@ -106,6 +106,7 @@ public class RenderingEngineGL extends RenderingEngine {
         hudShaderProgram.createUniform("texture_sampler");
         hudShaderProgram.createUniform("projModelMatrix");
         hudShaderProgram.createUniform("color");
+        hudShaderProgram.createUniform("shouldGreyScale");
 
         }catch(Exception e) {
             e.printStackTrace();
@@ -262,6 +263,12 @@ public class RenderingEngineGL extends RenderingEngine {
             Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
             hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
+            if (m.shouldGreyScale) {
+                hudShaderProgram.setUniform("shouldGreyScale", 1);
+            }
+            else {
+                hudShaderProgram.setUniform("shouldGreyScale", 0);
+            }
 
             m.mesh.initToEndFullRender(0);
         }
@@ -330,7 +337,7 @@ public class RenderingEngineGL extends RenderingEngine {
             SpotLight light = scene.spotLights.get(i);
             float aspectRatio = (float)light.shadowMap.shadowMapWidth/(float)light.shadowMap.shadowMapHeight;
             //ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,1f,15000,1,1);
+            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,1f,100,1,1);
             directionalLightDepthShaderProgram.setUniform("orthoProjectionMatrix", projMatrix);
             glViewport(0,0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);

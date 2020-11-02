@@ -43,6 +43,7 @@ public class TestHUD extends HUD {
         texquad.setScale(300);
         texquad.mesh.initOpenGLMeshData();
         texquad.isOpaque=false;
+        texquad.shouldGreyScale = true;
         hudElements.add(texquad);
 
         demoText = new Text(game, "Kurama Engine -alpha 2.0", new FontTexture(FONT,CHARSET), "sample");

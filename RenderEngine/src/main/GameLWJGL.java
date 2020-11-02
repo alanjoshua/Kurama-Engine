@@ -150,6 +150,7 @@ public class GameLWJGL extends Game implements Runnable {
         pauseButtons = new ArrayList<>();
         hud = new TestHUD(this);
         hud.hudElements.get(0).mesh.materials.get(0).texture = spotLight.shadowMap.depthMap;
+
         initModels();
         initPauseScreen();
 

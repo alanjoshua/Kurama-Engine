@@ -40,6 +40,7 @@ public class Model {
 	public Model pathModel;
 	public boolean isOpaque = true;
 	public String identifier;
+	public boolean shouldGreyScale = false;
 
 	public Mesh mesh;
 	public Game game;
