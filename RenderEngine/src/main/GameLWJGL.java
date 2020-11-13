@@ -253,9 +253,9 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
 
-//        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
-//        scene.spotLights.get(0).setScale(0.05f);
-//        scene.models.add(scene.spotLights.get(0));
+        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
+        scene.spotLights.get(0).setScale(0.05f);
+        scene.models.add(scene.spotLights.get(0));
 
 //        Model torch = new Model(this,  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints), "torch");
         scene.spotLights.get(0).setPos(new Vector(7, 30, 20));
@@ -484,8 +484,8 @@ public class GameLWJGL extends Game implements Runnable {
             scene.models.forEach(m -> m.tick(params));
 
 //            scene.pointLights.get(0).pos = cam.getPos();
-            scene.spotLights.get(0).setPos(cam.getPos());
-//            scene.spotLights.get(0).setPos(cam.getPos().sub(cam.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
+//            scene.spotLights.get(0).setPos(cam.getPos());
+            scene.spotLights.get(0).setPos(cam.getPos().sub(cam.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
             scene.spotLights.get(0).setOrientation(cam.getOrientation());
 
 //            scene.spotLights.get(1).setPos(cam.getPos());
