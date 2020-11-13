@@ -42,7 +42,7 @@ public class SpotLight extends Model {
 
     public Matrix generateShadowProjectionMatrix(float n, float f, float x, float y) {
         float aspectRatio = (float) shadowMap.shadowMapWidth / (float) shadowMap.shadowMapHeight;
-        Matrix projMatrix = Matrix.buildPerspectiveMatrix(angle, aspectRatio, n, f, x, y);
+        Matrix projMatrix = Matrix.buildPerspectiveMatrix(angle*2, aspectRatio, n, f, x, y);
         shadowProjectionMatrix = projMatrix;
         return projMatrix;
     }

@@ -148,20 +148,20 @@ public class GameLWJGL extends Game implements Runnable {
 //     -------------------------------------------------------------------------------------------------------------------
 //                                                   Second Spot Light
 
-        lightPos = new Vector(new float[]{0,0,10});
-        PointLight s2_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
-        s2_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
-        Quaternion coneOrientation_2 = Quaternion.getQuaternionFromEuler(-65,0,0);
-        SpotLight spotLight_2 = new SpotLight(this,s2_pointLight, coneOrientation_2, 25,
-                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
-                null, null, null,"spotlight 1");
-
-        spotLight_2.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
-
-        scene.spotLights.add(spotLight_2);
-
-        spotLight_2.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
-        spotLight_2.isOpaque = false;
+//        lightPos = new Vector(new float[]{0,0,10});
+//        PointLight s2_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
+//        s2_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
+//        Quaternion coneOrientation_2 = Quaternion.getQuaternionFromEuler(-65,0,0);
+//        SpotLight spotLight_2 = new SpotLight(this,s2_pointLight, coneOrientation_2, 25,
+//                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+//                null, null, null,"spotlight 1");
+//
+//        spotLight_2.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
+//
+//        scene.spotLights.add(spotLight_2);
+//
+//        spotLight_2.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
+//        spotLight_2.isOpaque = false;
 // ------------------------------------------------------------------------------------------------------------------------
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
@@ -253,9 +253,9 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
 
-        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
-        scene.spotLights.get(0).setScale(0.05f);
-        scene.models.add(scene.spotLights.get(0));
+//        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
+//        scene.spotLights.get(0).setScale(0.05f);
+//        scene.models.add(scene.spotLights.get(0));
 
 //        Model torch = new Model(this,  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints), "torch");
         scene.spotLights.get(0).setPos(new Vector(7, 30, 20));
@@ -484,11 +484,12 @@ public class GameLWJGL extends Game implements Runnable {
             scene.models.forEach(m -> m.tick(params));
 
 //            scene.pointLights.get(0).pos = cam.getPos();
+            scene.spotLights.get(0).setPos(cam.getPos());
 //            scene.spotLights.get(0).setPos(cam.getPos().sub(cam.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
-//            scene.spotLights.get(0).setOrientation(cam.getOrientation());
+            scene.spotLights.get(0).setOrientation(cam.getOrientation());
 
-            scene.spotLights.get(1).setPos(cam.getPos());
-            scene.spotLights.get(1).setOrientation(cam.getOrientation());
+//            scene.spotLights.get(1).setPos(cam.getPos());
+//            scene.spotLights.get(1).setOrientation(cam.getOrientation());
 
 
             if(shouldDayNight) {
