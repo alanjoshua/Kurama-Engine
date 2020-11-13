@@ -4,6 +4,7 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Scene;
 import engine.DataStructure.Texture;
 import engine.Effects.ShadowMap;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
@@ -96,8 +97,10 @@ public class Simulation extends Game {
         pointLight.attenuation = new PointLight.Attenuation(0f,0f,1f);
         scene.pointLights.add(pointLight);
 
-        scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getQuaternionFromEuler(90,0,0),1,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 1, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1),null, null, "light"));
-
+        scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),
+                Quaternion.getQuaternionFromEuler(90,0,0),1,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 1,
+                ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1),null, null, null, "light"));  //Add shadowlight projection code
+        scene.directionalLights.get(0).shadowProjectionMatrix = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
         boxesAtDestination = new ArrayList<>();

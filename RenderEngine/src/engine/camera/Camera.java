@@ -111,21 +111,22 @@ public class Camera {
 
 			if (game.getRenderingEngine().getProjectionMode() == ProjectionMode.PERSPECTIVE) {
 				
-				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
-				
-				if (imageAspectRatio >= 1) {
-					top = right;
-					right = top * imageAspectRatio;
-				} else {
-					top = right * (1 / imageAspectRatio);
-				}
-			
-				left = -right;
-				bottom = -top;
-				fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
-				canvasWidth = right * 2;
-				canvasHeight = top * 2;
-				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
+//				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
+//
+//				if (imageAspectRatio >= 1) {
+//					top = right;
+//					right = top * imageAspectRatio;
+//				} else {
+//					top = right * (1 / imageAspectRatio);
+//				}
+//
+//				left = -right;
+//				bottom = -top;
+//				fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
+//				canvasWidth = right * 2;
+//				canvasHeight = top * 2;
+				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveMatrix(fovX, imageAspectRatio, nearClippingPlane, farClippingPlane, 1, 1);
+//				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 			}
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				

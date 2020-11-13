@@ -9,6 +9,7 @@ import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Scene;
 import engine.Effects.Fog;
 import engine.Effects.ShadowMap;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Terrain.TerrainUtils;
@@ -93,9 +94,15 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.ambientLight = new Vector(0f,0f,0f);
-        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null,"light");
-        scene.directionalLights.add(directionalLight);
+        Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
+
+        scene.ambientLight = new Vector(0.05f,0.05f,0.05f);
+        DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
+                Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
+                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+                null, null, directionalLightOrthoProjection, "light");
+
+//        scene.directionalLights.add(directionalLight);
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
         directionalLight.isOpaque = false;
@@ -104,7 +111,11 @@ public class GameLWJGL extends Game implements Runnable {
         scene.fog = Fog.NOFOG;
         shouldDayNight = false;
 
-        DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),-180),0f,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),null, null, "light2");
+        DirectionalLight directionalLight2 = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
+                Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),-180),0f,
+                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+                null, null, directionalLightOrthoProjection, "light2");
+
         //scene.directionalLights.add(directionalLight2);
         directionalLight2.setPos(new Vector(-0.2f,1.5f,-20.26f));
         directionalLight2.lightPosScale = 500;
@@ -115,19 +126,43 @@ public class GameLWJGL extends Game implements Runnable {
         Vector lightPos = new Vector(new float[]{-1f,0f,0f});
         float lightIntensity = 0f;
         PointLight pointLight = new PointLight(lightColor,lightPos,lightIntensity);
-        pointLight.attenuation = new PointLight.Attenuation(0,0f,0.1f);
+        pointLight.attenuation = new PointLight.Attenuation(0,0f,0.01f);
         pointLight.pos = new Vector(-0.2f,30f,-10.26f);
-        scene.pointLights.add(pointLight);
+//        scene.pointLights.add(pointLight);
 ////
         lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 2f);
+        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 5f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
-        Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(-65,0,0);
-        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 20,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2, ShadowMap.DEFAULT_SHADOWMAP_WIDTH*2),null, null, "spotlight 1");
+        Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
+        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 25,
+                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+                null, null, null,"spotlight 1");
+
+//        spotLight.shadowProjectionMatrix = Matrix.buildOrthographicProjectionMatrix(1,700,10,-10,-10,10);
+        spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
+
         scene.spotLights.add(spotLight);
-//        scene.models.add(spotLight);
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
         spotLight.isOpaque = false;
+
+//     -------------------------------------------------------------------------------------------------------------------
+//                                                   Second Spot Light
+
+        lightPos = new Vector(new float[]{0,0,10});
+        PointLight s2_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
+        s2_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
+        Quaternion coneOrientation_2 = Quaternion.getQuaternionFromEuler(-65,0,0);
+        SpotLight spotLight_2 = new SpotLight(this,s2_pointLight, coneOrientation_2, 25,
+                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+                null, null, null,"spotlight 1");
+
+        spotLight_2.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
+
+        scene.spotLights.add(spotLight_2);
+
+        spotLight_2.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
+        spotLight_2.isOpaque = false;
+// ------------------------------------------------------------------------------------------------------------------------
 
         cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 display.getWidth(), display.getHeight());
@@ -193,10 +228,11 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = false;
         hints.shouldGenerateTangentBiTangent = false;
         Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
-        scene.directionalLights.get(0).mesh = sun;
-        scene.directionalLights.get(0).calculateBoundingBox();
-        scene.directionalLights.get(0).setScale(100);
+//        scene.directionalLights.get(0).mesh = sun;
+//        scene.directionalLights.get(0).calculateBoundingBox();
+//        scene.directionalLights.get(0).setScale(100);
 //        scene.directionalLights.get(1).mesh = sun;
+
 //        scene.directionalLights.get(1).setScale(100);
 //        scene.spotLights.get(0).mesh = sun;
 //        scene.spotLights.get(0).calculateBoundingBox();
@@ -216,6 +252,16 @@ public class GameLWJGL extends Game implements Runnable {
 
         hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
+
+        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
+        scene.spotLights.get(0).setScale(0.05f);
+        scene.models.add(scene.spotLights.get(0));
+
+//        Model torch = new Model(this,  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints), "torch");
+        scene.spotLights.get(0).setPos(new Vector(7, 30, 20));
+//        scene.models.add(torch);
+
+//        hints.shouldRotate = 0;
 
 //        Model testQuad = new Model(this,MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",meshInstances,hints),"quad");
 //        testQuad.setPos(new Vector(-0.2f,30f,-15.26f));
@@ -244,10 +290,26 @@ public class GameLWJGL extends Game implements Runnable {
 //                scene.models.add(cube);
 //            }
 //        }
+
+//        for(int i = 0;i < 10;i++) {
+//            for(int j = 0;j < 1;j++) {
+//                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
+//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+//                Model cube = new Model(this,cubeMesh , "cube");
+//                cube.setScale(boxScale);
+////                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
+//                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+//                //cube.setMiniBehaviourObj(tempRot);
+////               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
+//                cube.mesh.materials.set(0,cubeMat);
+//                scene.models.add(cube);
+//            }
+//        }
+
         for(int i = 0;i < 10;i++) {
-            for(int j = 0;j < 1;j++) {
-                float y = (int)(heightMap[i][j] * yRange * 2) * boxScale*2;
-                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y,j*boxScale*2}));
+            for(int y = 0;y < 10;y++) {
+
+                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
                 cube.setScale(boxScale);
 //                cube.setPos(pos.sub(new Vector(new float[]{boxCount*boxScale,0,boxCount*boxScale})));
@@ -260,11 +322,19 @@ public class GameLWJGL extends Game implements Runnable {
         }
 //
 //        Model apricot = new Model(this,buildModelFromFileGL("res/apricot/Apricot_02_hi_poly.obj",meshInstances,hints),"apricot2");
-//        apricot.setPos(apricot.getPos().add(new Vector(10,50,0)));
+//        apricot.setPos(apricot.getPos().add(new Vector(7,30,10)));
+//        apricot.setScale(0.5f);
 //        scene.models.add(apricot);
+
+        hints.shouldSmartBakeVertexAttributes = false;
+        hints.shouldDumbBakeVertexAttributes = true;
+        Model plant = new Model(this, buildModelFromFileGL("res/plant/01Alocasia_obj.obj", meshInstances, hints), "plant");
+        plant.setPos(new Vector(7, 30, 10));
+        plant.setScale(0.005f);
+        scene.models.add(plant);
 //
 //        Model plane = new Model(this,buildModelFromFileGL("res/E-45-Aircraft/E 45 Aircraft_obj.obj",meshInstances,hints),"plane");
-//        plane.setPos(plane.getPos().add(new Vector(5,-5,-15)));
+//        plane.setPos(plane.getPos().add(new Vector(0,5,0)));
 //        scene.models.add(plane);
 //
 //        Model wolf = new Model(this,buildModelFromFileGL("res/wolf/Wolf_One_obj.obj",meshInstances,hints),"wolf");
@@ -294,7 +364,6 @@ public class GameLWJGL extends Game implements Runnable {
 //        Model livingRoom = new Model(this,buildModelFromFileGL("res/livingRoom/luxuryHouseInterior.obj",meshInstances,hints),"livingRoom");
 //        livingRoom.setScale(0.1f);
 //        scene.models.add(livingRoom);
-//        System.out.println(livingRoom.mesh.materials.size());
 
         scene.buildModelMap();
 
@@ -413,11 +482,14 @@ public class GameLWJGL extends Game implements Runnable {
             params.timeDelta = timeDelta;
 
             scene.models.forEach(m -> m.tick(params));
+
 //            scene.pointLights.get(0).pos = cam.getPos();
-            scene.spotLights.get(0).setPos(cam.getPos());
-            scene.spotLights.get(0).setOrientation(cam.getOrientation());
-//            scene.models.get(1).setPos(cam.getPos().sub(new Vector(2,0,0)));
-//            scene.models.get(1).setOrientation(cam.getOrientation());
+//            scene.spotLights.get(0).setPos(cam.getPos().sub(cam.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
+//            scene.spotLights.get(0).setOrientation(cam.getOrientation());
+
+            scene.spotLights.get(1).setPos(cam.getPos());
+            scene.spotLights.get(1).setOrientation(cam.getOrientation());
+
 
             if(shouldDayNight) {
                 DirectionalLight directionalLight = scene.directionalLights.get(0);

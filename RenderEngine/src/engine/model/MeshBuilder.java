@@ -7,6 +7,8 @@ import java.util.List;
 
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
+import engine.Math.Matrix;
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.utils.Utils;
 import engine.DataStructure.LinkedList.CircularDoublyLinkedList;
@@ -34,6 +36,7 @@ public class MeshBuilder {
 		public Vector addConstantColor;
 		public boolean convertToLines = false;
 		public boolean shouldInvertNormals = false;
+		public int shouldRotate = 180;
 	}
 
 	public static Mesh buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
@@ -49,6 +52,7 @@ public class MeshBuilder {
 //			return new Model(resMesh,loc);
 		}
 		else {
+			System.out.println("loading raw data for: "+loc);
 			resMesh = loadRawData(loc);
 
 			if(hints == null) {
@@ -61,41 +65,69 @@ public class MeshBuilder {
 
 			}
 			else {
+				if (hints.shouldRotate != 0) {
+					Quaternion rot = Quaternion.getAxisAsQuat(new Vector(0, 1, 0), hints.shouldRotate);
+					List<Vector> listVerts = resMesh.getAttributeList(Mesh.POSITION);
+					Matrix listAsMat = new Matrix(listVerts).getMatrixWithoutLastRow();
+
+					List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).addRow(new Vector(listVerts.size(), 1)).convertToColumnVectorList();
+					resMesh.setAttribute(newVertices, Mesh.POSITION);
+				}
+
 				if(hints.shouldTriangulate) {
+					System.out.println("triangulating..");
 					resMesh = triangulate(resMesh, hints.forceEarClipping);
+					System.out.println("Finished triangulation");
 				}
 
 				if(hints.shouldInvertNormals) {
+					System.out.println("inverting normals...");
 					resMesh = reverseNormals(resMesh);
+					System.out.println("Finished inverting normals");
 				}
 
 				if(hints.shouldGenerateTangentBiTangent) {
+					System.out.println("Generating tangets and bi tangents...");
 					resMesh = generateTangentAndBiTangentVectors(resMesh);
+					System.out.println("Finished Generating tangets and bi tangents");
 				}
 
 				if(hints.shouldSmartBakeVertexAttributes) {
+					System.out.println("smart baking....");
 					resMesh = bakeMesh(resMesh,hints);
+					System.out.println("Finished smart bake");
 				}
 				else {
 					if(hints.shouldDumbBakeVertexAttributes) {
+						System.out.println("Dumb baking...");
 						resMesh = dumbBake(resMesh, hints);
+						System.out.println("Finished dumb bake");
 					}
 				}
 
 				if(hints.addRandomColor) {
+					System.out.println("Adding random colours...");
 					resMesh = addRandomColor(resMesh);
+					System.out.println("Finished adding random colours");
 				}
 
 				if(hints.addConstantColor!=null) {
+					System.out.println("Adding constant colour...");
 					resMesh = addColor(resMesh,hints.addConstantColor);
+					System.out.println("Finished adding constant colour");
+
 				}
 
 				if(hints.convertToLines) {
+					System.out.println("Converting to lines...");
 					resMesh = convertToLines(resMesh,hints);
+					System.out.println("Finished converting to lines");
 				}
 
 				if(hints.initLWJGLAttribs) {
+					System.out.println("Initting LWJGL attribs...");
 					resMesh.initOpenGLMeshData();
+					System.out.println("Finishing initting LWJGL attribs");
 				}
 			}
 

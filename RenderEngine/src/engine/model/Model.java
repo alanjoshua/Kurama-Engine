@@ -41,6 +41,7 @@ public class Model {
 	public boolean isOpaque = true;
 	public String identifier;
 	public boolean shouldGreyScale = false;
+	public boolean shouldLinearizeDepthInHUD = false;
 
 	public Mesh mesh;
 	public Game game;

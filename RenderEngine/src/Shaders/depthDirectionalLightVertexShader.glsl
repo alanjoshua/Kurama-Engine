@@ -8,8 +8,8 @@ layout (location = 4) in vec3 tangent;
 layout (location = 5) in vec3 biTangent;
 
 uniform mat4 modelLightViewMatrix;
-uniform mat4 orthoProjectionMatrix;
+uniform mat4 projectionMatrix;
 
 void main() {
-    gl_Position = orthoProjectionMatrix * modelLightViewMatrix * position;
+    gl_Position = projectionMatrix * modelLightViewMatrix * position;
 }

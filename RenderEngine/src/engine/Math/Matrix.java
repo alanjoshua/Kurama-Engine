@@ -30,6 +30,11 @@ public class Matrix {
 
 	}
 
+	public String getShape() {
+		int[] ret = {rows, cols};
+		return "r:"+rows + " c:"+cols;
+	}
+
 	public Matrix(int r, int c, float val) {
 		rows = r;
 		cols = c;

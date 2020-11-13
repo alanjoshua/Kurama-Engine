@@ -15,7 +15,8 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelLightViewMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 modelSpotLightViewMatrix[MAX_SPOT_LIGHTS];
-uniform mat4 orthoProjectionMatrix;
+uniform mat4 directionalLightOrthoMatrix[MAX_DIRECTIONAL_LIGHTS];
+uniform mat4 spotlightPerspMatrix[MAX_SPOT_LIGHTS];
 uniform int numDirectionalLights;
 uniform int numberOfSpotLights;
 
@@ -48,11 +49,11 @@ void main() {
     TBN = mat3(T, B, N);
 
     for(int i = 0;i < numDirectionalLights;i++) {
-        mLightViewVertexPos[i] = orthoProjectionMatrix * modelLightViewMatrix[i] * position;
+        mLightViewVertexPos[i] = directionalLightOrthoMatrix[i] * modelLightViewMatrix[i] * position;
     }
     for(int i = 0;i < numberOfSpotLights;i++) {
-        mSpotLightViewVertexPos[i] = modelSpotLightViewMatrix[i] * position;
-        mSpotLightViewVertexPos[i].xyz = mSpotLightViewVertexPos[i].xyz/mSpotLightViewVertexPos[i].w;
+        mSpotLightViewVertexPos[i] = spotlightPerspMatrix[i] * modelSpotLightViewMatrix[i] * position;
+        mSpotLightViewVertexPos[i] = mSpotLightViewVertexPos[i]/mSpotLightViewVertexPos[i].w;
     }
     materialInd = materialIndex;
     numDirLight = numDirectionalLights;

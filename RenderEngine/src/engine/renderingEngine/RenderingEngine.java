@@ -62,13 +62,13 @@ public abstract class RenderingEngine {
         spotLightsRes = spotLights.stream()
                 .map(l -> {
                     SpotLight currSpotLight = new SpotLight(l);
+
                     //Vector dir = new Vector(currSpotLight.coneDirection).addDimensionToVec(0);
                     currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-1).addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
 
                     Vector spotLightPos = currSpotLight.pointLight.pos;
                     Vector auxSpot = new Vector(spotLightPos).addDimensionToVec(1);
-                    currSpotLight.pointLight.pos = worldToCam.matMul(auxSpot).getColumn(0).removeDimensionFromVec(3);
-
+                    currSpotLight.setPos(worldToCam.matMul(auxSpot).getColumn(0).removeDimensionFromVec(3));
                     return currSpotLight;
                 })
                 .collect(Collectors.toList());
