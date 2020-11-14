@@ -96,7 +96,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
-        scene.ambientLight = new Vector(0.05f,0.05f,0.05f);
+        scene.ambientLight = new Vector(0.1f,0.1f,0.1f);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
@@ -134,7 +134,7 @@ public class GameLWJGL extends Game implements Runnable {
         PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 5f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
-        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 25,
+        SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
                 null, null, null,"spotlight 1");
 
@@ -225,9 +225,9 @@ public class GameLWJGL extends Game implements Runnable {
         int boxCount = 100;
         float yRange = 60;
 
-        hints.shouldSmartBakeVertexAttributes = false;
-        hints.shouldGenerateTangentBiTangent = false;
-        Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
+        hints.shouldSmartBakeVertexAttributes = true;
+        hints.shouldGenerateTangentBiTangent = true;
+//        Mesh sun =buildModelFromFileGL("res/glassball/glassball.obj",meshInstances,hints);
 //        scene.directionalLights.get(0).mesh = sun;
 //        scene.directionalLights.get(0).calculateBoundingBox();
 //        scene.directionalLights.get(0).setScale(100);
@@ -237,8 +237,8 @@ public class GameLWJGL extends Game implements Runnable {
 //        scene.spotLights.get(0).mesh = sun;
 //        scene.spotLights.get(0).calculateBoundingBox();
 
+
         hints.shouldGenerateTangentBiTangent = true;
-        hints.shouldGenerateTangentBiTangent = false;
         hints.shouldSmartBakeVertexAttributes = true;
         scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
@@ -306,8 +306,8 @@ public class GameLWJGL extends Game implements Runnable {
 //            }
 //        }
 
-        for(int i = 0;i < 10;i++) {
-            for(int y = 0;y < 10;y++) {
+        for(int i = 0;i < 20;i++) {
+            for(int y = 0;y < 20;y++) {
 
                 Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
@@ -326,10 +326,10 @@ public class GameLWJGL extends Game implements Runnable {
 //        apricot.setScale(0.5f);
 //        scene.models.add(apricot);
 
-        hints.shouldSmartBakeVertexAttributes = false;
-        hints.shouldDumbBakeVertexAttributes = true;
+        hints.shouldSmartBakeVertexAttributes = true;
+//        hints.shouldDumbBakeVertexAttributes = true;
         Model plant = new Model(this, buildModelFromFileGL("res/plant/01Alocasia_obj.obj", meshInstances, hints), "plant");
-        plant.setPos(new Vector(7, 30, 10));
+        plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);
         scene.models.add(plant);
 //

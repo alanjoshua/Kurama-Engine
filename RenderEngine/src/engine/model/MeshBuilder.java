@@ -196,6 +196,12 @@ public class MeshBuilder {
 
 	}
 
+//	This function is used to create a single index list for vertex attribute data that each have their own index list.
+//	The latter is obviously more space efficient since it doesn't have to store the same data repeatedly, but openGL only
+//	accepts one index list, so baking of indices is required.
+
+//	Smart bake is more space efficient than this function, but this is probably faster to run
+
 	public static Mesh dumbBake(Mesh mesh, ModelBuilderHints hints) {
 
 		if(mesh.indices != null) {
@@ -227,7 +233,6 @@ public class MeshBuilder {
 							newVertAttribs.get(i).add(mesh.getAttributeList(i).get(at));
 						}catch(Exception e) {
 							newVertAttribs.get(i).add(null);
-							//System.out.println(i);
 						}
 					}
 					else {
@@ -256,23 +261,46 @@ public class MeshBuilder {
 
 	}
 
-	public static Mesh bakeMesh(Mesh mesh,ModelBuilderHints hints) {
+
+//	This function is used to create a single index list for vertex attribute data that each have their own index list.
+//	The latter is obviously more space efficient since it doesn't have to store the same data repeatedly, but openGL only
+//	accepts one index list, so baking of indices is required.
+
+//	This function aims to be a bit more efficient in terms of space than "dumbBake" in how it makes one index list, but
+//	"dumbBake" is probably faster to run
+
+	public static Mesh bakeMesh(Mesh mesh, ModelBuilderHints hints) {
 
 		List<Integer> indexList = new ArrayList<>();
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
-		List<Vertex> uniqueVertices = new ArrayList<>();
+		Map<Vertex, Integer> uniqueVertices = new HashMap();
 		List<Face> newFaces = new ArrayList<>();
 
 		for(int i = 0;i < mesh.vertAttributes.size();i++) {
 			newVertAttribs.add(new ArrayList<>());
 		}
 
+//		Loop through all Vertices in faces, and add each unique vertex to unique vertices list
+//		(Two vertices are the same only if they have the same ind for all attributes)
+
+//		Now create a new index list using these unique vertices, and attribute list based on this new index list.
+		int lastIndexVal = 0;
 		for(Face f:mesh.faces) {
 			for(Vertex v: f.vertices) {
-				int vInd = uniqueVertices.indexOf(v);
+
+				if(f.vertices.size() != 3) {
+				throw new IllegalArgumentException("only triangles could be baked in this method: "+mesh.meshIdentifier);
+				}
+
+				int vInd = uniqueVertices.getOrDefault(v, -1);
+
+//				If vertex is not in uniqueVertices List
 				if(uniqueVertices.size() == 0 || vInd < 0) {
-					uniqueVertices.add(v);
-					indexList.add(uniqueVertices.size() - 1);
+
+					uniqueVertices.put(v, lastIndexVal);
+					lastIndexVal++;
+					indexList.add(lastIndexVal - 1);
+
 					for(int i =0;i < newVertAttribs.size();i++) {
 						Integer ind = v.getAttribute(i);
 						if(ind!=null) {
@@ -282,23 +310,15 @@ public class MeshBuilder {
 							newVertAttribs.get(i).add(null);
 						}
 					}
-				}
-				else {
+
+				}else {
 					indexList.add(vInd);
 				}
+
 			}
 		}
 
-		for(Face f:mesh.faces) {
-			if(f.vertices.size() != 3) {
-				throw new IllegalArgumentException("only triangles could be baked in this method: "+mesh.meshIdentifier);
-			}
-			for(Vertex v: f.vertices) {
-				indexList.add(uniqueVertices.indexOf(v));
-			}
-		}
-
-//		Assumes there are only triangles
+//		Create new vertices and faces using new index list
 		for(int i = 0;i < indexList.size();i+=3) {
 			Face temp = new Face();
 			for(int k = 0;k < 3;k++) {
