@@ -805,14 +805,14 @@ public class MeshBuilder {
 //				First newMtl in library
 				if(newSplit[0].equalsIgnoreCase("newmtl") && currentMatName == null) {
 					currentMatName = newSplit[1];
-					currentMaterial = new Material();
+					currentMaterial = new Material(currentMatName);
 				}
 
 //				New mtl is started. Add current mtl to map
 				else if(currentMatName != null && newSplit[0].equalsIgnoreCase("newmtl")) {
 					map.put(currentMatName,currentMaterial);
 					currentMatName = newSplit[1];
-					currentMaterial = new Material();
+					currentMaterial = new Material(currentMatName);
 				}
 
 //				Currently reading a mtl

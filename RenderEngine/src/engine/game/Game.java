@@ -1,7 +1,7 @@
 package engine.game;
 
 import engine.DataStructure.GridNode;
-import engine.DataStructure.Scene;
+import engine.scene.Scene;
 import engine.model.HUD;
 import engine.Math.Vector;
 import engine.display.Display;
@@ -59,7 +59,13 @@ public abstract class Game implements Runnable {
     }
 
     public void start() {
-        gameLoopThread.start();
+        String osName = System.getProperty("os.name");
+        if ( osName.contains("Mac") ) {
+            gameLoopThread.run();   //To make this program compatible with macs
+        } else {
+            System.out.println("start called");
+            gameLoopThread.start();
+        }
     }
 
     public void run() {

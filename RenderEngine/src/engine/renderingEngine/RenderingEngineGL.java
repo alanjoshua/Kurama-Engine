@@ -1,7 +1,7 @@
 package engine.renderingEngine;
 
 import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Scene;
+import engine.scene.Scene;
 import engine.lighting.SpotLight;
 import engine.model.HUD;
 import engine.Math.Matrix;

@@ -18,6 +18,11 @@ public class Texture {
     private final int id;
     public final int width;
     public final int height;
+    public String fileName="";
+
+    public boolean equals(Texture t) {
+        return (id == t.id) && (width == t.width) && (height == t.height) && (fileName == t.fileName);
+    }
 
     public Texture(String fileName) {
         ByteBuffer buff;
@@ -38,6 +43,7 @@ public class Texture {
             height = h.get();
         }
        this.id = createTexture(buff);
+       this.fileName = fileName;
     }
 
     public Texture(ByteBuffer imageBuffer) {

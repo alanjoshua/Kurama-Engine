@@ -1,7 +1,7 @@
 package ENED_Simulation;
 
 import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Scene;
+import engine.scene.Scene;
 import engine.DataStructure.Texture;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
@@ -142,10 +142,10 @@ public class Simulation extends Game {
 
         pauseButtons = new ArrayList<>();
 
-        boxWrongMat = new Material(new Vector(new float[]{1,0,0,1}),1);
-        boxRequiredMat = new Material(new Vector(new float[]{0,1,0,1}),1);
-        pathMat = new Material(new Vector(new float[]{0,1,0,1}),1);
-        nullMat = new Material(new Vector(new float[]{0,0,0,0}),0);
+        boxWrongMat = new Material(new Vector(new float[]{1,0,0,1}),1, "boxWrong");
+        boxRequiredMat = new Material(new Vector(new float[]{0,1,0,1}),1, "boxRequired");
+        pathMat = new Material(new Vector(new float[]{0,1,0,1}),1, "pathMat");
+        nullMat = new Material(new Vector(new float[]{0,0,0,0}),0, "nullMat");
 
         initModels();
         initPauseScreen();
@@ -222,7 +222,7 @@ public class Simulation extends Game {
         }catch (Exception e) {
             System.out.println("Couldn't load skybox texture");
         }
-        Material skyMat = new Material(tex,1);
+        Material skyMat = new Material(tex,1, "skyMat");
         skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
         scene.skybox.mesh.materials.set(0,skyMat);
 

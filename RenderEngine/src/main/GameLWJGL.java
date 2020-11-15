@@ -1,12 +1,10 @@
 package main;
 
 import java.awt.*;
-import java.io.File;
 import java.util.*;
 import java.util.List;
 
-import engine.DataStructure.Mesh.Vertex;
-import engine.DataStructure.Scene;
+import engine.scene.Scene;
 import engine.Effects.Fog;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
@@ -28,16 +26,14 @@ import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.MeshBuilder;
 import engine.camera.Camera;
-import engine.model.Terrain;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
+import engine.scene.SceneUtils;
 import engine.utils.Utils;
 import static engine.model.MeshBuilder.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE1;
 
 public class GameLWJGL extends Game implements Runnable {
 
@@ -66,22 +62,10 @@ public class GameLWJGL extends Game implements Runnable {
     protected boolean prevGameState = false;
 
     Map<String, Mesh> meshInstances;
-    Terrain terrain;
     private boolean shouldDayNight = false;
 
     public GameLWJGL(String threadName) {
         super(threadName);
-    }
-
-    @Override
-    public void start() {
-        String osName = System.getProperty("os.name");
-        if ( osName.contains("Mac") ) {
-            gameLoopThread.run();   //To make this program compatible with macs
-        } else {
-            System.out.println("start called");
-            gameLoopThread.start();
-        }
     }
 
     public void init() {
@@ -193,6 +177,8 @@ public class GameLWJGL extends Game implements Runnable {
         cam.updateValues();
         targetFPS = ((DisplayLWJGL)display).getRefreshRate();
 
+        SceneUtils.writeSceneToKE(scene, "");
+
     }
 
     public void initModels() {
@@ -214,7 +200,7 @@ public class GameLWJGL extends Game implements Runnable {
             e.printStackTrace();
         }
 
-        Material cubeMat = new Material(tex);
+        Material cubeMat = new Material(tex, "minecraftCubeMat");
         cubeMat.diffuseMap = cubeMat.texture;
         cubeMat.specularMap = cubeMat.texture;
         cubeMat.specularPower = 10;
@@ -243,7 +229,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",meshInstances,hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
 
-        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1);
+        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         //skyMat.texture = scene.spotLights.get(0).shadowMap.depthMap;
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
         scene.skybox.mesh.materials.set(0,skyMat);
@@ -348,7 +334,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        spider.setScale(0.1f);
 //
 
-        terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
+        Model terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
         Material ter = terrain.mesh.materials.get(0);
         ter.texture = new Texture("res/misc/crystalTexture.jpg");
         ter.diffuseMap = ter.texture;
@@ -534,6 +520,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(!isGameRunning) {
+            System.out.println("paused");
             pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));
         }
         else {
