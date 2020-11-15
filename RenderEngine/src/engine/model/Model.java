@@ -42,6 +42,7 @@ public class Model {
 	public String identifier;
 	public boolean shouldGreyScale = false;
 	public boolean shouldLinearizeDepthInHUD = false;
+	public boolean shouldRender = true;
 
 	public Mesh mesh;
 	public Game game;
