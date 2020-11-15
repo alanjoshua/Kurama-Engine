@@ -49,7 +49,7 @@ public class TestHUD extends HUD {
         hudElements.add(texquad);
 
         demoText = new Text(game, "Kurama Engine -alpha 2.0", new FontTexture(FONT,CHARSET), "sample");
-        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1f});
+        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
         System.out.println("Demo tex id: "+demoText.fontTexture.texture.getId());
 //        System.out.println("QUAD ID: "+texquad.mesh.materials.get(0).texture.getId());
         demoText.shouldGreyScale = false;

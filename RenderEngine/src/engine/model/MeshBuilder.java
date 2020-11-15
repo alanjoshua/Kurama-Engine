@@ -858,6 +858,11 @@ public class MeshBuilder {
 					if(newSplit[0].equalsIgnoreCase("map_ns")) { //Specular highlight
 //
 					}
+
+					if(newSplit[0].equalsIgnoreCase("reflectance")) { //Reflectance
+						currentMaterial.reflectance = Float.parseFloat(newSplit[1]);
+					}
+
 					if(newSplit[0].equalsIgnoreCase("map_bump") || newSplit[0].equalsIgnoreCase("bump")) {
 						try {
 							currentMaterial.normalMap = new Texture(parentDirectory+""+newSplit[1]);

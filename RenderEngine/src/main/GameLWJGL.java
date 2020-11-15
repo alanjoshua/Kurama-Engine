@@ -168,17 +168,20 @@ public class GameLWJGL extends Game implements Runnable {
 
         pauseButtons = new ArrayList<>();
         hud = new TestHUD(this);
-        hud.hudElements.get(0).mesh.materials.get(0).texture = spotLight.shadowMap.depthMap;
+
+        Material quadMat = new Material();
+        quadMat.matName = "shadowMapVisualizer";
+        quadMat.texture = spotLight.shadowMap.depthMap;
+        hud.hudElements.get(0).mesh.materials.set(0, quadMat);
 
         initModels();
         initPauseScreen();
 
         display.setClearColor(0,0,0,1);
         cam.updateValues();
-        targetFPS = ((DisplayLWJGL)display).getRefreshRate();
+        targetFPS = display.getRefreshRate();
 
-        SceneUtils.writeSceneToKE(scene, "");
-
+        SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
     }
 
     public void initModels() {

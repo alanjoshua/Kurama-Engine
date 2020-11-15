@@ -554,14 +554,13 @@ public class Vector {
 	
 	public String toString() {
 		String res = "";
-		res+="[";
 		for (int i = 0; i < getNumberOfDimensions(); i++) {
 			res+=(getData()[i]);
 			if (i + 1 != getNumberOfDimensions()) {
-				res+="    ";
+				res+=" ";
 			}
 		}
-		res+="]";
+
 		return res;
 	}
 

@@ -1,0 +1,88 @@
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-15T23:09:41.477522300
+# Material Count: 11
+
+newmtl minecraftCubeMat
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 0.5
+map_ka grassblock.png
+map_kd grassblock.png
+map_ks grassblock.png
+
+newmtl DEFAULT
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+
+newmtl Black.texture
+ka 1.0 1.0 1.0 1.0
+kd 0.010499 0.010362 0.011088 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl Material.004
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl chrome.waves
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl chrome
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl Black
+ka 1.0 1.0 1.0 1.0
+kd 0.010499 0.010362 0.011088 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl Material.002
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl wire_204204204
+ka 0.8 0.8 0.8 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.35 0.35 0.35 1.0
+ns 32.0
+reflectance 1.0
+
+newmtl TERRAIN
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka crystalTexture.jpg
+map_kd crystalTexture.jpg
+map_ks crystalSpecularMap.jpg
+map_bump crystalNormalMap.jpg
+
+newmtl SkyBox
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka skybox.png
+
