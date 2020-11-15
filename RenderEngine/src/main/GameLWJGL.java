@@ -335,7 +335,9 @@ public class GameLWJGL extends Game implements Runnable {
 //
 
         Model terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-        Material ter = terrain.mesh.materials.get(0);
+
+        Material ter = new Material();
+        ter.matName = "TERRAIN";
         ter.texture = new Texture("res/misc/crystalTexture.jpg");
         ter.diffuseMap = ter.texture;
         ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");

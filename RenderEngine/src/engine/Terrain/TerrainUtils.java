@@ -117,7 +117,7 @@ public class TerrainUtils {
         vertAttribs.add(texCoords);
         vertAttribs.add(calcNormals(positions,w,h));
 
-        Mesh resMesh = new Mesh(indices,faces,vertAttribs,null);
+        Mesh resMesh = new Mesh(indices,faces,vertAttribs,null, null);
         resMesh = MeshBuilder.generateTangentAndBiTangentVectors(resMesh);
 
 //        for(Face f: resMesh.faces) {

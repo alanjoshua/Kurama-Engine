@@ -3,6 +3,7 @@ package engine.GUI;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import engine.Effects.Material;
 import engine.font.FontTexture;
 import engine.game.Game;
 import engine.model.Model;
@@ -117,11 +118,16 @@ public class Text extends Model {
         vertAttribs.add(positions);
         vertAttribs.add(textCoords);
 
-        Mesh res = new Mesh(null,faces,vertAttribs,null);
+        Mesh res = new Mesh(null,faces,vertAttribs,null, null);
         res = MeshBuilder.triangulate(res,false);
         res = MeshBuilder.bakeMesh(res,null);
+
+        Material textMat = new Material();
+        textMat.texture = fontTexture.texture;
+        textMat.matName = "fontText";
+        res.materials.set(0, textMat);
         res.initOpenGLMeshData();
-        res.materials.get(0).texture = fontTexture.texture;
+
         return res;
     }
 

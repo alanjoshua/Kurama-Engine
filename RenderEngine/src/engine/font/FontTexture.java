@@ -6,6 +6,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -79,6 +80,8 @@ public class FontTexture {
             startX += charInfo.width + CHAR_PADDING;
         }
         g2D.dispose();
+
+//        ImageIO.write(img, "png", new File("savedFont.png"));
 
         ByteBuffer buf = null;
         try ( ByteArrayOutputStream out = new ByteArrayOutputStream()) {

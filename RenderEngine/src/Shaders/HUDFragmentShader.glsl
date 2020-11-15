@@ -26,7 +26,8 @@ void main()
     }
 
     if (shouldGreyScale == 0) {
-        fragColor = color * tempTex;
+        fragColor = color * tempTex.rgba;
+        return;
     }
     else {
         fragColor = vec4(tempTex.rrr, 1);

@@ -111,11 +111,20 @@ public class Vector {
 
 	@Override
 	public int hashCode() {
-		int hash = 0;
+
+		String temp = "";
 		for(float val:this.getData()) {
-			hash+=val;
+//			Convert float to int
+			Double ref = (double) val;
+			int decLen = ref.toString().split("\\.")[1].length();
+			if (decLen >= 1)
+				ref = ref * decLen;
+			int ref_int = ref.intValue();
+
+			temp += ref_int;
 		}
-		return hash;
+
+		return Integer.parseInt(temp);
 	}
 	
 	public float getAngleBetweenVectors(Vector x) {

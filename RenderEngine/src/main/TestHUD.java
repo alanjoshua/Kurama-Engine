@@ -48,7 +48,11 @@ public class TestHUD extends HUD {
         hudElements.add(texquad);
 
         demoText = new Text(game, "Kurama Engine -alpha 2.0", new FontTexture(FONT,CHARSET), "sample");
-        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
+        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1f});
+        System.out.println("Demo tex id: "+demoText.fontTexture.texture.getId());
+//        System.out.println("QUAD ID: "+texquad.mesh.materials.get(0).texture.getId());
+        demoText.shouldGreyScale = false;
+        demoText.shouldLinearizeDepthInHUD = false;
         hudElements.add(demoText);
 
         texquad.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -180).multiply(texquad.getOrientation()));
@@ -58,7 +62,7 @@ public class TestHUD extends HUD {
     }
 
     public void tick() {
-
+//        demoText.setPos(demoText.getPos().sub(new Vector(new float[]{1, 0, 0})));
     }
 
 }

@@ -188,7 +188,7 @@ public class MeshBuilder {
 			newFaces.add(line3);
 		}
 
-		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes,mesh.materials);
+		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation);
 		retMesh.drawMode = GL_LINES;
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 
@@ -254,7 +254,7 @@ public class MeshBuilder {
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs,mesh.materials);
+		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
@@ -331,7 +331,7 @@ public class MeshBuilder {
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials);
+		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
@@ -406,7 +406,7 @@ public class MeshBuilder {
 		}
 
 		List<List<Vector>> newVertAttribs = new ArrayList<>(inMesh.vertAttributes);
-		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials);
+		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials, inMesh.meshLocation);
 		retMesh.setAttribute(tangents,Mesh.TANGENT);
 		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
@@ -421,7 +421,7 @@ public class MeshBuilder {
 			newNormals.add(n.scalarMul(-1));
 		}
 		vertList.set(Mesh.NORMAL,newNormals);
-		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials);
+		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials, inMesh.meshLocation);
 		res.drawMode = inMesh.drawMode;
 		res.meshIdentifier = inMesh.meshIdentifier;
 		return res;
@@ -464,8 +464,8 @@ public class MeshBuilder {
 		List<int[]> textureFaces = new ArrayList<>();
 		List<int[]> normalFaces = new ArrayList<>();
 		List<String[]> materialFaces = new ArrayList<>();
-		String currentMaterialName = "DEFAULT";
-		matsList.put(currentMaterialName,new Material());
+		String currentMaterialName = Material.DEFAULT_MATERIAL_NAME;
+		matsList.put(currentMaterialName, Material.DEFAULT_MATERIAL);
 		List<String> materialsBeingUsedNames = new ArrayList<>();
 		materialsBeingUsedNames.add(currentMaterialName);
 
@@ -757,7 +757,7 @@ public class MeshBuilder {
 			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
-			resMesh = new Mesh(null,facesListObj, vertAttributes,matList);
+			resMesh = new Mesh(null,facesListObj, vertAttributes,matList, loc);
 			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
 			resMesh.meshIdentifier = loc;
 			return resMesh;
@@ -810,6 +810,7 @@ public class MeshBuilder {
 
 //				New mtl is started. Add current mtl to map
 				else if(currentMatName != null && newSplit[0].equalsIgnoreCase("newmtl")) {
+					currentMaterial.matName = currentMatName;
 					map.put(currentMatName,currentMaterial);
 					currentMatName = newSplit[1];
 					currentMaterial = new Material(currentMatName);
@@ -921,7 +922,7 @@ public class MeshBuilder {
 		for(Face f: inMesh.faces) {
 			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
-		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials);
+		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials, inMesh.meshLocation);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = GL_TRIANGLES;
 		return retMesh;
@@ -1099,10 +1100,9 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttributes = new ArrayList<>(1);
 		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
 
-		resMesh = new Mesh(null,facesListObj, vertAttributes,null);
+		resMesh = new Mesh(null,facesListObj, vertAttributes,null, null);
 		resMesh.meshIdentifier = "grid";
 		return resMesh;
-//		return new Model(resMesh,"grid");
 
 	}
 
@@ -1124,7 +1124,7 @@ public class MeshBuilder {
 			newFaces.add(newFace);
 		}
 
-		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials);
+		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation);
 		resMesh.drawMode = mesh.drawMode;
 		return resMesh;
 	}
@@ -1204,7 +1204,7 @@ public class MeshBuilder {
 		List<List<Vector>> attribs = new ArrayList<>();
 		attribs.add(vertices);
 
-		Mesh ret = new Mesh(indices,faces,attribs,null);
+		Mesh ret = new Mesh(indices,faces,attribs,null, null);
 		ret.setAttribute(colors,Mesh.COLOR);
 		ret.drawMode = GL_LINES;
 		ret.initOpenGLMeshData();
@@ -1378,7 +1378,7 @@ public class MeshBuilder {
 		vertAttribs.add(null);
 		vertAttribs.add(normals);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs,null);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null);
 		resMesh = triangulate(resMesh,false);
 
 		List<Integer> newIndices = new ArrayList<>();
@@ -1474,7 +1474,7 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttribs = new ArrayList<>();
 		vertAttribs.add(vertices);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs,null);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null);
 
 		if(hints != null) {
 
@@ -1493,7 +1493,6 @@ public class MeshBuilder {
 		resMesh.drawMode = GL_LINES;
 		resMesh.meshIdentifier = "Grid-Lines";
 		return resMesh;
-//		return new Model(resMesh,"Grid-Lines");
 
 	}
 

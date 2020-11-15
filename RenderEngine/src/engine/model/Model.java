@@ -269,7 +269,7 @@ public class Model {
 		List<List<Vector>> vertAttribs = new ArrayList<>(1);
 		vertAttribs.add(vertices);
 
-		boundingbox = new Mesh(null,faces,vertAttribs,null);
+		boundingbox = new Mesh(null,faces,vertAttribs,null, null);
 		MeshBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
 

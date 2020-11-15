@@ -27,7 +27,8 @@ public class Mesh {
     public List<List<Vector>> vertAttributes;
     public List<Integer> indices;
 
-    public String meshIdentifier;
+    public String meshIdentifier="";
+    public String meshLocation;
 
     public int drawMode = GL_TRIANGLES;
 
@@ -35,14 +36,15 @@ public class Mesh {
     public List<Integer> vboIdList;
     public List<Material> materials = new ArrayList<>();
 
-    public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes,List<Material> materials) {
+    public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes,List<Material> materials, String meshLocation) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
         vboIdList = new ArrayList<>();
         this.indices = indices;
+        this.meshLocation = meshLocation;
 
         if(materials == null) {
-            this.materials.add(new Material());
+            this.materials.add(Material.DEFAULT_MATERIAL);
             List<Vector> matList = new ArrayList<>();
             matList.add(new Vector(new float[]{0}));
             setAttribute(matList,MATERIAL);

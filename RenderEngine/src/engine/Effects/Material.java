@@ -4,6 +4,8 @@ import engine.DataStructure.Texture;
 import engine.Math.Vector;
 import engine.model.Terrain;
 
+import java.util.UUID;
+
 // Inspired by LWJGL book
 
 public class Material {
@@ -11,6 +13,7 @@ public class Material {
     public static Vector DEFAULTCOLOR = new Vector(new float[]{1,1,1,1});
     public static float DEFAULT_SPECULAR_POWER = 10;
     public static float DEFAULT_REFLECTANCE = 1;
+    public static String DEFAULT_MATERIAL_NAME = "DEFAULT";
 
     public Texture texture;
     public Texture normalMap;
@@ -23,21 +26,24 @@ public class Material {
     public float specularPower = DEFAULT_SPECULAR_POWER;
     public String matName;
 
+    public static Material DEFAULT_MATERIAL = new Material(DEFAULTCOLOR, DEFAULTCOLOR, DEFAULTCOLOR, null,
+            null,null,null, DEFAULT_REFLECTANCE, DEFAULT_SPECULAR_POWER, DEFAULT_MATERIAL_NAME);
+
     public Material() {
         this.ambientColor = DEFAULTCOLOR;
         this.diffuseColor = DEFAULTCOLOR;
-        this.specularColor = new Vector(0,0,0,1);
+        this.specularColor = DEFAULTCOLOR;
         this.texture = null;
         this.normalMap = null;
         this.diffuseMap = null;
         this.specularMap = null;
-        this.matName = "DEFAULT";
+        this.matName = UUID.randomUUID().toString();
     }
 
     public Material(String matName) {
         this.ambientColor = DEFAULTCOLOR;
         this.diffuseColor = DEFAULTCOLOR;
-        this.specularColor = new Vector(0,0,0,1);
+        this.specularColor = DEFAULTCOLOR;
         this.texture = null;
         this.normalMap = null;
         this.diffuseMap = null;
@@ -71,10 +77,53 @@ public class Material {
         this.matName = matName;
     }
 
-    public boolean equals(Material m) {
-        return (ambientColor.equals(m.ambientColor)) && (diffuseColor.equals(m.diffuseColor)) && (specularColor.equals(m.specularColor))
-                && (texture.equals(m.texture)) && (reflectance == m.reflectance) && (normalMap.equals(m.normalMap)) && (specularMap.equals(m.specularMap))
+    @Override
+    public boolean equals(Object obj) {
+
+        if (getClass() != obj.getClass())
+            return false;
+
+        Material m = (Material)obj;
+
+        boolean res = (ambientColor.equals(m.ambientColor)) && (diffuseColor.equals(m.diffuseColor)) && (specularColor.equals(m.specularColor))
+                && ((texture == null && m.texture == null) || (texture.equals(m.texture))) && (reflectance == m.reflectance) &&
+                ((normalMap == null && m.normalMap == null) || (normalMap.equals(m.normalMap))) &&
+                ((specularMap == null && m.specularMap == null) || (specularMap.equals(m.specularMap))) &&
+                ((diffuseMap == null && m.diffuseMap == null) || (diffuseMap.equals(m.diffuseMap)))
                 && (diffuseColor.equals(m.diffuseColor)) && (specularPower == m.specularPower) && (matName.equals(m.matName));
+
+        return res;
     }
 
+    @Override
+    public int hashCode() {
+        Double ref = (double) reflectance;
+        int decLen = ref.toString().split("\\.")[1].length();
+        if (decLen >= 1)
+            ref = ref * decLen;
+        int ref_int = ref.intValue();
+
+        Double spec = (double) specularPower;
+        decLen = spec.toString().split("\\.")[1].length();
+        if (decLen >= 1)
+            spec = spec * decLen;
+        int spec_int = spec.intValue();
+
+//        System.out.println("Ref int: "+ref_int + " Spec int: "+spec_int);
+
+        int result = (texture == null ? 0:texture.getId()) +  (normalMap == null ? 0:normalMap.getId()) +
+                (diffuseMap == null ? 0:diffuseMap.getId()) + (specularMap == null ? 0:specularMap.getId()) +
+                ambientColor.hashCode() + diffuseColor.hashCode() + specularColor.hashCode() +
+                ref_int + spec_int + matName.hashCode();
+
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        String res = "texture: "+texture +  " normalMap: " + normalMap + " diffuseMap: "+diffuseMap + " specularMap: "+specularMap+
+                " ambientColor: "+ambientColor + " diffuseColor: "+diffuseColor + " specularColor: "+specularColor +
+                " reflectance: " +reflectance+" specularPower: "+specularPower+" matName: "+ matName;
+        return res;
+    }
 }

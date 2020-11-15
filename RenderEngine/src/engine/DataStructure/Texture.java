@@ -20,8 +20,26 @@ public class Texture {
     public final int height;
     public String fileName="";
 
-    public boolean equals(Texture t) {
+    @Override
+    public String toString() {
+        return ""+id;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null)
+                return false;
+
+        if (getClass() != obj.getClass())
+            return false;
+
+        Texture t = (Texture)obj;
         return (id == t.id) && (width == t.width) && (height == t.height) && (fileName == t.fileName);
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
     }
 
     public Texture(String fileName) {
