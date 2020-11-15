@@ -137,6 +137,19 @@ public class SceneUtils {
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                           Write Material File
+        writeMaterialFile(sortedMaterials, directory, filePrefix, engineVersion);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                      Write .KE file
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+
+    public static void writeMaterialFile(Map<Material, Integer> sortedMaterials,
+                                         String directory, String filePrefix, String engineVersion) {
+
 //                                           Create new material file
 
         File materialFile = new File(directory+"/"+filePrefix+"/"+"matLibrary.mtl");
@@ -149,15 +162,13 @@ public class SceneUtils {
 //                                      Create folder for storing textures
 
         File textureFolder = new File(directory+"/"+filePrefix+"/"+"textures");
-        folderCreationSuccess = textureFolder.mkdir();
+        boolean folderCreationSuccess = textureFolder.mkdir();
         if(folderCreationSuccess){
             System.out.println("Directory created successfully");
         }else{
             System.out.println("Sorry couldn’t create textures directory");
         }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                           Write Material File
 
         Map<String, Integer> matNamesSoFar = new HashMap<>();
         Map<String, String> texturesStoredSoFar = new HashMap<>();
@@ -278,10 +289,6 @@ public class SceneUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                      Write .KE file
-
     }
 
 }
