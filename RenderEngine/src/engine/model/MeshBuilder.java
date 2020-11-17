@@ -17,15 +17,13 @@ import engine.DataStructure.LinkedList.Node;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
-import org.lwjgl.system.CallbackI;
-import org.w3c.dom.ls.LSOutput;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
 public class MeshBuilder {
 
-	public static class ModelBuilderHints {
+	public static class MeshBuilderHints {
 		public boolean shouldSmartBakeVertexAttributes = false;
 		public boolean shouldDumbBakeVertexAttributes = true;
 		public boolean shouldTriangulate = true;
@@ -39,13 +37,9 @@ public class MeshBuilder {
 		public int shouldRotate = 180;
 	}
 
-	public static Mesh buildModelFromFileGL(String loc, Map<String,Mesh> meshInstances, ModelBuilderHints hints) {
+	public static Mesh buildModelFromFileGL(String loc, MeshBuilderHints hints) {
 //		Model res = null;
 		Mesh resMesh = null;
-
-		if(meshInstances != null) {
-			resMesh = meshInstances.get(loc);
-		}
 
 		if(resMesh != null) {
 			return resMesh;
@@ -58,11 +52,6 @@ public class MeshBuilder {
 			if(hints == null) {
 				resMesh = triangulate(resMesh,false);
 				resMesh = dumbBake(resMesh,null);
-
-				if(meshInstances != null) {
-					meshInstances.put(loc, resMesh);
-				}
-
 			}
 			else {
 				if (hints.shouldRotate != 0) {
@@ -131,17 +120,13 @@ public class MeshBuilder {
 				}
 			}
 
-			if(meshInstances != null) {
-				meshInstances.put(loc, resMesh);
-			}
-
 			resMesh.meshIdentifier = loc;
 			return resMesh;
 		}
 	}
 
 //	This functions converts models with triangular faces to lines
-	public static Mesh convertToLines(Mesh mesh, ModelBuilderHints hints) {
+	public static Mesh convertToLines(Mesh mesh, MeshBuilderHints hints) {
 		List<Integer> newIndices = new ArrayList<>();
 		List<Face> newFaces = new ArrayList<>();
 
@@ -202,7 +187,7 @@ public class MeshBuilder {
 
 //	Smart bake is more space efficient than this function, but this is probably faster to run
 
-	public static Mesh dumbBake(Mesh mesh, ModelBuilderHints hints) {
+	public static Mesh dumbBake(Mesh mesh, MeshBuilderHints hints) {
 
 		if(mesh.indices != null) {
 			return mesh;
@@ -269,7 +254,7 @@ public class MeshBuilder {
 //	This function aims to be a bit more efficient in terms of space than "dumbBake" in how it makes one index list, but
 //	"dumbBake" is probably faster to run
 
-	public static Mesh bakeMesh(Mesh mesh, ModelBuilderHints hints) {
+	public static Mesh bakeMesh(Mesh mesh, MeshBuilderHints hints) {
 
 		List<Integer> indexList = new ArrayList<>();
 		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
@@ -1218,7 +1203,7 @@ public class MeshBuilder {
 	}
 
 	//Normals not set properly
-	public static Mesh buildGridTrigs(int w, int h, ModelBuilderHints hints) {
+	public static Mesh buildGridTrigs(int w, int h, MeshBuilderHints hints) {
 
 		List<Face> faces = new ArrayList<>();
 		List<Vector> vertices = new ArrayList<>();
@@ -1430,7 +1415,7 @@ public class MeshBuilder {
 
 	}
 
-	public static Mesh buildGridLines(int w, int h,ModelBuilderHints hints) {
+	public static Mesh buildGridLines(int w, int h, MeshBuilderHints hints) {
 		List<Vector> vertices = new ArrayList<>();
 		List<Face> faces = new ArrayList<>();
 

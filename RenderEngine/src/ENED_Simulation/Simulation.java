@@ -59,7 +59,6 @@ public class Simulation extends Game {
 
     protected boolean prevGameState = false;
 
-    Map<String, Mesh> meshInstances;
     Robot robot;
     Model flag;
 
@@ -88,7 +87,7 @@ public class Simulation extends Game {
     @Override
     public void init() {
 
-        scene = new Scene();
+        scene = new Scene(this);
 
         Vector lightColor = new Vector(new float[]{1f,1f,1f});
         Vector lightPos = new Vector(new float[]{0f,0f,1f});
@@ -104,7 +103,6 @@ public class Simulation extends Game {
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
         boxesAtDestination = new ArrayList<>();
-        meshInstances = new HashMap<>();
         scanner = new Scanner(System.in);
 
         towerA = new Vector(new float[]{6,1,-6});
@@ -155,12 +153,10 @@ public class Simulation extends Game {
 
         targetFPS = display.getRefreshRate();
         hud = new SimulationHUD(this);
-        scene.buildModelMap();
-
     }
 
     public void initModels() {
-        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.addRandomColor = true;
         hints.initLWJGLAttribs = true;
@@ -172,7 +168,7 @@ public class Simulation extends Game {
         grid.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
-        flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",meshInstances,hints),"flag");
+        flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
         flag.isCollidable = false;
 
@@ -197,7 +193,7 @@ public class Simulation extends Game {
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
-        robot = new Robot(this, MeshBuilder.buildModelFromFileGL(robotModelLoc,meshInstances,hints),"robot");
+        robot = new Robot(this, MeshBuilder.buildModelFromFileGL(robotModelLoc,hints),"robot");
         robot.shouldShowCollisionBox = false;
         robot.shouldShowPath = true;
         robot.home = towerA;
@@ -214,7 +210,7 @@ public class Simulation extends Game {
 
         hints.shouldSmartBakeVertexAttributes = true;
         hints.convertToLines = false;
-        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
         Texture tex = null;
         try {
@@ -228,13 +224,13 @@ public class Simulation extends Game {
 
         hints.convertToLines = false;
 
-        scene.models.add(robot);
-        scene.models.add(grid);
-        scene.models.add(flag);
-        scene.models.add(h1);
-        scene.models.add(h2);
-        scene.models.add(h3);
-        scene.models.add(h4);
+        scene.addModel(robot);
+        scene.addModel(grid);
+        scene.addModel(flag);
+        scene.addModel(h1);
+        scene.addModel(h2);
+        scene.addModel(h3);
+        scene.addModel(h4);
 
         initCrates();
 
@@ -275,11 +271,11 @@ public class Simulation extends Game {
             m.setOrientation(newQ);
         });
 
-        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 
-        boxMesh = MeshBuilder.buildModelFromFileGL(boxModelLoc,meshInstances,hints);
+        boxMesh = MeshBuilder.buildModelFromFileGL(boxModelLoc,hints);
         try {
             Texture tex = new Texture(boxTextureLoc);
             boxMesh.materials.get(0).texture = tex;
@@ -287,7 +283,7 @@ public class Simulation extends Game {
             e.printStackTrace();
         }
 
-        platformMesh = MeshBuilder.buildModelFromFileGL("/Resources/platform2.obj",meshInstances,hints);
+        platformMesh = MeshBuilder.buildModelFromFileGL("/Resources/platform2.obj",hints);
         try {
             Texture tex = new Texture("textures/oldwood.jpg");
             platformMesh.materials.get(0).texture = tex;
@@ -331,7 +327,7 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{platScaleX,platScaleY,platScaleZ}));
-                scene.models.add(platform);
+                scene.addModel(platform);
 
                 Integer currZone = getZone(r,c);
 
@@ -374,7 +370,10 @@ public class Simulation extends Game {
             }
         }
 
-        scene.models.addAll(boxesToBeSearched);
+        for (Box b: boxesToBeSearched) {
+            scene.addModel(b);
+        }
+//        scene.getModels().addAll(boxesToBeSearched);
 
     }
 
@@ -490,9 +489,7 @@ public class Simulation extends Game {
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(Model m: scene.models) {
-            m.cleanUp();
-        }
+        scene.cleanUp();
     }
 
     @Override
@@ -519,7 +516,7 @@ public class Simulation extends Game {
             Model.ModelTickInput params = new Model.ModelTickInput();
             params.timeDelta = timeDelta;
 
-            scene.models
+            scene.getModels()
                     .stream()
                     .filter(m -> m != robot)
                     .forEach(m -> m.tick(params));
@@ -540,7 +537,7 @@ public class Simulation extends Game {
         int[][] collisionArray = new int[simWidth][simDepth];
         List<Vector> boundData = new ArrayList<>();
 
-        for(Model m: scene.models) {
+        for(Model m: scene.getModels()) {
             if(m.isCollidable && modelsToAvoidChecking.indexOf(m) == -1) {  //Model is collidable and also not in avoid list
                 if(shouldOnlyOutline) {
                    boundData.addAll(getModelOutlineCollisionData(m));
@@ -809,16 +806,19 @@ public class Simulation extends Game {
     public void render() {
         boolean hasAddedPath = false;
         if(robot.pathModel!= null && robot.shouldShowPath) {
-           scene.models.add(robot.pathModel);
-           List<Model> tempList = new ArrayList<>();
-           tempList.add(robot.pathModel);
-           scene.modelMap.put(robot.pathModel.mesh,tempList);
+//           scene.addModel(robot.pathModel);
+//           List<Model> tempList = new ArrayList<>();
+//           tempList.add(robot.pathModel);
+//           scene.mesh_model_map.put(robot.pathModel.mesh,tempList);
+//           scene.addModel(robot.pathModel);
+            robot.pathModel.shouldRender = true;
            hasAddedPath = true;
         }
         renderingEngine.render(scene,isGameRunning ? null:hud,cam);
         if(hasAddedPath) {
-            scene.modelMap.remove(robot.pathModel.mesh);
-            scene.models.remove(scene.models.size()-1);
+//            scene.mesh_model_map.remove(robot.pathModel.mesh);
+//            scene.models.remove(scene.models.size()-1);
+            robot.pathModel.shouldRender = false;
         }
 
         glfwSwapBuffers(display.getWindow());
@@ -844,10 +844,5 @@ public class Simulation extends Game {
     @Override
     public InputLWJGL getInput() {
         return input;
-    }
-
-    @Override
-    public List<Model> getModels() {
-        return scene.models;
     }
 }

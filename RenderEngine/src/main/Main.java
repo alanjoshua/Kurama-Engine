@@ -1,6 +1,7 @@
 package main;
 
 import engine.game.Game;
+import engine.utils.Logger;
 
 public class Main {
 	

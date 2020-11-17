@@ -8,6 +8,8 @@ import engine.utils.Utils;
 import engine.model.Model;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
 
+import java.util.ArrayList;
+
 public class Camera {
 
 	private Game game;
@@ -130,7 +132,7 @@ public class Camera {
 			}
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
-				Vector[] bounds = Utils.getWorldBoundingBox(game.getModels());
+				Vector[] bounds = Utils.getWorldBoundingBox(new ArrayList<>(game.scene.getModels()));
 				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
 				Vector maxCam = (getWorldToCam().matMul(bounds[1].addDimensionToVec(1))).toVector();
 //				maxCam.display();

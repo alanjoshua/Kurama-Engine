@@ -9,6 +9,7 @@ import engine.inputs.Input;
 import engine.model.Model;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
+import engine.utils.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -191,8 +192,6 @@ public abstract class Game implements Runnable {
     public abstract Camera getCamera();
 
     public abstract Input getInput();
-
-    public abstract List<Model> getModels();
 
     public float getMovementCost(GridNode current) {
         return 0f;

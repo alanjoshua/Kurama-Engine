@@ -195,7 +195,8 @@ public class RenderingEngineGL extends RenderingEngine {
         int offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,0);
         offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
-        for(Mesh mesh:scene.modelMap.keySet()) {
+        for(String meshId :scene.mesh_model_map.keySet()) {
+            Mesh mesh = scene.meshID_mesh_map.get(meshId);
             sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
                     "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
 //            sceneShaderProgram.setUniform("directionalShadowMaps[0]",offset);
@@ -204,7 +205,8 @@ public class RenderingEngineGL extends RenderingEngine {
 
             mesh.initRender();
 
-            for(Model model:scene.modelMap.get(mesh)) {
+            for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+                Model model = scene.modelID_model_map.get(modelId);
 
                 if (model.shouldRender) {
                     Matrix objectToWorld = model.getObjectToWorldMatrix();
@@ -342,9 +344,14 @@ public class RenderingEngineGL extends RenderingEngine {
             Matrix worldToLight = light.getWorldToObject();
             worldToDirectionalLights.add(worldToLight);
 
-            for (Mesh mesh : scene.modelMap.keySet()) {
+            for(String meshId :scene.mesh_model_map.keySet()) {
+                Mesh mesh = scene.meshID_mesh_map.get(meshId);
+
                 mesh.initRender();
-                for (Model m : scene.modelMap.get(mesh)) {
+
+                for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+                    Model m = scene.modelID_model_map.get(modelId);
+
                     if (m.isOpaque && m.shouldRender) {
                         Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                         directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
@@ -372,9 +379,13 @@ public class RenderingEngineGL extends RenderingEngine {
             worldToSpotLights.add(worldToLight);
 //            worldToSpotLights.add(worldToLight);
 
-            for (Mesh mesh : scene.modelMap.keySet()) {
+            for(String meshId :scene.mesh_model_map.keySet()) {
+                Mesh mesh = scene.meshID_mesh_map.get(meshId);
+
                 mesh.initRender();
-                for (Model m : scene.modelMap.get(mesh)) {
+                for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+                    Model m = scene.modelID_model_map.get(modelId);
+
                     if (m.isOpaque) {
                         Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                         directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);

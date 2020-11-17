@@ -4,6 +4,7 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
 import engine.model.Model;
+import engine.utils.Logger;
 import org.lwjgl.system.CallbackI;
 
 import java.io.BufferedWriter;
@@ -41,7 +42,7 @@ public class SceneUtils {
 
         Map<Material, Integer> materials = new HashMap<>();
 
-        for (Model model: scene.models) {
+        for (Model model: scene.getModels()) {
             for (Material mat: model.mesh.materials) {
                 materials.computeIfPresent(mat, (k ,val) -> val + 1);
                 materials.putIfAbsent(mat, 1);
@@ -69,10 +70,10 @@ public class SceneUtils {
 
         Map<Material, Integer> sortedMaterials = sortByValue(materials);
 
-        System.out.println("\nMaterials used in Scene:");
+        Logger.log("\nMaterials used in Scene:");
         int curMatID = 0;
         for (Material key: sortedMaterials.keySet()) {
-            System.out.println(key.matName + " Times: " + sortedMaterials.get(key));
+            Logger.log(key.matName + " Times: " + sortedMaterials.get(key));
             sortedMaterials.put(key, curMatID);
             curMatID++;
 
@@ -80,9 +81,9 @@ public class SceneUtils {
 //                System.out.println(key);
         }
 
-        System.out.println("\nMaterials with ID");
+        Logger.log("\nMaterials with ID");
         for (Material key: sortedMaterials.keySet()) {
-            System.out.println(key.matName + " ID: " + sortedMaterials.get(key));
+            Logger.log(key.matName + " ID: " + sortedMaterials.get(key));
         }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +91,7 @@ public class SceneUtils {
 
         Map<Mesh, Integer> meshes = new HashMap<>();
 
-        for (Model model: scene.models) {
+        for (Model model: scene.getModels()) {
             meshes.computeIfPresent(model.mesh, (k ,val) -> val + 1);
             meshes.putIfAbsent(model.mesh, 1);
 
@@ -112,27 +113,27 @@ public class SceneUtils {
 
         Map<Mesh, Integer> sortedMeshes = sortByValue(meshes);
 
-        System.out.println("\nMeshes in scene:");
+        Logger.log("\nMeshes in scene:");
         int curMeshID = 0;
         for (Mesh key: sortedMeshes.keySet()) {
-            System.out.println(key.meshLocation + " Times: " + sortedMeshes.get(key));
+            Logger.log(key.meshLocation + " Times: " + sortedMeshes.get(key));
             sortedMeshes.put(key, curMeshID);
             curMeshID++;
         }
 
-        System.out.println("\nMeshes with ID");
+        Logger.log("\nMeshes with ID");
         for (Mesh key: sortedMeshes.keySet()) {
-            System.out.println(key.meshLocation + " ID: " + sortedMeshes.get(key));
+            Logger.log(key.meshLocation + " ID: " + sortedMeshes.get(key));
         }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                              Create Save folder
         File folder = new File(directory+"/"+filePrefix);
         boolean folderCreationSuccess = folder.mkdir();
         if(folderCreationSuccess){
-            System.out.println("Directory created successfully");
+            Logger.log("Directory created successfully");
         }else{
-            System.err.println("Sorry couldn’t create save folder");
-            System.err.println("Save failed...");
+            Logger.log("Sorry couldn’t create save folder");
+            Logger.log("Save failed...");
             return;
         }
 
@@ -156,7 +157,7 @@ public class SceneUtils {
         try {
             materialFile.createNewFile();
         }catch(IOException e) {
-            System.err.println("Could not create material file");
+            Logger.log("Could not create material file");
         }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                      Create folder for storing textures
@@ -164,9 +165,9 @@ public class SceneUtils {
         File textureFolder = new File(directory+"/"+filePrefix+"/"+"textures");
         boolean folderCreationSuccess = textureFolder.mkdir();
         if(folderCreationSuccess){
-            System.out.println("Directory created successfully");
+            Logger.log("Directory created successfully");
         }else{
-            System.out.println("Sorry couldn’t create textures directory");
+            Logger.log("Sorry couldn’t create textures directory");
         }
 
 

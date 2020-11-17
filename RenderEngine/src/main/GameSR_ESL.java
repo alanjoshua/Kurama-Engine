@@ -43,9 +43,9 @@ public class GameSR_ESL extends GameSR {
             int y = (int) (5 + grid.getPos().get(1));
             int z = (int) (random.nextInt(gridDepth) - gridDepth / 2 + grid.getPos().get(2));
 
-            MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+            MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
 
-            Model deer = new Model(this, MeshBuilder.buildModelFromFileGL(testModel,meshInstances,hints),"deer: +i");
+            Model deer = new Model(this, MeshBuilder.buildModelFromFileGL(testModel,hints),"deer: +i");
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
             deer.setPos(x,y,z);
 

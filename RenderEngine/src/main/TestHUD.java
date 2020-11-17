@@ -22,7 +22,7 @@ public class TestHUD extends HUD {
     public TestHUD(Game game) {
         super(game);
 
-        texquad = new Model(game, MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",null,null),"quad");
+        texquad = new Model(game, MeshBuilder.buildModelFromFileGL("res/misc/quad.obj",null),"quad");
 //        texquad.mesh.materials.get(0).ambientColor = new Vector(1,1,1,1);
         texquad.mesh = MeshBuilder.triangulate(texquad.mesh,false);
         texquad.mesh = MeshBuilder.bakeMesh(texquad.mesh,null);

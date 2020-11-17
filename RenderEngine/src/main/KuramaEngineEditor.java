@@ -53,9 +53,7 @@ public class KuramaEngineEditor extends Game implements Runnable {
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(Model m: scene.models) {
-            m.mesh.cleanUp();
-        }
+        scene.cleanUp();
     }
 
     @Override
@@ -81,7 +79,8 @@ public class KuramaEngineEditor extends Game implements Runnable {
         if(isGameRunning) {
         Model.ModelTickInput params = new Model.ModelTickInput();
         params.timeDelta = timeDelta;
-        scene.models.forEach(m -> m.tick(params));
+        scene.updateAllModels(params);
+//        scene.models.forEach(m -> m.tick(params));
         }
 
     }
@@ -241,8 +240,4 @@ public class KuramaEngineEditor extends Game implements Runnable {
         return null;
     }
 
-    @Override
-    public List<Model> getModels() {
-        return null;
-    }
 }

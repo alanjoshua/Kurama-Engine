@@ -6,9 +6,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import engine.GUI.Button;
 import engine.Math.Quaternion;
@@ -18,7 +16,6 @@ import engine.display.DisplaySR;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputSR;
-import engine.DataStructure.Mesh.Mesh;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.MeshBuilder;
@@ -52,8 +49,6 @@ public class GameSR extends Game implements Runnable {
 	protected Button FULLSCREEN;
 	protected Button WINDOWED;
 
-	Map<String, Mesh> meshInstances;
-
 	public GameSR(String threadName) {
 		super(threadName);
 	}
@@ -63,7 +58,6 @@ public class GameSR extends Game implements Runnable {
 
 
 	public void init() {
-		meshInstances = new HashMap<>();
 		display = new DisplaySR(this);
 		input = new InputSR(this);
 
@@ -135,13 +129,13 @@ public class GameSR extends Game implements Runnable {
 			m.setOrientation(newQ);
 		});
 
-		MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+		MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
 
-		Model deer = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/deer.obj",meshInstances,hints),"deer");
+		Model deer = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/deer.obj",hints),"deer");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
-		Model mill = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",meshInstances,hints),"mill");
+		Model mill = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",hints),"mill");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
 //		mill.triangulate();
@@ -149,7 +143,7 @@ public class GameSR extends Game implements Runnable {
 		Model grid = new Model(this, MeshBuilder.buildGridDeprecated(100, 100),"grid");
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/TeapotHex3.obj",meshInstances,hints),"pot");
+		Model pot = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/TeapotHex3.obj",hints),"pot");
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 		pot.setMiniBehaviourObj(tempRot);

@@ -29,11 +29,14 @@ import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.SceneUtils;
+import engine.utils.Logger;
 import engine.utils.Utils;
 import static engine.model.MeshBuilder.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
+
+import static engine.utils.Logger.log;
 
 public class GameLWJGL extends Game implements Runnable {
 
@@ -61,7 +64,6 @@ public class GameLWJGL extends Game implements Runnable {
 
     protected boolean prevGameState = false;
 
-    Map<String, Mesh> meshInstances;
     private boolean shouldDayNight = false;
 
     public GameLWJGL(String threadName) {
@@ -69,11 +71,11 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void init() {
-        scene = new Scene();
-
-        meshInstances = new HashMap<>();
+        scene = new Scene(this);
 
         renderingEngine = new RenderingEngineGL(this);
+
+        Logger.log("Hello");
 
         display = new DisplayLWJGL(this);
         display.startScreen();
@@ -191,7 +193,7 @@ public class GameLWJGL extends Game implements Runnable {
             m.setOrientation(newQ);
         });
 
-        MeshBuilder.ModelBuilderHints hints = new MeshBuilder.ModelBuilderHints();
+        MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = true;
         hints.addRandomColor = false;
         hints.initLWJGLAttribs = true;
@@ -229,7 +231,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         hints.shouldGenerateTangentBiTangent = true;
         hints.shouldSmartBakeVertexAttributes = true;
-        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",meshInstances,hints),"skybox");
+        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
 
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
@@ -242,9 +244,9 @@ public class GameLWJGL extends Game implements Runnable {
         hints.shouldSmartBakeVertexAttributes = true;
         hints.shouldGenerateTangentBiTangent = true;
 
-        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints);
+        scene.spotLights.get(0).mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", hints);
         scene.spotLights.get(0).setScale(0.05f);
-        scene.models.add(scene.spotLights.get(0));
+        scene.addModel(scene.spotLights.get(0));
 
 //        Model torch = new Model(this,  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", meshInstances, hints), "torch");
         scene.spotLights.get(0).setPos(new Vector(7, 30, 20));
@@ -263,7 +265,7 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", meshInstances, hints);
+        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", hints);
 
 //        for(int i = 0;i < heightMap.length;i++) {
 //            for(int j = 0;j < heightMap[i].length;j++) {
@@ -306,7 +308,7 @@ public class GameLWJGL extends Game implements Runnable {
                 //cube.setMiniBehaviourObj(tempRot);
 //               pos.sub(new Vector(new float[]{heightMap.length,0,heightMap[i].length}).scalarMul(boxScale))
                 cube.mesh.materials.set(0,cubeMat);
-                scene.models.add(cube);
+                scene.addModel(cube);
             }
         }
 //
@@ -317,10 +319,10 @@ public class GameLWJGL extends Game implements Runnable {
 
         hints.shouldSmartBakeVertexAttributes = true;
 //        hints.shouldDumbBakeVertexAttributes = true;
-        Model plant = new Model(this, buildModelFromFileGL("res/plant/01Alocasia_obj.obj", meshInstances, hints), "plant");
+        Model plant = new Model(this, buildModelFromFileGL("res/plant/01Alocasia_obj.obj", hints), "plant");
         plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);
-        scene.models.add(plant);
+        scene.addModel(plant);
 //
 //        Model plane = new Model(this,buildModelFromFileGL("res/E-45-Aircraft/E 45 Aircraft_obj.obj",meshInstances,hints),"plane");
 //        plane.setPos(plane.getPos().add(new Vector(0,5,0)));
@@ -350,13 +352,11 @@ public class GameLWJGL extends Game implements Runnable {
 
         terrain.mesh.initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
-        scene.models.add(terrain);
+        scene.addModel(terrain);
 
 //        Model livingRoom = new Model(this,buildModelFromFileGL("res/livingRoom/luxuryHouseInterior.obj",meshInstances,hints),"livingRoom");
 //        livingRoom.setScale(0.1f);
-//        scene.models.add(livingRoom);
-
-        scene.buildModelMap();
+//        scene.models.add(livingRoom)
 
     }
 
@@ -444,9 +444,7 @@ public class GameLWJGL extends Game implements Runnable {
     public void cleanUp() {
         display.cleanUp();
         renderingEngine.cleanUp();
-        for(Model m: scene.models) {
-            m.mesh.cleanUp();
-        }
+        scene.cleanUp();
     }
 
     public void tick() {
@@ -472,7 +470,7 @@ public class GameLWJGL extends Game implements Runnable {
             Model.ModelTickInput params = new Model.ModelTickInput();
             params.timeDelta = timeDelta;
 
-            scene.models.forEach(m -> m.tick(params));
+            scene.updateAllModels(params);
 
 //            scene.pointLights.get(0).pos = cam.getPos();
 //            scene.spotLights.get(0).setPos(cam.getPos());
@@ -609,10 +607,10 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-            if(input.keyDownOnce(input.R)) {
-                cam.lookAtModel( scene.models.get(lookAtIndex));
-                posDelta = new Vector(3,0);
-            }
+//            if(input.keyDownOnce(input.R)) {
+//                cam.lookAtModel( scene.models.get(lookAtIndex));
+//                posDelta = new Vector(3,0);
+//            }
 
             if(input.keyDownOnce(input.LEFT_CONTROL)) {
                 if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
@@ -694,12 +692,12 @@ public class GameLWJGL extends Game implements Runnable {
         return input;
     }
 
-    public List<Model> getModels() {
-        return  scene.models;
-    }
-
-    public void setModels(List<Model> models) {
-        scene.models = models;
-    }
+//    public List<Model> getModels() {
+//        return  scene.models;
+//    }
+//
+//    public void setModels(List<Model> models) {
+//        scene.models = models;
+//    }
 
 }
