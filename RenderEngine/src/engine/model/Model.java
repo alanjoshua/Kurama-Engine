@@ -38,7 +38,7 @@ public class Model {
 	protected Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
-	public boolean isOpaque = true;
+	public boolean shouldCastShadow = true;
 	public String identifier;
 	public boolean shouldGreyScale = false;
 	public boolean shouldLinearizeDepthInHUD = false;

@@ -26,7 +26,10 @@ public class ShaderProgram {
     private int fragmentShaderID;
     private final Map<String,Integer> uniforms;
 
-    public ShaderProgram() {
+    public String shaderIdentifier;
+
+    public ShaderProgram(String shaderIdentifier) {
+        this.shaderIdentifier = shaderIdentifier;
         programID = glCreateProgram();
         if(programID == 0) {
             throw new RuntimeException("Could not create Shader");

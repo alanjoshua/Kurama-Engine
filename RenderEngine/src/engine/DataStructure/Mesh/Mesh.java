@@ -27,7 +27,7 @@ public class Mesh {
     public List<List<Vector>> vertAttributes;
     public List<Integer> indices;
 
-    public String meshIdentifier="";
+    public String meshIdentifier=null;
     public String meshLocation;
 
     public int drawMode = GL_TRIANGLES;

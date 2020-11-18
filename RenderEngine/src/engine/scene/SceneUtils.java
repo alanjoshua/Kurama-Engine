@@ -42,23 +42,9 @@ public class SceneUtils {
 
         Map<Material, Integer> materials = new HashMap<>();
 
-        for (Model model: scene.getModels()) {
-            for (Material mat: model.mesh.materials) {
-                materials.computeIfPresent(mat, (k ,val) -> val + 1);
-                materials.putIfAbsent(mat, 1);
-            }
-        }
-
-        for (Model model: scene.spotLights) {
-            for (Material mat: model.mesh.materials) {
-                materials.computeIfPresent(mat, (k ,val) -> val + 1);
-                materials.putIfAbsent(mat, 1);
-            }
-        }
-
-        for (Model model: scene.directionalLights) {
-            for (Material mat: model.mesh.materials) {
-                materials.computeIfPresent(mat, (k ,val) -> val + 1);
+        for (Mesh mesh: scene.getMeshes()) {
+            for (Material mat : mesh.materials) {
+                materials.computeIfPresent(mat, (k, val) -> val + 1);
                 materials.putIfAbsent(mat, 1);
             }
         }
@@ -76,9 +62,6 @@ public class SceneUtils {
             Logger.log(key.matName + " Times: " + sortedMaterials.get(key));
             sortedMaterials.put(key, curMatID);
             curMatID++;
-
-//            if (key.matName == Material.DEFAULT_MATERIAL_NAME)
-//                System.out.println(key);
         }
 
         Logger.log("\nMaterials with ID");
@@ -91,20 +74,9 @@ public class SceneUtils {
 
         Map<Mesh, Integer> meshes = new HashMap<>();
 
-        for (Model model: scene.getModels()) {
-            meshes.computeIfPresent(model.mesh, (k ,val) -> val + 1);
-            meshes.putIfAbsent(model.mesh, 1);
-
-        }
-
-        for (Model model: scene.spotLights) {
-            meshes.computeIfPresent(model.mesh, (k ,val) -> val + 1);
-            meshes.putIfAbsent(model.mesh, 1);
-        }
-
-        for (Model model: scene.directionalLights) {
-            meshes.computeIfPresent(model.mesh, (k ,val) -> val + 1);
-            meshes.putIfAbsent(model.mesh, 1);
+        for (Mesh mesh: scene.getMeshes()) {
+            meshes.computeIfPresent(mesh, (k ,val) -> val + 1);
+            meshes.putIfAbsent(mesh, 1);
         }
 
         meshes.computeIfPresent(scene.skybox.mesh, (k ,val) -> val + 1);

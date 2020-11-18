@@ -24,13 +24,13 @@ import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 public class MeshBuilder {
 
 	public static class MeshBuilderHints {
-		public boolean shouldSmartBakeVertexAttributes = false;
-		public boolean shouldDumbBakeVertexAttributes = true;
+		public boolean shouldSmartBakeVertexAttributes = true;
+		public boolean shouldDumbBakeVertexAttributes = false;
 		public boolean shouldTriangulate = true;
 		public boolean forceEarClipping = false;
-		public boolean initLWJGLAttribs = false;
+		public boolean initLWJGLAttribs = true;
 		public boolean addRandomColor = false;
-		public boolean shouldGenerateTangentBiTangent = false;
+		public boolean shouldGenerateTangentBiTangent = true;
 		public Vector addConstantColor;
 		public boolean convertToLines = false;
 		public boolean shouldInvertNormals = false;

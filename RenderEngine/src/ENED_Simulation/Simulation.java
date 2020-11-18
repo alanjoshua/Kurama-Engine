@@ -1,6 +1,7 @@
 package ENED_Simulation;
 
 import engine.DataStructure.Mesh.Mesh;
+import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.DataStructure.Texture;
 import engine.Effects.ShadowMap;
@@ -152,7 +153,7 @@ public class Simulation extends Game {
         cam.lookAtModel(flag);
 
         targetFPS = display.getRefreshRate();
-        hud = new SimulationHUD(this);
+        scene.hud = new SimulationHUD(this);
     }
 
     public void initModels() {
@@ -224,13 +225,13 @@ public class Simulation extends Game {
 
         hints.convertToLines = false;
 
-        scene.addModel(robot);
-        scene.addModel(grid);
-        scene.addModel(flag);
-        scene.addModel(h1);
-        scene.addModel(h2);
-        scene.addModel(h3);
-        scene.addModel(h4);
+        scene.addModel(robot, renderingEngine.sceneShaderID);
+        scene.addModel(grid, renderingEngine.sceneShaderID);
+        scene.addModel(flag, renderingEngine.sceneShaderID);
+        scene.addModel(h1, renderingEngine.sceneShaderID);
+        scene.addModel(h2, renderingEngine.sceneShaderID);
+        scene.addModel(h3, renderingEngine.sceneShaderID);
+        scene.addModel(h4, renderingEngine.sceneShaderID);
 
         initCrates();
 
@@ -327,7 +328,7 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{platScaleX,platScaleY,platScaleZ}));
-                scene.addModel(platform);
+                scene.addModel(platform, renderingEngine.sceneShaderID);
 
                 Integer currZone = getZone(r,c);
 
@@ -371,7 +372,7 @@ public class Simulation extends Game {
         }
 
         for (Box b: boxesToBeSearched) {
-            scene.addModel(b);
+            scene.addModel(b, renderingEngine.sceneShaderID);
         }
 //        scene.getModels().addAll(boxesToBeSearched);
 
@@ -495,7 +496,7 @@ public class Simulation extends Game {
     @Override
     public void tick() {
         tickInput();
-        hud.tick();
+        scene.hud.tick();
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
@@ -814,7 +815,7 @@ public class Simulation extends Game {
             robot.pathModel.shouldRender = true;
            hasAddedPath = true;
         }
-        renderingEngine.render(scene,isGameRunning ? null:hud,cam);
+        renderingEngine.render(scene,cam);
         if(hasAddedPath) {
 //            scene.mesh_model_map.remove(robot.pathModel.mesh);
 //            scene.models.remove(scene.models.size()-1);

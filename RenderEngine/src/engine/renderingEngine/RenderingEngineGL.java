@@ -24,13 +24,17 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class RenderingEngineGL extends RenderingEngine {
 
-    public ShaderProgram sceneShaderProgram;
-    public ShaderProgram hudShaderProgram;
-    public ShaderProgram skyBoxShaderProgram;
-    public ShaderProgram directionalLightDepthShaderProgram;
+//    public ShaderProgram sceneShaderProgram;
+//    public ShaderProgram hudShaderProgram;
+//    public ShaderProgram skyBoxShaderProgram;
+//    public ShaderProgram depthShaderProgram;
+    public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
     protected Mesh axes;
-//    public Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-    //public Matrix ortho = Matrix.buildOrthographicProjectionMatrix(1,700,-100,100,-100,100);
+
+    public String sceneShaderID = "sceneShader";
+    public String hudShaderID = "hudShader";
+    public String skyboxShaderID = "skyboxShader";
+    public String depthShaderID = "depthShader";
 
     public void init() {
         axes = MeshBuilder.buildAxes();
@@ -44,15 +48,16 @@ public class RenderingEngineGL extends RenderingEngine {
         glCullFace(GL_BACK);
 
         setupSceneShader(game.scene);
-        setupDirectionalLightDepthShader();
+        depthShader();
         setupHUDShader();
         setupSkybox();
-
     }
 
     public void setupSceneShader(Scene scene) {
         try {
-            sceneShaderProgram = new ShaderProgram();
+            ShaderProgram sceneShaderProgram = new ShaderProgram(sceneShaderID);
+            shaderID_shader_map.put(sceneShaderID, sceneShaderProgram);
+
             sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SceneVertexShader.glsl"));
             sceneShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SceneFragmentShader.glsl"));
             sceneShaderProgram.link();
@@ -85,14 +90,16 @@ public class RenderingEngineGL extends RenderingEngine {
         }
     }
 
-    public void setupDirectionalLightDepthShader() {
-        directionalLightDepthShaderProgram = new ShaderProgram();
-        directionalLightDepthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.glsl"));
-        directionalLightDepthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.glsl"));
-        directionalLightDepthShaderProgram.link();
+    public void depthShader() {
+        ShaderProgram depthShaderProgram = new ShaderProgram(depthShaderID);
+        shaderID_shader_map.put(depthShaderID, depthShaderProgram);
 
-        directionalLightDepthShaderProgram.createUniform("projectionMatrix");
-        directionalLightDepthShaderProgram.createUniform("modelLightViewMatrix");
+        depthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.glsl"));
+        depthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.glsl"));
+        depthShaderProgram.link();
+
+        depthShaderProgram.createUniform("projectionMatrix");
+        depthShaderProgram.createUniform("modelLightViewMatrix");
 //        directionalLightDepthShaderProgram.createUniform("nearZ");
 //        directionalLightDepthShaderProgram.createUniform("farZ");
 //        directionalLightDepthShaderProgram.createUniform("shouldLinearizeDepth");
@@ -100,7 +107,9 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void setupHUDShader() {
         try {
-        hudShaderProgram = new ShaderProgram();
+        ShaderProgram hudShaderProgram = new ShaderProgram(hudShaderID);
+        shaderID_shader_map.put(hudShaderID, hudShaderProgram);
+
         hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/HUDVertexShader.glsl"));
         hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/HUDFragmentShader.glsl"));
         hudShaderProgram.link();
@@ -119,7 +128,9 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void setupSkybox() {
         try {
-            skyBoxShaderProgram = new ShaderProgram();
+            ShaderProgram skyBoxShaderProgram = new ShaderProgram(skyboxShaderID);
+            shaderID_shader_map.put(skyboxShaderID, skyBoxShaderProgram);
+
             skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SkyBoxVertexShader.glsl"));
             skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SkyBoxFragmentShader.glsl"));
             skyBoxShaderProgram.link();
@@ -150,16 +161,21 @@ public class RenderingEngineGL extends RenderingEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Scene scene, HUD hud, Camera camera) {
+    public void render(Scene scene, Camera camera) {
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(scene);
         glViewport(0,0,game.getDisplay().getWidth(),game.getDisplay().getHeight());
         clear();
         renderScene(scene,camera,shadowPackage);
         renderSkyBox(scene,camera);
-        renderHUD(hud);
+        renderHUD(scene);
+    }
+
+    public ShaderProgram getShader(String shaderID) {
+        return shaderID_shader_map.get(shaderID);
     }
 
     public void renderScene(Scene scene, Camera camera, ShadowDepthRenderPackage shadowPackage) {
+        ShaderProgram sceneShaderProgram = getShader(sceneShaderID);
         sceneShaderProgram.bind();
 
         Matrix worldToCam = camera.getWorldToCam();
@@ -195,7 +211,7 @@ public class RenderingEngineGL extends RenderingEngine {
         int offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,0);
         offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
-        for(String meshId :scene.mesh_model_map.keySet()) {
+        for(String meshId :scene.shader_mesh_model_map.get(sceneShaderID).keySet()) {
             Mesh mesh = scene.meshID_mesh_map.get(meshId);
             sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
                     "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
@@ -205,7 +221,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
             mesh.initRender();
 
-            for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+            for(String modelId : scene.shader_mesh_model_map.get(sceneShaderID).get(meshId).keySet()) {
                 Model model = scene.modelID_model_map.get(modelId);
 
                 if (model.shouldRender) {
@@ -272,28 +288,40 @@ public class RenderingEngineGL extends RenderingEngine {
         sceneShaderProgram.unbind();
     }
 
-    public void renderHUD(HUD hud) {
+    public void renderHUD(Scene scene) {
 
-        if(hud == null) {
+        if(scene.hud == null) {
             return;
         }
 
         Matrix ortho = Matrix.buildOrtho2D(0, game.getDisplay().getWidth(), game.getDisplay().getHeight(), 0);
+
+        ShaderProgram hudShaderProgram = getShader(hudShaderID);
         hudShaderProgram.bind();
         hudShaderProgram.setUniform("texture_sampler", 0);
 
-        for(Model m: hud.hudElements) {
-            if (m.shouldRender) {
-                // Set orthographic and model matrix for this HUD item
-                Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
-                hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-                hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
+        for(String meshId :scene.shader_mesh_model_map.get(hudShaderID).keySet()) {
+            Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
-                hudShaderProgram.setUniform("shouldGreyScale", m.shouldGreyScale ? 1 : 0);
-                hudShaderProgram.setUniform("shouldLinearizeDepth", m.shouldLinearizeDepthInHUD ? 1 : 0);
+//            mesh.initRender();
 
-                m.mesh.initToEndFullRender(0);
+            for(String modelId : scene.shader_mesh_model_map.get(hudShaderID).get(meshId).keySet()) {
+                Model m = scene.modelID_model_map.get(modelId);
+
+                if (m.shouldRender) {
+                    // Set orthographic and model matrix for this HUD item
+                    Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
+                    hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
+                    hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
+
+                    hudShaderProgram.setUniform("shouldGreyScale", m.shouldGreyScale ? 1 : 0);
+                    hudShaderProgram.setUniform("shouldLinearizeDepth", m.shouldLinearizeDepthInHUD ? 1 : 0);
+
+                    m.mesh.initToEndFullRender(0);
+                }
             }
+
+//            mesh.endRender();
         }
 
         hudShaderProgram.unbind();
@@ -306,6 +334,7 @@ public class RenderingEngineGL extends RenderingEngine {
             return;
         }
 
+        ShaderProgram skyBoxShaderProgram = getShader(skyboxShaderID);
         skyBoxShaderProgram.bind();
 
         if (scene.skybox.shouldRender) {
@@ -329,7 +358,9 @@ public class RenderingEngineGL extends RenderingEngine {
     public ShadowDepthRenderPackage renderDepthMap(Scene scene) {
 
         glCullFace(GL_BACK);
-        directionalLightDepthShaderProgram.bind();
+
+        ShaderProgram depthShaderProgram = getShader(depthShaderID);
+        depthShaderProgram.bind();
         List<Matrix> worldToDirectionalLights = new ArrayList<>();
         List<Matrix> worldToSpotLights = new ArrayList<>();
 
@@ -339,22 +370,22 @@ public class RenderingEngineGL extends RenderingEngine {
             glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            directionalLightDepthShaderProgram.setUniform("projectionMatrix", light.shadowProjectionMatrix);
+            depthShaderProgram.setUniform("projectionMatrix", light.shadowProjectionMatrix);
 
             Matrix worldToLight = light.getWorldToObject();
             worldToDirectionalLights.add(worldToLight);
 
-            for(String meshId :scene.mesh_model_map.keySet()) {
+            for(String meshId :scene.shader_mesh_model_map.get(sceneShaderID).keySet()) {
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
                 mesh.initRender();
 
-                for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+                for(String modelId : scene.shader_mesh_model_map.get(sceneShaderID).get(meshId).keySet()) {
                     Model m = scene.modelID_model_map.get(modelId);
 
-                    if (m.isOpaque && m.shouldRender) {
+                    if (m.shouldCastShadow && m.shouldRender) {
                         Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                        directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                         mesh.render();
                     }
                 }
@@ -365,30 +396,26 @@ public class RenderingEngineGL extends RenderingEngine {
 
         for(int i =0;i < scene.spotLights.size();i++) {
             SpotLight light = scene.spotLights.get(i);
-//            float aspectRatio = (float)light.shadowMap.shadowMapWidth/(float)light.shadowMap.shadowMapHeight;
-//            //ortho = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-//            Matrix projMatrix = Matrix.buildPerspectiveMatrix(light.angle*2,aspectRatio,1f,-1000,-1,-1);
 
             Matrix projMatrix = light.shadowProjectionMatrix;
-            directionalLightDepthShaderProgram.setUniform("projectionMatrix", projMatrix);
+            depthShaderProgram.setUniform("projectionMatrix", projMatrix);
             glViewport(0,0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
 
             Matrix worldToLight = light.getWorldToObject();
             worldToSpotLights.add(worldToLight);
-//            worldToSpotLights.add(worldToLight);
 
-            for(String meshId :scene.mesh_model_map.keySet()) {
+            for(String meshId :scene.shader_mesh_model_map.get(sceneShaderID).keySet()) {
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
                 mesh.initRender();
-                for(String modelId : scene.mesh_model_map.get(meshId).keySet()) {
+                for(String modelId : scene.shader_mesh_model_map.get(sceneShaderID).get(meshId).keySet()) {
                     Model m = scene.modelID_model_map.get(modelId);
 
-                    if (m.isOpaque) {
+                    if (m.shouldCastShadow) {
                         Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                        directionalLightDepthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                         mesh.render();
                     }
                 }
@@ -397,7 +424,7 @@ public class RenderingEngineGL extends RenderingEngine {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
-        directionalLightDepthShaderProgram.unbind();
+        depthShaderProgram.unbind();
         glCullFace(GL_BACK);
         return new ShadowDepthRenderPackage(worldToDirectionalLights,worldToSpotLights);
     }
@@ -412,8 +439,10 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void cleanUp() {
-        if(sceneShaderProgram != null) {
-            sceneShaderProgram.cleanUp();
+        for (ShaderProgram shader: shaderID_shader_map.values()) {
+            if (shader != null) {
+                shader.cleanUp();
+            }
         }
     }
 

@@ -34,7 +34,6 @@ public abstract class Game implements Runnable {
     protected Thread gameLoopThread;
     protected BufferedWriter bw;
 
-    public HUD hud;
     public Scene scene;
 
     public Game(String threadName) {

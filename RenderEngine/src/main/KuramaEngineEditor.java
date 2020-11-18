@@ -59,7 +59,7 @@ public class KuramaEngineEditor extends Game implements Runnable {
     @Override
     public void tick() {
         tickInput();
-        hud.tick();
+        scene.hud.tick();
 
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;

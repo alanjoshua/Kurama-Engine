@@ -10,6 +10,8 @@ import engine.model.Model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import engine.Math.Vector;
 import engine.model.MeshBuilder;
 
@@ -128,6 +130,7 @@ public class Text extends Model {
         res.materials.set(0, textMat);
         res.initOpenGLMeshData();
 
+        res.meshIdentifier = UUID.randomUUID().toString();
         return res;
     }
 
