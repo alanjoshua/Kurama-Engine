@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-18T22:34:59.535268200
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-18T23:43:42.937819
 # Material Count: 14
 
 newmtl res/misc/cube.obj|minecraftCubeMat
@@ -81,7 +81,14 @@ ks 0.5 0.5 0.5 1.0
 ns 225.0
 reflectance 1.0
 
-newmtl b434d221-1f13-4d30-929b-285ed849fbd0|TERRAIN
+newmtl HUD_texquad_mesh|shadowMapVisualizer
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+
+newmtl 8a19b5a7-a3f9-45bd-a911-1514ab6f55b6|TERRAIN
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
@@ -91,13 +98,6 @@ map_ka crystalTexture.jpg
 map_kd crystalTexture.jpg
 map_ks crystalSpecularMap.jpg
 map_bump crystalNormalMap.jpg
-
-newmtl HUD_texquad_mesh|shadowMapVisualizer
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
 
 newmtl res/misc/skybox.obj|SkyBox
 ka 1.0 1.0 1.0 1.0

@@ -34,8 +34,6 @@ public class TestHUD extends HUD {
 
         for (int i = 0; i < texquad.mesh.vertAttributes.get(Mesh.POSITION).size(); i++) {
             Vector v = texquad.mesh.vertAttributes.get(Mesh.POSITION).get(i);
-//            v = v.add(new Vector(new float[]{1f,1f,0,0}));
-//            v = v.mul(new Vector(new float[]{500,500,1,1}));
             texquad.mesh.vertAttributes.get(Mesh.POSITION).set(i, v);
         }
 

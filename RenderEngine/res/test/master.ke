@@ -1,0 +1,41 @@
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-18T23:43:42.948789100
+# Mesh Count: 7
+# Model count: 407
+
+MESH INFO
+
+start new mesh
+ID:res/misc/cube.obj
+Face count:12
+location:res/test/meshes/res/misc/cube.obj.keObj
+
+start new mesh
+ID:plantMesh
+Face count:256964
+location:res/test/meshes/plantMesh.keObj
+
+start new mesh
+ID:hud_text_mesh
+Face count:48
+location:res/test/meshes/hud_text_mesh.keObj
+
+start new mesh
+ID:res/torch/test/hand_light.obj
+Face count:27952
+location:res/test/meshes/res/torch/test/hand_light.obj.keObj
+
+start new mesh
+ID:HUD_texquad_mesh
+Face count:2
+location:res/test/meshes/HUD_texquad_mesh.keObj
+
+start new mesh
+ID:8a19b5a7-a3f9-45bd-a911-1514ab6f55b6
+Face count:19602
+location:res/test/meshes/8a19b5a7-a3f9-45bd-a911-1514ab6f55b6.keObj
+
+start new mesh
+ID:res/misc/skybox.obj
+Face count:12
+location:res/test/meshes/res/misc/skybox.obj.keObj
+

@@ -166,19 +166,11 @@ public class GameLWJGL extends Game implements Runnable {
         cam.updateValues();
         targetFPS = display.getRefreshRate();
 
-//        for(String shaderID: scene.shader_mesh_model_map.keySet()) {
-//            Logger.log("SHADER = "+shaderID);
-//            Logger.log("--------------------------------------------------");
-//            for(String meshID: scene.shader_mesh_model_map.get(shaderID).keySet()) {
-//                Logger.log("Mesh ID = "+meshID);
-//                Logger.log("++++++++++++++++++++++++++++++++++++++++++++++");
-//                for (String modelID: scene.shader_mesh_model_map.get(shaderID).get(meshID).keySet()) {
-//                    Logger.log("Model ID = "+modelID);
-//                }
-//            }
-//        }
-
-        SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
+        try {
+            SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void initModels() {
