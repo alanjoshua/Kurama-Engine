@@ -37,91 +37,26 @@ public class SceneUtils {
 
     public static void writeSceneToKE(Scene scene, String directory, String filePrefix, String engineVersion) {
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                              Get materials being used
-
-        Map<Material, Integer> materials = new HashMap<>();
-
-        for (Mesh mesh: scene.getMeshes()) {
-            for (Material mat : mesh.materials) {
-                materials.computeIfPresent(mat, (k, val) -> val + 1);
-                materials.putIfAbsent(mat, 1);
-            }
-        }
-
-        for (Material mat: scene.skybox.mesh.materials) {
-            materials.computeIfPresent(mat, (k ,val) -> val + 1);
-            materials.putIfAbsent(mat, 1);
-        }
-
-        Map<Material, Integer> sortedMaterials = sortByValue(materials);
-
-        Logger.log("\nMaterials used in Scene:");
-        int curMatID = 0;
-        for (Material key: sortedMaterials.keySet()) {
-            Logger.log(key.matName + " Times: " + sortedMaterials.get(key));
-            sortedMaterials.put(key, curMatID);
-            curMatID++;
-        }
-
-        Logger.log("\nMaterials with ID");
-        for (Material key: sortedMaterials.keySet()) {
-            Logger.log(key.matName + " ID: " + sortedMaterials.get(key));
-        }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                              Get meshes
-
-        Map<Mesh, Integer> meshes = new HashMap<>();
-
-        for (Mesh mesh: scene.getMeshes()) {
-            meshes.computeIfPresent(mesh, (k ,val) -> val + 1);
-            meshes.putIfAbsent(mesh, 1);
-        }
-
-        meshes.computeIfPresent(scene.skybox.mesh, (k ,val) -> val + 1);
-        meshes.putIfAbsent(scene.skybox.mesh, 1);
-
-
-        Map<Mesh, Integer> sortedMeshes = sortByValue(meshes);
-
-        Logger.log("\nMeshes in scene:");
-        int curMeshID = 0;
-        for (Mesh key: sortedMeshes.keySet()) {
-            Logger.log(key.meshLocation + " Times: " + sortedMeshes.get(key));
-            sortedMeshes.put(key, curMeshID);
-            curMeshID++;
-        }
-
-        Logger.log("\nMeshes with ID");
-        for (Mesh key: sortedMeshes.keySet()) {
-            Logger.log(key.meshLocation + " ID: " + sortedMeshes.get(key));
-        }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                              Create Save folder
+//      Create Save folder
         File folder = new File(directory+"/"+filePrefix);
         boolean folderCreationSuccess = folder.mkdir();
         if(folderCreationSuccess){
             Logger.log("Directory created successfully");
         }else{
-            Logger.log("Sorry couldn’t create save folder");
-            Logger.log("Save failed...");
+            Logger.logError("Sorry couldn’t create save folder");
+            Logger.logError("Save failed...");
             return;
         }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                           Write Material File
-        writeMaterialFile(sortedMaterials, directory, filePrefix, engineVersion);
+//      Write Material File
+        writeMaterialFile(scene.meshID_mesh_map, directory, filePrefix, engineVersion);
 
+//      Write .KE file
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                      Write .KE file
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
-    public static void writeMaterialFile(Map<Material, Integer> sortedMaterials,
-                                         String directory, String filePrefix, String engineVersion) {
+    public static void writeMaterialFile(Map<String, Mesh> meshes, String directory, String filePrefix,
+                                         String engineVersion) {
 
 //                                           Create new material file
 
@@ -148,113 +83,126 @@ public class SceneUtils {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(materialFile))) {
 
-            writer.write("# Created by "+engineVersion+" on "+java.time.LocalDateTime.now()+"\n");
-            writer.write("# Material Count: "+sortedMaterials.size()+"\n\n");
+            int matCount = 0;
+            for (Mesh m: meshes.values()) {
+                matCount += m.materials.size();
+            }
 
-            for (Material mat: sortedMaterials.keySet()) {
+            writer.write("# Created by "+engineVersion+" on "+java.time.LocalDateTime.now()+"\n");
+            writer.write("# Material Count: "+matCount+"\n\n");
+
+            for (String meshID: meshes.keySet()) {
+                for (Material mat : meshes.get(meshID).materials) {
 
 //                Write material name
-                String matName = mat.matName;
-                Integer times = matNamesSoFar.get(matName);
-                if (times == null) {
-                    matNamesSoFar.put(matName, 1);
-                }
-                else {
-                    matName += times;
-                    matNamesSoFar.put(matName, times + 1);
-                }
+                    String matName = meshID+"|"+mat.matName;
+//                    Integer times = matNamesSoFar.get(matName);
+//                    if (times == null) {
+//                        matNamesSoFar.put(matName, 1);
+//                    } else {
+//                        matName += times;
+//                        matNamesSoFar.put(matName, times + 1);
+//                    }
 
-                writer.write("newmtl "+matName+"\n");
+                    writer.write("newmtl " + matName + "\n");
 
 //                Write ambient Color
-                writer.write("ka " + mat.ambientColor+'\n');
+                    writer.write("ka " + mat.ambientColor + '\n');
 
 //                Write diffuse color
-                writer.write("kd "+ mat.diffuseColor+"\n");
+                    writer.write("kd " + mat.diffuseColor + "\n");
 
 //                Write specular color
-                writer.write("ks "+ mat.specularColor+"\n");
+                    writer.write("ks " + mat.specularColor + "\n");
 
 //                Write specular power
-                writer.write("ns "+ mat.specularPower+"\n");
+                    writer.write("ns " + mat.specularPower + "\n");
 
 //                Write reflectance
-                writer.write("reflectance "+mat.reflectance+"\n");
+                    writer.write("reflectance " + mat.reflectance + "\n");
 
 //                Write texture
-                Texture curTex = mat.texture;
-                if (curTex != null) {
-                    String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
+                    Texture curTex = mat.texture;
+                    if (curTex != null && curTex.fileName != null) {
+                        String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
 
 //                    If this texture hasn't already been copied
-                    if (newTextLoc == null) {
-                        String[] splits = curTex.fileName.split("/");
-                        String saveTexName = directory+"/"+filePrefix+"/"+"textures"+"/"+splits[splits.length-1];
+                        if (newTextLoc == null) {
+                            String[] splits = curTex.fileName.split("/");
+                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                        File source = new File(curTex.fileName);
-                        File dest = new File(saveTexName);
-                        Files.copy(source.toPath(), dest.toPath());
-                        texturesStoredSoFar.put(curTex.fileName, splits[splits.length-1]);
+                            File source = new File(curTex.fileName);
+                            File dest = new File(saveTexName);
+                            try {
+                                Files.copy(source.toPath(), dest.toPath());
+                            }
+                            catch(Exception e) {
+                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
+                            texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
+                        }
+                        writer.write("map_ka " + texturesStoredSoFar.get(curTex.fileName) + "\n");
                     }
-                    writer.write("map_ka "+texturesStoredSoFar.get(curTex.fileName)+"\n");
-                }
 
 //                Write diffuseMap
-                curTex = mat.diffuseMap;
-                if (curTex != null) {
-                    String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
+                    curTex = mat.diffuseMap;
+                    if (curTex != null && curTex.fileName != null) {
+                        String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
 
 //                    If this texture hasn't already been copied
-                    if (newTextLoc == null) {
-                        String[] splits = curTex.fileName.split("/");
-                        String saveTexName = directory+"/"+filePrefix+"/"+"textures"+"/"+splits[splits.length-1];
+                        if (newTextLoc == null) {
+                            String[] splits = curTex.fileName.split("/");
+                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                        Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
 
-                        texturesStoredSoFar.put(curTex.fileName, splits[splits.length-1]);
+                            texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
+                        }
+                        writer.write("map_kd " + texturesStoredSoFar.get(curTex.fileName) + "\n");
                     }
-                    writer.write("map_kd "+texturesStoredSoFar.get(curTex.fileName)+"\n");
-                }
 
 //                Write specular Map
-                curTex = mat.specularMap;
-                if (curTex != null) {
-                    String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
+                    curTex = mat.specularMap;
+                    if (curTex != null && curTex.fileName != null) {
+                        String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
 
 //                    If this texture hasn't already been copied
-                    if (newTextLoc == null) {
-                        String[] splits = curTex.fileName.split("/");
-                        String saveTexName = directory+"/"+filePrefix+"/"+"textures"+"/"+splits[splits.length-1];
+                        if (newTextLoc == null) {
+                            String[] splits = curTex.fileName.split("/");
+                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                        Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
 
-                        texturesStoredSoFar.put(curTex.fileName, splits[splits.length-1]);
+                            texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
+                        }
+                        writer.write("map_ks " + texturesStoredSoFar.get(curTex.fileName) + "\n");
                     }
-                    writer.write("map_ks "+texturesStoredSoFar.get(curTex.fileName)+"\n");
-                }
 
 //                Write bump map
-                curTex = mat.normalMap;
-                if (curTex != null) {
-                    String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
+                    curTex = mat.normalMap;
+                    if (curTex != null && curTex.fileName != null) {
+                        String newTextLoc = texturesStoredSoFar.get(curTex.fileName);
 
 //                    If this texture hasn't already been copied
-                    if (newTextLoc == null) {
-                        String[] splits = curTex.fileName.split("/");
-                        String saveTexName = directory+"/"+filePrefix+"/"+"textures"+"/"+splits[splits.length-1];
+                        if (newTextLoc == null) {
+                            String[] splits = curTex.fileName.split("/");
+                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                        Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
 
-                        texturesStoredSoFar.put(curTex.fileName, splits[splits.length-1]);
+                            texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
+                        }
+                        writer.write("map_bump " + texturesStoredSoFar.get(curTex.fileName) + "\n");
                     }
-                    writer.write("map_bump "+texturesStoredSoFar.get(curTex.fileName)+"\n");
-                }
 
-                writer.newLine();
+                    writer.newLine();
+                }
             }
 
             writer.flush();

@@ -188,15 +188,16 @@ public class Scene {
                 put(newModel.identifier, newModel);  // Insert new model into mesh_model map
     }
 
-    public void addSkyBlock(Model skyblock) {
+    public void addSkyBlock(Model skyblock, String shaderID) {
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(skyblock.identifier)) {
             logError("Model ID "+ skyblock.identifier + " not unique. Assigning random id...");
             skyblock.identifier = UUID.randomUUID().toString();
         }
 
+        setUniqueMeshID(skyblock.mesh);
+        addModel(skyblock, shaderID);
         this.skybox = skyblock;
-        modelID_model_map.put(skyblock.identifier, skybox);
     }
 
     public void cleanUp() {

@@ -214,7 +214,7 @@ public class GameLWJGL extends Game implements Runnable {
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
         skybox.mesh.materials.set(0,skyMat);
-        scene.addSkyBlock(skybox);
+        scene.addSkyBlock(skybox, renderingEngine.skyboxShaderID);
 
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
@@ -234,10 +234,6 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-
-        hints.shouldSmartBakeVertexAttributes = true;
-//        hints.shouldDumbBakeVertexAttributes = true;
-//        Model plant = new Model(this, buildModelFromFileGL("res/plant/01Alocasia_obj.obj", hints), "plant");
         Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj", "plantMesh", hints), "plant", renderingEngine.sceneShaderID);
         plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);

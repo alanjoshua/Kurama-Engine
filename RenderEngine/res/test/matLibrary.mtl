@@ -1,28 +1,7 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-18T13:03:07.382705
-# Material Count: 11
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-18T22:34:59.535268200
+# Material Count: 14
 
-newmtl DEFAULT
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-
-newmtl Black.texture
-ka 1.0 1.0 1.0 1.0
-kd 0.010499 0.010362 0.011088 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
-reflectance 1.0
-
-newmtl Material.004
-ka 1.0 1.0 1.0 1.0
-kd 0.8 0.8 0.8 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
-reflectance 1.0
-
-newmtl minecraftCubeMat
+newmtl res/misc/cube.obj|minecraftCubeMat
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
@@ -32,21 +11,77 @@ map_ka grassblock.png
 map_kd grassblock.png
 map_ks grassblock.png
 
-newmtl chrome.waves
+newmtl plantMesh|DEFAULT
 ka 1.0 1.0 1.0 1.0
-kd 0.8 0.8 0.8 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
 reflectance 1.0
 
-newmtl wire_204204204
+newmtl plantMesh|wire_204204204
 ka 0.8 0.8 0.8 1.0
 kd 0.8 0.8 0.8 1.0
 ks 0.35 0.35 0.35 1.0
 ns 32.0
 reflectance 1.0
 
-newmtl TERRAIN
+newmtl hud_text_mesh|fontText
+ka 1.0 1.0 1.0 0.5
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|DEFAULT
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|Black
+ka 1.0 1.0 1.0 1.0
+kd 0.010499 0.010362 0.011088 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|Black.texture
+ka 1.0 1.0 1.0 1.0
+kd 0.010499 0.010362 0.011088 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|Material.002
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|Material.004
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|chrome
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl res/torch/test/hand_light.obj|chrome.waves
+ka 1.0 1.0 1.0 1.0
+kd 0.8 0.8 0.8 1.0
+ks 0.5 0.5 0.5 1.0
+ns 225.0
+reflectance 1.0
+
+newmtl b434d221-1f13-4d30-929b-285ed849fbd0|TERRAIN
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
@@ -57,32 +92,18 @@ map_kd crystalTexture.jpg
 map_ks crystalSpecularMap.jpg
 map_bump crystalNormalMap.jpg
 
-newmtl chrome
+newmtl HUD_texquad_mesh|shadowMapVisualizer
 ka 1.0 1.0 1.0 1.0
-kd 0.8 0.8 0.8 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
 reflectance 1.0
 
-newmtl Black
-ka 1.0 1.0 1.0 1.0
-kd 0.010499 0.010362 0.011088 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
-reflectance 1.0
-
-newmtl SkyBox
+newmtl res/misc/skybox.obj|SkyBox
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
 map_ka skybox.png
-
-newmtl Material.002
-ka 1.0 1.0 1.0 1.0
-kd 0.8 0.8 0.8 1.0
-ks 0.5 0.5 0.5 1.0
-ns 225.0
-reflectance 1.0
 
