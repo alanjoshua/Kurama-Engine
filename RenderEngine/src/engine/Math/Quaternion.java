@@ -254,6 +254,10 @@ public class Quaternion {
 		return new Vector(new float[] { pitch, yaw, roll });
 	}
 
+	public String toString() {
+		return coordinate.toString();
+	}
+
 //	private Vector axis;
 //	private float angle;
 //	private Vector coordinate;

@@ -26,10 +26,8 @@ import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.model.MeshBuilder;
 import engine.camera.Camera;
-import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.SceneUtils;
-import engine.utils.Logger;
 import engine.utils.Utils;
 import static engine.model.MeshBuilder.*;
 
@@ -52,7 +50,7 @@ public class GameLWJGL extends Game implements Runnable {
     protected int lookAtIndex = 1;
     protected boolean isGameRunning = true;
 
-    protected List<engine.GUI.Button> pauseButtons;
+    protected List<engine.GUI.Button> pauseButtons = new ArrayList<>();
     protected engine.GUI.Button EXIT;
     protected engine.GUI.Button FULLSCREEN;
     protected engine.GUI.Button WINDOWED;
@@ -74,6 +72,42 @@ public class GameLWJGL extends Game implements Runnable {
         renderingEngine = new RenderingEngineGL(this);
         display = new DisplayLWJGL(this);
         display.startScreen();
+
+        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+                display.getWidth(), display.getHeight());
+
+        glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
+            glViewport(0,0,width,height);
+                if(getCamera() != null) {
+                    display.setWIDTH(width);
+                    display.setHEIGHT(height);
+                    getCamera().setImageWidth(width);
+                    getCamera().setImageHeight(height);
+                    getCamera().setShouldUpdateValues(true);
+                }
+        });
+
+        input = new InputLWJGL(this);
+
+        initScene();
+        initPauseScreen();
+
+        renderingEngine.init();
+
+        display.setClearColor(0,0,0,1);
+        cam.updateValues();
+        targetFPS = display.getRefreshRate();
+
+        try {
+            SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void initScene() {
+
+        scene.hud = new TestHUD(this);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,7 +147,11 @@ public class GameLWJGL extends Game implements Runnable {
 
         scene.addSplotLight(spotLight, renderingEngine.sceneShaderID);
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        Material quadMat = new Material();
+        quadMat.matName = "shadowMapVisualizer";
+        quadMat.texture = spotLight.shadowMap.depthMap;
+        scene.hud.hudElements.get(0).mesh.materials.set(0, quadMat);
 //     -------------------------------------------------------------------------------------------------------------------
 //                                                   Second Spot Light
 
@@ -133,47 +171,6 @@ public class GameLWJGL extends Game implements Runnable {
 //        spotLight_2.isOpaque = false;
 // ------------------------------------------------------------------------------------------------------------------------
 
-        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                display.getWidth(), display.getHeight());
-
-        glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
-            glViewport(0,0,width,height);
-                if(getCamera() != null) {
-                    display.setWIDTH(width);
-                    display.setHEIGHT(height);
-                    getCamera().setImageWidth(width);
-                    getCamera().setImageHeight(height);
-                    getCamera().setShouldUpdateValues(true);
-                }
-        });
-
-        renderingEngine.init();
-
-        input = new InputLWJGL(this);
-
-        pauseButtons = new ArrayList<>();
-        scene.hud = new TestHUD(this);
-
-        Material quadMat = new Material();
-        quadMat.matName = "shadowMapVisualizer";
-        quadMat.texture = spotLight.shadowMap.depthMap;
-        scene.hud.hudElements.get(0).mesh.materials.set(0, quadMat);
-
-        initModels();
-        initPauseScreen();
-
-        display.setClearColor(0,0,0,1);
-        cam.updateValues();
-        targetFPS = display.getRefreshRate();
-
-        try {
-            SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void initModels() {
         MiniBehaviour tempRot = ((m, params) -> {
             Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
             Quaternion newQ = rot.multiply(m.getOrientation());
@@ -213,7 +210,7 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = MeshBuilder.buildModelFromFileGL("res/misc/cube.obj", hints);
+        Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
 
         for(int i = 0;i < 20;i++) {
             for(int y = 0;y < 20;y++) {

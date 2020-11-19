@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import engine.Math.Vector;
 import engine.model.MeshBuilder;
+import engine.utils.Utils;
 
 public class Text extends Model {
 
@@ -130,7 +131,7 @@ public class Text extends Model {
         res.materials.set(0, textMat);
         res.initOpenGLMeshData();
 
-        res.meshIdentifier = UUID.randomUUID().toString();
+        res.meshIdentifier = Utils.getUniqueID();
         return res;
     }
 

@@ -92,6 +92,33 @@ public class SceneUtils {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                          Write model info to file
 
+            writer.write("MODEL INFO\n\n");  //Heading indicating that mesh info is starting
+
+            for (Model model: scene.modelID_model_map.values()) {
+                writer.write("start new model\n");
+
+//                Write model info
+                writer.write("ID:"+model.identifier+"\n");
+                writer.write("type:"+model.getClass().getSimpleName()+"\n");
+                writer.write("shader_ID:"+scene.modelID_shaderID_map.get(model.identifier)+"\n");
+
+                if (model.mesh != null) {
+                    writer.write("mesh_ID:"+model.mesh.meshIdentifier+"\n");
+                }
+                else {
+                    writer.write("mesh_ID:null\n");
+                }
+
+                writer.write("scale:"+model.getScale().toString()+"\n");
+                writer.write("pos:"+model.getPos().toString()+"\n");
+                writer.write("orientation:"+model.getOrientation().toString()+"\n");
+                writer.write("shouldCastShadow:"+model.shouldCastShadow+"\n");
+                writer.write("shouldRender:"+model.shouldRender+"\n");
+                writer.newLine();
+            }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         }
 
     }

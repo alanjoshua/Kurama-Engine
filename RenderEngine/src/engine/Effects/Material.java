@@ -3,6 +3,7 @@ package engine.Effects;
 import engine.DataStructure.Texture;
 import engine.Math.Vector;
 import engine.model.Terrain;
+import engine.utils.Utils;
 
 import java.util.UUID;
 
@@ -37,7 +38,7 @@ public class Material {
         this.normalMap = null;
         this.diffuseMap = null;
         this.specularMap = null;
-        this.matName = UUID.randomUUID().toString();
+        this.matName = Utils.getUniqueID();
     }
 
     public Material(String matName) {

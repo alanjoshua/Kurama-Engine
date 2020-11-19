@@ -11,6 +11,7 @@ import engine.model.HUD;
 import engine.model.MeshBuilder;
 import engine.model.Model;
 import engine.shader.ShaderProgram;
+import engine.utils.Utils;
 
 import java.util.*;
 
@@ -22,6 +23,7 @@ public class Scene {
     public Map<String, Mesh> meshID_mesh_map = new HashMap<>();
     public Map<String, HashMap<String, HashMap<String, Model>>> shader_mesh_model_map = new HashMap<>();
     public Map<String, Model> modelID_model_map = new HashMap<>();
+    public Map<String, String> modelID_shaderID_map = new HashMap<>();
     public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
 
     public List<PointLight> pointLights = new ArrayList<>();
@@ -70,7 +72,7 @@ public class Scene {
 
     public void setUniqueMeshID(Mesh mesh) {
         if (!isIDUniqueMeshID(mesh.meshIdentifier)) {
-            mesh.meshIdentifier = UUID.randomUUID().toString();
+            mesh.meshIdentifier = Utils.getUniqueID();
         }
     }
 
@@ -93,7 +95,7 @@ public class Scene {
 
             if (locPresent) {
                 log("Location already being used as ID. Asigning random ID...");
-                id = UUID.randomUUID().toString();
+                id = Utils.getUniqueID();
             }
             else {
                 id = fileName;
@@ -129,7 +131,7 @@ public class Scene {
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(modelID)) {
             logError("Model ID "+ modelID + " not unique. Assigning random id...");
-            String id = UUID.randomUUID().toString();
+            String id = Utils.getUniqueID();
             newModel = new Model(game, mesh, id);
         }
         else {
@@ -137,6 +139,8 @@ public class Scene {
         }
 
         modelID_model_map.put(newModel.identifier, newModel);
+        modelID_shaderID_map.put(newModel.identifier, shaderID);
+
         if (mesh != null) {
             shader_mesh_model_map.get(shaderID).get(mesh.meshIdentifier).put(newModel.identifier, newModel);  // Insert new model into mesh_model map
         }
@@ -155,7 +159,7 @@ public class Scene {
             }
 
             modelID_model_map.put(newModel.identifier, newModel);
-
+            modelID_shaderID_map.put(newModel.identifier, shaderID);
             return;
         }
 
@@ -175,10 +179,11 @@ public class Scene {
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(newModel.identifier)) {
             logError("Model ID "+ newModel.identifier + " not unique. Assigning random id...");
-            newModel.identifier = UUID.randomUUID().toString();
+            newModel.identifier = Utils.getUniqueID();
         }
 
         modelID_model_map.put(newModel.identifier, newModel);
+        modelID_shaderID_map.put(newModel.identifier, shaderID);
 //        log("\n");
 //        log("mesh id: "+ newModel.mesh.meshIdentifier);
 //        log("model ID: "+newModel.identifier);
@@ -192,7 +197,7 @@ public class Scene {
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(skyblock.identifier)) {
             logError("Model ID "+ skyblock.identifier + " not unique. Assigning random id...");
-            skyblock.identifier = UUID.randomUUID().toString();
+            skyblock.identifier = Utils.getUniqueID();
         }
 
         setUniqueMeshID(skyblock.mesh);

@@ -24,10 +24,6 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class RenderingEngineGL extends RenderingEngine {
 
-//    public ShaderProgram sceneShaderProgram;
-//    public ShaderProgram hudShaderProgram;
-//    public ShaderProgram skyBoxShaderProgram;
-//    public ShaderProgram depthShaderProgram;
     public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
     protected Mesh axes;
 
@@ -35,6 +31,10 @@ public class RenderingEngineGL extends RenderingEngine {
     public String hudShaderID = "hudShader";
     public String skyboxShaderID = "skyboxShader";
     public String depthShaderID = "depthShader";
+
+    public static int MAX_DIRECTIONAL_LIGHTS = 5;
+    public static int MAX_SPOTLIGHTS = 10;
+    public static int MAX_POINTLIGHTS = 10;
 
     public void init() {
         axes = MeshBuilder.buildAxes();
@@ -47,13 +47,13 @@ public class RenderingEngineGL extends RenderingEngine {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-        setupSceneShader(game.scene);
+        setupSceneShader();
         depthShader();
         setupHUDShader();
         setupSkybox();
     }
 
-    public void setupSceneShader(Scene scene) {
+    public void setupSceneShader() {
         try {
             ShaderProgram sceneShaderProgram = new ShaderProgram(sceneShaderID);
             shaderID_shader_map.put(sceneShaderID, sceneShaderProgram);
@@ -64,10 +64,10 @@ public class RenderingEngineGL extends RenderingEngine {
 
             sceneShaderProgram.createUniform("projectionMatrix");
 
-            sceneShaderProgram.createUniformArray("modelLightViewMatrix",5);
-            sceneShaderProgram.createUniformArray("modelSpotLightViewMatrix",5);
-            sceneShaderProgram.createUniformArray("directionalShadowMaps",5);
-            sceneShaderProgram.createUniformArray("spotLightShadowMaps",5);
+            sceneShaderProgram.createUniformArray("modelLightViewMatrix",MAX_DIRECTIONAL_LIGHTS);
+            sceneShaderProgram.createUniformArray("modelSpotLightViewMatrix",MAX_SPOTLIGHTS);
+            sceneShaderProgram.createUniformArray("directionalShadowMaps",MAX_DIRECTIONAL_LIGHTS);
+            sceneShaderProgram.createUniformArray("spotLightShadowMaps",MAX_SPOTLIGHTS);
             sceneShaderProgram.createUniform("modelViewMatrix");
             sceneShaderProgram.createUniform("numDirectionalLights");
             sceneShaderProgram.createUniform("numberOfSpotLights");
@@ -75,9 +75,9 @@ public class RenderingEngineGL extends RenderingEngine {
 
             sceneShaderProgram.createUniform("ambientLight");
 
-            sceneShaderProgram.createPointLightListUniform("pointLights",scene.pointLights.size());
-            sceneShaderProgram.createDirectionalLightListUniform("directionalLights",scene.directionalLights.size());
-            sceneShaderProgram.createSpotLightListUniform("spotLights",scene.spotLights.size());
+            sceneShaderProgram.createPointLightListUniform("pointLights",MAX_POINTLIGHTS);
+            sceneShaderProgram.createDirectionalLightListUniform("directionalLights",MAX_DIRECTIONAL_LIGHTS);
+            sceneShaderProgram.createSpotLightListUniform("spotLights",MAX_SPOTLIGHTS);
 
             sceneShaderProgram.createFogUniform("fog");
             sceneShaderProgram.createUniform("allDirectionalLightStatic");

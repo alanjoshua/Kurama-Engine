@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 public class Utils {
 	
@@ -23,6 +24,10 @@ public class Utils {
 		Vector proj1 = e1.normalise().scalarMul(e1.normalise().dot(p));
 		Vector proj2 = e2.normalise().scalarMul(e2.normalise().dot(p));
 		return proj1.add(proj2);
+	}
+
+	public static String getUniqueID() {
+		return UUID.randomUUID().toString();
 	}
 
 	public static String loadResourceAsString(String filename) {
