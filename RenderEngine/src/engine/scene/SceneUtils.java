@@ -4,6 +4,7 @@ import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
 import engine.model.Model;
+import engine.shader.ShaderProgram;
 import engine.utils.Logger;
 import org.lwjgl.system.CallbackI;
 
@@ -48,6 +49,8 @@ public class SceneUtils {
             return;
         }
 
+//        File shadersFolder = new File()
+
 //      Write Material File
         writeMaterialFile(scene.meshID_mesh_map, directory, filePrefix, engineVersion);
 
@@ -73,6 +76,84 @@ public class SceneUtils {
             writer.write("# Created by "+engineVersion+" on "+java.time.LocalDateTime.now()+"\n");
             writer.write("# Mesh Count: "+scene.meshID_mesh_map.size()+"\n");
             writer.write("# Model count: "+scene.modelID_model_map.size() + "\n\n");
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                          Write shader Info
+
+            File shadersFolder = new File(directory+"/"+filePrefix+"/shaders");
+            boolean folderCreationSuccess = shadersFolder.mkdir();
+            if(folderCreationSuccess){
+                Logger.log("Shaders folder created successfully");
+            }else{
+                Logger.logError("Sorry couldn’t create v folder");
+                Logger.logError("Save failed...");
+                return;
+            }
+
+            Map<String, String> shadersWrittenSoFar = new HashMap<>();
+
+            writer.write("SHADERS INFO\n\n");
+
+            for (ShaderProgram shader: scene.shaderID_shader_map.values()) {
+
+                writer.write("start new shader\n");
+                writer.write("ID:"+shader.shaderIdentifier+"\n");
+
+                String vertShaderLoc;
+                String fragmentShaderLoc;
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                                      Make copy of Shaders
+
+//              Make copy of vertex shader in shaders folder
+                String newShaderLoc = shadersWrittenSoFar.get(shader.vertexShaderLocation);
+
+//              If this shader hasn't already been copied
+                if (newShaderLoc == null) {
+                    String[] splits = shader.vertexShaderLocation.split("/");
+                    String saveTexName = directory + "/" + filePrefix + "/" + "shaders" + "/" + splits[splits.length - 1];
+
+//                  Create copy of texture in current save directory
+                    File source = new File(shader.vertexShaderLocation);
+                    File dest = new File(saveTexName);
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("current Vert shader: " + shader.vertexShaderLocation + " Shader ID: " + shader.shaderIdentifier);
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+                    shadersWrittenSoFar.put(shader.vertexShaderLocation, directory+"/"+filePrefix+"/shaders/"+splits[splits.length - 1]);
+                }
+                vertShaderLoc = shadersWrittenSoFar.get(shader.vertexShaderLocation);
+
+//                Make copy of fragment shader in shaders folder
+                newShaderLoc = shadersWrittenSoFar.get(shader.fragmentShaderLocation);
+
+//              If this shader hasn't already been copied
+                if (newShaderLoc == null) {
+                    String[] splits = shader.fragmentShaderLocation.split("/");
+                    String saveTexName = directory + "/" + filePrefix + "/" + "shaders" + "/" + splits[splits.length - 1];
+
+//                  Create copy of texture in current save directory
+                    File source = new File(shader.fragmentShaderLocation);
+                    File dest = new File(saveTexName);
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("current Frag shader: " + shader.fragmentShaderLocation + " Shader ID: " + shader.shaderIdentifier);
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+                    shadersWrittenSoFar.put(shader.fragmentShaderLocation, directory+"/"+filePrefix+"/shaders/"+splits[splits.length - 1]);
+                }
+                fragmentShaderLoc = shadersWrittenSoFar.get(shader.fragmentShaderLocation);
+
+//----------------------------------------------------------------------------------------------------------------------
+                writer.write("vertexShader:"+vertShaderLoc+"\n");
+                writer.write("fragmentShader:"+fragmentShaderLoc+"\n");
+                writer.newLine();
+            }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                   First write mesh info to master file

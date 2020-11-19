@@ -45,7 +45,7 @@ public class TestHUD extends HUD {
         texquad.shouldRender = false;
         hudElements.add(texquad);
 
-        demoText = new Text(game, "Kurama Engine -alpha 2.0", new FontTexture(FONT,CHARSET), "HUD_text");
+        demoText = new Text(game, "Kurama Engine -alpha 2.1", new FontTexture(FONT,CHARSET), "HUD_text");
         demoText.mesh.meshIdentifier = "hud_text_mesh";
         game.scene.setUniqueMeshID(demoText.mesh);
 

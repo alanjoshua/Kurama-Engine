@@ -14,6 +14,7 @@ import engine.shader.ShaderProgram;
 import engine.game.Game;
 import engine.model.Model;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,8 +59,8 @@ public class RenderingEngineGL extends RenderingEngine {
             ShaderProgram sceneShaderProgram = new ShaderProgram(sceneShaderID);
             shaderID_shader_map.put(sceneShaderID, sceneShaderProgram);
 
-            sceneShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SceneVertexShader.glsl"));
-            sceneShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SceneFragmentShader.glsl"));
+            sceneShaderProgram.createVertexShader("Shaders/SceneVertexShader.glsl");
+            sceneShaderProgram.createFragmentShader("Shaders/SceneFragmentShader.glsl");
             sceneShaderProgram.link();
 
             sceneShaderProgram.createUniform("projectionMatrix");
@@ -87,22 +88,29 @@ public class RenderingEngineGL extends RenderingEngine {
 
         } catch (Exception e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
     public void depthShader() {
-        ShaderProgram depthShaderProgram = new ShaderProgram(depthShaderID);
-        shaderID_shader_map.put(depthShaderID, depthShaderProgram);
 
-        depthShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightVertexShader.glsl"));
-        depthShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/depthDirectionalLightFragmentShader.glsl"));
-        depthShaderProgram.link();
+        try {
+            ShaderProgram depthShaderProgram = new ShaderProgram(depthShaderID);
+            shaderID_shader_map.put(depthShaderID, depthShaderProgram);
 
-        depthShaderProgram.createUniform("projectionMatrix");
-        depthShaderProgram.createUniform("modelLightViewMatrix");
+            depthShaderProgram.createVertexShader("Shaders/depthDirectionalLightVertexShader.glsl");
+            depthShaderProgram.createFragmentShader("Shaders/depthDirectionalLightFragmentShader.glsl");
+            depthShaderProgram.link();
+
+            depthShaderProgram.createUniform("projectionMatrix");
+            depthShaderProgram.createUniform("modelLightViewMatrix");
 //        directionalLightDepthShaderProgram.createUniform("nearZ");
 //        directionalLightDepthShaderProgram.createUniform("farZ");
 //        directionalLightDepthShaderProgram.createUniform("shouldLinearizeDepth");
+        }catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     public void setupHUDShader() {
@@ -110,8 +118,8 @@ public class RenderingEngineGL extends RenderingEngine {
         ShaderProgram hudShaderProgram = new ShaderProgram(hudShaderID);
         shaderID_shader_map.put(hudShaderID, hudShaderProgram);
 
-        hudShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/HUDVertexShader.glsl"));
-        hudShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/HUDFragmentShader.glsl"));
+        hudShaderProgram.createVertexShader("Shaders/HUDVertexShader.glsl");
+        hudShaderProgram.createFragmentShader("Shaders/HUDFragmentShader.glsl");
         hudShaderProgram.link();
 
         // Create uniforms for Orthographic-model projection matrix and base colour
@@ -123,6 +131,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
         }catch(Exception e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -131,8 +140,8 @@ public class RenderingEngineGL extends RenderingEngine {
             ShaderProgram skyBoxShaderProgram = new ShaderProgram(skyboxShaderID);
             shaderID_shader_map.put(skyboxShaderID, skyBoxShaderProgram);
 
-            skyBoxShaderProgram.createVertexShader(Utils.loadResourceAsString("/Shaders/SkyBoxVertexShader.glsl"));
-            skyBoxShaderProgram.createFragmentShader(Utils.loadResourceAsString("/Shaders/SkyBoxFragmentShader.glsl"));
+            skyBoxShaderProgram.createVertexShader("Shaders/SkyBoxVertexShader.glsl");
+            skyBoxShaderProgram.createFragmentShader("Shaders/SkyBoxFragmentShader.glsl");
             skyBoxShaderProgram.link();
 
             skyBoxShaderProgram.createUniform("projectionMatrix");
@@ -142,6 +151,7 @@ public class RenderingEngineGL extends RenderingEngine {
         }
         catch (Exception e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 

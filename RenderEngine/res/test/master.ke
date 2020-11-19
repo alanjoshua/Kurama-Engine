@@ -1,6 +1,28 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-19T21:40:19.166738300
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-20T00:58:59.996046700
 # Mesh Count: 7
 # Model count: 407
+
+SHADERS INFO
+
+start new shader
+ID:depthShader
+vertexShader:res/test/shaders/depthDirectionalLightVertexShader.glsl
+fragmentShader:res/test/shaders/depthDirectionalLightFragmentShader.glsl
+
+start new shader
+ID:sceneShader
+vertexShader:res/test/shaders/SceneVertexShader.glsl
+fragmentShader:res/test/shaders/SceneFragmentShader.glsl
+
+start new shader
+ID:hudShader
+vertexShader:res/test/shaders/HUDVertexShader.glsl
+fragmentShader:res/test/shaders/HUDFragmentShader.glsl
+
+start new shader
+ID:skyboxShader
+vertexShader:res/test/shaders/SkyBoxVertexShader.glsl
+fragmentShader:res/test/shaders/SkyBoxFragmentShader.glsl
 
 MESH INFO
 
@@ -15,14 +37,14 @@ Face count:48
 location:res/test/meshes/hud_text_mesh.keObj
 
 start new mesh
+ID:5627fb3f-2077-4291-84d7-0eb556cea425
+Face count:19602
+location:res/test/meshes/5627fb3f-2077-4291-84d7-0eb556cea425.keObj
+
+start new mesh
 ID:res/torch/test/hand_light.obj
 Face count:27952
 location:res/test/meshes/res/torch/test/hand_light.obj.keObj
-
-start new mesh
-ID:6b017f3d-4b7b-45ad-bba5-a97dcee179cb
-Face count:19602
-location:res/test/meshes/6b017f3d-4b7b-45ad-bba5-a97dcee179cb.keObj
 
 start new mesh
 ID:HUD_texquad_mesh
@@ -42,89 +64,89 @@ location:res/test/meshes/res/misc/skybox.obj.keObj
 MODEL INFO
 
 start new model
-ID:d63b3ffe-5830-4b48-8563-d2b6eded5783
+ID:82810a5c-eba4-40eb-a134-3d3d5006ffd7
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:0.9999999 34.0 -1.0000001
+pos:3.0 56.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a764a826-9c2d-45ac-8624-53ab1d455ecd
+ID:3861b1cb-6fcd-4d59-9405-68ec09cd63dc
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:19.0 50.0 -1.0000001
+pos:5.0 46.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:8581e1ee-c9fc-45c6-9be8-690f788f0f3d
+ID:40bdd70e-4c95-4058-9f88-94979870aab4
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 58.0 -1.0000001
+pos:37.0 60.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:7aced68d-f760-4102-a7fc-e1a1aecebd57
+ID:db19de82-8c29-4abe-8f9f-39cdb652b0af
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:33.0 50.0 -1.0000001
+pos:35.0 62.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:31f6bfe2-acb0-4172-967c-00b2bc5a23d0
+ID:36b8d1a3-6737-4c1b-b715-e48c4f9a1f94
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:-1.0000001 50.0 -1.0000001
+pos:0.9999999 38.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:67ae67a2-7cc5-452c-a0ed-98610fceb217
+ID:58574310-d8b8-4f08-b6cf-6edc9d0ece8a
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 52.0 -1.0000001
+pos:13.0 38.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:5a4148d8-a388-472b-97b7-2a0ab18a48f0
+ID:dc4b5e6f-2013-43d4-8b84-777fc49a33cd
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:33.0 40.0 -1.0000001
+pos:0.9999999 42.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:21fe7f3a-59ed-4823-8ca4-0f2129d12ec3
+ID:6a47f5b1-a433-4046-b3d5-f218bec1bb7f
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:21.0 32.0 -1.0000001
+pos:3.0 62.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -141,23 +163,12 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:94807599-b0b4-4673-a766-8737400ce190
+ID:21339b86-26f0-4b08-b126-03cebcd8fb01
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:19f8d982-627a-4195-b6c7-daf044847606
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 62.0 -1.0000001
+pos:17.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -166,7 +177,7 @@ start new model
 ID:terrain
 type:Terrain
 shader_ID:sceneShader
-mesh_ID:6b017f3d-4b7b-45ad-bba5-a97dcee179cb
+mesh_ID:5627fb3f-2077-4291-84d7-0eb556cea425
 scale:100.0 60.0 100.0
 pos:0.0 0.0 0.0
 orientation:1.0 0.0 0.0 0.0
@@ -174,89 +185,155 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:944334d5-9546-4985-ad2b-ec29180d001d
+ID:dd3b4522-9bd0-4137-aeb4-cbf1ce45a0ab
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:23.0 50.0 -1.0000001
+pos:7.0 32.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:9a5fccef-0483-43af-96c0-c8f0e96acc23
+ID:cb25a1a2-9779-4383-b898-2a745ff366c6
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:11.0 44.0 -1.0000001
+pos:25.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:aaf6a214-c0c3-4e2d-8d49-e8aa15cc7141
+ID:13a1b9d5-28fc-4781-af67-a68c78b8376c
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:27.0 60.0 -1.0000001
+pos:3.0 30.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:3f9fe0d5-3272-4175-9f7d-d8fd1bad02bc
+ID:50a462ed-bded-4f29-bdf2-e475109619ea
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 60.0 -1.0000001
+pos:33.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:012b3633-b630-4266-8a6c-4d5ccedb4c52
+ID:7f4985ff-4372-47f3-9cb7-603726d38b28
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:11.0 28.0 -1.0000001
+pos:7.0 62.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:da563161-ba87-4d5a-a53d-c502ea7fad49
+ID:a9ac2e72-db32-4d42-8e7b-d799f21155b4
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 28.0 -1.0000001
+pos:0.9999999 30.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:bec7dd27-1a48-4892-ab33-4eb7afdc1903
+ID:a5fa102c-11f2-446a-abf5-df98f24843ed
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 62.0 -1.0000001
+pos:3.0 46.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:467c8aef-f2b9-46d1-9593-ef709a543dab
+ID:6114facd-5353-478c-a6c7-b809da7d37f2
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:31.0 28.0 -1.0000001
+pos:31.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1af8770f-8a7a-4f76-a920-a99d87c1120d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:01cda78c-b4a7-45c1-a5e0-ae68c74dd1c8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa066ba5-5ad1-4f15-ad63-93e8f753333f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7df23507-ea2b-467c-bd7a-f5412d6709d1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:efbe55d5-8bf1-4199-8738-03a746447248
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6f0c314e-edfb-4d8d-a4d9-991599ea0632
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 56.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -273,601 +350,7 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a577a604-9616-4282-b8a6-3b40e8398ebd
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:9c2b2c80-0924-4930-9ead-9df6d2e6cbf4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c982047e-309a-45cb-ac1c-baa0eda8862a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b47865c7-a13f-4d0a-8e21-213131ac125d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:cad6173d-6150-4f81-aa2d-f1d13bae6625
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:95dd69a5-cf07-41bf-9b05-6b4540ac0404
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:77b7cff0-54e0-4d70-9628-10610a876cac
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b258cde7-727d-4715-b9e6-b1170add96cb
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:99021259-0674-4a50-9f12-5c9862a1e03b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b803e351-3ccf-4e8c-8dc0-41dd2f93a74f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3a2895fa-31e0-4dd3-8c89-d0f0a8482e2c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5f15eade-4e51-4f21-85f9-6ee2f67fd2f4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fc3bbc8b-f470-4c66-bd95-2ce20c3997fd
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:769b69e4-43d1-47a2-bdc7-df4e142e6b11
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3bbb6667-1400-4267-80bf-4a29c7642957
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:641eb182-29aa-4e50-b6c5-12d40890a1dc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e6e5f730-38a4-4cdb-bf8b-ce8aaf31ed9b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:748229a0-0058-4749-b081-9ff73b7e1650
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e96ee67f-21f7-4ff2-8bf6-e0032f99e963
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5d446ea1-dc11-4e01-b5fe-3c851f400ea5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:788d2e67-7db3-4d54-a148-1d484c268d6b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f8257ccc-70ac-4ddd-9b5d-1700b5191cc5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:efe9088f-5b75-49fa-8592-93905ac9f631
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7f2b5c5f-b637-47e8-b7c6-fed8f62e121e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:cb644277-b669-4529-985a-3f74afb3667c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:70d63f51-20f8-4e79-82f2-15a922b33ae1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7378e753-94cc-430e-a83b-799377275213
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:808c0e94-779c-4a26-8ad4-bcd917b968b7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:eac37140-ba2a-431b-8e21-743d19a24890
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:03592351-eb38-47d4-94c2-0d4288c57ee7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7899a1e5-55d8-40e6-bb61-7fb3b2c8ca28
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e379b025-2421-42d7-b0e1-91507fc57d39
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:662528ec-a35d-4f57-8d57-a20fa05b839c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:2383a68a-9843-4c6e-9a49-1a130277352c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a9e4db76-2eaf-4346-984b-b80609dd38d4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:40bd3a8f-f1cc-4097-acb5-4869b10a9b74
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c9c28f47-4027-4460-9086-a9bc7c039f35
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b2eb5b70-ec53-45be-9be3-4b2cfff8b144
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f30db4be-1aef-40ee-9784-7d6fd53f7a93
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fbe6df2d-c540-4483-b677-a8a8bf8552c1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7bb27a1d-64c9-4a0d-944e-f1a998df181b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:25eabd48-7cfd-4b16-9edf-c280a9e3beb9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:002133a6-1b2c-49e4-89b5-f539f8ab2e9d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f3d966e4-1f64-4e94-b06f-d64bf3682afa
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6faa8aaa-029c-4973-aa0e-cb10f11ec6c7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6c7fd37c-5fee-412e-bdbf-8906747930e6
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c039fbd2-1a3b-4e59-ba55-50d636f663a5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b1cd6952-79ae-41c3-9c5f-b706c4c5d79b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:743113ac-2062-476b-a164-b1244fe6361d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4892ff8d-eaf7-4ad6-9805-d98fb1ec1860
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3aacf05d-22c6-4b38-826d-a2829f16b8af
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0960f495-3808-457d-8d63-a967a276cd60
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1af482db-171d-4ff8-9a67-a4f7a9027d2d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6c92347f-b541-4c64-b3cf-f0f7c3af562c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e846a7c4-7b56-42f5-8e9d-0d87571439d7
+ID:040877ff-fb1f-458c-aed0-1f45c863a0e5
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -878,18 +361,447 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:da412559-4da8-4f41-8310-b725403b9b89
+ID:e960b5c4-45d5-4b55-a607-2f73dd0b90e8
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:15.0 30.0 -1.0000001
+pos:33.0 46.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:daa24dd8-ba24-410b-9fc2-6f68d79856a1
+ID:7b834dca-061f-40b2-a3a9-71fcc4451eb4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fea53f52-683d-4a61-a083-9228ae100ed2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8e3e705f-e39f-4ebf-b864-4bf8453a0af2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a17d1bae-6669-48c6-8b11-0bbb73156f81
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:96d3b5c9-398b-405c-a45c-98c89fd140e6
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c300adc1-51eb-4ef1-92f1-6d2a21468755
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fcef3685-4074-478b-a710-abde5e2ff042
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b3412178-0395-46f9-8b4b-99951f45c7cb
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5bdbf7cb-c5ec-46e8-bf0f-b56c5739d7a7
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c2cc1290-f1e2-4bee-a490-a38e4cd219f2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:092ff934-e45a-4e53-96ad-60249a12243d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f0d0894b-7f7b-4e18-86a8-7995d5744791
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:19b8ae82-72ed-42f8-a047-234c595c45c4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a7612859-fca5-4cd7-99a6-a7dad7f791f8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e27264f6-99b0-4bbc-9795-fdc99b4562f7
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:74699d2d-741b-4bd0-b4fd-4db87957ade3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a1504b66-1e58-4101-b7f4-063bc10af413
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:87684574-ba5d-4993-8361-5bbb879e9847
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:537feceb-2d99-4a0d-aa08-b415577860fb
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6d93d181-c842-493a-880f-acd39c5ccc29
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8a75ed20-2fdc-462a-8a8f-a31710e05a6b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:151cef8a-304c-43e7-857b-317f33adbc80
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:65270b59-1d8e-451c-818c-dc6c1c4a7757
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:72ab863a-5e0d-4f8b-988a-8e22db9ebbcf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8534bf20-2509-400a-b6b9-dc27555d78ef
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f3bb8c7a-afdf-4853-ba93-a1ebc3dc9957
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fb9a6574-4f3c-4af8-a0c2-cfc0b35e6fff
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b37157df-85a3-4e79-a393-2774e2d98edc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:4e7dc905-3664-435f-9250-29b47902a269
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:75d62444-01e6-4431-8dd8-891f8865d538
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fe056a9b-008f-4678-a827-e269f519945d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:04df76ab-43b0-44ea-93fd-82b0eb5efe1d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:4718edbc-18cb-4889-9576-3fdef3cf3484
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f1172aa0-8e91-459c-b918-ab8f9c7a0176
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b65ab643-ab3e-4e80-aafb-0652181507a9
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7a1d1031-34fb-4be4-80b4-7182b49ce923
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a47fca3f-0ce5-4e94-9631-80488983564b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:767a0b50-0e93-40dd-af9e-86fdeca08458
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1149abd2-d4cc-4de4-b074-ccc10c408c36
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0b5861b9-6d69-4fdc-bf7a-35c84fba29e9
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -900,45 +812,287 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:ad5089d4-24e1-48b9-839a-5f9c5c413892
+ID:a34db1d8-9940-4719-9f44-8b7d7b4516c2
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 30.0 -1.0000001
+pos:5.0 44.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:bbaef729-be0e-458a-bb8c-2b0e714ed7c2
+ID:5d1eb40c-bd43-4c06-9285-3162da2b2ea5
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:19.0 42.0 -1.0000001
+pos:29.0 50.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:0f911e70-a240-4785-b325-34f485f1c0cb
+ID:ff1ff47f-54be-4649-a62e-ca6ed505b89d
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 28.0 -1.0000001
+pos:33.0 62.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:084ab0fc-d5db-456e-96e0-897dc2a726e9
+ID:932f2074-fbfa-40c0-b9a9-3b98f7911dff
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6894f548-06d7-4326-9099-6500575abffb
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9db1977c-cf6c-4e94-9ebb-abd3df04e1da
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:759b9556-edce-4deb-a3a1-4fe50c4d42f0
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d89a71e6-e2ab-4e1b-8bb1-9381c9c365f5
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:01229982-1c20-490d-95fa-f51958b9d5c3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6d9db61f-69b0-4c2f-b8d5-472425d32d01
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b0953946-4df5-4356-aba5-20125dd7eba3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:03ce1c55-b509-495a-9ee9-b40e642bd97e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a9b2ec66-79e5-471f-85f5-857e05dae25b
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
 pos:9.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f3217a5d-357f-4d8a-885f-969ac6fe3dfe
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:40125e6b-ba50-4eb1-8581-06626df40054
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:66e9f7ca-e408-4279-93b0-5f790c54f886
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e684cf64-c83a-4da7-a509-1e527760934a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2f8a845c-dc06-41a8-8ba8-8f7a83acfca7
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e564c9ef-5a53-4f0f-99fe-4dc375b4746a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fe6f0bc4-13b6-4f57-b747-4ef4d0e4f74f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:850a1773-f0ab-42ae-bce8-b03395b7244c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:efa552b6-7263-4c69-96f5-db98b9dcf886
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2f8aa0d4-357b-4cf9-a82b-1068f2ebca46
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fcf3dfaa-9aa0-4ffe-a8fb-0e039ed1ce1d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:848f0357-0ebc-4769-97a5-5da374045a47
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:58c990fa-db6f-4234-9877-a100c6192c67
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 52.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -955,216 +1109,7 @@ shouldCastShadow:false
 shouldRender:true
 
 start new model
-ID:c2ecdcea-a77a-4237-9f2f-1a15ef9c4422
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:45913143-5e40-47a6-aaf3-beb01306d486
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c26a6f6f-5e69-415f-a87d-b463c2c46558
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:690fc0c1-c68f-4397-9962-f4f09f43e36d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b4062954-fa7a-42b1-bd5b-22bf662a61ef
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e61510e5-1af5-4113-8abc-2253e8be0646
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:91a98c2f-358a-4a43-bf7e-22ec61facb61
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7f77015d-4f0b-4ff4-960e-caa954b75423
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8ccf45a7-f72a-4820-bc0c-6c95247a0302
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1ddbcfbe-a7b5-4ff8-9dad-c3ba76e54d0a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8440577a-5e08-4d5f-8776-c4b0bb2cde31
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c9e74ddc-5c16-4896-9e60-72294170283e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:54c6fb72-fb31-48b5-a400-418f96b6f778
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0fcd1c6b-e3da-42de-bad2-c05cc75514fc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:06933d28-d842-44fc-b10c-f8ebb5c1287a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:95b5c962-4823-4fea-bbf7-6d1c82b5cfda
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:acc479d7-d844-4807-9b06-28c47ed6a543
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:cddb89bc-1394-4f4f-b059-cca488faae40
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f12562ab-a777-4255-b0d7-b745e1b4431b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:23195bfc-9a58-461d-931e-ae6a862901f4
+ID:520b4816-d03d-4274-9778-2056df5376e4
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -1175,205 +1120,29 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:46fd8992-b762-4ad6-8270-1673d1cae805
+ID:a3326445-1bdd-4805-bc22-b61c3c29e37b
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:9.0 34.0 -1.0000001
+pos:29.0 30.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:96871cab-dd8f-4192-b9c9-1f2bb16183bd
+ID:eda48937-9092-4f77-94b3-c37e1d712cec
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:13.0 28.0 -1.0000001
+pos:33.0 40.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:64037c6d-7a08-4bcf-b834-621314af8058
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ecd29c59-01d0-4415-8ca4-c38e43c1a7a0
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:54140eec-706f-4418-a11a-1c267a8affe5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a26f87fc-1d42-44d9-a7a1-226d9e6c3655
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0ae319f1-ac1d-412a-8310-d8983bfd70d7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:dcf7748c-b5ed-44e9-a676-9f59a42695dc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:60cdb6a1-3d39-4d36-97e5-1209af14b1dc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:794615da-4b0c-4954-9b43-a25f16b1d6b4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:965988cc-e82a-42c7-ba6f-21ab4d4e2db2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3e43f16a-95cf-4d16-8693-e60364bbc700
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d5c7c523-65b0-4a60-a035-fb39c089596c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:05435e47-01d5-4c05-ab79-b0da7b9cfaeb
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3bfea716-c0b8-4e88-bb6c-f12ccf98bd78
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:856a4862-33c4-422c-9dff-390d7f12382a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0268659f-3552-44c1-9d9f-8fd4808875f2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:55b0fdd7-7a1b-4218-a199-392cbb3db8d5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d78b0819-940e-4da4-8fc6-79767fe45e8f
+ID:3a3aac8b-9368-4a11-bad0-0d9356b42dfa
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -1384,293 +1153,18 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:c607bb7a-efc5-455a-a939-386492d4d3cc
+ID:05f3642c-7c02-476d-8c3f-63fc68f3714f
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:3.0 50.0 -1.0000001
+pos:13.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:45f796b3-5ed8-4196-8fa5-5f9d650deb91
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:92f4452b-d1f5-4fc4-b5b0-5e0042582b93
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:782026a9-3f46-44d9-9fb0-6a99f3e8de05
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8ce95cbb-9547-411d-8fb5-805e4886a0a6
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:019004e3-d773-4dac-8bbc-abef5ec7beef
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e4e043fc-4f3b-49b6-b344-89076d194288
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d2a9af19-66ad-441d-8b31-f4fe5a159e2a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:815d5348-4104-4c9f-895a-0615e8780c22
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:cacb818a-89f6-4515-84e2-8ac61bc6ecac
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7a7d2cc2-eeba-461c-a1cd-a2abfe8b52b7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ecf171be-9aac-4499-825b-40e3097d7875
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ff1d5e60-0b35-49e9-af3e-7402a2e87cce
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:591405f5-2ce4-4114-b1a4-69685fffea01
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5dbd8f92-a453-4b07-b05b-28a12356421a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6f504d59-ae2d-4024-8f67-106cb4119f97
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f350262e-560d-4394-9499-323415699315
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4250652b-1f5a-4c65-ab6e-626de450df5c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b7f5e283-8bac-44af-8acc-fce36850ecd6
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:003d7a47-6967-4b83-ac24-6db1f289d68e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5c9459c8-28cc-4501-8063-77ae24e49ef2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8704a013-e1b1-4a17-89f2-4ea1abf99851
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5a5d8c6d-2cba-404a-8c7e-bd7f9910275a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7356d5a7-b79e-49f0-b98d-cc3ba47b63ec
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7da18477-b35c-4eea-8bd0-5ea7a713a88f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:32d8d1bd-5675-4ac4-a210-ebf6f27ee355
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c3d21b23-b2ab-461b-b106-14fb67918b24
+ID:f0c85422-f76c-4b1f-9654-d50cfe24e5cb
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -1681,12 +1175,386 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:03ad9d45-864f-4428-aae9-27ecb838ad3f
+ID:8858c78f-1430-4e66-84f8-508e51b545a2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:44c747d9-53a4-4b84-8e97-55eb212bc568
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b2807cf0-09f3-4a2d-a305-7fef8cb40ceb
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:08a97066-30d5-4d45-b6dd-8a231be47998
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cac6d244-5b03-4e1f-ae63-841747c1f58b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a90b9216-c204-49d9-a135-a2d0ad10a9bc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a5725552-72ba-4557-a8fe-1a6b768659a3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:40b153f1-a771-4c37-b844-53e5b0f28839
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
 pos:15.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:52911275-ba7d-431a-b591-9ab1d7383685
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2eb7cacd-2a73-4f4b-8c61-dc04f8aa2efb
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa5b45d2-a873-4d3b-b78e-0b20ab66ba4d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d3de65d7-c3c0-46f7-b6ff-63cb500db131
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a56763db-7976-4ff2-bb02-2ad83aee733c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a5df75c9-c2d2-4214-832e-537e4412a02b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:761167f7-4f1c-482b-aafa-243ca16a69e6
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:985c7fbd-694a-40a6-bd2a-41a14f26710b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bddf9698-1fa4-42ba-bfb3-f01a27909f92
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0df47c5c-6d3c-40d2-a509-9be01c574f65
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b00a1112-a093-4b59-b9b1-35f020d0330e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9da24944-7e9e-4a33-8a25-bad8a498fcde
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7e5c5429-06a7-4959-8b99-45f435e71901
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bea4335b-df7d-47d6-aa3d-ac8b0037680f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7a3a9b68-725d-4db9-81ad-0f228203477c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b869206b-c6ca-47bd-b0b7-e70f7920bbae
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9d9befd1-5b49-4b84-a221-12ac1e959d26
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:dc7954fa-43f3-4820-9e6f-5ac28e92cfb4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:02c13f4a-64a2-42e2-8b25-741c1dfcc807
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5d48859b-d96f-4f94-b528-8359d3dde708
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e265906e-f8d0-4a8a-917a-e1e0c1c9f861
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:63724037-4399-4380-8ac7-fcc84e628d51
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f69dc6f0-144b-47e4-8d8c-75f855e3938e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0221bcc6-aae5-4f60-833e-6dc27c424141
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d66f6fe3-67d3-42b7-aa7b-3b4f0efb0c61
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:09ea8ab1-12e7-4880-8c67-12e167474346
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:90c92595-79ea-4b3f-a709-5e257eb7d641
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 38.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -1703,799 +1571,7 @@ shouldCastShadow:false
 shouldRender:false
 
 start new model
-ID:0179e347-eb70-4bf2-8d09-360ae13b1659
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0cb654c3-2720-4cc3-80b1-348d4bc37c52
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:64041330-1245-46e2-8b0d-fd3d6229a16d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:06196fd5-c4d7-4918-8ffd-1d565a830524
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6ff8b277-61eb-4800-805a-00eaa8440d3d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:67e17fde-9f37-4942-9cfc-50b6d84ea89e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ce8f611a-5741-45f8-bc27-373596faa62a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f1a8bd6e-ad58-4042-84a6-d80b72065fca
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:44a927d7-ed31-4715-a427-50b468af9645
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:232d573a-f6d7-4104-98e1-34e05188775c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a3bf4907-5019-4d5a-bd0b-be57140a0189
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b8637321-d8a4-4bb1-afc0-e4b622562a4a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ca4ae092-5d92-4779-9b80-3ecf2334b499
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4a55594d-bddb-4d55-bb4d-e5c5d050817e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fc1356fe-8e13-49ad-95d7-62132b0d4f5a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:09bdc649-fcb9-448d-bfe8-d1299c6576df
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7c297aa4-2dd7-4d8b-9640-482fb6e0a915
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5a408dbd-2238-4d23-8900-85ae94b444c3
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d087e14f-9afb-4f53-924c-edec398f8202
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:398bfac2-2c16-4802-8fe4-d64389654cac
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8d56101e-876f-46a4-9550-e48ced13141d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d32280bf-260a-4eb4-b274-12618ec70d73
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:78cda8b3-add1-424e-8298-f6929595a9f0
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ce03b858-b033-4c2e-89bd-f021f7f76e37
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c01c8ef8-18e2-4707-aebf-d2e3acf78635
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:62dfcc18-f017-443f-9bb0-6c68ccaabe1e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:78063499-5903-410c-bd23-8e524832a8f5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d79f8f60-a02e-4ccf-99ea-2b5be9ea25ba
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f0f3cc00-4f4f-4579-b377-5915a6928bf0
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fee21c96-9a4a-4807-a38a-975bfea0b90b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f5dbef4b-f122-4ff5-8282-4f54688f2d54
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c259a90e-9b21-4c05-8e3d-76c60965a06c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:cfb5c357-6970-45a0-a026-a23d3dcf2901
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8c480473-c49b-4572-a064-369927140208
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6177ed16-08cf-41d7-9d5b-fe2c508c72ea
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:19af6a04-b6d1-40d3-9d8c-a1e08c0d4cc9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1b577ed0-b804-4c23-b995-d1b9db236ada
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:54f8717e-c63f-4483-bb2c-545420c48ad7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5bbfd534-b939-4064-8c0d-0034f3bef600
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:40e5cfc3-a35d-4d16-b337-3b9695bed1de
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:974051e2-55f3-4057-be89-f01d66b9eaa9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1a45dbca-b523-42aa-9a8c-5e18570b57cc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c816cb92-1d33-4d7b-b0a1-d5856c2ed6a6
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a74fdd89-9069-4424-80f6-c018a59e653d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:41b9d406-d0bd-47a7-9523-e356ea5d6e61
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c3c3d80f-b5f3-4731-87bf-87d3e015aa7d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b4acfd90-7953-45fe-a0b8-0dbc9884dc54
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:151b6471-5717-4ef4-ba48-c786223056b7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:2371afa7-e971-4fdf-a97e-5412d45fc3e5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ac3c06a3-2eff-49d3-9c2c-2c6af7253374
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7aae5f97-41d4-4abe-b789-a2c2d598099a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:671a951c-f926-4b4f-93ba-2d9d73795477
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6abb0179-21a4-4a5a-bd46-252927afa1a9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:42b5f8d5-754f-491a-b686-0ae28fa5cf2f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ea56261f-4e80-464d-8be5-9ff0b632a77c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:41ee6482-946c-476c-b208-81a0e25c6cc5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e30d2641-7cb9-4731-a32c-59cdcb0b18ba
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fc92ca8d-3416-4de0-b7f2-488576b42ed3
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8c209cf8-0aba-4c3b-84c9-941d770d6d3e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:6b210d2b-e007-4898-8eac-fc15e993115b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c1749806-b00f-436c-8e9d-b4d1f383bbe2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a793527b-b770-4871-ba59-240b61f9a326
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:31952a29-5d76-4753-a688-15c69cb858c7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:30570017-e288-4ca8-837a-c77d11fe7148
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a9b83c82-ca01-460b-85b2-df7dd5fc1746
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:28316e2a-3ed8-4ad7-a75e-0551cf496a0a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a7b9817e-a203-4870-84bd-b840b65fa39e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:243e3f13-4fb8-48e7-b08b-f664582df548
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f11672ec-c1a2-406b-b9f7-fede8a247f8a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fdb280d9-ad07-481a-b02e-297a1bfed4b1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:51615af8-c087-400e-9d7d-f3243e4574e4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d62031dc-ec69-472e-b901-c033b3fe9ad3
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:23f2d731-aefd-44aa-993e-c5f48fa239b8
+ID:cca297db-d6e3-43f2-906a-a4a0078b0a0c
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -2506,502 +1582,18 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:c61f5558-e782-4c3a-8d9f-4cc69a4fc791
+ID:bea5f2a4-8fb8-4d8a-81ca-605fd3856e33
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:5.0 58.0 -1.0000001
+pos:17.0 56.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:5bacf31f-826c-486e-a4b1-e87b4040ad10
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:285394bf-08c6-4ad8-a963-58cad0865552
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:946618dd-eb55-490d-9ce8-b97803ee321f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3c6abbb1-6ad3-4f35-91fc-39d212f8023e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:676f6683-643f-484a-9a0d-4b59b81c9500
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ed3e4bc0-ea2f-45f0-bc91-42077c36cfde
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:27861043-cbd5-4b07-993e-42518e112b54
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a1ce5864-9580-4003-8204-1881019d96f8
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:9b728476-c207-4e64-a626-c7ad9139bf71
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:56dc1d98-9d25-4a55-a9ec-45e4046a1eaa
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e6fc916c-38a6-463c-98e1-7236410a455f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:070d9a59-2c94-4223-ba8e-39783736d22c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:819b04f8-81f5-46e0-a4ae-60360f59bc7d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:567c4e59-9fbe-4380-8965-eec980b48dcb
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:16f29d02-7cd7-447b-b9bb-7a8052ea9e0f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a34aed0a-f1a4-462b-a3d2-925eb5728bf1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:806cef50-519f-4bc1-9829-0be8ccb27869
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:452e596b-f75a-4d97-a8a6-7ad47eac4b9d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b3378862-eea3-4c5c-ad92-96129e4576b4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ec9e76dc-9faf-4bef-9b62-e37adba0684a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1ea38a73-6295-4280-b4b1-ef9485fbd28e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7f82fa18-8232-4d0c-b4f9-265807ffcb0a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:95f08e0b-3962-4348-a38b-6e52767577dc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:9ed48813-92d4-45ea-85a6-f35e2146d450
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:37cf2619-bd0f-45af-ac17-4b6f4447568c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5f1cd79f-c2cf-43fd-8b35-d402af17fe46
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:807a2b08-8f52-4b99-acd3-d885b3e865f9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b6dbe1f8-a8d4-489b-bca9-8fcbf73676a3
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7a26fa6d-5f51-46ce-b714-e42489c9b34f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4acba101-5eb6-48f9-9b4b-60ff71a20a87
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f121c62a-c871-4e1c-abbd-e418468752a7
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e2ebbb1b-d219-48c6-9528-dd327f9a275c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:445516c7-3dbb-42e9-81ad-3d73745068ff
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:475830ca-4f2f-4665-93be-b60e225e3013
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:56729b61-9922-4222-82d5-4aa30d23bdd4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:42cced42-2408-4f6e-a4f5-32c406ddd9b2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f24a4681-eb38-40f6-82c4-72e2385f1a5c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c33aba4f-32ae-40f6-ab8d-0ed7b3bb6f6a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:aa46f99f-693d-4f3a-9aa1-0ca47722fbbc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3570cf50-9ee6-4db0-a5cc-3986a695225d
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a8e09aec-0ad8-4799-bab0-f30448a38615
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e653d90d-67c0-46a7-86ac-64bfeb2b5056
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:39185f25-a545-4c21-8b76-0e7345669c55
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:889ba845-ccc3-420d-995c-2c70df7c1560
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:97fce9cf-e86d-487a-825c-b01c606ccc05
+ID:bca7c392-ddb5-45c7-999f-12cef5083c1c
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3012,7 +1604,51 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:92a024a1-35ae-4f4a-9d63-8717c4a9458a
+ID:cfa1b291-b24a-401d-a31b-fd47e12c5fa4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d8e05b1e-722c-4345-b9c5-fb51c5593e91
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:15d0a6c1-484a-4992-bac5-7ebb14299b6d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:736f6a92-0f3c-495b-a542-9f77bd808d80
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:707b2c06-79d7-416e-a3df-b002467a5b01
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3023,18 +1659,40 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:b88a7b3f-b819-4610-a4e6-e550f4f3af3b
+ID:fa1749c6-173f-4642-b5e2-2053c124e07b
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:7.0 24.0 -1.0000001
+pos:25.0 44.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:b6cb1273-bf0d-4e85-8272-968e6e1448c3
+ID:9dbb54d6-96cd-4a4a-abe4-6eda72a9b4ce
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c03f1e65-a8ca-405f-b63b-24bde55dc066
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ccc84954-0b3f-4202-9571-d800d73c469c
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3045,95 +1703,18 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:165479a4-1a6d-41b8-b049-08886a8cea54
+ID:a2373408-4e4b-4362-b2a4-f61441a82999
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:31.0 32.0 -1.0000001
+pos:29.0 24.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:05fc6704-36cb-4cab-a511-f33960b4e19b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d31388ca-8768-477e-a2ab-48f5c208529e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7628f216-4820-4800-8b07-f530834db29f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:91fd8799-cdea-4614-bcb2-b3541f047927
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e3e5fc14-059f-431d-95d3-8c1d778357ea
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d0dcd46c-db9d-4b1a-9560-6a3d694107ca
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:48296280-04fc-41e4-9969-70e45e9fe440
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c17e5306-c9d4-4a54-9f58-310b55d00fd8
+ID:daaf27c1-6739-487d-bef4-0d66edb778df
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3144,7 +1725,304 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:0dd7771e-83a2-4042-a531-bbc34cddd4d9
+ID:6c388967-5d0c-43b8-8ae6-dbd6f5ef12cf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:307b52a1-b4f8-4bcc-b429-390cf1b82dd0
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9531f46f-62e8-415e-9031-c18ee3965c1e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e0c07690-38ff-4e5c-acf1-f064a7860006
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:963def1c-9fdd-4744-9bf1-dcd97b463667
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8dcd28e7-53fd-4f4c-9f1f-49bed22b59fd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a39ce511-3925-4771-834a-b74ed107770a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3f5a2d48-89fa-45f9-a61d-5b1857e5950a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e47a4cc6-f101-49c1-90d4-9b54efc49483
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a963a439-f3ea-4fbb-a8fc-4390ed361871
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:517f73fc-5d93-42be-8499-806fce737822
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:de2e749d-743a-4902-85c8-d3d6e335e967
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:166ba73d-55f1-48d1-94d2-5ba40dac711e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ebdd8aeb-7910-44d4-87a9-3dc40259dabc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2b3e8a41-2a46-4ac0-bec7-99add4213468
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:867f3464-e0f0-4642-b1df-e7e906688158
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:984c075a-b277-457a-ba44-10dbc2e7d4f2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a1b2ac24-1a0f-4fbb-a3fd-ccd5110c9ff5
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9637f5dc-c217-4d4f-b2b4-db2ba785a804
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:00ac95f0-deca-412c-a8fd-f41fac04830f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9db6f4e2-bf65-49a0-b22e-b558234be3b5
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7524e06e-0507-4e3c-902c-59dd75dd5eda
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0e9ba768-64e7-4af2-b3b3-e56e5ef196d2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:84b906ff-8f09-4511-94fa-bdd833ea73ea
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0c3cad94-770a-448c-958d-33ddcb43483a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c4afe979-2bb2-4073-bc88-54bf9d28a9de
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:97330f56-103b-4abb-9c60-be89553cef9e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa260578-690e-4755-8541-6c9cbef89bf8
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3155,23 +2033,991 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:59c419a3-02d2-4ced-8743-822147952850
+ID:d7778e99-a8c4-44eb-b5f2-b9c8e0360378
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 34.0 -1.0000001
+pos:23.0 36.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:865f5d53-4a20-4bdf-a1d5-ceb224ba6e5e
+ID:6edfa939-2db6-43ad-a773-89b21b29f483
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:37.0 62.0 -1.0000001
+pos:25.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:aded1b78-49b1-47c4-8cca-a2ea69a316cd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:64fd13d5-1668-47c5-b830-399634ed24a8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa2ecb66-2289-4b26-bff5-4e38aa043459
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5a2d2827-6b2f-48cb-bb90-5ddfd15ff3a2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:aac6a394-40e6-4fcf-bb5f-c3f8f76ccdf0
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c78771f0-b6f3-4186-8597-0c3abe4d9b92
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa8a075f-81d6-4b7d-9003-7df82933257b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:be8dcb47-11ac-4155-a3c5-e9161f870192
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:62dde203-1273-4740-bd8d-0550c4d6806a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2a837409-e474-4152-b6ea-9f175a200a71
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:89dc50e9-2f85-4444-9570-ebd0387d2c8c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f6d0a8dc-8ce6-496d-b7dc-ebdb3bdd191a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:73163ebf-1149-4add-9620-d7427e56c028
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ded31fbc-1751-4823-98db-4165e0edaa43
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ecc7e4e8-8a75-4c91-b9f6-226dc9e7fd95
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b9c25777-de94-4ed7-9e6c-861dfea7d126
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:73851edd-288e-44fb-8775-687ce74777c3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:78ab3293-938f-4cfc-8589-97403b087311
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:aa3ee206-8eab-46dd-8b34-46fb6324ab3b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9122bec5-e7b4-4c34-a847-0d662954b037
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e5f04528-90be-435c-b9bb-8703b65dddc8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d8b36b43-53e1-44e8-9fce-eab66c5fbacc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3674b90e-5f6b-4915-8fcd-942f5fafb249
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:53815454-3dee-430c-a9e0-a89350b8e404
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a08d1115-4e3e-4c8c-8260-d65114667588
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e05ac967-8db7-492c-a13e-d374185ca253
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f2ada305-645a-42f7-98ac-4827f4dd0830
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e39c4e16-f1e2-492b-b774-68166e1cdada
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:96908640-9f72-4f89-b9d6-daafe40a1dfd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e4bb2611-cc43-49de-8b0b-0ea2e9cbbdd6
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5df3e50a-cfae-489f-9875-14c93481d861
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:656d2909-0c3f-4203-81d8-98d98c18549e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b0752dd1-3df6-4643-ab97-6a9c238f53b4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b85c9c86-2da2-489e-8c01-df23a31c9a4d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7a4a12c3-5796-4e93-a204-6786af565ca5
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1541b9b7-7f27-4eaa-b6b9-fda7f9630abd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0f1884d8-cb10-43f9-959b-87ff3f1053b3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cd3bef9b-de17-4a07-98ac-a5167fcf7167
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fa88ca03-329b-4804-a7a8-3b2abb468b04
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cf9c9d9c-ae1f-43d4-8092-3a426b9521e3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b3b61101-783e-4852-a9bb-025d4b1ea570
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1878750b-bdbb-4438-ad6a-21c95a7a3da0
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c62a377d-894c-449f-b193-e334114328b7
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:23c51efe-8205-40d1-b221-007e9ede83d3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7b3ad683-3964-406f-b2e3-944f8901cb93
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9333d445-3723-4f30-a32b-8734124ac459
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bb0e1918-6d4b-4860-8dcf-77c27c5036ae
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9b56bc9c-5fd9-4d9c-8ec8-c65e00af2ea1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5ee61266-8bac-4489-80c9-fd7436b77285
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c018b598-63d4-4ded-8b32-241fec6ce8dc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1c9b3afe-b82d-4717-a935-c34d57ea70fa
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9a278996-3db4-450f-a4e5-522fdb390e17
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3e2f6102-f14a-48cd-937b-02ca0b4b31dc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:20959aea-1930-4c64-9c7b-28f07f6168aa
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:714ee500-a96d-41ca-8821-4d2b549d41df
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9d14cffa-5110-436d-a174-dfb00090fe84
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1bd2ea49-e12c-4733-be99-6307b05ad9dc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:72444757-6253-42f7-b982-226b375812df
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6d2e9af3-5700-42b7-b37d-163be198dc77
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:23d4ad99-c32a-466c-91c1-4d6e14f21cab
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:325f9f3d-61b8-4255-bf4c-1b452e0d4e33
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:10d925e5-343a-4cc9-a4e1-e0f6c9183252
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b5493c0d-25fd-4f21-aa67-700ad1d21357
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3a5616f4-282a-436d-a4d8-cd6dbbfe169e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f1ae8d37-b676-4c25-b0d7-572cbe9fd0e1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f04e7074-955a-4f95-9406-ce9405db2d3f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:420b8daf-0ffd-4c92-9524-bb33551f2007
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:45f3715d-4b06-4a8e-9f86-c9c0db59c7f3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2c685e5d-c658-47ec-9b06-68a885854854
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c467f202-d9b8-4d26-9ae6-589792c8a073
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:89fa0d11-64a9-411c-bc8d-7caab239aa08
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0aec6632-14e9-46ca-810a-16bce1282503
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9d312193-a3a4-4169-94fb-df9609426879
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ee0eeccd-2efc-4c96-9181-e1758d70042d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1e8105b5-1f2f-4247-bd91-26ee50ba238d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0cf6e99e-98aa-4900-8755-c40550795c4e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9ccb8228-1232-4db9-9e5a-1bf257b1a38f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3289f835-c261-4041-bb50-3ff73bf8ac94
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b8f0f8ba-2690-4f97-9dc4-d359ba93eb0d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2c626d6e-c81d-4ad8-90c8-2ab29071b364
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f43f8bc3-d797-4cb1-bc16-8fde36dde68f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0d041998-1040-4c22-b555-975b75546d10
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:491f064e-8d8f-44d0-ad4b-b0a6ab7c47fa
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:693a6c03-3b99-45b4-9047-26179a99cdbf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9a739876-760c-4160-a054-ab42d713b367
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1829cdf7-0f62-432e-b1be-6260c572c6c1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:c58e80c8-120b-44a6-b9bd-af7b203f2260
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2924f5d8-d780-4267-8788-66f3e303971f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 24.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -3188,95 +3034,73 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:990baa0f-78ab-414f-8fad-78d7327dadc1
+ID:12f95697-f506-4dfc-b1f1-d6082987c2cb
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:37.0 28.0 -1.0000001
+pos:29.0 40.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:4213ec3a-92f4-479c-b35c-258a5764729e
+ID:dd9172bc-9eb5-4f1f-b01f-9600363f3ca2
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:21.0 58.0 -1.0000001
+pos:37.0 26.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:25fb909a-21a2-4870-95d1-1ffce3fe44d3
+ID:ec926c74-d12d-4ec1-8551-d01cf074440e
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:23.0 44.0 -1.0000001
+pos:35.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:f7ca5f1a-6cbc-48d3-a902-d092f7d8455e
+ID:5e70b8bf-7d91-42fc-a745-b8a9212aded2
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 46.0 -1.0000001
+pos:21.0 26.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:37fc9e19-0464-4801-897d-3f0c0da17a28
+ID:212fb0fb-718b-4a1c-96f9-e627a4cf9f47
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:9.0 46.0 -1.0000001
+pos:0.9999999 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:072bdf1f-b665-4cd3-a2f8-a6386fc541eb
+ID:82fcc8fc-7a8b-4200-96b9-f6a68df4a418
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:0.9999999 52.0 -1.0000001
+pos:21.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:7c29b59d-ff77-401b-81f7-d742c6016f9c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:86b231ac-6a6a-4d55-af47-ceeb06f84a04
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:dd5bf9b2-d94d-414b-ad8e-319ed5e92769
+ID:e5741674-a2fd-4418-ba34-c74a2c2df9f3
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3287,62 +3111,51 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:fcb5dbc8-111a-4713-bf03-471666247ec7
+ID:ee480c75-e5ca-4756-8344-fec1dc8f6851
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 48.0 -1.0000001
+pos:13.0 36.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:03efbf33-7a81-4d29-a9a5-5becf8dea66a
+ID:68c787ed-73bc-4481-ac5a-295d5667acfc
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 42.0 -1.0000001
+pos:31.0 28.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:05738373-76d8-42ed-85ae-0a27e5f041a7
+ID:247134c6-b6a7-45f5-9130-5cbfe6b20e89
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:23.0 48.0 -1.0000001
+pos:23.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:7f5aace5-bd8a-4ac0-9b38-8db1fc0ea567
+ID:4e08475c-9197-469b-b7be-f1984efdb6e8
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:31.0 52.0 -1.0000001
+pos:0.9999999 60.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:ec0300a1-8425-4709-a666-537fc08681cd
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5172a47d-2240-4d00-98ed-e3a70c434f6b
+ID:d00bb397-f14d-4d38-9564-9e4ce49ff005
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3353,122 +3166,232 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:dcb02722-3fba-42e5-ac31-6e6057dcd83a
+ID:02a6df3d-31f4-40c8-9e6f-34c1136d78fd
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 32.0 -1.0000001
+pos:19.0 42.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a52b46e0-d311-485b-82b3-5cb93233108b
+ID:aa0411a0-c31c-489d-8bdf-f04bacb8c6a0
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:25.0 26.0 -1.0000001
+pos:19.0 30.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:789bf783-500d-4130-8ddd-0770ebfc6506
+ID:9b4f4924-3f09-4205-9a6f-d0beae5ea4b0
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 54.0 -1.0000001
+pos:33.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:0da8c776-99b6-4948-943c-de747d6a7495
+ID:781b919b-0b10-4261-a385-7133cc6e1fab
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 56.0 -1.0000001
+pos:9.0 28.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:9acb6be7-106c-4363-afa0-9cc40fe2e9ee
+ID:c0474b5f-a8d0-4234-9257-b962e17a5cb1
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:23.0 30.0 -1.0000001
+pos:11.0 40.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:f9d135c3-ace1-44d3-b847-ea7b32796a18
+ID:494530ab-1ddc-4660-9c35-b1ce56baf290
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:19.0 56.0 -1.0000001
+pos:31.0 42.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:d84a5b9f-49cd-4311-9855-b95f8684f77d
+ID:9ea85965-2b5a-46c3-b933-533b968617f2
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:7.0 62.0 -1.0000001
+pos:11.0 32.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:7aa3de87-10fe-4d86-bd89-f8f6b9e9e983
+ID:ba58c0ba-ce07-4d9b-9d66-521b8417106b
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 24.0 -1.0000001
+pos:35.0 48.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:83385295-d116-4a0a-8603-f3b80afd8a5e
+ID:61eb46f7-7b16-42a6-ba68-7d1526c07e6d
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:37.0 36.0 -1.0000001
+pos:7.0 56.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:8128f0f6-c42c-4219-9411-89f0e65808aa
+ID:b3668024-5833-4265-a3c7-60baa9a02b47
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:31.0 38.0 -1.0000001
+pos:33.0 24.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:760a82b8-36da-47da-a036-761cdb156c60
+ID:596c299d-2332-4302-bb5d-838665a73dd9
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:11.0 24.0 -1.0000001
+pos:25.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cb75ea4c-a8fa-4293-9059-d87651670eef
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:82ae3f3a-a329-4c81-bb2e-81729f8ff7c7
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bddac903-cdc2-447b-96a9-3c398e799670
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:5b10ce95-d52c-4448-bc71-47cf49a8deb1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1773e138-73c8-4145-a757-54f59d9f799e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:eb965254-448e-48a1-bea4-b6493784c8f3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b7c6daa5-a617-4796-85e1-fb76b897d9e9
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8b0c67ae-955b-4556-bae0-f85a1344a969
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:260dbcbd-b40e-482f-bae1-3b1e39b4bc6c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:4bd18357-61dd-49e7-9f98-7e1aa59b1ca4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 44.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -3485,18 +3408,51 @@ shouldCastShadow:false
 shouldRender:true
 
 start new model
-ID:f0427359-4858-4b9b-aa5f-bd1ac9162f1b
+ID:6f46e3e4-f679-4f6a-a15a-1fd105c37f07
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:27.0 54.0 -1.0000001
+pos:29.0 42.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:6ab59220-52a4-4a05-86f6-89dbb2154315
+ID:6563b94e-cc93-4745-b44a-ec4e325b34c3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ff07d47c-15e2-4d43-bada-9307cf5ba9cf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ed8ab874-ec38-4ddd-bc31-570000a40f97
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6039300f-8b2a-4bf2-baef-4d493c39efc5
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3507,40 +3463,29 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:dfb892e3-fd66-40b5-bd53-2f35ad02df28
+ID:61452719-4070-44a8-986c-b3a498624434
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:27.0 34.0 -1.0000001
+pos:29.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:ce172a0a-9efe-49e6-8251-539ee42326de
+ID:a39b2a98-4fcf-4e77-aab2-84a78974e375
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:-1.0000001 62.0 -1.0000001
+pos:7.0 42.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:c3b949f9-ea80-4dc3-9be8-439c82bcef1a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c6e8338f-158b-4bdf-a9ca-93c7db67e09f
+ID:75703cfa-8695-4819-b6de-2428e1efcdac
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -3551,111 +3496,67 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a08098b4-cd64-49d4-b00d-f3ca4b48e557
+ID:7132d50d-0ff0-4807-912f-ccc3f9a24fc3
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:-1.0000001 34.0 -1.0000001
+pos:23.0 40.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:987085f8-099a-4303-8d6d-81707b8f7f23
+ID:4924b67d-3e2d-4b94-a34a-c6c864df95a0
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:21.0 62.0 -1.0000001
+pos:5.0 24.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:aeae7375-2d5d-489a-b323-46976258dada
+ID:e9186380-aed8-455a-864c-d606f2c3fdf1
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:17.0 42.0 -1.0000001
+pos:31.0 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:7c822031-006e-4ced-9f80-6bd1e6ee90c8
+ID:ea7cb4c8-6f25-4d69-b7f5-48f6cef7c70f
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:13.0 30.0 -1.0000001
+pos:-1.0000001 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:fc73e1de-f671-49da-aac8-92945ee7283a
+ID:d2cde130-5c27-4f87-8f96-559451ffa5ee
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:23.0 54.0 -1.0000001
+pos:23.0 24.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:2a25eae1-3dc6-43f4-b92a-5c7ede5ff557
+ID:a2b2748a-1d29-47ca-8bfb-3a4ba42f6da8
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:35.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1d6506a9-ac97-4024-922b-c416a34805ca
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:75759211-0d29-4e0a-8069-78bf101b16da
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:64898593-9957-4365-8167-7739dcc9da81
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:2fe27bbe-1eee-4784-abd6-b3c5b7bb7963
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 58.0 -1.0000001
+pos:7.0 44.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -3672,744 +3573,7 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:ae5b4928-7a88-4918-85ed-242b8f55a257
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f17919c2-b9f6-4520-85a7-ca46058eb1d9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5bd08306-be1f-4445-9eb1-c5b11d96ea29
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8b63d70e-273c-43e2-94a7-fe3a303dd4a2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8acea815-661d-477f-9037-9c4f8b946aa1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4da9da11-720f-4665-a054-db3474f59cad
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8b4c2c98-bdc6-42aa-94d2-464473d4009c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:373c14cd-39b7-48a0-93fa-f66d52a6c6e2
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3bf394eb-956d-4729-9fce-af1b792bbeb9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:29.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:67026e9c-14a5-429d-9308-8689f51d2806
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:97259033-72d5-4888-a49f-fe067074307f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f9333ef5-e251-49dd-9631-b525789bd37a
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:28f2d1fe-252b-4164-b0e7-fcffa80031ba
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c2745ac1-bfe1-4ab8-b419-abaee30ff915
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b416d885-782a-46b0-8a04-da76d49abcb9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:dc0346c0-ebbc-4a1a-8fba-775455889095
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d19c766b-95bc-4883-ab2a-983340a27545
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:39554794-6c1a-45ba-a1c5-4c464c8fa44f
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 50.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:820122a3-b236-47ac-9261-d632b10d2106
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f2d99d8a-5641-4960-b164-4c929e5f5082
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 58.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ecf10bc5-9610-4d7b-bda2-23f16dbc7334
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8baeabfb-80f3-4e57-b7c9-0102c49d76bc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c18ee4f8-ae6e-43c9-aa58-3a43f0118f46
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3de01f7f-4f91-4929-b2ca-186a42e168a3
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1587f8d6-4c64-4ee2-98af-8a4671e20024
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:179794aa-c224-4102-8555-7b2c78e49c9c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 54.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7fe1360a-9837-4b4a-a806-4296fb689ccc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:7.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0b1223fa-b12f-4c57-854b-f80eb44bfd97
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:fccfa9d9-6536-4092-a050-6ccb3b79c9fa
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b8e246c6-336d-48e0-8baf-ab8ce52a89dc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 26.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ea4d7671-de0e-4c0c-a622-7f35d6466e6b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:31.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:404a934b-3575-4f50-82e5-624132c81bfc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 36.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:2bc49a44-d070-4250-948e-bebe89950008
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:9a7ba9cf-30bc-4a72-890b-8520ea1e12be
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a28e5fcb-f32f-4bb9-993c-87bf39b34510
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:5065c514-f541-49ce-bc4b-5bf37994b2ab
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b1ca658b-de64-4f0f-95f4-c7cc37dab2ce
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:69e1ecfb-ef9f-435c-91b7-1dc3d54ab71c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 48.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a9fc6c6e-e59b-40a2-a115-bd44109394ed
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e3e3d925-8c7e-4534-be08-0612bbeebc7e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:7e9b1566-ca35-4ca8-8f4d-9ff945e9f910
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:136a9578-3e10-4c13-af42-740625c0a6fc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:c0e9adfd-0afb-4c49-85f1-9971e52dfbd9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:bf5eabae-6e1d-492b-aa7b-1c2354cbafd5
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:5.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:88e16480-acd6-4af5-9dff-d6865c4a00c0
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d071731d-1b34-451e-9a42-ac23e2c1d293
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:af0cd739-4404-4dc2-8cff-2f437bee0d6e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 62.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:3e9a72d6-9f3a-4e44-ad7e-700b70a7e057
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:68eb7311-94e8-4019-8a4f-1da15e10fe5b
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 46.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:370f2d69-174c-4062-a33b-4eb50749f3c8
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:39edf403-021a-4b80-9207-d98cdd8b8f8e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 34.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1f5da905-088e-488e-b62a-afa675a991c1
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:33.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:ec892322-4cf2-4886-8a66-ed260222f184
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:-1.0000001 60.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:1751ba8b-fecd-4e73-acfc-a483b59877a4
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:25.0 24.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:bc0b1ecc-a46d-467a-a566-180a0034e683
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:23.0 40.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d0111af0-4a69-4f84-8f40-4df5b0280fdc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:17.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:e145d713-8bb1-4aa9-95ca-5f5567e206af
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:19.0 28.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:0dec1161-b0a7-427e-b354-b1bfdb49e94c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:15.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:778ad295-61f0-4356-8a92-5a8d03c9bbc9
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:13.0 32.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:59e2650d-10b9-4d02-a429-aa04ff91d7f6
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:21.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:4fc697da-e474-46bd-a363-462ca1567f13
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:35.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f68841b3-13d9-49d0-948f-beda7214eaa0
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:0.9999999 38.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:b30d3504-b7aa-418f-b9c3-f299ccd06c8c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:3.0 56.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:f967dd3f-3a5d-46d5-adc5-cd63ee57d9cc
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:37.0 42.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:8c3159d7-2e5b-4bb1-b369-ed8984d4785e
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:9.0 30.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:d9caeab4-b416-4777-b615-1a6af7632c9c
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:11.0 52.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:a172b329-321f-4e26-b261-6d3ecb3a32ed
-type:Model
-shader_ID:sceneShader
-mesh_ID:cube_mesh
-scale:1.0 1.0 1.0
-pos:27.0 44.0 -1.0000001
-orientation:1.0 0.0 0.0 0.0
-shouldCastShadow:true
-shouldRender:true
-
-start new model
-ID:51a63aa7-ecac-4649-82da-8d42ee8a52ec
+ID:a7a116cb-50e1-4400-b1d7-3967315b1961
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -4420,7 +3584,227 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:92527f44-8b9a-46a0-9ca6-accc60a13492
+ID:b999014b-be2f-4c0b-b84a-a6c0ef9ccb0c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a8d649fd-cc06-43ec-b8bf-37d387d928a0
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8fddb888-e821-4e9e-8cc1-83eb1b0efe76
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:dc8eab8e-fca5-4699-a2d2-7dd020053df4
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:17f10e08-cef8-4f67-bcf1-9c694425bd6c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f3c0fb03-4029-4e94-a4c3-9286d1df59b3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:a11418a6-7fb2-4189-bfb8-e34a99f9efa1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:07717e75-11c3-4c9e-80a4-318ece655c6a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 34.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:dc3cc40e-665c-49a7-93b8-386f485f988a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9898f5e7-3c66-4a31-8254-de42329e2985
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0cdbe801-24f9-42b8-b17e-cebacb84006a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:685d83ce-2ab7-481c-b107-36b1cddeb387
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f5740c78-be3b-4ea2-908c-1fb907091425
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:99a7045c-7177-42cf-8958-4b04530b0544
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:645e6dd6-6858-4c36-9aba-74a0cc09e154
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2d8a8d88-cdda-44ba-89ec-e13c9016f2bd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6418882f-9a95-42b6-ad20-9d08363a8ea8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:04c500e6-ca90-4b58-b52a-a22419447c57
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9f62d90c-4ecf-4968-9d55-18565245058f
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e4c94d8e-8ec4-4e92-91c3-c5ddc1e0322d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:09b9eec3-f94c-4944-8a7f-0a280c34b61c
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -4431,40 +3815,447 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:e72b5eca-ed08-440a-81cb-65f8e352d5d2
+ID:468d95b6-7eb6-4401-838d-1853f87c5276
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:31.0 30.0 -1.0000001
+pos:11.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a2c1ed33-383a-43a5-a669-a35367163ff8
+ID:80ecf9f6-736d-4c48-8f26-344aa945b88f
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:9.0 52.0 -1.0000001
+pos:27.0 28.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:a619c61c-1876-4e7d-9cb5-642db21b34b1
+ID:8e935e40-e2e4-4775-831b-7e8b316347b0
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:0.9999999 46.0 -1.0000001
+pos:7.0 54.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:271306cb-eee0-4e0b-9f02-41ff1b3c37f4
+ID:d259b763-3288-44c8-ab3d-64f6b4d96cce
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2aef7913-9224-4603-bfe0-e726ba5309f2
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:730a2ad2-0feb-4777-8d87-f50a4c4259af
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d17d999b-4aff-4b58-aa40-e2427eae2474
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:e7f7be78-c6ae-48ae-b11a-0cf35305d832
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:6f5c4d25-917c-4511-b061-2dbfc546639c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:aa1d8c08-59a3-4d7f-9f72-1ec17d94c351
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cfef7ecd-45c0-452f-9541-72cd6ee9789c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:40f84449-a2e2-49d0-9b0b-b322a2e1f32c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:084d859b-3189-4549-8b45-46eeb3d94636
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:eb7331b4-5e1d-4bc4-bc22-2c040955e46a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:32aca2f9-f774-46d3-a5c9-a8afaf5e9e4e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:0.9999999 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2e9fd0f8-c6e5-47ed-b490-d5c06ff232db
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:034add0a-606c-4f9b-801d-5235319d4239
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:4434945b-3b0d-4cd1-8f7d-b9d7b2721a63
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 38.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2282243a-8227-4755-84f3-6b1b8091b924
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:36abcb36-0eba-47a9-bfa6-56ef325c34bc
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cbbd8646-ae4c-4fa1-9895-65d9a2540675
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bf4b3f60-49cc-44b6-9daf-67df9321357a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:dd738c62-1875-4643-a9ab-854f3159c387
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:60418788-40b2-4dcc-bdea-a0b25cdd7490
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:72f1e8ed-ca09-4d41-b4d0-dd9f35f5cc82
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ea6b0f75-9b3e-4b38-90eb-96c3516c5c62
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:780cd740-b558-439f-880f-5b6ca2a02124
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 32.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:51d0ce96-bfe8-45cf-8e2e-7a1edae85145
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:9.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:fac6fe02-ae73-4a06-ad7a-4f5bca5f2ef8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:33.0 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d332b430-7cf6-4448-a29a-8fe4ffd4884d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:37.0 46.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:956e6ed9-a5dc-4504-a582-f9f4ca2712db
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cc206475-9ed5-4298-a05d-4facad290c1d
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 26.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:1912db24-2aec-401d-9ad4-517223e88383
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:3d050828-3129-4e69-b3f8-711a1b887fc6
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 52.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7b4494cc-a641-499c-9bfb-2566b8a7469a
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:b7cb9ebe-65a4-4892-9916-b2e3640c714c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:78410ce2-8ac5-4b36-83b6-7f8a1a8164e8
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7162951d-a4cf-42ca-b5de-59c4daf7f932
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:35.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9442f785-af18-4970-a98f-5233542a78ba
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:f407a383-2fb4-4838-b738-6b8dc7ab6a19
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:23.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:2db84627-f971-411e-b6dc-5a606b9f020b
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
@@ -4475,45 +4266,276 @@ shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:d0940417-47c0-4124-a605-699d64262548
+ID:72b959ce-bf65-4616-b732-f44877507919
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:29.0 46.0 -1.0000001
+pos:11.0 58.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:1e854390-0a22-42e3-afb9-1d97c2830801
+ID:194f3f6a-e9b3-4a33-8832-b33f0a3c3e02
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:7.0 44.0 -1.0000001
+pos:29.0 26.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:36e98331-118d-4ac9-b5ce-ef847a66d61f
+ID:be39adaf-b3fc-4a3a-988b-6fdd1ead15e6
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:11.0 26.0 -1.0000001
+pos:0.9999999 34.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
 
 start new model
-ID:1ab34598-bf3e-4630-af6b-83f50b933b5e
+ID:ce6a08b1-f154-422a-b3b7-19f03ed3d905
 type:Model
 shader_ID:sceneShader
 mesh_ID:cube_mesh
 scale:1.0 1.0 1.0
-pos:11.0 54.0 -1.0000001
+pos:15.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9f1d52f5-5966-4804-b658-a4792e6fa1f1
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 42.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9c8a03d4-2445-4227-b6bc-e1ae93518a73
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:31.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:845c7bd8-1209-4884-b97d-28902ae277cd
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:5.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:402a1332-7922-4978-adb2-e39a09a94d04
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:-1.0000001 58.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:71a856cc-14fe-4570-b104-7a882e33bc92
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:17.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:66622b7c-f2c9-4ca5-8773-369d60a89a6b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 30.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ff176ba9-30ae-4c9c-9b64-ff5395370712
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 54.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:8b1266b5-cfdf-4c1d-89ec-a95436251dbf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:21.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:02fff3f2-31fb-44c7-a81a-aab98beb5fa3
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:3.0 24.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cdb49cbd-fdd0-44c6-a0e0-237f0d7687bf
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:7b7f6fa1-3311-4c56-9679-521b02e21e1e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 44.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:0ed737b0-af7d-42d5-b02c-c253cb9ab037
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 62.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:298ef639-cadc-41cd-8096-a5ef07981950
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:11.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:ddc9b5f5-fdf9-4bc3-8c1b-82cd440d2264
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:13.0 60.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:232099ea-e796-4c8f-97a6-8ef80d004727
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:25.0 36.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:cdc74aab-602e-4b08-b32e-329afe69a552
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 40.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:d52b409c-11a5-49f2-adb2-b89e52e5a83c
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:29.0 28.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:9492d2bc-23cc-49a6-bc7a-2000a7ba8d4b
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:27.0 50.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:bd40ca3f-95da-419f-b837-5a36130210ce
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:19.0 56.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:00b43ba0-6f08-4956-8771-8934d92c9485
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:7.0 48.0 -1.0000001
+orientation:1.0 0.0 0.0 0.0
+shouldCastShadow:true
+shouldRender:true
+
+start new model
+ID:326085d9-f252-47b1-bd50-1caba6a83f8e
+type:Model
+shader_ID:sceneShader
+mesh_ID:cube_mesh
+scale:1.0 1.0 1.0
+pos:15.0 44.0 -1.0000001
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true

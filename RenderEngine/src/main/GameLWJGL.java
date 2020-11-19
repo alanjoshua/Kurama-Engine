@@ -98,6 +98,7 @@ public class GameLWJGL extends Game implements Runnable {
         cam.updateValues();
         targetFPS = display.getRefreshRate();
 
+        scene.shaderID_shader_map = renderingEngine.shaderID_shader_map;
         try {
             SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
         }catch (Exception e) {

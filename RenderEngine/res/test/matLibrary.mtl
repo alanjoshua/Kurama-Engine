@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-19T21:40:19.155767500
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-20T00:58:59.986074200
 # Material Count: 14
 
 newmtl plantMesh|DEFAULT
@@ -21,6 +21,17 @@ kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
+
+newmtl 5627fb3f-2077-4291-84d7-0eb556cea425|TERRAIN
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka crystalTexture.jpg
+map_kd crystalTexture.jpg
+map_ks crystalSpecularMap.jpg
+map_bump crystalNormalMap.jpg
 
 newmtl res/torch/test/hand_light.obj|DEFAULT
 ka 1.0 1.0 1.0 1.0
@@ -70,17 +81,6 @@ kd 0.8 0.8 0.8 1.0
 ks 0.5 0.5 0.5 1.0
 ns 225.0
 reflectance 1.0
-
-newmtl 6b017f3d-4b7b-45ad-bba5-a97dcee179cb|TERRAIN
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-map_ka crystalTexture.jpg
-map_kd crystalTexture.jpg
-map_ks crystalSpecularMap.jpg
-map_bump crystalNormalMap.jpg
 
 newmtl HUD_texquad_mesh|shadowMapVisualizer
 ka 1.0 1.0 1.0 1.0

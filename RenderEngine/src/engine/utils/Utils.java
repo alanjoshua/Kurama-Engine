@@ -9,9 +9,7 @@ import engine.model.Model;
 import engine.Math.Vector;
 import org.lwjgl.system.windows.INPUT;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,22 +28,21 @@ public class Utils {
 		return UUID.randomUUID().toString();
 	}
 
-	public static String loadResourceAsString(String filename) {
+	public static String loadResourceAsString(String filename) throws IOException {
 		StringBuilder temp = new StringBuilder();
 
-		Utils u = new Utils();
-//		InputStream url = u.getClass().getResourceAsStream(filename);
-		InputStream url = u.getClass().getResourceAsStream(filename);
-		System.out.println(filename);
+		Logger.log(filename);
 
-		try(BufferedReader br = new BufferedReader(new InputStreamReader(url))) {
+		File file = new File(filename);
+		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				temp.append(line);
 				temp.append("\n");
 			}
 		}catch (Exception e) {
-			System.err.println("Couldn't load file: "+filename);
+			Logger.logError("Couldn't load file: "+filename);
+			throw new IOException("Could not load file");
 		}
 
 		return temp.toString();

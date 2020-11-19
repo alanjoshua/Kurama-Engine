@@ -1,5 +1,6 @@
 package engine.shader;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import engine.lighting.DirectionalLight;
 import engine.Effects.Material;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
+import engine.utils.Utils;
 import org.lwjgl.system.MemoryStack;
 
 import static org.lwjgl.opengl.GL20.*;
@@ -27,6 +29,9 @@ public class ShaderProgram {
     private final Map<String,Integer> uniforms;
 
     public String shaderIdentifier;
+
+    public String vertexShaderLocation = null;
+    public String fragmentShaderLocation = null;
 
     public ShaderProgram(String shaderIdentifier) {
         this.shaderIdentifier = shaderIdentifier;
@@ -281,22 +286,29 @@ public class ShaderProgram {
     }
 
 
-    public void createVertexShader(String shaderCode) {
-        vertexShaderID = createShader(shaderCode,GL_VERTEX_SHADER);
+    public void createVertexShader(String shaderLocation) throws IOException {
+        vertexShaderID = createShader(shaderLocation,GL_VERTEX_SHADER);
     }
 
-    public void createFragmentShader(String shaderCode) {
-        fragmentShaderID = createShader(shaderCode,GL_FRAGMENT_SHADER);
+    public void createFragmentShader(String shaderLocation) throws IOException {
+        fragmentShaderID = createShader(shaderLocation,GL_FRAGMENT_SHADER);
     }
 
-    public int createShader(String shaderCode, int shaderType) {
+    public int createShader(String shaderLocation, int shaderType) throws IOException {
         int shaderID = glCreateShader(shaderType);
         if(shaderID == 0) {
             throw new RuntimeException("Error creating shader. Type: " + shaderType);
         }
 
-        glShaderSource(shaderID,shaderCode);
+        glShaderSource(shaderID, Utils.loadResourceAsString(shaderLocation));
         glCompileShader(shaderID);
+
+        if (shaderType == GL_FRAGMENT_SHADER) {
+            fragmentShaderLocation = shaderLocation;
+        }
+        else {
+            vertexShaderLocation = shaderLocation;
+        }
 
         if(glGetShaderi(shaderID,GL_COMPILE_STATUS) == 0) {
             throw new RuntimeException("Error compiling shader code: "+glGetShaderInfoLog(shaderID,1024));
