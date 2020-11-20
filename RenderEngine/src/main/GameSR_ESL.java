@@ -28,7 +28,7 @@ public class GameSR_ESL extends GameSR {
     @Override
     public void initModels() {
 
-        renderingEngine.setRenderPipeline(RenderingEngine.RenderPipeline.Quat);
+        renderingEngine.setRenderPipeline(RenderingEngine.RenderMultiplicationMode_Deprecated.Quat);
 
         Random random = new Random();
         random.setSeed(seed);

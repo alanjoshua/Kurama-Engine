@@ -6,17 +6,12 @@ import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
+import engine.scene.Scene;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class RenderingEngine {
-
-    public class LightDataPackage {
-        public PointLight pointLights[];
-        public SpotLight spotLights[];
-        public DirectionalLight directionalLights[];
-    }
 
     protected Game game;
 
@@ -24,21 +19,19 @@ public abstract class RenderingEngine {
         ORTHO, PERSPECTIVE
     }
 
-    public enum RenderPipeline {
+    public enum RenderMultiplicationMode_Deprecated {
         Matrix, Quat
     }
 
     protected ProjectionMode projectionMode = ProjectionMode.PERSPECTIVE;
-    protected RenderPipeline renderPipeline = RenderPipeline.Matrix;
+    protected RenderMultiplicationMode_Deprecated renderMultiplicationModeDeprecated = RenderMultiplicationMode_Deprecated.Matrix;
 
-    public RenderingEngine(Game game) {
-        this.game = game;
-    }
+    public RenderingEngine(Game game) { this.game = game; }
 
-    public abstract void init();
+    public abstract void init(Scene scene);
     public abstract void cleanUp();
 
-    public RenderingEngine.LightDataPackage processLights(List<PointLight> pointLights, List<SpotLight> spotLights, List<DirectionalLight> directionalLights, Matrix worldToCam) {
+    public static LightDataPackage processLights(List<PointLight> pointLights, List<SpotLight> spotLights, List<DirectionalLight> directionalLights, Matrix worldToCam) {
         List<PointLight> pointLightsRes;
         List<SpotLight> spotLightsRes;
         List<DirectionalLight> directionalLightsRes;
@@ -95,11 +88,11 @@ public abstract class RenderingEngine {
         this.projectionMode = projectionMode;
     }
 
-    public RenderPipeline getRenderPipeline() {
-        return renderPipeline;
+    public RenderMultiplicationMode_Deprecated getRenderPipeline() {
+        return renderMultiplicationModeDeprecated;
     }
 
-    public void setRenderPipeline(RenderPipeline renderPipeline) {
-        this.renderPipeline = renderPipeline;
+    public void setRenderPipeline(RenderMultiplicationMode_Deprecated renderMultiplicationModeDeprecated) {
+        this.renderMultiplicationModeDeprecated = renderMultiplicationModeDeprecated;
     }
 }

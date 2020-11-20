@@ -21,7 +21,7 @@ import engine.model.Model.MiniBehaviour;
 import engine.model.MeshBuilder;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngine.RenderPipeline;
+import engine.renderingEngine.RenderingEngine.RenderMultiplicationMode_Deprecated;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
 import engine.renderingEngine.RenderingEngineSR;
 
@@ -88,7 +88,7 @@ public class GameSR extends Game implements Runnable {
 		renderingEngine.resetBuffers();
 
 		renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
-		renderingEngine.setRenderPipeline(RenderPipeline.Matrix);
+		renderingEngine.setRenderPipeline(RenderMultiplicationMode_Deprecated.Matrix);
 
 		cam.updateValues();
 
@@ -334,8 +334,8 @@ public class GameSR extends Game implements Runnable {
 		}
 		
 		if (input.keyDownOnce(input.Q)) {
-			if(((RenderingEngineSR)renderingEngine).getRenderPipeline() == RenderPipeline.Quat) ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Matrix);
-			else ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderPipeline.Quat);
+			if(((RenderingEngineSR)renderingEngine).getRenderPipeline() == RenderMultiplicationMode_Deprecated.Quat) ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Matrix);
+			else ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Quat);
 		}
 		
 		if (((InputSR)input).getPosition().getNorm() != 0 && isGameRunning) {

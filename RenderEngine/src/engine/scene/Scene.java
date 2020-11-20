@@ -3,6 +3,7 @@ package engine.scene;
 import engine.DataStructure.Mesh.Mesh;
 import engine.Effects.Fog;
 import engine.Math.Vector;
+import engine.camera.Camera;
 import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
@@ -10,6 +11,7 @@ import engine.lighting.SpotLight;
 import engine.model.HUD;
 import engine.model.MeshBuilder;
 import engine.model.Model;
+import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 import engine.utils.Utils;
 
@@ -21,9 +23,9 @@ import static engine.utils.Logger.logError;
 public class Scene {
 
     public Map<String, Mesh> meshID_mesh_map = new HashMap<>();
-    public Map<String, HashMap<String, HashMap<String, Model>>> shader_mesh_model_map = new HashMap<>();
+    public Map<String, HashMap<String, HashMap<String, Model>>> shaderblock_mesh_model_map = new HashMap<>();
     public Map<String, Model> modelID_model_map = new HashMap<>();
-    public Map<String, String> modelID_shaderID_map = new HashMap<>();
+    public Map<String, List<String>> modelID_shaderID_map = new HashMap<>();
     public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
 
     public List<PointLight> pointLights = new ArrayList<>();
@@ -35,6 +37,8 @@ public class Scene {
     public Fog fog = Fog.NOFOG;
 
     public HUD hud;
+    public Camera camera;
+    public RenderPipeline renderPipeline;
 
     private Game game;
 
@@ -46,12 +50,12 @@ public class Scene {
         pointLights.add(pl);
     }
 
-    public void addSplotLight(SpotLight sl, String shaderID) {
+    public void addSplotLight(SpotLight sl, List<String> shaderID) {
         addModel(sl, shaderID);
         spotLights.add(sl);
     }
 
-    public void addDirectionalLight(DirectionalLight dl, String shaderID) {
+    public void addDirectionalLight(DirectionalLight dl, List<String> shaderID) {
         addModel(dl, shaderID);
         directionalLights.add(dl);
     }
@@ -112,69 +116,13 @@ public class Scene {
         return newMesh;
     }
 
-    public Model createModel(Mesh mesh, String modelID, String shaderID) {
-        Model newModel;
-
-        shader_mesh_model_map.putIfAbsent(shaderID, new HashMap<>());  // Enter a new hashmap if shaderID does not exist yet
-
-//        Mesh does not exists in scene's database
-        if (mesh != null && !meshID_mesh_map.containsKey(mesh.meshIdentifier)) {
-            meshID_mesh_map.put(mesh.meshIdentifier, mesh);
-            shader_mesh_model_map.get(shaderID).put(mesh.meshIdentifier, new HashMap<>());
-        }
-
-//        If mesh is already present, but no models so far have been added that use the specified shader
-        if (!shader_mesh_model_map.get(shaderID).containsKey(mesh.meshIdentifier)) {
-            shader_mesh_model_map.get(shaderID).put(mesh.meshIdentifier, new HashMap<>());
-        }
-
-//        Check whether modelID is unique. If not, assign a random ID
-        if (modelID_model_map.containsKey(modelID)) {
-            logError("Model ID "+ modelID + " not unique. Assigning random id...");
-            String id = Utils.getUniqueID();
-            newModel = new Model(game, mesh, id);
-        }
-        else {
-            newModel = new Model(game, mesh, modelID);
-        }
-
-        modelID_model_map.put(newModel.identifier, newModel);
-        modelID_shaderID_map.put(newModel.identifier, shaderID);
-
-        if (mesh != null) {
-            shader_mesh_model_map.get(shaderID).get(mesh.meshIdentifier).put(newModel.identifier, newModel);  // Insert new model into mesh_model map
-        }
-
+    public Model createModel(Mesh mesh, String modelID, List<String> shaderID) {
+        Model newModel = new Model(game, mesh, modelID);
+        addModel(newModel, shaderID);
         return newModel;
     }
 
-    public void addModel(Model newModel, String shaderID) {
-//        If model does not have a mesh
-        if (newModel.mesh == null) {
-
-    //        Check whether modelID is unique. If not, assign a random ID
-            if (modelID_model_map.containsKey(newModel.identifier)) {
-                logError("Model ID "+ newModel.identifier + " not unique. Assigning random id...");
-                newModel.identifier = UUID.randomUUID().toString();
-            }
-
-            modelID_model_map.put(newModel.identifier, newModel);
-            modelID_shaderID_map.put(newModel.identifier, shaderID);
-            return;
-        }
-
-        shader_mesh_model_map.putIfAbsent(shaderID, new HashMap<>());  // Enter a new hashmap if shaderID does not exist yet
-
-//        Mesh does not exists in scene's database
-        if (!meshID_mesh_map.containsKey(newModel.mesh.meshIdentifier)) {
-            meshID_mesh_map.put(newModel.mesh.meshIdentifier, newModel.mesh);
-            shader_mesh_model_map.get(shaderID).put(newModel.mesh.meshIdentifier, new HashMap<>());
-        }
-
-//        If mesh is already present, but no models so far have been added that use the specified shader
-        if (!shader_mesh_model_map.get(shaderID).containsKey(newModel.mesh.meshIdentifier)) {
-            shader_mesh_model_map.get(shaderID).put(newModel.mesh.meshIdentifier, new HashMap<>());
-        }
+    public void addModel(Model newModel, List<String> shaderIDs) {
 
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(newModel.identifier)) {
@@ -183,17 +131,36 @@ public class Scene {
         }
 
         modelID_model_map.put(newModel.identifier, newModel);
-        modelID_shaderID_map.put(newModel.identifier, shaderID);
-//        log("\n");
-//        log("mesh id: "+ newModel.mesh.meshIdentifier);
-//        log("model ID: "+newModel.identifier);
-//        log("curr mesh is present in map: "+ shader_mesh_model_map.get(shaderID).containsKey(newModel.mesh.meshIdentifier));
-        shader_mesh_model_map.get(shaderID).
-                get(newModel.mesh.meshIdentifier).
-                put(newModel.identifier, newModel);  // Insert new model into mesh_model map
+        modelID_shaderID_map.put(newModel.identifier, shaderIDs);
+
+//        If model does not have a mesh or shaderIds = Null, return immediately as there is no need to render Model
+        if (newModel.mesh == null || shaderIDs == null) {
+            return;
+        }
+
+//        Mesh does not exists in scene's database
+        if (!meshID_mesh_map.containsKey(newModel.mesh.meshIdentifier)) {
+            meshID_mesh_map.put(newModel.mesh.meshIdentifier, newModel.mesh);
+        }
+
+//      Loop through all shaderIds
+        for (String shaderID: shaderIDs) {
+            shaderblock_mesh_model_map.putIfAbsent(shaderID, new HashMap<>());  // Enter a new hashmap if shaderID does not exist yet
+
+//        Shader is not associated with model mesh, so add new mesh entry to shader ID
+            if (!shaderblock_mesh_model_map.get(shaderID).containsKey(newModel.mesh.meshIdentifier)) {
+                shaderblock_mesh_model_map.get(shaderID).put(newModel.mesh.meshIdentifier, new HashMap<>());
+            }
+
+//            Link model with shader
+            shaderblock_mesh_model_map.get(shaderID).
+                    get(newModel.mesh.meshIdentifier).
+                    put(newModel.identifier, newModel);  // Insert new model into mesh_model map
+
+        }
     }
 
-    public void addSkyBlock(Model skyblock, String shaderID) {
+    public void addSkyBlock(Model skyblock, List<String> shaderID) {
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(skyblock.identifier)) {
             logError("Model ID "+ skyblock.identifier + " not unique. Assigning random id...");

@@ -1,20 +1,21 @@
 package engine.renderingEngine;
 
+import engine.DataStructure.Mesh.Face;
+import engine.DataStructure.Mesh.Vertex;
+import engine.Math.Matrix;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.camera.Camera;
+import engine.game.Game;
+import engine.model.MeshBuilder;
+import engine.model.Model;
+import engine.scene.Scene;
+import engine.utils.Utils;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import engine.Math.Matrix;
-import engine.utils.Utils;
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.game.Game;
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Vertex;
-import engine.model.Model;
-import engine.model.MeshBuilder;
-import engine.camera.Camera;
 
 public class RenderingEngineSR extends RenderingEngine {
 
@@ -27,7 +28,7 @@ public class RenderingEngineSR extends RenderingEngine {
     }
 
     @Override
-    public void init() {
+    public void init(Scene scene) {
         resetBuffers();
     }
 
@@ -54,7 +55,7 @@ public class RenderingEngineSR extends RenderingEngine {
 
 //			Transform and convert 3D points to camera space according to rendering mode
 
-            if (renderPipeline == RenderPipeline.Quat) {
+            if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Quat) {
                 Matrix transformedV;
 
                 if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
@@ -78,7 +79,7 @@ public class RenderingEngineSR extends RenderingEngine {
                     camSpaceV[i] = camSpaceV[i].sub(pos_);
                 }
                 camSpace = new Matrix(Vector.addDimensionToVec(camSpaceV, 1));
-            } else if (renderPipeline == RenderPipeline.Matrix) {
+            } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
                 Matrix transformedV = null;
                 if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
                     transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
@@ -309,7 +310,7 @@ public class RenderingEngineSR extends RenderingEngine {
         Matrix camSpace = null;
 
 //		Transform and convert 3D points to camera space according to rendering mode
-        if (renderPipeline == RenderPipeline.Quat) {
+        if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Quat) {
             Matrix transformedV;
 
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
@@ -333,7 +334,7 @@ public class RenderingEngineSR extends RenderingEngine {
                 camSpaceV[i] = camSpaceV[i].sub(pos_);
             }
             camSpace = new Matrix(Vector.addDimensionToVec(camSpaceV, 1));
-        } else if (renderPipeline == RenderPipeline.Matrix) {
+        } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
             Matrix transformedV = null;
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
                 transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));

@@ -1,9 +1,9 @@
 package ENED_Simulation;
 
+import RenderPipeline.TestRenderPipeline;
 import engine.DataStructure.Mesh.Mesh;
-import engine.renderingEngine.RenderingEngineGL;
-import engine.scene.Scene;
 import engine.DataStructure.Texture;
+import engine.Effects.Material;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
@@ -14,10 +14,10 @@ import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
-import engine.Effects.Material;
 import engine.lighting.PointLight;
-import engine.model.Model;
 import engine.model.MeshBuilder;
+import engine.model.Model;
+import engine.scene.Scene;
 
 import java.util.*;
 
@@ -27,7 +27,7 @@ import static org.lwjgl.opengl.GL11.glViewport;
 public class Simulation extends Game {
 
     protected DisplayLWJGL display;
-    protected Camera cam;
+//    protected Camera cam;
     protected InputLWJGL input;
     protected RenderingEngineSim renderingEngine;
     protected List<Box> boxesToBeSearched;
@@ -121,9 +121,9 @@ public class Simulation extends Game {
         display.startScreen();
 
         renderingEngine = new RenderingEngineSim(this);
-        renderingEngine.init();
+        renderingEngine.init(scene);
 
-        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+        scene.camera = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -149,14 +149,17 @@ public class Simulation extends Game {
         initModels();
         initPauseScreen();
 
-        cam.updateValues();
-        cam.lookAtModel(flag);
+        scene.camera.updateValues();
+        scene.camera.lookAtModel(flag);
 
         targetFPS = display.getRefreshRate();
         scene.hud = new SimulationHUD(this);
     }
 
     public void initModels() {
+
+        TestRenderPipeline renderPipeline = (TestRenderPipeline)scene.renderPipeline;
+
         MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.addRandomColor = true;
@@ -225,13 +228,13 @@ public class Simulation extends Game {
 
         hints.convertToLines = false;
 
-        scene.addModel(robot, renderingEngine.sceneShaderID);
-        scene.addModel(grid, renderingEngine.sceneShaderID);
-        scene.addModel(flag, renderingEngine.sceneShaderID);
-        scene.addModel(h1, renderingEngine.sceneShaderID);
-        scene.addModel(h2, renderingEngine.sceneShaderID);
-        scene.addModel(h3, renderingEngine.sceneShaderID);
-        scene.addModel(h4, renderingEngine.sceneShaderID);
+        scene.addModel(robot, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(grid, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(flag, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(h1, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(h2, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(h3, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
+        scene.addModel(h4, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
 
         initCrates();
 
@@ -256,6 +259,7 @@ public class Simulation extends Game {
 
 //    This method initialises boxes
     public void initCrates() {
+        TestRenderPipeline renderPipeline = (TestRenderPipeline)scene.renderPipeline;
 
         Random rand = new Random();
         //rand.setSeed(seed);
@@ -328,7 +332,7 @@ public class Simulation extends Game {
 
                 platform.setPos(new Vector(new float[]{tempX,platY,tempZ}));
                 platform.setScale(new Vector(new float[]{platScaleX,platScaleY,platScaleZ}));
-                scene.addModel(platform, renderingEngine.sceneShaderID);
+                scene.addModel(platform, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
 
                 Integer currZone = getZone(r,c);
 
@@ -372,7 +376,7 @@ public class Simulation extends Game {
         }
 
         for (Box b: boxesToBeSearched) {
-            scene.addModel(b, renderingEngine.sceneShaderID);
+            scene.addModel(b, Arrays.asList(new String[]{renderPipeline.sceneShaderBlockID}));
         }
 //        scene.getModels().addAll(boxesToBeSearched);
 
@@ -530,7 +534,7 @@ public class Simulation extends Game {
         }
         else {
             calculate3DCamMovement();
-            cam.tick();
+            scene.camera.tick();
         }
     }
 
@@ -689,52 +693,52 @@ public class Simulation extends Game {
 
         if(input.keyDown(GLFW_KEY_W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_S)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_A)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_D)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_SPACE)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_LEFT_SHIFT)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+            scene.camera.setPos(scene.camera.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(GLFW_KEY_ESCAPE)) {
@@ -747,7 +751,7 @@ public class Simulation extends Game {
 
         if(isGameRunning) {
             if(input.keyDownOnce(GLFW_KEY_R)) {
-                cam.lookAtModel(lookAtModel);
+                scene.camera.lookAtModel(lookAtModel);
             }
 
             if(input.keyDownOnce(GLFW_KEY_LEFT_CONTROL)) {
@@ -781,7 +785,7 @@ public class Simulation extends Game {
             float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
             float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
 
-            Vector currentAngle = cam.getOrientation().getPitchYawRoll();
+            Vector currentAngle = scene.camera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
 
             if(currentPitch >= 0 && currentPitch > 60) {
@@ -794,11 +798,11 @@ public class Simulation extends Game {
             Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
             Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 
-            Quaternion q = cam.getOrientation();
+            Quaternion q = scene.camera.getOrientation();
 
             q = q.multiply(pitch);
             q = yaw.multiply(q);
-            cam.setOrientation(q);
+            scene.camera.setOrientation(q);
         }
 
     }
@@ -815,7 +819,7 @@ public class Simulation extends Game {
             robot.pathModel.shouldRender = true;
            hasAddedPath = true;
         }
-        renderingEngine.render(scene,cam);
+        renderingEngine.render(scene);
         if(hasAddedPath) {
 //            scene.mesh_model_map.remove(robot.pathModel.mesh);
 //            scene.models.remove(scene.models.size()-1);
@@ -839,7 +843,7 @@ public class Simulation extends Game {
 
     @Override
     public Camera getCamera() {
-        return cam;
+        return scene.camera;
     }
 
     @Override

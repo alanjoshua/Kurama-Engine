@@ -1,43 +1,44 @@
 package main;
 
-import java.awt.*;
-import java.util.*;
-import java.util.List;
-
-import engine.scene.Scene;
+import HUD.TestHUD;
+import RenderPipeline.TestRenderPipeline;
+import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Texture;
 import engine.Effects.Fog;
+import engine.Effects.Material;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Terrain.TerrainUtils;
+import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Texture;
 import engine.lighting.DirectionalLight;
-import engine.Effects.Material;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
-import engine.model.MeshBuilder;
-import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngineGL;
+import engine.scene.Scene;
 import engine.scene.SceneUtils;
 import engine.utils.Utils;
-import static engine.model.MeshBuilder.*;
 
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static engine.model.MeshBuilder.MeshBuilderHints;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 public class GameLWJGL extends Game implements Runnable {
 
     protected DisplayLWJGL display;
-    protected Camera cam;
     protected InputLWJGL input;
     protected RenderingEngineGL renderingEngine;
 
@@ -73,7 +74,7 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+        scene.camera = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 display.getWidth(), display.getHeight());
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -92,13 +93,30 @@ public class GameLWJGL extends Game implements Runnable {
         initScene();
         initPauseScreen();
 
-        renderingEngine.init();
+        scene.renderPipeline = new TestRenderPipeline(this);
+        renderingEngine.renderPipeline = scene.renderPipeline;
+        renderingEngine.init(scene);
 
         display.setClearColor(0,0,0,1);
-        cam.updateValues();
+        scene.camera.updateValues();
         targetFPS = display.getRefreshRate();
 
-        scene.shaderID_shader_map = renderingEngine.shaderID_shader_map;
+//        for (String shaderblockID: scene.shaderblock_mesh_model_map.keySet()) {
+//            Logger.log("Shader block: "+shaderblockID);
+//            for (String meshID: scene.shaderblock_mesh_model_map.get(shaderblockID).keySet()) {
+//                Logger.log("Mesh ID: "+meshID);
+//                for(String modelID: scene.shaderblock_mesh_model_map.get(shaderblockID).get(meshID).keySet()) {
+//                    Logger.log("Model ID: "+modelID);
+//                }
+//                Logger.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+//            }
+//            Logger.log("----------------------------------------------------");
+//        }
+
+//        for(String modelID: scene.modelID_shaderID_map.keySet()) {
+//            Logger.log("model ID: "+modelID + "  shaderIds: "+scene.modelID_shaderID_map.get(modelID));
+//        }
+
         try {
             SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
         }catch (Exception e) {
@@ -107,6 +125,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void initScene() {
+        MeshBuilderHints hints = new MeshBuilderHints();
 
         scene.hud = new TestHUD(this);
 
@@ -123,7 +142,7 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
-        scene.addDirectionalLight(directionalLight, renderingEngine.sceneShaderID);
+        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -141,12 +160,12 @@ public class GameLWJGL extends Game implements Runnable {
 
         spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
 
-        spotLight.mesh =  MeshBuilder.buildModelFromFileGL("res/torch/test/hand_light.obj", new MeshBuilderHints());
+        spotLight.mesh =  scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints);
         spotLight.setScale(0.05f);
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
         spotLight.shouldCastShadow = false;
 
-        scene.addSplotLight(spotLight, renderingEngine.sceneShaderID);
+        scene.addSplotLight(spotLight, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         Material quadMat = new Material();
@@ -178,11 +197,9 @@ public class GameLWJGL extends Game implements Runnable {
             m.setOrientation(newQ);
         });
 
-        MeshBuilderHints hints = new MeshBuilderHints();
-
         Texture tex = null;
         try {
-            tex = new Texture("res/misc/grassblock.png");
+            tex = new Texture("projects/testProject/res/misc/grassblock.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -198,20 +215,21 @@ public class GameLWJGL extends Game implements Runnable {
         int boxCount = 100;
         float yRange = 60;
 
-        Model skybox = new Model(this, MeshBuilder.buildModelFromFileGL("res/misc/skybox.obj",hints),"skybox");
+        Model skybox = scene.createModel(scene.loadMesh("projects/testProject/res/misc/skybox.obj",
+                "skybox_mesh", hints), "skybox", Arrays.asList(new String[]{TestRenderPipeline.skyboxShaderBlockID}));
         skybox.setScale(skyBoxScale);
 
-        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
+        Material skyMat = new Material(new Texture("projects/testProject/res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
         skybox.mesh.materials.set(0,skyMat);
-        scene.addSkyBlock(skybox, renderingEngine.skyboxShaderID);
+        scene.skybox = skybox;
 
         Vector[] bounds = Model.getBounds(scene.skybox.mesh);
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
+        Mesh cubeMesh = scene.loadMesh("projects/testProject/res/misc/cube.obj", "cube_mesh", hints);
 
         for(int i = 0;i < 20;i++) {
             for(int y = 0;y < 20;y++) {
@@ -220,11 +238,12 @@ public class GameLWJGL extends Game implements Runnable {
                 cube.setScale(boxScale);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
                 cube.mesh.materials.set(0,cubeMat);
-                scene.addModel(cube, renderingEngine.sceneShaderID);
+                scene.addModel(cube, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
             }
         }
 
-        Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj", "plantMesh", hints), "plant", renderingEngine.sceneShaderID);
+        Model plant = scene.createModel(scene.loadMesh("projects/testProject/res/plant/01Alocasia_obj.obj",
+                "plantMesh", hints), "plant", Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
         plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);
 
@@ -232,16 +251,16 @@ public class GameLWJGL extends Game implements Runnable {
         scene.setUniqueMeshID(terrain.mesh);
         Material ter = new Material();
         ter.matName = "TERRAIN";
-        ter.texture = new Texture("res/misc/crystalTexture.jpg");
+        ter.texture = new Texture("projects/testProject/res/misc/crystalTexture.jpg");
         ter.diffuseMap = ter.texture;
-        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
-        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
+        ter.normalMap = new Texture("projects/testProject/res/misc/crystalNormalMap.jpg");
+        ter.specularMap = new Texture("projects/testProject/res/misc/crystalSpecularMap.jpg");
         ter.reflectance = 1f;
         terrain.mesh.materials.set(0,ter);
 
         terrain.mesh.initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
-        scene.addModel(terrain, renderingEngine.sceneShaderID);
+        scene.addModel(terrain, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
 
     }
 
@@ -359,8 +378,8 @@ public class GameLWJGL extends Game implements Runnable {
 
 //            scene.pointLights.get(0).pos = cam.getPos();
 //            scene.spotLights.get(0).setPos(cam.getPos());
-            scene.spotLights.get(0).setPos(cam.getPos().sub(cam.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
-            scene.spotLights.get(0).setOrientation(cam.getOrientation());
+            scene.spotLights.get(0).setPos(scene.camera.getPos().sub(scene.camera.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
+            scene.spotLights.get(0).setOrientation(scene.camera.getOrientation());
 
 //            scene.spotLights.get(1).setPos(cam.getPos());
 //            scene.spotLights.get(1).setOrientation(cam.getOrientation());
@@ -413,7 +432,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
         else {
             calculate3DCamMovement();
-            cam.tick();
+            scene.camera.tick();
         }
 
     }
@@ -424,7 +443,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -435,7 +454,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.S)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -446,7 +465,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.A)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             posDelta = posDelta.add(v.scalarMul(-cameraSpeed));
@@ -455,7 +474,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.D)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = cam.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             posDelta = posDelta.add(v.scalarMul(cameraSpeed));
@@ -517,8 +536,8 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-        Vector newPos = cam.getPos().add(posDelta);
-        cam.setPos(newPos);
+        Vector newPos = scene.camera.getPos().add(posDelta);
+        scene.camera.setPos(newPos);
 //        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
 //        if(terrainCollisionData.isValid) {
 //            this.cam.setPos(terrainCollisionData.validPosition);
@@ -532,7 +551,7 @@ public class GameLWJGL extends Game implements Runnable {
             float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
             float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
 
-            Vector currentAngle = cam.getOrientation().getPitchYawRoll();
+            Vector currentAngle = scene.camera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
 
             if(currentPitch >= 0 && currentPitch > 60) {
@@ -545,17 +564,17 @@ public class GameLWJGL extends Game implements Runnable {
             Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
             Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 
-            Quaternion q = cam.getOrientation();
+            Quaternion q = scene.camera.getOrientation();
 
             q = q.multiply(pitch);
             q = yaw.multiply(q);
-            cam.setOrientation(q);
+            scene.camera.setOrientation(q);
         }
 
     }
 
     public void render() {
-        renderingEngine.render(scene,cam);
+        renderingEngine.render(scene);
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
         input.poll();
@@ -570,11 +589,10 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public Camera getCamera() {
-        return cam;
+        return scene.camera;
     }
 
     public Input getInput() {
         return input;
     }
-
 }
