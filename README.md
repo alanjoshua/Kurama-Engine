@@ -18,6 +18,7 @@
 * Switching between Matrix and Quaternion rotation mode (Only in Pure Java Rendering Mode)
 * Ability to create basic GUI (Buttons not yet implemented in openGL mode)
 * Supports a HUD overlay
+* Support for text and create 3D meshes for text with any font in the system.
 * Input handling
 * Built-in simple benchmarking tool
 
