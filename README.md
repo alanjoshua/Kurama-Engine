@@ -17,7 +17,7 @@
 * Capable of triangulating n-gons (polygons with number of sides greater than 3) and other 3D modelling features
 * Switching between Matrix and Quaternion rotation mode (Only in Pure Java Rendering Mode)
 * Ability to create basic GUI (Buttons not yet implemented in openGL mode)
-* Supports a HUD overlap
+* Supports a HUD overlay
 * Input handling
 * Built-in simple benchmarking tool
 
