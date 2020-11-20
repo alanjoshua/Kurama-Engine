@@ -21,6 +21,7 @@
 * Support for text and create 3D meshes for text with any font in the system.
 * Input handling
 * Built-in simple benchmarking tool
+* Modular rendering pipeline to allow users to stack and use multiple custom shaders with the engine. 
 
 <br>
 <br>
