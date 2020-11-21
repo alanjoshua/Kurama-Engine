@@ -13,14 +13,16 @@ import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.shader.ShaderProgram;
+import engine.utils.Utils;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_BACK;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
@@ -67,8 +69,12 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         scene_shader = new ShaderProgram(scene_shader_id);
 
         try {
-            scene_shader.createVertexShader("projects/testProject/Shaders/SceneVertexShader.glsl");
-            scene_shader.createFragmentShader("projects/testProject/Shaders/SceneFragmentShader.glsl");
+
+            Path thisFilePath = Utils.getClassPath("SceneShaderBlock.java");
+            File shadersDir = thisFilePath.getParent().getParent().getParent().toFile();
+
+            scene_shader.createVertexShader(shadersDir.getAbsolutePath()+"/Shaders/SceneVertexShader.glsl");
+            scene_shader.createFragmentShader(shadersDir.getAbsolutePath()+"/Shaders/SceneFragmentShader.glsl");
             scene_shader.link();
 
             scene_shader.createUniform("projectionMatrix");

@@ -1,20 +1,24 @@
 package engine.utils;
 
-import engine.Math.Perlin;
-import engine.game.Game;
 import engine.DataStructure.LinkedList.DoublyLinkedList;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Vertex;
-import engine.model.Model;
+import engine.Math.Perlin;
 import engine.Math.Vector;
-import org.lwjgl.system.windows.INPUT;
+import engine.game.Game;
+import engine.model.Model;
 
-import java.io.*;
-import java.net.URL;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class Utils {
 	
@@ -46,6 +50,20 @@ public class Utils {
 		}
 
 		return temp.toString();
+	}
+
+	public static Path getClassPath(String searchClass) {
+		Path result=null;
+
+		try (Stream<Path> stream = Files.find(Paths.get(System.getProperty("user.dir")), 5,
+				(path, attr) -> path.getFileName().toString().equals(searchClass) )) {
+			result = stream.findAny().get();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 	
 	public static float edge(Vector v1, Vector v2, Vector p) {

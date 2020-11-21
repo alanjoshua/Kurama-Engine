@@ -90,8 +90,9 @@ public class SceneUtils {
 
             Map<String, String> shadersWrittenSoFar = new HashMap<>();
 
-            writer.write("SHADERS INFO\n\n");
+            writer.write("RENDER PIPELINE INFO\n\n");
 
+            writer.write("renderPipeline_class:"+scene.renderPipeline.getClass().getName()+"\n\n");
 //            for (RenderBlock shader: scene.renderPipeline.renderBlockID_renderBlock_map.values()) {
 //
 //                writer.write("start new renderblock\n");

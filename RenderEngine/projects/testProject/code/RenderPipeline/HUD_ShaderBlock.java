@@ -4,6 +4,10 @@ import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;
 import engine.shader.ShaderProgram;
+import engine.utils.Utils;
+
+import java.io.File;
+import java.nio.file.Path;
 
 public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
 
@@ -18,10 +22,14 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
     public void setup(RenderBlockInput input) {
 
         try {
+
+            Path thisFilePath = Utils.getClassPath("HUD_ShaderBlock.java");
+            File shadersDir = thisFilePath.getParent().getParent().getParent().toFile();
+
             hud_shader = new ShaderProgram(hud_shader_id);
 
-            hud_shader.createVertexShader("projects/testProject/Shaders/HUDVertexShader.glsl");
-            hud_shader.createFragmentShader("projects/testProject/Shaders/HUDFragmentShader.glsl");
+            hud_shader.createVertexShader(shadersDir.getAbsolutePath()+"/Shaders/HUDVertexShader.glsl");
+            hud_shader.createFragmentShader(shadersDir.getAbsolutePath()+"/Shaders/HUDFragmentShader.glsl");
             hud_shader.link();
 
             // Create uniforms for Orthographic-model projection matrix and base colour
