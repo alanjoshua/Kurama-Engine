@@ -37,14 +37,29 @@ public class SceneUtils {
     public static void writeSceneToKE(Scene scene, String directory, String filePrefix, String engineVersion) throws IOException {
 
 //      Create Save folder
-        File folder = new File(directory+"/"+filePrefix);
-        boolean folderCreationSuccess = folder.mkdir();
-        if(folderCreationSuccess){
-            Logger.log("Directory created successfully");
-        }else{
-            Logger.logError("Sorry couldn’t create save folder");
-            Logger.logError("Save failed...");
+//        File folder = new File(directory+"/"+filePrefix);
+//        boolean folderCreationSuccess = folder.mkdir();
+//        if(folderCreationSuccess){
+//            Logger.log("Directory created successfully");
+//        }else{
+//            Logger.logError("Sorry couldn’t create save folder");
+//            Logger.logError("Save failed...");
+//            return;
+//        }
+
+        File folder = new File(directory + "/" +filePrefix);
+        if(!folder.exists()) {
+            Logger.logError("Save folder not found. Returning...");
             return;
+        }
+
+        File MasterFolder = new File(directory + "/" +filePrefix + "/KE_Files");
+        if(!MasterFolder.exists()) {
+            Logger.log("KE_Files folder does not exist. Creating folder...");
+            if(!MasterFolder.mkdir()) {
+                Logger.logError("Error while creating KE_Files folder. Returning...");
+                return;
+            }
         }
 
 //        File shadersFolder = new File()
@@ -61,7 +76,7 @@ public class SceneUtils {
             throws IOException {
 
 //        Create new master KE file
-        File materialFile = new File(directory+"/"+filePrefix+"/"+"master.ke");
+        File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
         try {
             materialFile.createNewFile();
         }catch(IOException e) {
@@ -78,14 +93,20 @@ public class SceneUtils {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                          Write shader Info
 
-            File shadersFolder = new File(directory+"/"+filePrefix+"/shaders");
-            boolean folderCreationSuccess = shadersFolder.mkdir();
-            if(folderCreationSuccess){
-                Logger.log("Shaders folder created successfully");
-            }else{
-                Logger.logError("Sorry couldn’t create v folder");
-                Logger.logError("Save failed...");
-                return;
+            File shadersFolder = new File(directory+"/"+filePrefix+"/Shaders");
+
+            if (!shadersFolder.exists()) {
+                boolean folderCreationSuccess = shadersFolder.mkdir();
+                if (folderCreationSuccess) {
+                    Logger.log("Shaders folder created successfully");
+                } else {
+                    Logger.logError("Sorry couldn’t create v folder");
+                    Logger.logError("Save failed...");
+                    return;
+                }
+            }
+            else {
+                Logger.log("Shaders folder already exists.");
             }
 
             Map<String, String> shadersWrittenSoFar = new HashMap<>();
@@ -220,8 +241,12 @@ public class SceneUtils {
 
 //      Create new material file
 
-        File materialFile = new File(directory+"/"+filePrefix+"/"+"matLibrary.mtl");
+        File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/matLibrary.mtl");
         try {
+            if (materialFile.exists()) {
+                Logger.logError("Material file already exists. Deleting current file...");
+                materialFile.delete();
+            }
             materialFile.createNewFile();
         }catch(IOException e) {
             throw new IOException("Unable to create new material file");
@@ -229,12 +254,32 @@ public class SceneUtils {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                      Create folder for storing textures
 
-        File textureFolder = new File(directory+"/"+filePrefix+"/"+"textures");
-        boolean folderCreationSuccess = textureFolder.mkdir();
-        if(folderCreationSuccess){
-            Logger.log("Directory created successfully");
-        }else{
-            Logger.log("Sorry couldn’t create textures directory");
+        File modelsFolder = new File(directory+"/"+filePrefix+"/models");
+        if (modelsFolder.exists()) {
+            Logger.log("Models folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = modelsFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Models Directory created successfully");
+            } else {
+                Logger.log("Sorry couldn’t create Models directory");
+                return;
+            }
+        }
+
+        File textureFolder = new File(directory+"/"+filePrefix+"/models/"+"textures");
+        if (textureFolder.exists()) {
+            Logger.log("Textures folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = textureFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Textures Directory created successfully");
+            } else {
+                Logger.log("Sorry couldn’t create textures directory");
+                return;
+            }
         }
 
 
@@ -289,11 +334,16 @@ public class SceneUtils {
 //                    If this texture hasn't already been copied
                         if (newTextLoc == null) {
                             String[] splits = curTex.fileName.split("/");
-                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
+                            String saveTexName = directory + "/" + filePrefix + "/models/textures/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
                             File source = new File(curTex.fileName);
                             File dest = new File(saveTexName);
+
+                            if (dest.exists()) {
+                                Logger.logError("Resource file already exists at destination. Deleting it...");
+                                dest.delete();
+                            }
                             try {
                                 Files.copy(source.toPath(), dest.toPath());
                             }
@@ -315,11 +365,24 @@ public class SceneUtils {
 //                    If this texture hasn't already been copied
                         if (newTextLoc == null) {
                             String[] splits = curTex.fileName.split("/");
-                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
+                            String saveTexName = directory + "/" + filePrefix + "/models/textures/" + splits[splits.length - 1];
 
-//                        Create copy of texture in current save directory
-                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+//                       Create copy of texture in current save directory
+                            File source = new File(curTex.fileName);
+                            File dest = new File(saveTexName);
 
+                            if (dest.exists()) {
+                                Logger.logError("Resource file already exists at destination. Deleting it...");
+                                dest.delete();
+                            }
+                            try {
+                                Files.copy(source.toPath(), dest.toPath());
+                            }
+                            catch(Exception e) {
+                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }
                         writer.write("map_kd " + texturesStoredSoFar.get(curTex.fileName) + "\n");
@@ -333,11 +396,24 @@ public class SceneUtils {
 //                    If this texture hasn't already been copied
                         if (newTextLoc == null) {
                             String[] splits = curTex.fileName.split("/");
-                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
+                            String saveTexName = directory + "/" + filePrefix + "/models/textures/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+                            File source = new File(curTex.fileName);
+                            File dest = new File(saveTexName);
 
+                            if (dest.exists()) {
+                                Logger.logError("Resource file already exists at destination. Deleting it...");
+                                dest.delete();
+                            }
+                            try {
+                                Files.copy(source.toPath(), dest.toPath());
+                            }
+                            catch(Exception e) {
+                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }
                         writer.write("map_ks " + texturesStoredSoFar.get(curTex.fileName) + "\n");
@@ -351,10 +427,24 @@ public class SceneUtils {
 //                    If this texture hasn't already been copied
                         if (newTextLoc == null) {
                             String[] splits = curTex.fileName.split("/");
-                            String saveTexName = directory + "/" + filePrefix + "/" + "textures" + "/" + splits[splits.length - 1];
+                            String saveTexName = directory + "/" + filePrefix + "/models/textures/" + splits[splits.length - 1];
 
 //                        Create copy of texture in current save directory
-                            Files.copy(new File(curTex.fileName).toPath(), new File(saveTexName).toPath());
+                            File source = new File(curTex.fileName);
+                            File dest = new File(saveTexName);
+
+                            if (dest.exists()) {
+                                Logger.logError("Resource file already exists at destination. Deleting it...");
+                                dest.delete();
+                            }
+                            try {
+                                Files.copy(source.toPath(), dest.toPath());
+                            }
+                            catch(Exception e) {
+                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
 
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }

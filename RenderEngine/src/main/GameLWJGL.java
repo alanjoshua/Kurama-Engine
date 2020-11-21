@@ -118,7 +118,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        }
 
         try {
-            SceneUtils.writeSceneToKE(scene, "res", "test", "Kurama Engine ver alpha-2.0");
+            SceneUtils.writeSceneToKE(scene, "projects", "testProject", "Kurama Engine ver alpha-2.0");
         }catch (Exception e) {
             e.printStackTrace();
         }
