@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-22T19:43:48.052681900
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-22T19:59:25.097446600
 # Material Count: 14
 
 newmtl plantMesh|DEFAULT
@@ -29,17 +29,6 @@ ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
 map_ka skybox.png
-
-newmtl f2608576-4bbf-4489-88e5-b1300e6cfb69|TERRAIN
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-map_ka crystalTexture.jpg
-map_kd crystalTexture.jpg
-map_ks crystalSpecularMap.jpg
-map_bump crystalNormalMap.jpg
 
 newmtl HUD_texquad_mesh|shadowMapVisualizer
 ka 1.0 1.0 1.0 1.0
@@ -96,6 +85,17 @@ kd 0.8 0.8 0.8 1.0
 ks 0.5 0.5 0.5 1.0
 ns 225.0
 reflectance 1.0
+
+newmtl 5445a25c-e3f9-4ab8-add2-7c84b6956c3b|TERRAIN
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka crystalTexture.jpg
+map_kd crystalTexture.jpg
+map_ks crystalSpecularMap.jpg
+map_bump crystalNormalMap.jpg
 
 newmtl cube_mesh|minecraftCubeMat
 ka 1.0 1.0 1.0 1.0

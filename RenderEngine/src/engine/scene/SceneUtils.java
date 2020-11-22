@@ -239,7 +239,7 @@ public class SceneUtils {
 
             writer.write("MATERIALS_MAP\n");
             for(int i = 0; i < mesh.materials.size();i++) {
-                writer.write(i+":"+mesh.meshIdentifier+"\n");
+                writer.write(i+":"+mesh.materials.get(i).matName+"\n");
             }
             writer.newLine();
 
