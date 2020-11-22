@@ -58,7 +58,7 @@ public class SceneUtils {
             return false;
         }
 
-        if(!writeMeshes(scene.meshID_mesh_map, directory, filePrefix)) {
+        if(!write_keOBJ_meshes(scene.meshID_mesh_map, directory, filePrefix)) {
             return false;
         }
 
@@ -166,11 +166,11 @@ public class SceneUtils {
         return true;
     }
 
-    public static boolean writeMeshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
+    public static boolean copyObjMeshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
         for (Mesh mesh: meshes.values()) {
             if (mesh.meshLocation != null) {
                 File source = new File(mesh.meshLocation);
-                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
+                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".obj");
 
                 if (!source.equals(dest)) {  // Copy files only they are not the same file
                     if (dest.exists()) {
@@ -191,6 +191,151 @@ public class SceneUtils {
             else {
                 Logger.log("Mesh location is null for meshID: "+mesh.meshIdentifier);
             }
+        }
+
+        return true;
+    }
+
+    public static boolean write_keOBJ_meshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
+        for (Mesh mesh: meshes.values()) {
+
+            if (mesh.meshLocation != null) {
+                Logger.log("Current Mesh: "+mesh.meshIdentifier);
+                File source = new File(mesh.meshLocation);
+                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
+
+                if(!source.equals(dest)) {  // Not the same files, so .keObj doesn't yet exist
+                    if(dest.exists()) {
+                        Logger.log("Loaded from a different source, but prvious version exists, so deleting it...");
+                        dest.delete();
+                    }
+                    if(!write_mesh_as_keObj(mesh, dest)) {
+                        return false;
+                    }
+                }
+                else {  //Some previous keObj version exists, but save only if mesh has been modified after loading
+                    if(mesh.isModified) {
+                        Logger.log("Loaded from previous version, but mesh has been modified, so overwriting file...");
+                        dest.delete();
+                        if(!write_mesh_as_keObj(mesh, dest)) {
+                            return false;
+                        }
+                    }
+                    else {
+                        Logger.log("Previous version already exists, but mesh has not yet been modified, so not being saved");
+                    }
+                }
+            }
+            else {
+                Logger.log("Mesh location is null for meshID: "+mesh.meshIdentifier);
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean write_mesh_as_keObj(Mesh mesh, File dest) {
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(dest))) {
+
+            writer.write("MATERIALS_MAP\n");
+            for(int i = 0; i < mesh.materials.size();i++) {
+                writer.write(i+":"+mesh.meshIdentifier+"\n");
+            }
+            writer.newLine();
+
+            writer.write("VERTEX POSITIONS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.POSITION)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("TEXTURE POSITIONS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.TEXTURE)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("NORMAL POSITIONS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.NORMAL)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("COLORS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.COLOR)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("TANGENTS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.TANGENT)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("BI-TANGENTS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.BITANGENT)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("MATERIALS\n");
+            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.MATERIAL)) {
+                if (val != null) {
+                    writer.write(val.toString());
+                }
+                else {
+                    writer.write("null");
+                }
+                writer.newLine();
+            }
+            writer.newLine();
+
+            writer.write("INDICES\n");
+            for(Integer index: mesh.indices) {
+                writer.write(index.intValue()+"");
+                writer.newLine();
+            }
+            writer.newLine();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return true;

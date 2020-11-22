@@ -39,6 +39,7 @@ public class Mesh {
     public List<Integer> vboIdList;
     public List<Material> materials = new ArrayList<>();
     public MeshBuilderHints hints;
+    public boolean isModified = false;
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes, List<Material> materials,
                 String meshLocation, MeshBuilderHints hints) {

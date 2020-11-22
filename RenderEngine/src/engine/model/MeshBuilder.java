@@ -30,7 +30,7 @@ public class MeshBuilder {
 
 		if(hints == null) {
 			resMesh = triangulate(resMesh,false, null);
-			resMesh = dumbBake(resMesh,null);
+			resMesh = bakeMesh(resMesh, null);
 		}
 		else {
 			if (hints.shouldRotate != 0) {
@@ -297,6 +297,7 @@ public class MeshBuilder {
 		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation, hints);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
+		retMesh.isModified = true;
 		return retMesh;
 	}
 
@@ -374,6 +375,7 @@ public class MeshBuilder {
 		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = inMesh.drawMode;
+		retMesh.isModified = true;
 		return retMesh;
 	}
 
@@ -387,6 +389,7 @@ public class MeshBuilder {
 		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials, inMesh.meshLocation, hints);
 		res.drawMode = inMesh.drawMode;
 		res.meshIdentifier = inMesh.meshIdentifier;
+		res.isModified = true;
 		return res;
 	}
 
@@ -723,6 +726,7 @@ public class MeshBuilder {
 			resMesh = new Mesh(null,facesListObj, vertAttributes,matList, loc, hints);
 			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
 			resMesh.meshIdentifier = loc;
+			resMesh.isModified = true;
 			return resMesh;
 
 		} catch (IOException e) {
@@ -862,6 +866,7 @@ public class MeshBuilder {
 		}
 
 		inMesh.setAttribute(colors,Mesh.COLOR);
+		inMesh.isModified = true;
 		return inMesh;
 
 	}
@@ -880,6 +885,7 @@ public class MeshBuilder {
 		}
 
 		inMesh.setAttribute(colors,Mesh.COLOR);
+		inMesh.isModified = true;
 		return inMesh;
 
 	}
@@ -893,6 +899,7 @@ public class MeshBuilder {
 		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials, inMesh.meshLocation, hints);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = GL_TRIANGLES;
+		retMesh.isModified = true;
 		return retMesh;
 	}
 
@@ -1094,6 +1101,7 @@ public class MeshBuilder {
 
 		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation, hints);
 		resMesh.drawMode = mesh.drawMode;
+		resMesh.isModified = true;
 		return resMesh;
 	}
 
