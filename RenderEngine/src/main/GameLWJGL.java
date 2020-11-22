@@ -26,9 +26,11 @@ import engine.model.Model.MiniBehaviour;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.scene.SceneUtils;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -118,11 +120,13 @@ public class GameLWJGL extends Game implements Runnable {
 //        }
 
         try {
-            SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
+            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
                     "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
                     "projects/testProject/code/ModelBehaviour",
-                    "Kurama Engine ver alpha-2.0");
-        }catch (Exception e) {
+                    "Kurama Engine ver alpha-2.0")) {
+                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -202,7 +206,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Texture tex = null;
         try {
-            tex = new Texture("projects/testProject/res/misc/grassblock.png");
+            tex = new Texture("res/misc/grassblock.png");
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -218,11 +222,11 @@ public class GameLWJGL extends Game implements Runnable {
         int boxCount = 100;
         float yRange = 60;
 
-        Model skybox = scene.createModel(scene.loadMesh("projects/testProject/res/misc/skybox.obj",
+        Model skybox = scene.createModel(scene.loadMesh("res/misc/skybox.obj",
                 "skybox_mesh", hints), "skybox", Arrays.asList(new String[]{TestRenderPipeline.skyboxShaderBlockID}));
         skybox.setScale(skyBoxScale);
 
-        Material skyMat = new Material(new Texture("projects/testProject/res/misc/skybox.png"),1, "SkyBox");
+        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
         skybox.mesh.materials.set(0,skyMat);
         scene.skybox = skybox;
@@ -232,7 +236,7 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
-        Mesh cubeMesh = scene.loadMesh("projects/testProject/res/misc/cube.obj", "cube_mesh", hints);
+        Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
 
         for(int i = 0;i < 20;i++) {
             for(int y = 0;y < 20;y++) {
@@ -245,7 +249,7 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-        Model plant = scene.createModel(scene.loadMesh("projects/testProject/res/plant/01Alocasia_obj.obj",
+        Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
                 "plantMesh", hints), "plant", Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
         plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);
@@ -254,10 +258,10 @@ public class GameLWJGL extends Game implements Runnable {
         scene.setUniqueMeshID(terrain.mesh);
         Material ter = new Material();
         ter.matName = "TERRAIN";
-        ter.texture = new Texture("projects/testProject/res/misc/crystalTexture.jpg");
+        ter.texture = new Texture("res/misc/crystalTexture.jpg");
         ter.diffuseMap = ter.texture;
-        ter.normalMap = new Texture("projects/testProject/res/misc/crystalNormalMap.jpg");
-        ter.specularMap = new Texture("projects/testProject/res/misc/crystalSpecularMap.jpg");
+        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
+        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
         ter.reflectance = 1f;
         terrain.mesh.materials.set(0,ter);
 
