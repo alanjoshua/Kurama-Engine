@@ -58,7 +58,7 @@ public class SceneUtils {
             return false;
         }
 
-        if(!copyMeshes(scene.meshID_mesh_map, directory, filePrefix)) {
+        if(!writeMeshes(scene.meshID_mesh_map, directory, filePrefix)) {
             return false;
         }
 
@@ -166,11 +166,11 @@ public class SceneUtils {
         return true;
     }
 
-    public static boolean copyMeshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
+    public static boolean writeMeshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
         for (Mesh mesh: meshes.values()) {
             if (mesh.meshLocation != null) {
                 File source = new File(mesh.meshLocation);
-                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".obj");
+                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
 
                 if (!source.equals(dest)) {  // Copy files only they are not the same file
                     if (dest.exists()) {
@@ -429,7 +429,7 @@ public class SceneUtils {
 //                Write mesh info
                 writer.write("ID:"+mesh.meshIdentifier+"\n");
                 writer.write("Face count:"+mesh.faces.size()+"\n");
-                writer.write("location:"+ mesh.meshIdentifier+".obj\n");
+                writer.write("location:"+ mesh.meshIdentifier+".keObj\n");
                 writer.write("hints:"+mesh.hints+"\n");
                 writer.newLine();
             }
