@@ -1,3 +1,5 @@
+MESH_ID:cube_mesh
+
 MATERIALS_MAP
 0:minecraftCubeMat
 

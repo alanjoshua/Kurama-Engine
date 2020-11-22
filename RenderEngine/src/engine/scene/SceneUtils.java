@@ -237,6 +237,8 @@ public class SceneUtils {
     public static boolean write_mesh_as_keObj(Mesh mesh, File dest) {
         try(BufferedWriter writer = new BufferedWriter(new FileWriter(dest))) {
 
+            writer.write("MESH_ID:"+mesh.meshIdentifier+"\n\n");
+
             writer.write("MATERIALS_MAP\n");
             for(int i = 0; i < mesh.materials.size();i++) {
                 writer.write(i+":"+mesh.materials.get(i).matName+"\n");

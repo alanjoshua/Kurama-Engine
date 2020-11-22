@@ -1,3 +1,5 @@
+MESH_ID:HUD_texquad_mesh
+
 MATERIALS_MAP
 0:shadowMapVisualizer
 
