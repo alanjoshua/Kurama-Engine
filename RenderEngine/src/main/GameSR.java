@@ -1,29 +1,30 @@
 package main;
 
-import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.awt.image.*;
-import java.util.ArrayList;
-import java.util.List;
-
 import engine.GUI.Button;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplaySR;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputSR;
+import engine.model.MeshBuilder;
+import engine.model.MeshBuilderHints;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
-import engine.model.MeshBuilder;
-import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngine.RenderMultiplicationMode_Deprecated;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
+import engine.renderingEngine.RenderingEngine.RenderMultiplicationMode_Deprecated;
 import engine.renderingEngine.RenderingEngineSR;
+
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferStrategy;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameSR extends Game implements Runnable {
 
@@ -129,7 +130,7 @@ public class GameSR extends Game implements Runnable {
 			m.setOrientation(newQ);
 		});
 
-		MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
+		MeshBuilderHints hints = new MeshBuilderHints();
 
 		Model deer = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/deer.obj",hints),"deer");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));

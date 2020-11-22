@@ -1,9 +1,10 @@
 package main;
 
-import engine.model.Model;
-import engine.model.MeshBuilder;
-import engine.Math.Vector;
 import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.model.MeshBuilder;
+import engine.model.MeshBuilderHints;
+import engine.model.Model;
 import engine.renderingEngine.RenderingEngine;
 
 import java.util.Random;
@@ -43,7 +44,7 @@ public class GameSR_ESL extends GameSR {
             int y = (int) (5 + grid.getPos().get(1));
             int z = (int) (random.nextInt(gridDepth) - gridDepth / 2 + grid.getPos().get(2));
 
-            MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
+            MeshBuilderHints hints = new MeshBuilderHints();
 
             Model deer = new Model(this, MeshBuilder.buildModelFromFileGL(testModel,hints),"deer: +i");
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));

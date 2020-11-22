@@ -4,17 +4,15 @@ import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
 import engine.Effects.Material;
+import engine.Math.Vector;
 import engine.font.FontTexture;
 import engine.game.Game;
+import engine.model.MeshBuilder;
 import engine.model.Model;
+import engine.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-
-import engine.Math.Vector;
-import engine.model.MeshBuilder;
-import engine.utils.Utils;
 
 public class Text extends Model {
 
@@ -121,8 +119,8 @@ public class Text extends Model {
         vertAttribs.add(positions);
         vertAttribs.add(textCoords);
 
-        Mesh res = new Mesh(null,faces,vertAttribs,null, null);
-        res = MeshBuilder.triangulate(res,false);
+        Mesh res = new Mesh(null,faces,vertAttribs,null, null, null);
+        res = MeshBuilder.triangulate(res,false, null);
         res = MeshBuilder.bakeMesh(res,null);
 
         Material textMat = new Material();

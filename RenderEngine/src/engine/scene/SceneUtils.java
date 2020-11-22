@@ -34,56 +34,379 @@ public class SceneUtils {
         return temp;
     }
 
-    public static void writeSceneToKE(Scene scene, String directory, String filePrefix, String engineVersion) throws IOException {
+    public static boolean writeSceneToKE(Scene scene, String directory, String filePrefix, String shadersDirectory,
+                                      String RenderBlockDirectory, String hudDirectory, String modelBehaviourDirectory,
+                                         String engineVersion) throws IOException {
 
-//      Create Save folder
-//        File folder = new File(directory+"/"+filePrefix);
-//        boolean folderCreationSuccess = folder.mkdir();
-//        if(folderCreationSuccess){
-//            Logger.log("Directory created successfully");
-//        }else{
-//            Logger.logError("Sorry couldn’t create save folder");
-//            Logger.logError("Save failed...");
-//            return;
-//        }
-
-        File folder = new File(directory + "/" +filePrefix);
-        if(!folder.exists()) {
-            Logger.logError("Save folder not found. Returning...");
-            return;
+        if(!createProjectStructure(directory, filePrefix)) {
+            return false;
         }
 
+        if(!copyShaders(directory, filePrefix, shadersDirectory)) {
+            return false;
+        }
+
+        if(!copyRenderBlocks(directory, filePrefix, RenderBlockDirectory)) {
+            return false;
+        }
+
+        if(!copyHUDFiles(directory, filePrefix, hudDirectory)) {
+            return false;
+        }
+
+        if(!copyModelBehaviourFiles(directory, filePrefix, modelBehaviourDirectory)) {
+            return false;
+        }
+
+        if(!copyMeshes(scene.meshID_mesh_map, directory, filePrefix)) {
+            return false;
+        }
+
+        if(!writeMaterialFile(scene.meshID_mesh_map, directory, filePrefix, engineVersion)) {
+            return false;
+        }
+
+        if(!writeMasterKEFile(scene, directory, filePrefix, engineVersion)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean copyShaders(String directory, String filePrefix, String shadersDirectory) {
+        Logger.log("Copying shaders...");
+        File shadersFolder = new File(shadersDirectory);
+
+        if(shadersFolder.isDirectory()) {
+            for (File source: shadersFolder.listFiles()) {
+                File dest = new File(directory+"/"+filePrefix+"/Shaders/"+source.getName());
+
+                if (!source.equals(dest)) {  // Copy files only they are not the same file
+
+                    if (dest.exists()) {
+                        Logger.logError("Resource file already exists at destination. Deleting it...");
+                        dest.delete();
+                    }
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("Error while copying shader "+source.getName());
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+                else {
+                    Logger.log(" source and destination shaders are the same. Not overwriting files... "+source.getName());
+                }
+            }
+        }
+        return true;
+    }
+
+    public static boolean copyRenderBlocks(String directory, String filePrefix, String RenderBlockDirectory) {
+        Logger.log("Copying renderBlocks...");
+
+        File shadersFolder = new File(RenderBlockDirectory);
+
+        if(shadersFolder.isDirectory()) {
+            for (File source: shadersFolder.listFiles()) {
+                File dest = new File(directory+"/"+filePrefix+"/code/RenderPipeline/"+source.getName());
+
+                if (!source.equals(dest)) {  // Copy files only they are not the same file
+
+                    if (dest.exists()) {
+                        Logger.logError("Resource file already exists at destination. Deleting it...");
+                        dest.delete();
+                    }
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("Error while copying file "+source.getName());
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+                else {
+                    Logger.log(" source and destination files are the same. Not overwriting files... "+source.getName());
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean copyHUDFiles(String directory, String filePrefix, String HUDDirectory) {
+        Logger.log("Copying HUD files...");
+        File shadersFolder = new File(HUDDirectory);
+
+        if(shadersFolder.isDirectory()) {
+            for (File source: shadersFolder.listFiles()) {
+                File dest = new File(directory+"/"+filePrefix+"/code/HUD/"+source.getName());
+
+                if (!source.equals(dest)) {  // Copy files only they are not the same file
+
+                    if (dest.exists()) {
+                        Logger.logError("Resource file already exists at destination. Deleting it...");
+                        dest.delete();
+                    }
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("Error while copying file "+source.getName());
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+                else {
+                    Logger.log(" source and destination files are the same. Not overwriting files... "+source.getName());
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean copyMeshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
+        for (Mesh mesh: meshes.values()) {
+            if (mesh.meshLocation != null) {
+                File source = new File(mesh.meshLocation);
+                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".obj");
+
+                if (!source.equals(dest)) {  // Copy files only they are not the same file
+                    if (dest.exists()) {
+                        Logger.logError("Resource file already exists at destination. Deleting it...");
+                        dest.delete();
+                    }
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("Error while copying file " + source.getName());
+                        e.printStackTrace();
+                        return false;
+                    }
+                } else {
+                    Logger.log(" source and destination files are the same. Not overwriting files... " + source.getName());
+                }
+            }
+            else {
+                Logger.log("Mesh location is null for meshID: "+mesh.meshIdentifier);
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean copyModelBehaviourFiles(String directory, String filePrefix, String modelBehaviourDir) {
+        Logger.log("Copying model behaviour files...");
+        File shadersFolder = new File(modelBehaviourDir);
+
+        if(shadersFolder.isDirectory()) {
+            for (File source: shadersFolder.listFiles()) {
+                File dest = new File(directory+"/"+filePrefix+"/code/ModelBehaviour/"+source.getName());
+
+                if (!source.equals(dest)) {  // Copy files only they are not the same file
+
+                    if (dest.exists()) {
+                        Logger.logError("Resource file already exists at destination. Deleting it...");
+                        dest.delete();
+                    }
+                    try {
+                        Files.copy(source.toPath(), dest.toPath());
+                    } catch (Exception e) {
+                        Logger.logError("Error while copying file "+source.getName());
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+                else {
+                    Logger.log(" source and destination files are the same. Not overwriting files... "+source.getName());
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean createProjectStructure(String directory, String filePrefix) throws IOException {
+
+//        Create save folder
+
+        File saveFolder = new File(directory + "/" +filePrefix);
+        if(!saveFolder.exists()) {
+            Logger.log("Save folder not found. Creating new save folder...");
+            if(!saveFolder.mkdir()) {
+                Logger.logError("Error while creating Save folder. Returning...");
+                return false;
+            }
+        }
+
+//        Create KE_Files folder
         File MasterFolder = new File(directory + "/" +filePrefix + "/KE_Files");
         if(!MasterFolder.exists()) {
             Logger.log("KE_Files folder does not exist. Creating folder...");
             if(!MasterFolder.mkdir()) {
                 Logger.logError("Error while creating KE_Files folder. Returning...");
-                return;
+                return false;
             }
         }
 
-//        File shadersFolder = new File()
+//        Create new master KE file
+        File masterFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
+        if (masterFile.exists()) {
+            Logger.log("Material file already exists. Deleting it..");
+            masterFile.delete();
+        }
+        if(!masterFile.createNewFile()) {
+            Logger.logError("Error while creating new master.ke file. Returning...");
+            return false;
+        }
 
-//      Write Material File
-        writeMaterialFile(scene.meshID_mesh_map, directory, filePrefix, engineVersion);
+//        Create Shaders folder
+        File shadersFolder = new File(directory+"/"+filePrefix+"/Shaders");
 
-//      Write .KE master file
-        writeMasterKEFile(scene, directory, filePrefix, engineVersion);
+        if (!shadersFolder.exists()) {
+            boolean folderCreationSuccess = shadersFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Shaders folder created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create v folder");
+                Logger.logError("Save failed...");
+                return false;
+            }
+        }
+        else {
+            Logger.log("Shaders folder already exists.");
+        }
 
+//      Create new material file
+        File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/matLibrary.mtl");
+        try {
+            if (materialFile.exists()) {
+                Logger.logError("Material file already exists. Deleting current file...");
+                materialFile.delete();
+            }
+            materialFile.createNewFile();
+        }catch(IOException e) {
+            Logger.logError("Error while creating material file");
+            e.printStackTrace();
+            return false;
+        }
+
+//        Create models folder
+        File modelsFolder = new File(directory+"/"+filePrefix+"/models");
+        if (modelsFolder.exists()) {
+            Logger.log("Models folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = modelsFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Models Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create Models directory");
+                return false;
+            }
+        }
+
+//        Create textures folder
+        File textureFolder = new File(directory+"/"+filePrefix+"/models/"+"textures");
+        if (textureFolder.exists()) {
+            Logger.log("Textures folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = textureFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Textures Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create textures directory");
+                return false;
+            }
+        }
+
+//        Create textures folder
+        File meshesFolder = new File(directory+"/"+filePrefix+"/models/"+"meshes");
+        if (meshesFolder.exists()) {
+            Logger.log("Meshes folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = meshesFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Textures Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create textures directory");
+                return false;
+            }
+        }
+
+//        Create code folder
+        File codeFolder = new File(directory+"/"+filePrefix+"/code");
+        if (codeFolder.exists()) {
+            Logger.log("Code folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = codeFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("Code Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create Code directory");
+                return false;
+            }
+        }
+
+//        Create Render Pipeline folder
+        File renderPipelineFolder = new File(directory+"/"+filePrefix+"/code/RenderPipeline");
+        if (renderPipelineFolder.exists()) {
+            Logger.log("renderPipeline folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = renderPipelineFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("renderPipeline Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create renderPipeline directory");
+                return false;
+            }
+        }
+
+//        Create Model Behaviour folder
+        File modelBehaviourFolder = new File(directory+"/"+filePrefix+"/code/ModelBehaviour");
+        if (modelBehaviourFolder.exists()) {
+            Logger.log("modelBehaviour folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = modelBehaviourFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("modelBehaviour Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create modelBehaviour directory");
+                return false;
+            }
+        }
+
+//        Create HUD folder
+        File HUDFolder = new File(directory+"/"+filePrefix+"/code/HUD");
+        if (HUDFolder.exists()) {
+            Logger.log("modelBehaviour folder already exists.");
+        }
+        else {
+            boolean folderCreationSuccess = HUDFolder.mkdir();
+            if (folderCreationSuccess) {
+                Logger.log("HUD Directory created successfully");
+            } else {
+                Logger.logError("Sorry couldn’t create HUD directory");
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    public static void writeMasterKEFile(Scene scene, String directory, String filePrefix, String engineVersion)
+    public static boolean writeMasterKEFile(Scene scene, String directory, String filePrefix, String engineVersion)
             throws IOException {
 
 //        Create new master KE file
-        File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
-        try {
-            materialFile.createNewFile();
-        }catch(IOException e) {
-            throw new IOException("Unable to create new material file");
-        }
+        File masterFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(materialFile))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(masterFile))) {
 
 //            Write file creation date and basic scene info
             writer.write("# Created by "+engineVersion+" on "+java.time.LocalDateTime.now()+"\n");
@@ -91,89 +414,9 @@ public class SceneUtils {
             writer.write("# Model count: "+scene.modelID_model_map.size() + "\n\n");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                          Write shader Info
-
-            File shadersFolder = new File(directory+"/"+filePrefix+"/Shaders");
-
-            if (!shadersFolder.exists()) {
-                boolean folderCreationSuccess = shadersFolder.mkdir();
-                if (folderCreationSuccess) {
-                    Logger.log("Shaders folder created successfully");
-                } else {
-                    Logger.logError("Sorry couldn’t create v folder");
-                    Logger.logError("Save failed...");
-                    return;
-                }
-            }
-            else {
-                Logger.log("Shaders folder already exists.");
-            }
-
-            Map<String, String> shadersWrittenSoFar = new HashMap<>();
-
-            writer.write("RENDER PIPELINE INFO\n\n");
+//                                          Write RenderPipeline Info
 
             writer.write("renderPipeline_class:"+scene.renderPipeline.getClass().getName()+"\n\n");
-//            for (RenderBlock shader: scene.renderPipeline.renderBlockID_renderBlock_map.values()) {
-//
-//                writer.write("start new renderblock\n");
-//                writer.write("ID:"+shader.shaderIdentifier+"\n");
-//
-//                String vertShaderLoc;
-//                String fragmentShaderLoc;
-//
-////----------------------------------------------------------------------------------------------------------------------
-////                                                      Make copy of Shaders
-//
-////              Make copy of vertex shader in shaders folder
-//                String newShaderLoc = shadersWrittenSoFar.get(shader.vertexShaderLocation);
-//
-////              If this shader hasn't already been copied
-//                if (newShaderLoc == null) {
-//                    String[] splits = shader.vertexShaderLocation.split("/");
-//                    String saveTexName = directory + "/" + filePrefix + "/" + "shaders" + "/" + splits[splits.length - 1];
-//
-////                  Create copy of texture in current save directory
-//                    File source = new File(shader.vertexShaderLocation);
-//                    File dest = new File(saveTexName);
-//                    try {
-//                        Files.copy(source.toPath(), dest.toPath());
-//                    } catch (Exception e) {
-//                        Logger.logError("current Vert shader: " + shader.vertexShaderLocation + " Shader ID: " + shader.shaderIdentifier);
-//                        e.printStackTrace();
-//                        System.exit(1);
-//                    }
-//                    shadersWrittenSoFar.put(shader.vertexShaderLocation, directory+"/"+filePrefix+"/shaders/"+splits[splits.length - 1]);
-//                }
-//                vertShaderLoc = shadersWrittenSoFar.get(shader.vertexShaderLocation);
-//
-////                Make copy of fragment shader in shaders folder
-//                newShaderLoc = shadersWrittenSoFar.get(shader.fragmentShaderLocation);
-//
-////              If this shader hasn't already been copied
-//                if (newShaderLoc == null) {
-//                    String[] splits = shader.fragmentShaderLocation.split("/");
-//                    String saveTexName = directory + "/" + filePrefix + "/" + "shaders" + "/" + splits[splits.length - 1];
-//
-////                  Create copy of texture in current save directory
-//                    File source = new File(shader.fragmentShaderLocation);
-//                    File dest = new File(saveTexName);
-//                    try {
-//                        Files.copy(source.toPath(), dest.toPath());
-//                    } catch (Exception e) {
-//                        Logger.logError("current Frag shader: " + shader.fragmentShaderLocation + " Shader ID: " + shader.shaderIdentifier);
-//                        e.printStackTrace();
-//                        System.exit(1);
-//                    }
-//                    shadersWrittenSoFar.put(shader.fragmentShaderLocation, directory+"/"+filePrefix+"/shaders/"+splits[splits.length - 1]);
-//                }
-//                fragmentShaderLoc = shadersWrittenSoFar.get(shader.fragmentShaderLocation);
-//
-////----------------------------------------------------------------------------------------------------------------------
-//                writer.write("vertexShader:"+vertShaderLoc+"\n");
-//                writer.write("fragmentShader:"+fragmentShaderLoc+"\n");
-//                writer.newLine();
-//            }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                   First write mesh info to master file
@@ -186,7 +429,8 @@ public class SceneUtils {
 //                Write mesh info
                 writer.write("ID:"+mesh.meshIdentifier+"\n");
                 writer.write("Face count:"+mesh.faces.size()+"\n");
-                writer.write("location:"+ directory+"/"+filePrefix+"/"+"meshes/"+mesh.meshIdentifier+".keObj\n");
+                writer.write("location:"+ mesh.meshIdentifier+".obj\n");
+                writer.write("hints:"+mesh.hints+"\n");
                 writer.newLine();
             }
 
@@ -218,7 +462,7 @@ public class SceneUtils {
                 writer.newLine();
             }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            return true;
 
         }
 
@@ -236,52 +480,14 @@ public class SceneUtils {
      * @param filePrefix File name of the save folder
      * @param engineVersion Engine version string to write to material file
      */
-    public static void writeMaterialFile(Map<String, Mesh> meshes, String directory, String filePrefix,
+    public static boolean writeMaterialFile(Map<String, Mesh> meshes, String directory, String filePrefix,
                                          String engineVersion) throws IOException {
 
-//      Create new material file
-
+//      Open Material File
         File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/matLibrary.mtl");
-        try {
-            if (materialFile.exists()) {
-                Logger.logError("Material file already exists. Deleting current file...");
-                materialFile.delete();
-            }
-            materialFile.createNewFile();
-        }catch(IOException e) {
-            throw new IOException("Unable to create new material file");
-        }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                      Create folder for storing textures
-
-        File modelsFolder = new File(directory+"/"+filePrefix+"/models");
-        if (modelsFolder.exists()) {
-            Logger.log("Models folder already exists.");
-        }
-        else {
-            boolean folderCreationSuccess = modelsFolder.mkdir();
-            if (folderCreationSuccess) {
-                Logger.log("Models Directory created successfully");
-            } else {
-                Logger.log("Sorry couldn’t create Models directory");
-                return;
-            }
-        }
-
-        File textureFolder = new File(directory+"/"+filePrefix+"/models/"+"textures");
-        if (textureFolder.exists()) {
-            Logger.log("Textures folder already exists.");
-        }
-        else {
-            boolean folderCreationSuccess = textureFolder.mkdir();
-            if (folderCreationSuccess) {
-                Logger.log("Textures Directory created successfully");
-            } else {
-                Logger.log("Sorry couldn’t create textures directory");
-                return;
-            }
-        }
-
+//                                             Start writing material file
 
         Map<String, Integer> matNamesSoFar = new HashMap<>();
         Map<String, String> texturesStoredSoFar = new HashMap<>();
@@ -340,17 +546,21 @@ public class SceneUtils {
                             File source = new File(curTex.fileName);
                             File dest = new File(saveTexName);
 
-                            if (dest.exists()) {
-                                Logger.logError("Resource file already exists at destination. Deleting it...");
-                                dest.delete();
+                            if (!source.equals(dest)) {  // Copy files only they are not the same file
+                                if (dest.exists()) {
+                                    Logger.logError("Resource file already exists at destination. Deleting it...");
+                                    dest.delete();
+                                }
+                                try {
+                                    Files.copy(source.toPath(), dest.toPath());
+                                } catch (Exception e) {
+                                    Logger.logError("curTex: " + curTex.fileName + " MeshID: " + meshID);
+                                    e.printStackTrace();
+                                    return false;
+                                }
                             }
-                            try {
-                                Files.copy(source.toPath(), dest.toPath());
-                            }
-                            catch(Exception e) {
-                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
-                                e.printStackTrace();
-                                System.exit(1);
+                            else {
+                                Logger.log(curTex.fileName + " source and destination are the same. Not overwriting files...");
                             }
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }
@@ -371,17 +581,21 @@ public class SceneUtils {
                             File source = new File(curTex.fileName);
                             File dest = new File(saveTexName);
 
-                            if (dest.exists()) {
-                                Logger.logError("Resource file already exists at destination. Deleting it...");
-                                dest.delete();
+                            if (!source.equals(dest)) {  // Copy files only they are not the same file
+                                if (dest.exists()) {
+                                    Logger.logError("Resource file already exists at destination. Deleting it...");
+                                    dest.delete();
+                                }
+                                try {
+                                    Files.copy(source.toPath(), dest.toPath());
+                                } catch (Exception e) {
+                                    Logger.logError("curTex: " + curTex.fileName + " MeshID: " + meshID);
+                                    e.printStackTrace();
+                                    return false;
+                                }
                             }
-                            try {
-                                Files.copy(source.toPath(), dest.toPath());
-                            }
-                            catch(Exception e) {
-                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
-                                e.printStackTrace();
-                                System.exit(1);
+                            else {
+                                Logger.log(curTex.fileName + " source and destination are the same. Not overwriting files...");
                             }
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }
@@ -402,17 +616,21 @@ public class SceneUtils {
                             File source = new File(curTex.fileName);
                             File dest = new File(saveTexName);
 
-                            if (dest.exists()) {
-                                Logger.logError("Resource file already exists at destination. Deleting it...");
-                                dest.delete();
+                            if (!source.equals(dest)) {  // Copy files only they are not the same file
+                                if (dest.exists()) {
+                                    Logger.logError("Resource file already exists at destination. Deleting it...");
+                                    dest.delete();
+                                }
+                                try {
+                                    Files.copy(source.toPath(), dest.toPath());
+                                } catch (Exception e) {
+                                    Logger.logError("curTex: " + curTex.fileName + " MeshID: " + meshID);
+                                    e.printStackTrace();
+                                    return false;
+                                }
                             }
-                            try {
-                                Files.copy(source.toPath(), dest.toPath());
-                            }
-                            catch(Exception e) {
-                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
-                                e.printStackTrace();
-                                System.exit(1);
+                            else {
+                                Logger.log(curTex.fileName + " source and destination are the same. Not overwriting files...");
                             }
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
                         }
@@ -433,17 +651,21 @@ public class SceneUtils {
                             File source = new File(curTex.fileName);
                             File dest = new File(saveTexName);
 
-                            if (dest.exists()) {
-                                Logger.logError("Resource file already exists at destination. Deleting it...");
-                                dest.delete();
+                            if (!source.equals(dest)) {  // Copy files only they are not the same file
+                                if (dest.exists()) {
+                                    Logger.logError("Resource file already exists at destination. Deleting it...");
+                                    dest.delete();
+                                }
+                                try {
+                                    Files.copy(source.toPath(), dest.toPath());
+                                } catch (Exception e) {
+                                    Logger.logError("curTex: " + curTex.fileName + " MeshID: " + meshID);
+                                    e.printStackTrace();
+                                    return false;
+                                }
                             }
-                            try {
-                                Files.copy(source.toPath(), dest.toPath());
-                            }
-                            catch(Exception e) {
-                                Logger.logError("curTex: "+curTex.fileName + " MeshID: "+meshID);
-                                e.printStackTrace();
-                                System.exit(1);
+                            else {
+                                Logger.log(curTex.fileName + " source and destination are the same. Not overwriting files...");
                             }
 
                             texturesStoredSoFar.put(curTex.fileName, splits[splits.length - 1]);
@@ -460,6 +682,9 @@ public class SceneUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return true;
+
     }
 
 }

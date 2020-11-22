@@ -1,12 +1,15 @@
 package engine.DataStructure.Mesh;
 
+import engine.Effects.Material;
+import engine.Math.Vector;
+import engine.model.MeshBuilderHints;
+import org.lwjgl.system.MemoryUtil;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
-
-import engine.Math.Vector;
-import engine.Effects.Material;
-import org.lwjgl.system.MemoryUtil;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glDisableVertexAttribArray;
@@ -35,13 +38,16 @@ public class Mesh {
     public int vaoId;
     public List<Integer> vboIdList;
     public List<Material> materials = new ArrayList<>();
+    public MeshBuilderHints hints;
 
-    public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes,List<Material> materials, String meshLocation) {
+    public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes, List<Material> materials,
+                String meshLocation, MeshBuilderHints hints) {
         this.faces = faces;
         this.vertAttributes = vertAttributes;
         vboIdList = new ArrayList<>();
         this.indices = indices;
         this.meshLocation = meshLocation;
+        this.hints = hints;
 
         if(materials == null) {
             this.materials.add(Material.DEFAULT_MATERIAL);

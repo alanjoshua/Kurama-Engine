@@ -1,128 +1,106 @@
 package engine.model;
 
-import java.io.*;
-import java.net.URL;
-import java.util.*;
-import java.util.List;
-
-import engine.DataStructure.Texture;
-import engine.Effects.Material;
-import engine.Math.Matrix;
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.utils.Utils;
 import engine.DataStructure.LinkedList.CircularDoublyLinkedList;
 import engine.DataStructure.LinkedList.DoublyLinkedList;
 import engine.DataStructure.LinkedList.Node;
 import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Mesh.Vertex;
+import engine.DataStructure.Texture;
+import engine.Effects.Material;
+import engine.Math.Matrix;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.utils.Utils;
+
+import java.io.*;
+import java.net.URL;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
 public class MeshBuilder {
 
-	public static class MeshBuilderHints {
-		public boolean shouldSmartBakeVertexAttributes = true;
-		public boolean shouldDumbBakeVertexAttributes = false;
-		public boolean shouldTriangulate = true;
-		public boolean forceEarClipping = false;
-		public boolean initLWJGLAttribs = true;
-		public boolean addRandomColor = false;
-		public boolean shouldGenerateTangentBiTangent = true;
-		public Vector addConstantColor;
-		public boolean convertToLines = false;
-		public boolean shouldInvertNormals = false;
-		public int shouldRotate = 180;
-	}
-
 	public static Mesh buildModelFromFileGL(String loc, MeshBuilderHints hints) {
-//		Model res = null;
-		Mesh resMesh = null;
+		Mesh resMesh;
 
-		if(resMesh != null) {
-			return resMesh;
-//			return new Model(resMesh,loc);
+		System.out.println("loading raw data for: "+loc);
+		resMesh = loadRawData(loc, hints);
+
+		if(hints == null) {
+			resMesh = triangulate(resMesh,false, null);
+			resMesh = dumbBake(resMesh,null);
 		}
 		else {
-			System.out.println("loading raw data for: "+loc);
-			resMesh = loadRawData(loc);
+			if (hints.shouldRotate != 0) {
+				Quaternion rot = Quaternion.getAxisAsQuat(new Vector(0, 1, 0), hints.shouldRotate);
+				List<Vector> listVerts = resMesh.getAttributeList(Mesh.POSITION);
+				Matrix listAsMat = new Matrix(listVerts).getMatrixWithoutLastRow();
 
-			if(hints == null) {
-				resMesh = triangulate(resMesh,false);
-				resMesh = dumbBake(resMesh,null);
+				List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).addRow(new Vector(listVerts.size(), 1)).convertToColumnVectorList();
+				resMesh.setAttribute(newVertices, Mesh.POSITION);
+			}
+
+			if(hints.shouldTriangulate) {
+				System.out.println("triangulating..");
+				resMesh = triangulate(resMesh, hints.forceEarClipping, hints);
+				System.out.println("Finished triangulation");
+			}
+
+			if(hints.shouldInvertNormals) {
+				System.out.println("inverting normals...");
+				resMesh = reverseNormals(resMesh, hints);
+				System.out.println("Finished inverting normals");
+			}
+
+			if(hints.shouldGenerateTangentBiTangent) {
+				System.out.println("Generating tangets and bi tangents...");
+				resMesh = generateTangentAndBiTangentVectors(resMesh, hints);
+				System.out.println("Finished Generating tangets and bi tangents");
+			}
+
+			if(hints.shouldSmartBakeVertexAttributes) {
+				System.out.println("smart baking....");
+				resMesh = bakeMesh(resMesh,hints);
+				System.out.println("Finished smart bake");
 			}
 			else {
-				if (hints.shouldRotate != 0) {
-					Quaternion rot = Quaternion.getAxisAsQuat(new Vector(0, 1, 0), hints.shouldRotate);
-					List<Vector> listVerts = resMesh.getAttributeList(Mesh.POSITION);
-					Matrix listAsMat = new Matrix(listVerts).getMatrixWithoutLastRow();
-
-					List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).addRow(new Vector(listVerts.size(), 1)).convertToColumnVectorList();
-					resMesh.setAttribute(newVertices, Mesh.POSITION);
-				}
-
-				if(hints.shouldTriangulate) {
-					System.out.println("triangulating..");
-					resMesh = triangulate(resMesh, hints.forceEarClipping);
-					System.out.println("Finished triangulation");
-				}
-
-				if(hints.shouldInvertNormals) {
-					System.out.println("inverting normals...");
-					resMesh = reverseNormals(resMesh);
-					System.out.println("Finished inverting normals");
-				}
-
-				if(hints.shouldGenerateTangentBiTangent) {
-					System.out.println("Generating tangets and bi tangents...");
-					resMesh = generateTangentAndBiTangentVectors(resMesh);
-					System.out.println("Finished Generating tangets and bi tangents");
-				}
-
-				if(hints.shouldSmartBakeVertexAttributes) {
-					System.out.println("smart baking....");
-					resMesh = bakeMesh(resMesh,hints);
-					System.out.println("Finished smart bake");
-				}
-				else {
-					if(hints.shouldDumbBakeVertexAttributes) {
-						System.out.println("Dumb baking...");
-						resMesh = dumbBake(resMesh, hints);
-						System.out.println("Finished dumb bake");
-					}
-				}
-
-				if(hints.addRandomColor) {
-					System.out.println("Adding random colours...");
-					resMesh = addRandomColor(resMesh);
-					System.out.println("Finished adding random colours");
-				}
-
-				if(hints.addConstantColor!=null) {
-					System.out.println("Adding constant colour...");
-					resMesh = addColor(resMesh,hints.addConstantColor);
-					System.out.println("Finished adding constant colour");
-
-				}
-
-				if(hints.convertToLines) {
-					System.out.println("Converting to lines...");
-					resMesh = convertToLines(resMesh,hints);
-					System.out.println("Finished converting to lines");
-				}
-
-				if(hints.initLWJGLAttribs) {
-					System.out.println("Initting LWJGL attribs...");
-					resMesh.initOpenGLMeshData();
-					System.out.println("Finishing initting LWJGL attribs");
+				if(hints.shouldDumbBakeVertexAttributes) {
+					System.out.println("Dumb baking...");
+					resMesh = dumbBake(resMesh, hints);
+					System.out.println("Finished dumb bake");
 				}
 			}
 
-			resMesh.meshIdentifier = loc;
-			return resMesh;
+			if(hints.addRandomColor) {
+				System.out.println("Adding random colours...");
+				resMesh = addRandomColor(resMesh);
+				System.out.println("Finished adding random colours");
+			}
+
+			if(hints.addConstantColor!=null) {
+				System.out.println("Adding constant colour...");
+				resMesh = addColor(resMesh,hints.addConstantColor);
+				System.out.println("Finished adding constant colour");
+
+			}
+
+			if(hints.convertToLines) {
+				System.out.println("Converting to lines...");
+				resMesh = convertToLines(resMesh,hints);
+				System.out.println("Finished converting to lines");
+			}
+
+			if(hints.initLWJGLAttribs) {
+				System.out.println("Initting LWJGL attribs...");
+				resMesh.initOpenGLMeshData();
+				System.out.println("Finishing initting LWJGL attribs");
+			}
 		}
+
+		resMesh.meshIdentifier = loc;
+		return resMesh;
 	}
 
 //	This functions converts models with triangular faces to lines
@@ -173,7 +151,7 @@ public class MeshBuilder {
 			newFaces.add(line3);
 		}
 
-		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation);
+		Mesh retMesh = new Mesh(newIndices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation, hints);
 		retMesh.drawMode = GL_LINES;
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 
@@ -239,7 +217,7 @@ public class MeshBuilder {
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation);
+		Mesh retMesh = new Mesh(indices,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation, hints);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
@@ -316,13 +294,13 @@ public class MeshBuilder {
 			newFaces.add(temp);
 		}
 
-		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation);
+		Mesh retMesh = new Mesh(indexList,newFaces,newVertAttribs,mesh.materials, mesh.meshLocation, hints);
 		retMesh.meshIdentifier = mesh.meshIdentifier;
 		retMesh.drawMode = mesh.drawMode;
 		return retMesh;
 	}
 
-	public static Mesh generateTangentAndBiTangentVectors(Mesh inMesh) {
+	public static Mesh generateTangentAndBiTangentVectors(Mesh inMesh, MeshBuilderHints hints) {
 		if(inMesh.getAttributeList(Mesh.TEXTURE) == null) {
 			throw new RuntimeException("Cannot generate tangent and biTangent vectors if texture coordinates are not present: "+inMesh.meshIdentifier);
 		}
@@ -391,7 +369,7 @@ public class MeshBuilder {
 		}
 
 		List<List<Vector>> newVertAttribs = new ArrayList<>(inMesh.vertAttributes);
-		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials, inMesh.meshLocation);
+		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials, inMesh.meshLocation, hints);
 		retMesh.setAttribute(tangents,Mesh.TANGENT);
 		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
@@ -399,20 +377,20 @@ public class MeshBuilder {
 		return retMesh;
 	}
 
-	public static Mesh reverseNormals(Mesh inMesh) {
+	public static Mesh reverseNormals(Mesh inMesh, MeshBuilderHints hints) {
 		List<List<Vector>> vertList = inMesh.vertAttributes;
 		List<Vector> newNormals = new ArrayList<>();
 		for(Vector n:inMesh.getAttributeList(Mesh.NORMAL)) {
 			newNormals.add(n.scalarMul(-1));
 		}
 		vertList.set(Mesh.NORMAL,newNormals);
-		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials, inMesh.meshLocation);
+		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials, inMesh.meshLocation, hints);
 		res.drawMode = inMesh.drawMode;
 		res.meshIdentifier = inMesh.meshIdentifier;
 		return res;
 	}
 
-	public static Mesh loadRawData(String loc) {
+	public static Mesh loadRawData(String loc, MeshBuilderHints hints) {
 
 		MeshBuilder m = new MeshBuilder();
 		if(!loc.substring(loc.length() - 3).equalsIgnoreCase("obj")) {
@@ -742,7 +720,7 @@ public class MeshBuilder {
 			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
 			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
-			resMesh = new Mesh(null,facesListObj, vertAttributes,matList, loc);
+			resMesh = new Mesh(null,facesListObj, vertAttributes,matList, loc, hints);
 			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
 			resMesh.meshIdentifier = loc;
 			return resMesh;
@@ -906,13 +884,13 @@ public class MeshBuilder {
 
 	}
 
-	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping) {
+	public static Mesh triangulate(Mesh inMesh, boolean forceEarClipping, MeshBuilderHints hints) {
 		List<Face> newFaces = new ArrayList<>();
 
 		for(Face f: inMesh.faces) {
 			newFaces.addAll(triangulate(f, inMesh.getVertices(),forceEarClipping));
 		}
-		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials, inMesh.meshLocation);
+		Mesh retMesh = new Mesh(null,newFaces,inMesh.vertAttributes,inMesh.materials, inMesh.meshLocation, hints);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = GL_TRIANGLES;
 		return retMesh;
@@ -1090,7 +1068,7 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttributes = new ArrayList<>(1);
 		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
 
-		resMesh = new Mesh(null,facesListObj, vertAttributes,null, null);
+		resMesh = new Mesh(null,facesListObj, vertAttributes,null, null, null);
 		resMesh.meshIdentifier = "grid";
 		return resMesh;
 
@@ -1100,7 +1078,7 @@ public class MeshBuilder {
 //
 //	}
 
-	public static Mesh reverseWindingOrder(Mesh mesh) {
+	public static Mesh reverseWindingOrder(Mesh mesh, MeshBuilderHints hints) {
 		List<Face> newFaces = new ArrayList<>();
 		for(Face f:mesh.faces) {
 			List<Vertex> newVerts = new ArrayList<>();
@@ -1114,7 +1092,7 @@ public class MeshBuilder {
 			newFaces.add(newFace);
 		}
 
-		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation);
+		Mesh resMesh = new Mesh(mesh.indices,newFaces,mesh.vertAttributes,mesh.materials, mesh.meshLocation, hints);
 		resMesh.drawMode = mesh.drawMode;
 		return resMesh;
 	}
@@ -1194,7 +1172,7 @@ public class MeshBuilder {
 		List<List<Vector>> attribs = new ArrayList<>();
 		attribs.add(vertices);
 
-		Mesh ret = new Mesh(indices,faces,attribs,null, null);
+		Mesh ret = new Mesh(indices,faces,attribs,null, null, null);
 		ret.setAttribute(colors,Mesh.COLOR);
 		ret.drawMode = GL_LINES;
 		ret.initOpenGLMeshData();
@@ -1368,8 +1346,8 @@ public class MeshBuilder {
 		vertAttribs.add(null);
 		vertAttribs.add(normals);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null);
-		resMesh = triangulate(resMesh,false);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null, null);
+		resMesh = triangulate(resMesh,false, hints);
 
 		List<Integer> newIndices = new ArrayList<>();
 
@@ -1389,7 +1367,7 @@ public class MeshBuilder {
 		}
 
 		resMesh.indices = newIndices;
-		resMesh = reverseWindingOrder(resMesh);
+		resMesh = reverseWindingOrder(resMesh, hints);
 
 		if(hints != null) {
 
@@ -1464,7 +1442,7 @@ public class MeshBuilder {
 		List<List<Vector>> vertAttribs = new ArrayList<>();
 		vertAttribs.add(vertices);
 
-		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null);
+		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null, null);
 
 		if(hints != null) {
 

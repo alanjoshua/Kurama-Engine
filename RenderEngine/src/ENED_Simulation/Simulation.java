@@ -16,6 +16,7 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.model.MeshBuilder;
+import engine.model.MeshBuilderHints;
 import engine.model.Model;
 import engine.scene.Scene;
 
@@ -160,7 +161,7 @@ public class Simulation extends Game {
 
         TestRenderPipeline renderPipeline = (TestRenderPipeline)scene.renderPipeline;
 
-        MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
+        MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.addRandomColor = true;
         hints.initLWJGLAttribs = true;
@@ -276,7 +277,7 @@ public class Simulation extends Game {
             m.setOrientation(newQ);
         });
 
-        MeshBuilder.MeshBuilderHints hints = new MeshBuilder.MeshBuilderHints();
+        MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 

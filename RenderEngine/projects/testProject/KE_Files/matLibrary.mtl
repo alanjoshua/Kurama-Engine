@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-22T04:31:29.456420400
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-22T12:50:00.944340600
 # Material Count: 14
 
 newmtl plantMesh|DEFAULT
@@ -96,7 +96,7 @@ map_ka grassblock.png
 map_kd grassblock.png
 map_ks grassblock.png
 
-newmtl ea20ac99-884d-434e-8546-72c05d3187cf|TERRAIN
+newmtl a5ebf764-4f42-4add-92a6-f1d9aad62e90|TERRAIN
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0

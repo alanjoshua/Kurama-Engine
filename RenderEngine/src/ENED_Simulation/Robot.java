@@ -930,7 +930,7 @@ public class Robot extends Movable {
         }
         List<List<Vector>> vertAttribs = new ArrayList<>();
         vertAttribs.add(path);
-        Mesh pathMesh = new Mesh(indices,faces,vertAttribs,null, null);
+        Mesh pathMesh = new Mesh(indices,faces,vertAttribs,null, null, null);
         pathMesh.drawMode = GL_LINES;
         MeshBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
         pathMesh.initOpenGLMeshData();

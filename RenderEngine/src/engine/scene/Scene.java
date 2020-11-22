@@ -10,6 +10,7 @@ import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.HUD;
 import engine.model.MeshBuilder;
+import engine.model.MeshBuilderHints;
 import engine.model.Model;
 import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
@@ -80,7 +81,7 @@ public class Scene {
         }
     }
 
-    public Mesh loadMesh(String location, String meshID, MeshBuilder.MeshBuilderHints hints) {
+    public Mesh loadMesh(String location, String meshID, MeshBuilderHints hints) {
 
         log("Loading mesh "+meshID + " ...");
         Mesh newMesh = MeshBuilder.buildModelFromFileGL(location, hints);

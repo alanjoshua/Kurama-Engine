@@ -20,6 +20,7 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
+import engine.model.MeshBuilderHints;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.renderingEngine.RenderingEngineGL;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static engine.model.MeshBuilder.MeshBuilderHints;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.glViewport;
 
@@ -118,7 +118,10 @@ public class GameLWJGL extends Game implements Runnable {
 //        }
 
         try {
-            SceneUtils.writeSceneToKE(scene, "projects", "testProject", "Kurama Engine ver alpha-2.0");
+            SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
+                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
+                    "projects/testProject/code/ModelBehaviour",
+                    "Kurama Engine ver alpha-2.0");
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -427,7 +430,6 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(!isGameRunning) {
-            System.out.println("paused");
             pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));
         }
         else {
