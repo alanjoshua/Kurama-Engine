@@ -550,12 +550,17 @@ public class SceneUtils {
                             Font font = new Font(font_name, font_style, font_size);
                             s = new Text(game, text, new FontTexture(font, "ISO-8859-1"), id);
 
-                            if(meshID.equals("null")) {
-                                mesh = null;
-                            }
-                            else {
+                            if(!meshID.equals("null")) {
                                 mesh = scene.meshID_mesh_map.get(meshID);
-                                s.mesh = mesh;
+
+                                // Do this only if material list size are the same
+                                if(mesh.materials.size() == s.mesh.materials.size()) {
+                                    for (int i =0;i < mesh.materials.size();i++) {
+                                        mesh.materials.get(i).texture = s.mesh.materials.get(i).texture;
+                                        s.mesh.materials.set(i, mesh.materials.get(i));
+                                    }
+                                }
+
                             }
 
                             s.setPos(pos);

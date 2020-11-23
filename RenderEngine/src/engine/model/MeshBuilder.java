@@ -771,6 +771,10 @@ public class MeshBuilder {
 			while((tempLine = reader.readLine()) != null) {
 				String[] newSplit = tempLine.trim().split("\\s+");
 
+				if(currentMatName != null && currentMatName.equals("hud_text_mesh|fontText")) {
+					System.out.print("");
+				}
+
 //				First newMtl in library
 				if(newSplit[0].equalsIgnoreCase("newmtl") && currentMatName == null) {
 					currentMatName = newSplit[1];
@@ -789,13 +793,28 @@ public class MeshBuilder {
 				else if(currentMatName != null && !newSplit[0].equalsIgnoreCase("newmtl")) {
 					//System.out.println(newSplit[0]);
 					if(newSplit[0].equalsIgnoreCase("ka")) {
-						currentMaterial.ambientColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+						if(newSplit.length >= 5) {
+							currentMaterial.ambientColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), Float.parseFloat(newSplit[4])});
+						}
+						else {
+							currentMaterial.ambientColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), 1f});
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("kd")) {
-						currentMaterial.diffuseColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+						if(newSplit.length >= 5) {
+							currentMaterial.diffuseColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), Float.parseFloat(newSplit[4])});
+						}
+						else {
+							currentMaterial.diffuseColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), 1f});
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("ks")) {
-						currentMaterial.specularColor = new Vector(new float[]{Float.parseFloat(newSplit[1]),Float.parseFloat(newSplit[2]),Float.parseFloat(newSplit[3]),1f});
+						if(newSplit.length >= 5) {
+							currentMaterial.specularColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), Float.parseFloat(newSplit[4])});
+						}
+						else {
+							currentMaterial.specularColor = new Vector(new float[]{Float.parseFloat(newSplit[1]), Float.parseFloat(newSplit[2]), Float.parseFloat(newSplit[3]), 1f});
+						}
 					}
 					if(newSplit[0].equalsIgnoreCase("ns")) {
 						currentMaterial.specularPower = Float.parseFloat(newSplit[1]);
