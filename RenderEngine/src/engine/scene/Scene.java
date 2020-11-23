@@ -117,6 +117,19 @@ public class Scene {
         return newMesh;
     }
 
+    public void addMesh(Mesh mesh) {
+        log("Checking whether input meshID is unique...");
+        boolean idPresent = meshID_mesh_map.containsKey(mesh.meshIdentifier);
+
+        if (idPresent) {
+            log("ID not unique. Assigning random ID...");
+            mesh.meshIdentifier = Utils.getUniqueID();
+        }
+
+        log("Assigned id: "+mesh.meshIdentifier);
+        meshID_mesh_map.put(mesh.meshIdentifier, mesh);
+    }
+
     public Model createModel(Mesh mesh, String modelID, List<String> shaderID) {
         Model newModel = new Model(game, mesh, modelID);
         addModel(newModel, shaderID);

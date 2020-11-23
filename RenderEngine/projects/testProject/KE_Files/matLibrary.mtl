@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-23T15:44:50.767211900
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-24T02:05:01.541254
 # Material Count: 14
 
 newmtl plantMesh|DEFAULT
@@ -22,7 +22,7 @@ ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
 
-newmtl bfab7313-ade7-4e46-ac62-c2a9c90e7cb1|TERRAIN
+newmtl Terrain_mesh|TERRAIN
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0

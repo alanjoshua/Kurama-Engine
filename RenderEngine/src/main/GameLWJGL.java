@@ -75,9 +75,6 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                display.getWidth(), display.getHeight());
-
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
                 if(getCamera() != null) {
@@ -91,10 +88,19 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-        initScene();
+//        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+//                display.getWidth(), display.getHeight());
+//        initScene();
+//        System.out.println();
+        try {
+            scene = SceneUtils.loadScene(this, "projects/testProject");
+            System.out.println();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
         initPauseScreen();
 
-        scene.renderPipeline = new TestRenderPipeline(this);
         renderingEngine.renderPipeline = scene.renderPipeline;
         renderingEngine.init(scene);
 
@@ -128,11 +134,6 @@ public class GameLWJGL extends Game implements Runnable {
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
-        try {
-            Scene tempscene = SceneUtils.loadScene(this, "projects/testProject");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void initScene() {
@@ -259,7 +260,7 @@ public class GameLWJGL extends Game implements Runnable {
         plant.setScale(0.005f);
 
         Model terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-        scene.setUniqueMeshID(terrain.mesh);
+        terrain.mesh.meshIdentifier = "Terrain_mesh";
         Material ter = new Material();
         ter.matName = "TERRAIN";
         ter.texture = new Texture("res/misc/crystalTexture.jpg");
@@ -272,6 +273,8 @@ public class GameLWJGL extends Game implements Runnable {
         terrain.mesh.initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+
+        scene.renderPipeline = new TestRenderPipeline(this);
 
     }
 
@@ -364,7 +367,9 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
         tickInput();
-        scene.hud.tick();
+        if(scene.hud != null) {
+            scene.hud.tick();
+        }
 
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;

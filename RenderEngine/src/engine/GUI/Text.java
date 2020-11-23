@@ -18,7 +18,7 @@ public class Text extends Model {
 
     public static final float ZPOS = 0f;
     public static final int VERTICES_PER_QUAD = 4;
-    protected String text;
+    public String text;
     public FontTexture fontTexture;
     public float width;
 

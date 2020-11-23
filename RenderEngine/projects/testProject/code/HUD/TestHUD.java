@@ -50,6 +50,12 @@ public class TestHUD extends HUD {
         demoText.mesh.meshIdentifier = "hud_text_mesh";
         game.scene.setUniqueMeshID(demoText.mesh);
 
+        String temp = demoText.fontTexture.font.getAttributes().toString();
+//        System.out.println(temp);
+//        Font f = Font.decode(temp);
+//        System.out.println(f.getFontName());
+//        Font f1 = new Font();
+
         demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
 
         demoText.shouldGreyScale = false;

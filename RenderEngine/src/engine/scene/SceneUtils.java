@@ -1,55 +1,49 @@
 package engine.scene;
 
+import engine.DataStructure.Mesh.Face;
 import engine.DataStructure.Mesh.Mesh;
+import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Texture;
+import engine.Effects.Fog;
 import engine.Effects.Material;
+import engine.Effects.ShadowMap;
+import engine.GUI.Text;
+import engine.Math.Matrix;
+import engine.Math.Quaternion;
+import engine.Math.Vector;
+import engine.camera.Camera;
+import engine.font.FontTexture;
 import engine.game.Game;
+import engine.lighting.DirectionalLight;
+import engine.lighting.PointLight;
+import engine.lighting.SpotLight;
+import engine.model.HUD;
 import engine.model.MeshBuilder;
 import engine.model.Model;
 import engine.renderingEngine.RenderPipeline;
 import engine.utils.Logger;
 
+import java.awt.*;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SceneUtils {
 
-    public static <T> T getRenderPipeline(Class<T> type, Object o) {
-        if (type.isInstance(o)) {
-            return type.cast(o);
-        }
-        else {
-            return null;
-        }
-    }
+    public static RenderPipeline getRenderPipeline(String  renderPipelineClass_name, Game game) {
+        Logger.log("Retrieving rendering pipeline...");
+        try {
+            Class renderPipeline_class = Class.forName(renderPipelineClass_name);
+            Constructor  constructor = renderPipeline_class.getConstructor(new Class[]{Game.class});
+            RenderPipeline renderPipeline = (RenderPipeline) constructor.newInstance(new Object[]{game});
+            return renderPipeline;
 
-    public static Scene loadScene(Game game, String directory) throws IOException {
-        if(!verifyProjectStructure(directory)) {
-            return null;
-        }
-        Scene scene = new Scene(game);
-
-        Map<String, Material> materials_map = MeshBuilder.parseMaterialLibrary(directory+"/KE_Files/matLibrary.mtl", directory+"/models/textures/");
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(new File(directory+"/KE_Files/master.ke")))) {
-            String line;
-            while((line=reader.readLine()) != null) {
-                String[] tokens = line.split(":");
-
-                if(tokens[0].equalsIgnoreCase("renderPipeline_class")) {
-                    String renderPipelineClass_name = tokens[1];
-                    Class renderPipeline_class = Class.forName(renderPipelineClass_name);
-                    Constructor constructor = renderPipeline_class.getConstructor(new Class[]{Game.class});
-                    RenderPipeline renderPipeline = (RenderPipeline) constructor.newInstance(new Object[]{game});
-                    scene.renderPipeline = renderPipeline;
-                }
-
-            }
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
+        }  catch (ClassNotFoundException | NoSuchMethodException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -58,7 +52,742 @@ public class SceneUtils {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
+        return null;
+    }
+
+    public static HUD getHUD(String  HUD_class_name, Game game) {
+        Logger.log("Retrieving HUD...");
+        try {
+            Class hud_class = Class.forName(HUD_class_name);
+            Constructor  constructor = hud_class.getConstructor(new Class[]{Game.class});
+            HUD hud = (HUD) constructor.newInstance(new Object[]{game});
+            return hud;
+
+        }  catch (ClassNotFoundException | NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Scene loadScene(Game game, String directory) throws IOException {
+        Logger.log("Verifying project structure...");
+        if(!verifyProjectStructure(directory)) {
+            return null;
+        }
+        Logger.log("Project structure is valid");
+
+        Logger.log("Parsing material library...");
+        Map<String, Material> materials_map = MeshBuilder.parseMaterialLibrary(directory+"/KE_Files/matLibrary.mtl", directory+"/models/textures/");
+        if (materials_map == null) {
+            return null;
+        }
+        Logger.log("Successfully parsed library");
+
+        Scene scene = new Scene(game);
+        boolean isLoadingMeshes = false;
+        boolean isLoadingModels = false;
+        boolean isLoadingCamera = false;
+        boolean isLoadingFog = false;
+        boolean isLoadingPointLights = false;
+
+        String skyBoxID = null;
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(new File(directory+"/KE_Files/master.ke")))) {
+            String line;
+            while((line=reader.readLine()) != null) {
+
+                String[] tokens = line.split(":");
+
+                if(tokens[0].equalsIgnoreCase("renderPipeline_class")) {
+                    scene.renderPipeline = getRenderPipeline(tokens[1], game);
+                    if(scene.renderPipeline == null)  {
+                        Logger.logError("Was not able to load RenderPipeline class. Returning  null...");
+                        return null;
+                    }
+                    Logger.log("Successfully loaded renderPipeline");
+                }
+
+                if(tokens[0].equalsIgnoreCase("HUD_class")) {
+                    scene.hud = getHUD(tokens[1], game);
+                    if(scene.hud == null)  {
+                        Logger.logError("Was not able to load HUD class. Setting as null...");
+                    }
+                    Logger.log("Successfully loaded HUD");
+                }
+
+                if(tokens[0].equalsIgnoreCase("skybox_id")) {
+                    skyBoxID = tokens[1];
+                }
+
+
+                if(line.equalsIgnoreCase("MESH INFO")) {
+                    Logger.log("Loading meshes now");
+                    isLoadingMeshes = true;
+                    isLoadingModels = false;
+                    isLoadingCamera = false;
+                    isLoadingFog = false;
+                    isLoadingPointLights = false;
+                }
+                else if (line.equalsIgnoreCase("MODEL INFO")) {
+                    Logger.log("Loading models now");
+                    isLoadingMeshes = false;
+                    isLoadingModels = true;
+                    isLoadingCamera = false;
+                    isLoadingFog = false;
+                    isLoadingPointLights = false;
+                }
+
+                else if (line.equalsIgnoreCase("CAMERA INFO")) {
+                    Logger.log("Loading camera now");
+                    isLoadingMeshes = false;
+                    isLoadingModels = false;
+                    isLoadingCamera = true;
+                    isLoadingFog = false;
+                    isLoadingPointLights = false;
+                }
+
+                else if (line.equalsIgnoreCase("FOG INFO")) {
+                    Logger.log("Loading fog now");
+                    isLoadingMeshes = false;
+                    isLoadingModels = false;
+                    isLoadingCamera = false;
+                    isLoadingFog = true;
+                    isLoadingPointLights = false;
+                }
+
+                else if (line.equalsIgnoreCase("POINTLIGHTS INFO")) {
+                    Logger.log("Loading pointlights now");
+                    isLoadingMeshes = false;
+                    isLoadingModels = false;
+                    isLoadingCamera = false;
+                    isLoadingFog = false;
+                    isLoadingPointLights = true;
+                }
+
+                if(isLoadingMeshes) {
+                    if(line.equalsIgnoreCase("start new mesh")) {
+                        String line2;
+                        String id = null;
+                        String location = null;
+
+                        while(!(line2 = reader.readLine()).equals("")) {
+//                            Logger.log("line2: "+line2);
+                            String[] tokens2 = line2.split(":");
+
+                            switch (tokens2[0]) {
+                                case "ID" :
+                                    id = tokens2[1];
+                                    break;
+                                case "location":
+                                    location = tokens2[1];
+                                    break;
+                            }
+                        }
+                        if(!location.equals("null")) {
+                            try {
+                                Mesh newMesh = loadKEOBJ(directory + "/models/meshes/" + location, id, materials_map);
+                                if(newMesh == null) {
+                                    Logger.logError("Mesh ID:"+id+" returned as null");
+                                }
+                                else {
+                                    scene.addMesh(newMesh);
+                                }
+                            }catch (Exception e) {
+                                e.printStackTrace();
+                                Logger.logError(directory + "/models/meshes/" + location);
+                            }
+                        }
+                    }
+                }
+
+                if(isLoadingFog) {
+                    Vector color = null;
+                    float density = 0;
+                    boolean active = false;
+
+                    String line2;
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        String[] tokens2 = line2.split(":");
+                        switch (tokens2[0]) {
+                            case "density:":
+                                density = Float.parseFloat(tokens2[1]);
+                                break;
+                            case "active":
+                                active = Boolean.parseBoolean(tokens2[1]);
+                                break;
+                            case "color":
+                                List<Float> val = new ArrayList<>();
+                                String[] token3 = tokens2[1].split(" ");
+
+                                for(int i = 0; i < token3.length; i++) {
+                                    val.add(Float.parseFloat(token3[i]));
+                                }
+                                color = new Vector(val);
+                                break;
+                        }
+                    }
+                    scene.fog = new Fog(active, color, density);
+                }
+
+                if(isLoadingCamera) {
+                    Vector pos = null;
+                    Quaternion orientation = null;
+                    float fovX = 0;
+                    float near = 0;
+                    float far = 1000;
+                    int imageWidth=100, imageHeight = 100;
+
+                    String line2;
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        String[] tokens2 = line2.split(":");
+
+                        switch (tokens2[0]) {
+                            case "fovX":
+                                fovX = Float.parseFloat(tokens2[1]);
+                                break;
+                            case "near":
+                                near = Float.parseFloat(tokens2[1]);
+                                break;
+                            case "far":
+                                far = Float.parseFloat(tokens2[1]);
+                                break;
+                            case "imageWidth":
+                                imageWidth = Integer.parseInt(tokens2[1]);
+                                break;
+                            case "imageHeight":
+                                imageHeight = Integer.parseInt(tokens2[1]);
+                                break;
+                            case "pos":
+                                List<Float> val = new ArrayList<>();
+                                String[] token3 = tokens2[1].split(" ");
+
+                                for(int i = 0; i < token3.length; i++) {
+                                    val.add(Float.parseFloat(token3[i]));
+                                }
+                                pos = new Vector(val);
+                                break;
+
+                            case "orientation":
+                                val = new ArrayList<>();
+                                token3 = tokens2[1].split(" ");
+
+                                for(int i = 0; i < token3.length; i++) {
+                                    val.add(Float.parseFloat(token3[i]));
+                                }
+                                orientation = new Quaternion(new Vector(val));
+                                break;
+                        }
+                    }
+                    scene.camera = new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight);
+                }
+
+                if(isLoadingPointLights) {
+                    if (line.equalsIgnoreCase("start new model")) {
+                        Vector pos = null;
+                        Vector color = null;
+                        float att_constant=1;
+                        float att_linear=1;
+                        float att_exp=1;
+                        float intensity = 1;
+
+                        String line2;
+                        while(!(line2 = reader.readLine()).equals("")) {
+                            String[] tokens2 = line2.split(":");
+
+                            switch (tokens2[0]) {
+                                case "intensity":
+                                    intensity = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_constant":
+                                    att_constant = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_linear":
+                                    att_linear = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_exp":
+                                    att_exp = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "color":
+                                    List<Float> val = new ArrayList<>();
+                                    String[] token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    color = new Vector(val);
+                                    break;
+
+                                case "pos":
+                                    val = new ArrayList<>();
+                                    token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    pos = new Vector(val);
+                                    break;
+                            }
+
+                            PointLight p = new PointLight(color, pos, intensity,
+                                    new PointLight.Attenuation(att_constant, att_linear, att_exp));
+                            scene.addPointlight(p);
+                        }
+                    }
+                }
+
+                if(isLoadingModels) {
+                    if (line.equalsIgnoreCase("start new model")) {
+                        String line2;
+                        String id = null;
+                        String location = null;
+                        String meshID = null;
+                        String type = null;
+                        Vector scale = null;
+                        Vector pos = null;
+                        Quaternion orientation = null;
+                        List<String> shaderIds = new ArrayList<>();
+                        boolean shouldCastShadow = true;
+                        boolean shouldRender = true;
+
+                        Vector color = null;
+                        float intensity = 1;
+                        float lightPosScale = 100;
+                        int shadowMapWidth = ShadowMap.DEFAULT_SHADOWMAP_WIDTH;
+                        int shadowMapHeight = ShadowMap.DEFAULT_SHADOWMAP_HEIGHT;
+                        Matrix shadowProjectMatrix = null;
+                        float angle=45;
+                        float att_constant=1;
+                        float att_linear=1;
+                        float att_exp=1;
+                        
+                        String font_name = null;
+                        int font_size = 0;
+                        int font_style = 0;
+
+                        String text=null;
+
+                        while(!(line2 = reader.readLine()).equals("")) {
+                            String[] tokens2 = line2.split(":");
+//                            Logger.log(line2);
+//                            Logger.log(tokens2[0]);
+                            switch (tokens2[0]) {
+                                case "ID":
+                                    id = tokens2[1];
+                                    break;
+                                case "type":
+                                    type = tokens2[1];
+                                    break;
+                                case "mesh_ID":
+                                    meshID = tokens2[1];
+                                    break;
+                                case "shouldCastShadow":
+                                    shouldCastShadow = Boolean.parseBoolean(tokens2[1]);
+                                    break;
+                                case "shouldRender":
+                                    shouldRender = Boolean.parseBoolean(tokens2[1]);
+                                    break;
+                                case "angle":
+                                    angle = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "intensity":
+                                    intensity = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_constant":
+                                    att_constant = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_linear":
+                                    att_linear = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "att_exp":
+                                    att_exp = Float.parseFloat(tokens2[1]);
+                                    break;
+                                case "shadowMap_width":
+                                    shadowMapWidth = Integer.parseInt(tokens2[1]);
+                                    break;
+                                case "shadowMap_height":
+                                    shadowMapHeight = Integer.parseInt(tokens2[1]);
+                                    break;
+                                case "text":
+                                    text = tokens2[1];
+                                    break;
+                                case "font_name":
+                                    font_name = tokens2[1];
+                                    break;
+                                case "font_size":
+                                    font_size = Integer.parseInt(tokens2[1]);
+                                    break;
+                                case "font_style":
+                                    font_style = Integer.parseInt(tokens2[1]);
+                                    break;
+
+                                case "shader_ID":
+                                    String withoutBrackets = tokens2[1].substring(1, tokens2[1].length()-1);
+                                    String[] shaders = withoutBrackets.split(",");
+                                    for(int i = 0; i < shaders.length; i++) {
+                                        String shader_rev = shaders[i].strip();
+                                        shaderIds.add(shader_rev);
+                                    }
+                                    break;
+
+                                case "scale":
+                                    List<Float> val = new ArrayList<>();
+                                    String[] token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    scale = new Vector(val);
+                                    break;
+
+                                case "color":
+                                    val = new ArrayList<>();
+                                    token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    color = new Vector(val);
+                                    break;
+
+                                case "pos":
+                                    val = new ArrayList<>();
+                                    token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    pos = new Vector(val);
+                                    break;
+
+                                case "orientation":
+                                    val = new ArrayList<>();
+                                    token3 = tokens2[1].split(" ");
+
+                                    for(int i = 0; i < token3.length; i++) {
+                                        val.add(Float.parseFloat(token3[i]));
+                                    }
+                                    orientation = new Quaternion(new Vector(val));
+                                    break;
+
+                                case "shadowProjectionMatrix":
+                                    // Assume matrix is 4 x 4
+                                    String[] rows = tokens2[1].split(",");
+
+                                    if(rows.length != 4) {
+                                        Logger.logError("Number of rows of shadow Project matrix is not 4. Exiting...");
+                                        System.exit(1);
+                                    }
+
+                                    float[][] vals = new float[4][4];
+
+                                    for(int i = 0;i < rows.length; i++) {
+                                        String[] cols = rows[i].split(" ");
+
+                                        if(cols.length != 4) {
+                                            Logger.logError("Number of cols of shadow Project matrix is not 4. Exiting...");
+                                            System.exit(1);
+                                        }
+
+                                        for(int j = 0;j < cols.length;j++) {
+                                            vals[i][j] = Float.parseFloat(cols[j]);
+                                        }
+                                    }
+                                    shadowProjectMatrix = new Matrix(vals);
+                                    break;
+                            }
+
+                        }
+
+                        if(type.equals("DirectionalLight")) {
+                            DirectionalLight l;
+                            if(meshID.equals("null")) {
+                                l = new DirectionalLight(game, color, orientation, intensity,
+                                        new ShadowMap(shadowMapWidth, shadowMapHeight), null, null,
+                                        shadowProjectMatrix, id);
+                            }
+                            else {
+                                l = new DirectionalLight(game, color, orientation, intensity,
+                                        new ShadowMap(shadowMapWidth, shadowMapHeight), scene.meshID_mesh_map.get(meshID),
+                                        null, shadowProjectMatrix, id);
+                            }
+                            l.setPos(pos);
+                            l.setScale(scale);
+                            l.shouldRender = shouldRender;
+                            l.shouldCastShadow = shouldCastShadow;
+                            l.lightPosScale = lightPosScale;
+                            scene.addDirectionalLight(l, shaderIds);
+                        }
+
+                        else if(type.equals("SpotLight")) {
+                            SpotLight s;
+                            Mesh mesh;
+                            if(meshID.equals("null")) {
+                                mesh = null;
+                            }
+                            else {
+                                mesh = scene.meshID_mesh_map.get(meshID);
+                            }
+                            s = new SpotLight(game, new PointLight(color, pos, intensity, new PointLight.Attenuation(att_constant, att_linear, att_exp)),
+                                    orientation, angle, new ShadowMap(shadowMapWidth, shadowMapHeight),
+                                    mesh, null, shadowProjectMatrix, id);
+                            s.setPos(pos);
+                            s.setScale(scale);
+                            s.shouldRender = shouldRender;
+                            s.shouldCastShadow = shouldCastShadow;
+                            scene.addSplotLight(s, shaderIds);
+                        }
+
+                        else if(type.equals("Text")) {
+                            Text s;
+                            Mesh mesh;
+
+                            Font font = new Font(font_name, font_style, font_size);
+                            s = new Text(game, text, new FontTexture(font, "ISO-8859-1"), id);
+
+                            if(meshID.equals("null")) {
+                                mesh = null;
+                            }
+                            else {
+                                mesh = scene.meshID_mesh_map.get(meshID);
+                                s.mesh = mesh;
+                            }
+
+                            s.setPos(pos);
+                            s.setScale(scale);
+                            s.shouldRender = shouldRender;
+                            s.shouldCastShadow = shouldCastShadow;
+                            scene.addModel(s, shaderIds);
+                        }
+
+                        else {
+                            Model m;
+                            Mesh mesh;
+                            if(meshID.equals("null")) {
+                                mesh = null;
+                            }
+                            else {
+                                mesh = scene.meshID_mesh_map.get(meshID);
+                            }
+                            m = new Model(game, mesh, id);
+                            m.setPos(pos);
+                            m.setScale(scale);
+                            m.shouldRender = shouldRender;
+                            m.shouldCastShadow = shouldCastShadow;
+                            scene.addModel(m, shaderIds);
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+        scene.skybox = scene.modelID_model_map.get(skyBoxID);
         return scene;
+    }
+
+    public static Mesh loadKEOBJ(String file, String id, Map<String, Material> materialsMap) {
+        Mesh ret = null;
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(new File(file)))) {
+            String line;
+
+            List<Vector> pos = new ArrayList<>();
+            List<Vector> tex = new ArrayList<>();
+            List<Vector> normals = new ArrayList<>();
+            List<Vector> colors = new ArrayList<>();
+            List<Vector> tangents = new ArrayList<>();
+            List<Vector> bitangents = new ArrayList<>();
+            List<Vector> materialInds = new ArrayList<>();
+            List<Integer> indices = new ArrayList<>();
+
+            Map<Integer, String> matIndexMap = new HashMap<>();
+
+            String meshID = null;
+
+            while ((line = reader.readLine()) != null) {
+                String[] tokens = line.split(":");
+
+                if(tokens[0].equals("MESH_ID")) {
+                    meshID = tokens[1];
+                }
+
+                if(line.equals("MATERIALS_MAP")) {
+                    String line2;
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        String[] tokens2 = line2.split(":");
+                        matIndexMap.put(Integer.parseInt(tokens2[0]), tokens2[1]);
+                    }
+                }
+
+                if(line.equals("VERTEX POSITIONS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        String[] tokens2 = line2.split(" ");
+                        List<Float> val = new ArrayList<>();
+
+                        for(int i = 0; i < tokens2.length; i++) {
+                            val.add(Float.parseFloat(tokens2[i]));
+                        }
+                       pos.add(new Vector(val));
+                    }
+                }
+
+                if(line.equals("TEXTURE POSITIONS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        if(!line2.equals("null")) {
+                            String[] tokens2 = line2.split(" ");
+                            List<Float> val = new ArrayList<>();
+
+                            for (int i = 0; i < tokens2.length; i++) {
+                                val.add(Float.parseFloat(tokens2[i]));
+                            }
+                            tex.add(new Vector(val));
+                        }
+                    }
+                }
+
+                if(line.equals("NORMAL POSITIONS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        if(!line2.equals("null")) {
+                            String[] tokens2 = line2.split(" ");
+                            List<Float> val = new ArrayList<>();
+
+                            for (int i = 0; i < tokens2.length; i++) {
+                                val.add(Float.parseFloat(tokens2[i]));
+                            }
+                            normals.add(new Vector(val));
+                        }
+                    }
+                }
+
+                if(line.equals("COLORS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        if(!line2.equals("null")) {
+                            String[] tokens2 = line2.split(" ");
+                            List<Float> val = new ArrayList<>();
+
+                            for (int i = 0; i < tokens2.length; i++) {
+                                val.add(Float.parseFloat(tokens2[i]));
+                            }
+                            colors.add(new Vector(val));
+                        }
+                    }
+                }
+
+                if(line.equals("TANGENTS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        if(!line2.equals("null")) {
+                            String[] tokens2 = line2.split(" ");
+                            List<Float> val = new ArrayList<>();
+
+                            for (int i = 0; i < tokens2.length; i++) {
+                                val.add(Float.parseFloat(tokens2[i]));
+                            }
+                            tangents.add(new Vector(val));
+                        }
+                    }
+                }
+
+                if(line.equals("BI-TANGENTS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        if(!line2.equals("null")) {
+                            String[] tokens2 = line2.split(" ");
+                            List<Float> val = new ArrayList<>();
+
+                            for (int i = 0; i < tokens2.length; i++) {
+                                val.add(Float.parseFloat(tokens2[i]));
+                            }
+                            bitangents.add(new Vector(val));
+                        }
+                    }
+                }
+
+                if(line.equals("MATERIALS")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        String[] tokens2 = line2.split(" ");
+                        List<Float> val = new ArrayList<>();
+
+                        for(int i = 0; i < tokens2.length; i++) {
+                            val.add(Float.parseFloat(tokens2[i]));
+                        }
+                        materialInds.add(new Vector(val));
+                    }
+                }
+
+                if(line.equals("INDICES")) {
+                    String line2;
+
+                    while(!(line2 = reader.readLine()).equals("")) {
+                        indices.add(Integer.parseInt(line2));
+                    }
+                }
+
+                List<Material> materials = new ArrayList<>();
+                for(int i = 0;i < matIndexMap.size();i++) {
+                    String matKey = meshID+"|"+matIndexMap.get(new Integer(i));
+                    Material m = materialsMap.get(matKey);
+                    materials.add(m);
+                }
+
+                List<List<Vector>> vertAttributes = new ArrayList<>();
+                for(int i = 0;i < 7; i++) {
+                    vertAttributes.add(null);
+                }
+                vertAttributes.set(Mesh.POSITION, pos);
+                vertAttributes.set(Mesh.TEXTURE, tex);
+                vertAttributes.set(Mesh.NORMAL, normals);
+                vertAttributes.set(Mesh.COLOR, colors);
+                vertAttributes.set(Mesh.TANGENT, tangents);
+                vertAttributes.set(Mesh.BITANGENT, bitangents);
+                vertAttributes.set(Mesh.MATERIAL, materialInds);
+
+                List<Face> newFaces = new ArrayList<>();
+
+        //		Create new vertices and faces using new index list
+                for(int i = 0;i < indices.size();i+=3) {
+                    Face temp = new Face();
+                    for(int k = 0;k < 3;k++) {
+                        Vertex v = new Vertex();
+                        for (int j = 0; j < vertAttributes.size(); j++) {
+                            v.setAttribute(indices.get(i + k), j);
+                        }
+                        temp.addVertex(v);
+                    }
+                    newFaces.add(temp);
+                }
+
+                ret = new Mesh(indices, newFaces, vertAttributes, materials, file, null);
+                ret.meshIdentifier = meshID;
+                ret.initOpenGLMeshData();
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return ret;
     }
 
     public static boolean verifyProjectStructure(String directory) {
@@ -291,10 +1020,11 @@ public class SceneUtils {
     public static boolean write_keOBJ_meshes(Map<String, Mesh> meshes, String directory, String filePrefix) {
         for (Mesh mesh: meshes.values()) {
 
+            File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
+
             if (mesh.meshLocation != null) {
                 Logger.log("Current Mesh: "+mesh.meshIdentifier);
                 File source = new File(mesh.meshLocation);
-                File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
 
                 if(!source.equals(dest)) {  // Not the same files, so .keObj doesn't yet exist
                     if(dest.exists()) {
@@ -319,7 +1049,10 @@ public class SceneUtils {
                 }
             }
             else {
-                Logger.log("Mesh location is null for meshID: "+mesh.meshIdentifier);
+                Logger.log("Mesh location is null for meshID: "+mesh.meshIdentifier+". Saving mesh to file...");
+                if(!write_mesh_as_keObj(mesh, dest)) {
+                    return false;
+                }
             }
         }
 
@@ -374,38 +1107,42 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("COLORS\n");
-            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.COLOR)) {
-                if (val != null) {
-                    writer.write(val.toString());
+            if(mesh.getAttributeList(Mesh.COLOR) != null) {
+                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.COLOR)) {
+                    if (val != null) {
+                        writer.write(val.toString());
+                    } else {
+                        writer.write("null");
+                    }
+                    writer.newLine();
                 }
-                else {
-                    writer.write("null");
-                }
-                writer.newLine();
             }
+
             writer.newLine();
 
             writer.write("TANGENTS\n");
-            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.TANGENT)) {
-                if (val != null) {
-                    writer.write(val.toString());
+            if(mesh.getAttributeList(Mesh.TANGENT) != null) {
+                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.TANGENT)) {
+                    if (val != null) {
+                        writer.write(val.toString());
+                    } else {
+                        writer.write("null");
+                    }
+                    writer.newLine();
                 }
-                else {
-                    writer.write("null");
-                }
-                writer.newLine();
             }
             writer.newLine();
 
             writer.write("BI-TANGENTS\n");
-            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.BITANGENT)) {
-                if (val != null) {
-                    writer.write(val.toString());
+            if(mesh.getAttributeList(Mesh.BITANGENT) != null) {
+                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.BITANGENT)) {
+                    if (val != null) {
+                        writer.write(val.toString());
+                    } else {
+                        writer.write("null");
+                    }
+                    writer.newLine();
                 }
-                else {
-                    writer.write("null");
-                }
-                writer.newLine();
             }
             writer.newLine();
 
@@ -653,9 +1390,23 @@ public class SceneUtils {
             writer.write("# Model count: "+scene.modelID_model_map.size() + "\n\n");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                          Write RenderPipeline Info
+//                                          Write RenderPipeline and HUD Info
 
             writer.write("renderPipeline_class:"+scene.renderPipeline.getClass().getName()+"\n\n");
+
+            if(scene.hud != null) {
+                writer.write("HUD_class:" + scene.hud.getClass().getName() + "\n\n");
+            }
+            else {
+                writer.write("HUD_class:" + null + "\n\n");
+            }
+
+            if(scene.skybox != null) {
+                writer.write("skybox_id:" + scene.skybox.identifier + "\n\n");
+            }
+            else {
+                writer.write("skybox_id:" + null + "\n\n");
+            }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                   First write mesh info to master file
@@ -682,8 +1433,9 @@ public class SceneUtils {
                 writer.write("start new model\n");
 
 //                Write model info
+                String type = model.getClass().getSimpleName();
                 writer.write("ID:"+model.identifier+"\n");
-                writer.write("type:"+model.getClass().getSimpleName()+"\n");
+                writer.write("type:"+type+"\n");
                 writer.write("shader_ID:"+scene.modelID_shaderID_map.get(model.identifier)+"\n");
 
                 if (model.mesh != null) {
@@ -698,8 +1450,56 @@ public class SceneUtils {
                 writer.write("orientation:"+model.getOrientation().toString()+"\n");
                 writer.write("shouldCastShadow:"+model.shouldCastShadow+"\n");
                 writer.write("shouldRender:"+model.shouldRender+"\n");
+
+                if(type.equals("Text")) {
+                    Text t = (Text)model;
+                    writer.write("font_name:"+ t.fontTexture.font.getFontName()+"\n");
+                    writer.write("font_style:"+ t.fontTexture.font.getStyle()+"\n");
+                    writer.write("font_size:"+ t.fontTexture.font.getSize()+"\n");
+                    writer.write("text:"+t.text+"\n");
+                }
+
+                if(type.equals("DirectionalLight")) {
+                    DirectionalLight l = (DirectionalLight)model;
+                    writer.write("color:"+l.color.toString()+"\n");
+                    writer.write("intensity:"+l.intensity+"\n");
+                    writer.write("lightPosScale:"+l.lightPosScale+"\n");
+                    writer.write("shadowMap_width:"+l.shadowMap.shadowMapWidth+"\n");
+                    writer.write("shadowMap_height:"+l.shadowMap.shadowMapHeight+"\n");
+                    writer.write("shadowProjectionMatrix:"+l.shadowProjectionMatrix.toString()+"\n");
+                }
+
+                if(type.equals("SpotLight")) {
+                    SpotLight s = (SpotLight)model;
+                    writer.write("angle:"+s.angle+"\n");
+                    writer.write("angle:"+s.angle+"\n");
+                    writer.write("shadowMap_width:"+s.shadowMap.shadowMapWidth+"\n");
+                    writer.write("shadowMap_height:"+s.shadowMap.shadowMapHeight+"\n");
+                    writer.write("shadowProjectionMatrix:"+s.shadowProjectionMatrix.toString()+"\n");
+                    writer.write("color:"+ s.pointLight.color.toString()+"\n");
+                    writer.write("intensity:"+ s.pointLight.intensity+"\n");
+                    writer.write("att_constant:"+s.pointLight.attenuation.constant+"\n");
+                    writer.write("att_linear:"+s.pointLight.attenuation.linear+"\n");
+                    writer.write("att_exp:"+s.pointLight.attenuation.exponent+"\n");
+                }
                 writer.newLine();
             }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                              Write Pointlights
+            writer.write("POINTLIGHTS INFO\n");
+
+            for(PointLight s: scene.pointLights) {
+                writer.write("start new pointLight\n");
+                writer.write("");
+                writer.write("color:"+ s.color.toString()+"\n");
+                writer.write("intensity:"+ s.intensity+"\n");
+                writer.write("att_constant:"+s.attenuation.constant+"\n");
+                writer.write("att_linear:"+s.attenuation.linear+"\n");
+                writer.write("att_exp:"+s.attenuation.exponent+"\n");
+                writer.write("pos:"+s.pos.toString()+"\n");
+                writer.newLine();
+            }
+            writer.newLine();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                          Write camera and Fog
@@ -710,6 +1510,8 @@ public class SceneUtils {
             writer.write("fovX:"+scene.camera.getFovX()+"\n");
             writer.write("near:"+scene.camera.getNearClippingPlane()+"\n");
             writer.write("far:"+scene.camera.getFarClippingPlane()+"\n");
+            writer.write("imageWidth:"+scene.camera.getImageWidth()+"\n");
+            writer.write("imageHeight:"+scene.camera.getImageHeight()+"\n");
             writer.newLine();
 
             writer.write("FOG INFO\n");

@@ -4,7 +4,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Matrix {
@@ -45,6 +44,14 @@ public class Matrix {
 				data[i][j] = val;
 			}
 		}
+	}
+
+	public String toString() {
+		StringBuilder res = new StringBuilder();
+		for(Vector row: this.convertToRowVectorList()) {
+			res.append(row.toString()+",");
+		}
+		return res.substring(0, res.length()-1);
 	}
 
 	public static Matrix createRandomMatrix(int r, int c, Supplier<Float> randGenerator) {

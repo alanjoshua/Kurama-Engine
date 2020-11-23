@@ -750,6 +750,7 @@ public class MeshBuilder {
 				isOpenedSuccessfully = true;
 			} catch (Exception e) {
 				System.err.println("Could not find material library file: " + matFilePath);
+				return null;
 			}
 		} else {
 			try {
@@ -757,6 +758,7 @@ public class MeshBuilder {
 				isOpenedSuccessfully = true;
 			} catch (Exception e) {
 				System.err.println("Could not find material library file: " + matFilePath);
+				return null;
 			}
 		}
 
