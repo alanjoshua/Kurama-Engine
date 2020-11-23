@@ -83,7 +83,7 @@ public class GameSR extends Game implements Runnable {
 		models = new ArrayList<>();
 		modelsOnlyOutline = new ArrayList<>();
 
-		cam = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+		cam = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
 				display.getWidth(), display.getHeight());
 
 		renderingEngine.resetBuffers();

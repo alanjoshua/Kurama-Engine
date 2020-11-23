@@ -26,7 +26,6 @@ import engine.model.Model.MiniBehaviour;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.scene.SceneUtils;
-import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -76,7 +75,7 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.startScreen();
 
-        scene.camera = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 display.getWidth(), display.getHeight());
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -119,13 +118,18 @@ public class GameLWJGL extends Game implements Runnable {
 //            Logger.log("model ID: "+modelID + "  shaderIds: "+scene.modelID_shaderID_map.get(modelID));
 //        }
 
+//        try {
+//            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
+//                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
+//                    "projects/testProject/code/ModelBehaviour",
+//                    "Kurama Engine ver alpha-2.0")) {
+//                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         try {
-            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
-                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
-                    "projects/testProject/code/ModelBehaviour",
-                    "Kurama Engine ver alpha-2.0")) {
-                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
-            }
+            Scene tempscene = SceneUtils.loadScene(this, "projects/testProject");
         } catch (IOException e) {
             e.printStackTrace();
         }

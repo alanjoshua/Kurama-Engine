@@ -3,35 +3,127 @@ package engine.scene;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
+import engine.game.Game;
+import engine.model.MeshBuilder;
 import engine.model.Model;
+import engine.renderingEngine.RenderPipeline;
 import engine.utils.Logger;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SceneUtils {
 
-
-//    Sorting function from https://www.geeksforgeeks.org/sorting-a-hashmap-according-to-values/
-    public static <T> Map<T, Integer> sortByValue(Map<T, Integer> hm) {
-
-        // Create a list from elements of HashMap
-        List<Map.Entry<T, Integer> > list =
-                new LinkedList<>(hm.entrySet());
-
-        // Sort the list
-        Collections.sort(list, (o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
-
-        // put data from sorted list to hashmap
-        HashMap<T, Integer> temp = new LinkedHashMap<>();
-        for (Map.Entry<T, Integer> aa : list) {
-            temp.put(aa.getKey(), aa.getValue());
+    public static <T> T getRenderPipeline(Class<T> type, Object o) {
+        if (type.isInstance(o)) {
+            return type.cast(o);
         }
-        return temp;
+        else {
+            return null;
+        }
+    }
+
+    public static Scene loadScene(Game game, String directory) throws IOException {
+        if(!verifyProjectStructure(directory)) {
+            return null;
+        }
+        Scene scene = new Scene(game);
+
+        Map<String, Material> materials_map = MeshBuilder.parseMaterialLibrary(directory+"/KE_Files/matLibrary.mtl", directory+"/models/textures/");
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(new File(directory+"/KE_Files/master.ke")))) {
+            String line;
+            while((line=reader.readLine()) != null) {
+                String[] tokens = line.split(":");
+
+                if(tokens[0].equalsIgnoreCase("renderPipeline_class")) {
+                    String renderPipelineClass_name = tokens[1];
+                    Class renderPipeline_class = Class.forName(renderPipelineClass_name);
+                    Constructor constructor = renderPipeline_class.getConstructor(new Class[]{Game.class});
+                    RenderPipeline renderPipeline = (RenderPipeline) constructor.newInstance(new Object[]{game});
+                    scene.renderPipeline = renderPipeline;
+                }
+
+            }
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return scene;
+    }
+
+    public static boolean verifyProjectStructure(String directory) {
+        File saveFolder = new File(directory);
+        if (!saveFolder.exists()) {
+            Logger.logError("Save directory does not exist. Please provide the correct folder to load from...");
+            return false;
+        }
+
+        if(!new File(directory+"/code").exists()) {
+            Logger.logError("Code directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/code/HUD").exists()) {
+            Logger.logError("HUD directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/code/ModelBehaviour").exists()) {
+            Logger.logError("ModelBehaviour directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/code/RenderPipeline").exists()) {
+            Logger.logError("RenderPipeline directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/KE_Files").exists()) {
+            Logger.logError("KE_Files directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/KE_Files/master.ke").exists()) {
+            Logger.logError("master.ke does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/KE_Files/matLibrary.mtl").exists()) {
+            Logger.logError("matLibrary.mtl does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/models").exists()) {
+            Logger.logError("Models directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/models/meshes").exists()) {
+            Logger.logError("meshes directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/models/textures").exists()) {
+            Logger.logError("textures directory does not exist.");
+            return false;
+        }
+
+        if(!new File(directory+"/Shaders").exists()) {
+            Logger.logError("Shaders directory does not exist.");
+            return false;
+        }
+
+        return true;
     }
 
     public static boolean writeSceneToKE(Scene scene, String directory, String filePrefix, String shadersDirectory,
@@ -609,10 +701,27 @@ public class SceneUtils {
                 writer.newLine();
             }
 
-            return true;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                          Write camera and Fog
 
+            writer.write("CAMERA INFO\n");
+            writer.write("pos:"+scene.camera.getPos().toString()+"\n");
+            writer.write("orientation:"+scene.camera.getOrientation().toString()+"\n");
+            writer.write("fovX:"+scene.camera.getFovX()+"\n");
+            writer.write("near:"+scene.camera.getNearClippingPlane()+"\n");
+            writer.write("far:"+scene.camera.getFarClippingPlane()+"\n");
+            writer.newLine();
+
+            writer.write("FOG INFO\n");
+            writer.write("active:"+scene.fog.active+"\n");
+            writer.write("color:"+scene.fog.color.toString()+"\n");
+            writer.write("density:"+scene.fog.density+"\n");
+            writer.newLine();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
 
+        return true;
     }
 
     /**

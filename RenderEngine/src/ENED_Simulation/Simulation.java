@@ -124,7 +124,7 @@ public class Simulation extends Game {
         renderingEngine = new RenderingEngineSim(this);
         renderingEngine.init(scene);
 
-        scene.camera = new Camera(this,null,null,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 display.getWidth(), display.getHeight());
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {

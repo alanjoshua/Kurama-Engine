@@ -71,7 +71,7 @@ public class Camera {
 //		updateValues();
 //	}
 
-	public Camera(Game game, Quaternion quaternion, Quaternion forward, Quaternion up, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
+	public Camera(Game game, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
 				  int imageWidht, int imageHeight) {
 		this.game = game;
 		this.filmApertureWidth = 0;

@@ -736,27 +736,27 @@ public class MeshBuilder {
 		}
 	}
 
-	public static Map<String,Material> parseMaterialLibrary(String fileName,String parentDirectory) throws IOException {
+	public static Map<String,Material> parseMaterialLibrary(String matFilePath,String directoryOfResourceFiles) throws IOException {
 		MeshBuilder m = new MeshBuilder();
-		URL urlNew = m.getClass().getResource(fileName);
+		URL urlNew = m.getClass().getResource(matFilePath);
 		BufferedReader reader = null;
 		boolean isOpenedSuccessfully = false;
 
 		Map<String,Material> map = new LinkedHashMap<>();
 
-		if (fileName.charAt(0) == '/') {
+		if (matFilePath.charAt(0) == '/') {
 			try {
 				reader = new BufferedReader(new InputStreamReader(urlNew.openStream()));
 				isOpenedSuccessfully = true;
 			} catch (Exception e) {
-				System.err.println("Could not find material library file: " + fileName);
+				System.err.println("Could not find material library file: " + matFilePath);
 			}
 		} else {
 			try {
-				reader = new BufferedReader(new FileReader(new File(fileName)));
+				reader = new BufferedReader(new FileReader(new File(matFilePath)));
 				isOpenedSuccessfully = true;
 			} catch (Exception e) {
-				System.err.println("Could not find material library file: " + fileName);
+				System.err.println("Could not find material library file: " + matFilePath);
 			}
 		}
 
@@ -800,7 +800,7 @@ public class MeshBuilder {
 					}
 					if(newSplit[0].equalsIgnoreCase("map_ka")) {
 						try {
-							currentMaterial.texture = new Texture(parentDirectory + "" + newSplit[1]);
+							currentMaterial.texture = new Texture(directoryOfResourceFiles + "" + newSplit[1]);
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.texture = null;
@@ -808,7 +808,7 @@ public class MeshBuilder {
 					}
 					if(newSplit[0].equalsIgnoreCase("map_kd")) {
 						try {
-							currentMaterial.diffuseMap = new Texture(parentDirectory+""+newSplit[1]);
+							currentMaterial.diffuseMap = new Texture(directoryOfResourceFiles+""+newSplit[1]);
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.diffuseMap = null;
@@ -816,7 +816,7 @@ public class MeshBuilder {
 					}
 					if(newSplit[0].equalsIgnoreCase("map_ks")) {
 						try {
-							currentMaterial.specularMap = new Texture(parentDirectory+""+newSplit[1]);
+							currentMaterial.specularMap = new Texture(directoryOfResourceFiles+""+newSplit[1]);
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.specularMap = null;
@@ -832,7 +832,7 @@ public class MeshBuilder {
 
 					if(newSplit[0].equalsIgnoreCase("map_bump") || newSplit[0].equalsIgnoreCase("bump")) {
 						try {
-							currentMaterial.normalMap = new Texture(parentDirectory+""+newSplit[1]);
+							currentMaterial.normalMap = new Texture(directoryOfResourceFiles+""+newSplit[1]);
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.normalMap = null;
