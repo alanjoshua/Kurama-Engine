@@ -87,6 +87,9 @@ public class SceneUtils {
         if (materials_map == null) {
             return null;
         }
+        for(String m: materials_map.keySet()) {
+            Logger.log("matname: "+m);
+        }
         Logger.log("Successfully parsed library");
 
         Scene scene = new Scene(game);
@@ -563,7 +566,7 @@ public class SceneUtils {
 
                             if(!meshID.equals("null")) {
                                 mesh = scene.meshID_mesh_map.get(meshID);
-
+                                s.mesh.meshIdentifier = mesh.meshIdentifier;
                                 // Do this only if material list size are the same
                                 if(mesh.materials.size() == s.mesh.materials.size()) {
                                     for (int i =0;i < mesh.materials.size();i++) {
@@ -1038,9 +1041,9 @@ public class SceneUtils {
         for (Mesh mesh: meshes.values()) {
 
             File dest = new File(directory + "/" + filePrefix + "/models/meshes/" + mesh.meshIdentifier + ".keObj");
+            Logger.log("Current Mesh: "+mesh.meshIdentifier);
 
             if (mesh.meshLocation != null) {
-                Logger.log("Current Mesh: "+mesh.meshIdentifier);
                 File source = new File(mesh.meshLocation);
 
                 if(!source.equals(dest)) {  // Not the same files, so .keObj doesn't yet exist
@@ -1588,7 +1591,13 @@ public class SceneUtils {
                 for (Material mat : meshes.get(meshID).materials) {
 
 //                Write material name
-                    String matName = meshID+"|"+mat.matName;
+                    String matName;
+                    if(!mat.matName.contains("|")) {
+                        matName = meshID + "|" + mat.matName;
+                    }
+                    else {
+                        matName = mat.matName;
+                    }
 //                    Integer times = matNamesSoFar.get(matName);
 //                    if (times == null) {
 //                        matNamesSoFar.put(matName, 1);

@@ -117,6 +117,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void writeSceneToFile() {
+        Logger.log("Writing scene to file...");
         try {
             if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
                     "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
@@ -461,6 +462,10 @@ public class GameLWJGL extends Game implements Runnable {
             Vector z = x.cross(y);
             posDelta = posDelta.add((z.scalarMul(-cameraSpeed)));
 //            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDownOnce(input.B)) {
+            writeSceneToFile();
         }
 
         if(input.keyDown(input.S)) {
