@@ -8,6 +8,7 @@
 * Custom functional-style linear algebra library
 * software rendering mode (Pure Java mode) if the user does not want to use openGL
 * Reading .OBJ files and rendering the models as a mesh
+* Write scene to file and load it back up using a single command. 
 * Support for directional, point and spot lights, with Phong Shading
 * Directional and spotlight shadow mapping
 * Random terrain generation
@@ -29,7 +30,7 @@
 ![Image of a scene rendering by Kurama Engine](https://github.com/alanjoshua/Kurama-Engine/blob/master/images/java.exe%20Screenshot%202020.05.27%20-%2017.23.05.63.png)
 
 ## Test Program
-* Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases
+* Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases  (Very outdated)
 
 
 
