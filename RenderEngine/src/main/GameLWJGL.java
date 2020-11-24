@@ -26,6 +26,7 @@ import engine.model.Model.MiniBehaviour;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.scene.SceneUtils;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -88,17 +89,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-//        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-//                display.getWidth(), display.getHeight());
 //        initScene();
-//        System.out.println();
-        try {
-            scene = SceneUtils.loadScene(this, "projects/testProject");
-            System.out.println();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+        scene = loadScene();
+
         initPauseScreen();
 
         renderingEngine.renderPipeline = scene.renderPipeline;
@@ -108,38 +101,41 @@ public class GameLWJGL extends Game implements Runnable {
         scene.camera.updateValues();
         targetFPS = display.getRefreshRate();
 
-//        for (String shaderblockID: scene.shaderblock_mesh_model_map.keySet()) {
-//            Logger.log("Shader block: "+shaderblockID);
-//            for (String meshID: scene.shaderblock_mesh_model_map.get(shaderblockID).keySet()) {
-//                Logger.log("Mesh ID: "+meshID);
-//                for(String modelID: scene.shaderblock_mesh_model_map.get(shaderblockID).get(meshID).keySet()) {
-//                    Logger.log("Model ID: "+modelID);
-//                }
-//                Logger.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-//            }
-//            Logger.log("----------------------------------------------------");
-//        }
+//        writeSceneToFile();
 
-//        for(String modelID: scene.modelID_shaderID_map.keySet()) {
-//            Logger.log("model ID: "+modelID + "  shaderIds: "+scene.modelID_shaderID_map.get(modelID));
-//        }
+    }
 
-//        try {
-//            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
-//                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
-//                    "projects/testProject/code/ModelBehaviour",
-//                    "Kurama Engine ver alpha-2.0")) {
-//                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+    public Scene loadScene() {
+        try {
+            Scene scene = SceneUtils.loadScene(this, "projects/testProject");
+            return scene;
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return null;
+    }
+
+    public void writeSceneToFile() {
+        try {
+            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
+                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
+                    "projects/testProject/code/ModelBehaviour",
+                    "Kurama Engine ver alpha-2.0")) {
+                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void initScene() {
         MeshBuilderHints hints = new MeshBuilderHints();
 
         scene.hud = new TestHUD(this);
+
+        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+                display.getWidth(), display.getHeight());
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

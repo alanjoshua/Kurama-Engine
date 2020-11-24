@@ -97,6 +97,7 @@ public class SceneUtils {
         boolean isLoadingPointLights = false;
 
         String skyBoxID = null;
+        Vector ambientColor = new Vector(new float[]{1,1,1,1});
 
         try(BufferedReader reader = new BufferedReader(new FileReader(new File(directory+"/KE_Files/master.ke")))) {
             String line;
@@ -123,6 +124,16 @@ public class SceneUtils {
 
                 if(tokens[0].equalsIgnoreCase("skybox_id")) {
                     skyBoxID = tokens[1];
+                }
+
+                if(tokens[0].equalsIgnoreCase("ambientColor")) {
+                    List<Float> val = new ArrayList<>();
+                    String[] token3 = tokens[1].split(" ");
+
+                    for(int i = 0; i < token3.length; i++) {
+                        val.add(Float.parseFloat(token3[i]));
+                    }
+                    ambientColor = new Vector(val);
                 }
 
 
@@ -594,6 +605,7 @@ public class SceneUtils {
         }
 
         scene.skybox = scene.modelID_model_map.get(skyBoxID);
+        scene.ambientLight = ambientColor;
         return scene;
     }
 
@@ -1395,7 +1407,7 @@ public class SceneUtils {
             writer.write("# Model count: "+scene.modelID_model_map.size() + "\n\n");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                          Write RenderPipeline and HUD Info
+//                                          Write RenderPipeline, HUD, skybox, ambientColor
 
             writer.write("renderPipeline_class:"+scene.renderPipeline.getClass().getName()+"\n\n");
 
@@ -1411,6 +1423,13 @@ public class SceneUtils {
             }
             else {
                 writer.write("skybox_id:" + null + "\n\n");
+            }
+
+            if(scene.ambientLight != null) {
+                writer.write("ambientColor:" + scene.ambientLight.toString() + "\n\n");
+            }
+            else {
+                writer.write("ambientColor:" + null + "\n\n");
             }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

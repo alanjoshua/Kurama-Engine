@@ -33,7 +33,7 @@ public class Scene {
     public List<DirectionalLight> directionalLights = new ArrayList<>();
     public List<SpotLight> spotLights = new ArrayList<>();
     public Vector ambientLight = new Vector(new float[]{0.3f,0.3f,0.3f});
-    public float specularPower = 2f;
+
     public Model skybox = null;
     public Fog fog = Fog.NOFOG;
 
