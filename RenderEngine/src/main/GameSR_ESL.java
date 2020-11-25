@@ -1,6 +1,5 @@
 package main;
 
-import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.model.MeshBuilder;
 import engine.model.MeshBuilderHints;
@@ -52,13 +51,12 @@ public class GameSR_ESL extends GameSR {
 
             float angle = (random.nextInt(angleMax) - angleMax/2 );
 
-            Model.MiniBehaviour tempRot = ((m, params )-> {
-                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), angle * timeDelta);
-                Quaternion newQ = rot.multiply(m.getOrientation());
-                m.setOrientation(newQ);
-            });
-
-            deer.setMiniBehaviourObj(tempRot);
+//            Model.MiniBehaviour tempRot = ((m, params )-> {
+//                Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), angle * timeDelta);
+//                Quaternion newQ = rot.multiply(m.getOrientation());
+//                m.setOrientation(newQ);
+//            });
+//            deer.setMiniBehaviourObj(tempRot);
 
             modelsOnlyOutline.add(deer);
         }

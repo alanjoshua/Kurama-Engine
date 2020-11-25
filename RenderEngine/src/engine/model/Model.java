@@ -16,17 +16,9 @@ import static org.lwjgl.opengl.GL11C.GL_LINES;
 
 public class Model {
 
-	public interface MiniBehaviour {
-		void tick(Model m,ModelTickInput params);
-	}
-
-	public static class ModelTickInput {
-		public float timeDelta;
-	}
-
 	protected Vector scale;
 	protected Vector pos;
-	protected MiniBehaviour miniBehaviourObj;
+	public ModelBehaviour behaviour;
 	protected Quaternion orientation;
 	protected Matrix transformedVertices;
 	protected Matrix cacheViewMatrix;
@@ -52,7 +44,7 @@ public class Model {
 		this.game = game;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
-		miniBehaviourObj = null;
+		behaviour = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
@@ -64,7 +56,7 @@ public class Model {
 		this.game = game;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
-		miniBehaviourObj = null;
+		behaviour = null;
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
 
@@ -74,9 +66,9 @@ public class Model {
 		}
 	}
 
-	public void tick(ModelTickInput params) {
-		if (miniBehaviourObj != null) {
-			miniBehaviourObj.tick(this,params);
+	public void tick(ModelBehaviourTickInput params) {
+		if (behaviour != null) {
+			behaviour.tick(this,params);
 		}
 	}
 
@@ -307,12 +299,12 @@ public class Model {
 
 	public Mesh getMesh() {return mesh;}
 
-	public MiniBehaviour getMiniBehaviourObj() {
-		return miniBehaviourObj;
+	public ModelBehaviour getBehaviour() {
+		return behaviour;
 	}
 
-	public void setMiniBehaviourObj(MiniBehaviour miniBehaviourObj) {
-		this.miniBehaviourObj = miniBehaviourObj;
+	public void setBehaviour(ModelBehaviour behaviour) {
+		this.behaviour = behaviour;
 	}
 
 	public Vector getPos() {

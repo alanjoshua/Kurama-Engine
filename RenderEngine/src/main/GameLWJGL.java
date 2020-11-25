@@ -1,6 +1,7 @@
 package main;
 
 import HUD.TestHUD;
+import ModelBehaviour.rotate;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Fog;
@@ -21,7 +22,7 @@ import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.MeshBuilderHints;
 import engine.model.Model;
-import engine.model.Model.MiniBehaviour;
+import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
@@ -151,7 +152,6 @@ public class GameLWJGL extends Game implements Runnable {
         spotLight.setScale(0.05f);
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
         spotLight.shouldCastShadow = false;
-
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,11 +178,11 @@ public class GameLWJGL extends Game implements Runnable {
 //        spotLight_2.isOpaque = false;
 // ------------------------------------------------------------------------------------------------------------------------
 
-        MiniBehaviour tempRot = ((m, params) -> {
-            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
-            Quaternion newQ = rot.multiply(m.getOrientation());
-            m.setOrientation(newQ);
-        });
+//        MiniBehaviour tempRot = ((m, params) -> {
+//            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
+//            Quaternion newQ = rot.multiply(m.getOrientation());
+//            m.setOrientation(newQ);
+//        });
 
         Texture tex = null;
         try {
@@ -224,6 +224,7 @@ public class GameLWJGL extends Game implements Runnable {
                 Model cube = new Model(this,cubeMesh , "cube");
                 cube.setScale(boxScale);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+                cube.behaviour = new rotate();
                 cube.mesh.materials.set(0,cubeMat);
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
@@ -362,7 +363,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-            Model.ModelTickInput params = new Model.ModelTickInput();
+            ModelBehaviourTickInput params = new ModelBehaviourTickInput();
             params.timeDelta = timeDelta;
 
             scene.updateAllModels(params);

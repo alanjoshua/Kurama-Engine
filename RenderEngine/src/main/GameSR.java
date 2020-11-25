@@ -9,10 +9,7 @@ import engine.display.DisplaySR;
 import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputSR;
-import engine.model.MeshBuilder;
-import engine.model.MeshBuilderHints;
-import engine.model.Model;
-import engine.model.Model.MiniBehaviour;
+import engine.model.*;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
 import engine.renderingEngine.RenderingEngine.RenderMultiplicationMode_Deprecated;
@@ -124,11 +121,11 @@ public class GameSR extends Game implements Runnable {
 	}
 
 	public void initModels() {
-		MiniBehaviour tempRot = ((m, params) -> {
-			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
-			Quaternion newQ = rot.multiply(m.getOrientation());
-			m.setOrientation(newQ);
-		});
+//		MiniBehaviour tempRot = ((m, params) -> {
+//			Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
+//			Quaternion newQ = rot.multiply(m.getOrientation());
+//			m.setOrientation(newQ);
+//		});
 
 		MeshBuilderHints hints = new MeshBuilderHints();
 
@@ -147,7 +144,7 @@ public class GameSR extends Game implements Runnable {
 		Model pot = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/TeapotHex3.obj",hints),"pot");
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
-		pot.setMiniBehaviourObj(tempRot);
+//		pot.setMiniBehaviourObj(tempRot);
 //		pot.triangulate();
 
 //		ModelBuilder.ModelBuilderHints hints = new ModelBuilder.ModelBuilderHints();
@@ -262,7 +259,7 @@ public class GameSR extends Game implements Runnable {
 		else
 			display.enableCursor();
 
-		Model.ModelTickInput params = new Model.ModelTickInput();
+		ModelBehaviourTickInput params = new ModelBehaviourTickInput();
 		params.timeDelta = timeDelta;
 
 		models.forEach(m -> m.tick(params));

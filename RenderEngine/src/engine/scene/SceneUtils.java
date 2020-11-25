@@ -19,6 +19,7 @@ import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.HUD;
 import engine.model.MeshBuilder;
+import engine.model.ModelBehaviour;
 import engine.model.Model;
 import engine.renderingEngine.RenderPipeline;
 import engine.utils.Logger;
@@ -62,6 +63,26 @@ public class SceneUtils {
             Constructor  constructor = hud_class.getConstructor(new Class[]{Game.class});
             HUD hud = (HUD) constructor.newInstance(new Object[]{game});
             return hud;
+
+        }  catch (ClassNotFoundException | NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static ModelBehaviour getMiniBehaviour(String behaviour_classname, Game game) {
+        Logger.log("Retrieving model behaviour...");
+        try {
+            Class behaviour_class = Class.forName(behaviour_classname);
+            Constructor  constructor = behaviour_class.getConstructor();
+            ModelBehaviour beh = (ModelBehaviour) constructor.newInstance();
+            return beh;
 
         }  catch (ClassNotFoundException | NoSuchMethodException e) {
             e.printStackTrace();
@@ -393,6 +414,8 @@ public class SceneUtils {
 
                         String text=null;
 
+                        ModelBehaviour behaviour = null;
+
                         while(!(line2 = reader.readLine()).equals("")) {
                             String[] tokens2 = line2.split(":");
 //                            Logger.log(line2);
@@ -445,6 +468,17 @@ public class SceneUtils {
                                     break;
                                 case "font_style":
                                     font_style = Integer.parseInt(tokens2[1]);
+                                    break;
+
+                                case "modelBehaviour":
+                                    if(!tokens2[1].equals("null")) {
+                                        behaviour = getMiniBehaviour(tokens2[1], game);
+                                        if (behaviour == null) {
+                                            Logger.logError("Was not able to load Model behaviour class. Returning  null...");
+                                            return null;
+                                        }
+                                        Logger.log("Successfully loaded model behaviour");
+                                    }
                                     break;
 
                                 case "shader_ID":
@@ -542,6 +576,7 @@ public class SceneUtils {
                             l.shouldRender = shouldRender;
                             l.shouldCastShadow = shouldCastShadow;
                             l.lightPosScale = lightPosScale;
+                            l.setBehaviour(behaviour);
                             scene.addDirectionalLight(l, shaderIds);
                         }
 
@@ -561,6 +596,7 @@ public class SceneUtils {
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
                             s.shouldCastShadow = shouldCastShadow;
+                            s.setBehaviour(behaviour);
                             scene.addSplotLight(s, shaderIds);
                         }
 
@@ -588,6 +624,7 @@ public class SceneUtils {
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
                             s.shouldCastShadow = shouldCastShadow;
+                            s.setBehaviour(behaviour);
                             scene.addModel(s, shaderIds);
                         }
 
@@ -605,6 +642,7 @@ public class SceneUtils {
                             m.setScale(scale);
                             m.shouldRender = shouldRender;
                             m.shouldCastShadow = shouldCastShadow;
+                            m.setBehaviour(behaviour);
                             scene.addModel(m, shaderIds);
                         }
 
@@ -1516,6 +1554,13 @@ public class SceneUtils {
                 writer.write("orientation:"+model.getOrientation().toString()+"\n");
                 writer.write("shouldCastShadow:"+model.shouldCastShadow+"\n");
                 writer.write("shouldRender:"+model.shouldRender+"\n");
+
+                if(model.getBehaviour() == null) {
+                    writer.write("modelBehaviour:null\n");
+                }
+                else{
+                    writer.write("modelBehaviour:"+model.getBehaviour().getClass().getCanonicalName()+"\n");
+                }
 
                 if(type.equals("Text")) {
                     Text t = (Text)model;

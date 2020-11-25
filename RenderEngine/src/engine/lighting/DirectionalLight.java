@@ -7,6 +7,7 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.game.Game;
 import engine.model.Model;
+import engine.model.ModelBehaviourTickInput;
 
 public class DirectionalLight extends Model {
 
@@ -34,7 +35,7 @@ public class DirectionalLight extends Model {
     }
 
     @Override
-    public void tick(ModelTickInput params) {
+    public void tick(ModelBehaviourTickInput params) {
         pos = orientation.getRotationMatrix().getColumn(2).scalarMul(-lightPosScale);
     }
 

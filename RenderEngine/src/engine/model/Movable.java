@@ -28,7 +28,7 @@ public class Movable extends Model {
         return true;
     }
 
-    public boolean moveForward(ModelTickInput params) {
+    public boolean moveForward(ModelBehaviourTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta * -1);
@@ -42,7 +42,7 @@ public class Movable extends Model {
         return false;
     }
 
-    public boolean moveBackward(ModelTickInput params) {
+    public boolean moveBackward(ModelBehaviourTickInput params) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(movementSpeed * params.timeDelta);
@@ -56,7 +56,7 @@ public class Movable extends Model {
         return false;
     }
 
-    public boolean turnLeft(ModelTickInput params) {
+    public boolean turnLeft(ModelBehaviourTickInput params) {
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed* params.timeDelta);
         if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
             Quaternion newQ = rot.multiply(getOrientation());
@@ -66,7 +66,7 @@ public class Movable extends Model {
         return false;
     }
 
-    public boolean turnRight(ModelTickInput params) {
+    public boolean turnRight(ModelBehaviourTickInput params) {
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -rotationSpeed* params.timeDelta);
         if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
             Quaternion newQ = rot.multiply(getOrientation());
@@ -76,7 +76,7 @@ public class Movable extends Model {
         return false;
     }
 
-    public boolean move(ModelTickInput params,float dist) {
+    public boolean move(ModelBehaviourTickInput params,float dist) {
         Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
         Vector z = rotationMatrix[2];
         Vector delta = z.scalarMul(dist * params.timeDelta);
@@ -90,7 +90,7 @@ public class Movable extends Model {
         return false;
     }
 
-    public boolean turn(ModelTickInput params, float angle) {
+    public boolean turn(ModelBehaviourTickInput params, float angle) {
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), angle * params.timeDelta);
         if(isOkayToUpdateRotation(rot.getRotationMatrix())) {
             Quaternion newQ = rot.multiply(getOrientation());

@@ -8,10 +8,7 @@ import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.model.HUD;
-import engine.model.MeshBuilder;
-import engine.model.MeshBuilderHints;
-import engine.model.Model;
+import engine.model.*;
 import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 import engine.utils.Utils;
@@ -192,7 +189,7 @@ public class Scene {
         }
     }
 
-    public void updateAllModels(Model.ModelTickInput params) {
+    public void updateAllModels(ModelBehaviourTickInput params) {
         modelID_model_map.values().forEach(m -> m.tick(params));
     }
 

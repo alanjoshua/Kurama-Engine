@@ -1,5 +1,6 @@
 package ENED_Simulation;
 
+import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
@@ -271,11 +272,11 @@ public class Simulation extends Game {
 
         List<Vector> barcodes = new ArrayList<>();
 
-        Model.MiniBehaviour tempRot = ((m, params) -> {
-            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
-            Quaternion newQ = rot.multiply(m.getOrientation());
-            m.setOrientation(newQ);
-        });
+//        Model.MiniBehaviour tempRot = ((m, params) -> {
+//            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
+//            Quaternion newQ = rot.multiply(m.getOrientation());
+//            m.setOrientation(newQ);
+//        });
 
         MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
@@ -519,7 +520,7 @@ public class Simulation extends Game {
         }
 
         if(isGameRunning) {
-            Model.ModelTickInput params = new Model.ModelTickInput();
+            ModelBehaviourTickInput params = new ModelBehaviourTickInput();
             params.timeDelta = timeDelta;
 
             scene.getModels()

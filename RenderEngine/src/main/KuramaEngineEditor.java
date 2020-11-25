@@ -1,6 +1,5 @@
 package main;
 
-import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
@@ -10,13 +9,9 @@ import engine.game.Game;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
-import engine.lighting.SpotLight;
-import engine.model.Model;
+import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 
@@ -77,9 +72,9 @@ public class KuramaEngineEditor extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-        Model.ModelTickInput params = new Model.ModelTickInput();
-        params.timeDelta = timeDelta;
-        scene.updateAllModels(params);
+            ModelBehaviourTickInput params = new ModelBehaviourTickInput();
+            params.timeDelta = timeDelta;
+            scene.updateAllModels(params);
 //        scene.models.forEach(m -> m.tick(params));
         }
 

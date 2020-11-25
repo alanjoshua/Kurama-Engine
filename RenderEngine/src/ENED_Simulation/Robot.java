@@ -10,6 +10,7 @@ import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
 import engine.model.MeshBuilder;
+import engine.model.ModelBehaviourTickInput;
 import engine.model.Movable;
 
 import java.util.*;
@@ -71,7 +72,7 @@ public class Robot extends Movable {
     }
 
     @Override
-    public void tick(ModelTickInput params) {
+    public void tick(ModelBehaviourTickInput params) {
         timePassedSinceLastPathFind += params.timeDelta;
         timePassedSinceLastStuckCheck += params.timeDelta;
         attemptedTranslation = new Vector(3,0);
@@ -148,7 +149,7 @@ public class Robot extends Movable {
         oldOrientation = orientation;
     }
 
-    public void tryEndStuck(ModelTickInput params) {
+    public void tryEndStuck(ModelBehaviourTickInput params) {
             if(stuckMoveDir == null) {
                 stuckMoveDir = movementSpeed * -1f;
                 if (!move(params, stuckMoveDir)) {
@@ -206,7 +207,7 @@ public class Robot extends Movable {
         shouldMoveToDesitanation = false;
     }
 
-    public void checkChanges(ModelTickInput params) {
+    public void checkChanges(ModelBehaviourTickInput params) {
         translationDirection = translationDirection.normalise();
 
         if(!shouldMoveToDesitanation && !shouldTurn90ToPickBox) {
@@ -233,7 +234,7 @@ public class Robot extends Movable {
     }
 
 //    Returns true if actually orienting towards the box
-    public boolean orientTowardsBoxIfNear(ModelTickInput params) {
+    public boolean orientTowardsBoxIfNear(ModelBehaviourTickInput params) {
         if(pathModel != null && pathModel.mesh != null && pathModel.mesh.getVertices().size() >= 2) {
             return false;
         }
@@ -334,7 +335,7 @@ public class Robot extends Movable {
         }
     }
 
-    public void AI(ModelTickInput params) {
+    public void AI(ModelBehaviourTickInput params) {
 
         updatePathFinding();
 
@@ -357,7 +358,7 @@ public class Robot extends Movable {
 
     }
 
-    public void turn90ToPickUpBox(ModelTickInput params) {
+    public void turn90ToPickUpBox(ModelBehaviourTickInput params) {
         Matrix robotMatrix = this.getOrientation().getRotationMatrix();
         Matrix boxMatrix = boxPicked.getOrientation().getRotationMatrix();
         float verticalDirection = boxMatrix.getColumn(2).dot(robotMatrix.getColumn(2));
@@ -424,7 +425,7 @@ public class Robot extends Movable {
         }
     }
 
-    public void followPath(ModelTickInput params) {
+    public void followPath(ModelBehaviourTickInput params) {
         Vector dir = getMovementFromPath(params);
 
         if (dir != null) {
@@ -458,7 +459,7 @@ public class Robot extends Movable {
         return z.scalarMul(deltaZ);
     }
 
-    public Vector getMovementFromPath(ModelTickInput params) {
+    public Vector getMovementFromPath(ModelBehaviourTickInput params) {
         if(pathModel == null) {
             return null;
         }
