@@ -1,6 +1,6 @@
 package HUD;
 
-import RenderPipeline.TestRenderPipeline;
+import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.DataStructure.Mesh.Mesh;
 import engine.GUI.Text;
 import engine.Math.Quaternion;
@@ -25,7 +25,7 @@ public class TestHUD extends HUD {
 
         Model texquad = game.scene.createModel(game.scene.loadMesh("res/misc/quad.obj",
                 "HUD_texquad_mesh", null), "texQuad",
-                Arrays.asList(new String[]{TestRenderPipeline.hudShaderBlockID}));
+                Arrays.asList(new String[]{DefaultRenderPipeline.hudShaderBlockID}));
 
         for (int i = 0; i < texquad.mesh.vertAttributes.get(Mesh.TEXTURE).size(); i++) {
             Vector v = texquad.mesh.vertAttributes.get(Mesh.TEXTURE).get(i);
@@ -62,7 +62,7 @@ public class TestHUD extends HUD {
         demoText.shouldLinearizeDepthInHUD = false;
         hudElements.add(demoText);
 
-        game.scene.addModel(demoText, Arrays.asList(new String[]{TestRenderPipeline.hudShaderBlockID}));
+        game.scene.addModel(demoText, Arrays.asList(new String[]{DefaultRenderPipeline.hudShaderBlockID}));
 
         texquad.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), -180).multiply(texquad.getOrientation()));
         texquad.setPos(new Vector(new float[]{500,game.getDisplay().getHeight() - 500,0}));

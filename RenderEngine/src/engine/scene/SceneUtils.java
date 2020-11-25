@@ -75,7 +75,7 @@ public class SceneUtils {
         return null;
     }
 
-    public static Scene loadScene(Game game, String directory) throws IOException {
+    public static Scene loadScene(Game game, String directory) {
         Logger.log("Verifying project structure...");
         if(!verifyProjectStructure(directory)) {
             return null;
@@ -83,7 +83,14 @@ public class SceneUtils {
         Logger.log("Project structure is valid");
 
         Logger.log("Parsing material library...");
-        Map<String, Material> materials_map = MeshBuilder.parseMaterialLibrary(directory+"/KE_Files/matLibrary.mtl", directory+"/models/textures/");
+        Map<String, Material> materials_map;
+        try {
+            materials_map = MeshBuilder.parseMaterialLibrary(directory + "/KE_Files/matLibrary.mtl", directory + "/models/textures/");
+        }catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+
         if (materials_map == null) {
             return null;
         }
@@ -606,6 +613,10 @@ public class SceneUtils {
                 }
             }
         }
+        catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
 
         scene.skybox = scene.modelID_model_map.get(skyBoxID);
         scene.ambientLight = ambientColor;
@@ -877,7 +888,7 @@ public class SceneUtils {
 
     public static boolean writeSceneToKE(Scene scene, String directory, String filePrefix, String shadersDirectory,
                                       String RenderBlockDirectory, String hudDirectory, String modelBehaviourDirectory,
-                                         String engineVersion) throws IOException {
+                                         String engineVersion) {
 
         if(!createProjectStructure(directory, filePrefix)) {
             return false;
@@ -916,6 +927,12 @@ public class SceneUtils {
 
     public static boolean copyShaders(String directory, String filePrefix, String shadersDirectory) {
         Logger.log("Copying shaders...");
+
+        if(shadersDirectory == null) {
+            Logger.log("Shaders directory is null. Not copying anything...");
+            return true;
+        }
+
         File shadersFolder = new File(shadersDirectory);
 
         if(shadersFolder.isDirectory()) {
@@ -946,6 +963,11 @@ public class SceneUtils {
 
     public static boolean copyRenderBlocks(String directory, String filePrefix, String RenderBlockDirectory) {
         Logger.log("Copying renderBlocks...");
+
+        if(RenderBlockDirectory == null) {
+            Logger.log("RenderBlock directory is null. Not copying anything...");
+            return true;
+        }
 
         File shadersFolder = new File(RenderBlockDirectory);
 
@@ -978,6 +1000,12 @@ public class SceneUtils {
 
     public static boolean copyHUDFiles(String directory, String filePrefix, String HUDDirectory) {
         Logger.log("Copying HUD files...");
+
+        if(HUDDirectory == null) {
+            Logger.log("HUD directory is null. Not copying anything...");
+            return true;
+        }
+
         File shadersFolder = new File(HUDDirectory);
 
         if(shadersFolder.isDirectory()) {
@@ -1194,6 +1222,12 @@ public class SceneUtils {
 
     public static boolean copyModelBehaviourFiles(String directory, String filePrefix, String modelBehaviourDir) {
         Logger.log("Copying model behaviour files...");
+
+        if(modelBehaviourDir == null) {
+            Logger.log("modelBehaviour directory is null. Not copying anything...");
+            return true;
+        }
+
         File shadersFolder = new File(modelBehaviourDir);
 
         if(shadersFolder.isDirectory()) {
@@ -1223,7 +1257,7 @@ public class SceneUtils {
         return true;
     }
 
-    public static boolean createProjectStructure(String directory, String filePrefix) throws IOException {
+    public static boolean createProjectStructure(String directory, String filePrefix) {
 
 //        Create save folder
 
@@ -1248,12 +1282,18 @@ public class SceneUtils {
 
 //        Create new master KE file
         File masterFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
-        if (masterFile.exists()) {
-            Logger.log("Material file already exists. Deleting it..");
-            masterFile.delete();
+        try {
+            if (masterFile.exists()) {
+                Logger.log("Material file already exists. Deleting it..");
+                masterFile.delete();
+            }
+            if (!masterFile.createNewFile()) {
+                Logger.logError("Error while creating new master.ke file. Returning...");
+                return false;
+            }
         }
-        if(!masterFile.createNewFile()) {
-            Logger.logError("Error while creating new master.ke file. Returning...");
+        catch (IOException e) {
+            e.printStackTrace();
             return false;
         }
 
@@ -1396,8 +1436,7 @@ public class SceneUtils {
         return true;
     }
 
-    public static boolean writeMasterKEFile(Scene scene, String directory, String filePrefix, String engineVersion)
-            throws IOException {
+    public static boolean writeMasterKEFile(Scene scene, String directory, String filePrefix, String engineVersion) {
 
 //        Create new master KE file
         File masterFile = new File(directory+"/"+filePrefix+"/KE_Files/master.ke");
@@ -1548,6 +1587,9 @@ public class SceneUtils {
             writer.newLine();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        }catch (IOException e) {
+            e.printStackTrace();
+            return false;
         }
 
         return true;
@@ -1566,7 +1608,7 @@ public class SceneUtils {
      * @param engineVersion Engine version string to write to material file
      */
     public static boolean writeMaterialFile(Map<String, Mesh> meshes, String directory, String filePrefix,
-                                         String engineVersion) throws IOException {
+                                         String engineVersion) {
 
 //      Open Material File
         File materialFile = new File(directory+"/"+filePrefix+"/KE_Files/matLibrary.mtl");

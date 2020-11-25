@@ -1,10 +1,10 @@
-package RenderPipeline;
+package engine.renderingEngine.defaultRenderPipeline;
 
 import engine.game.Game;
 import engine.renderingEngine.RenderBlockInput;
 import engine.scene.Scene;
 
-public class TestRenderPipeline extends engine.renderingEngine.RenderPipeline {
+public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline {
 
     public static String sceneShaderBlockID = "sceneShaderBlock";
     public static String hudShaderBlockID = "hudShaderBlock";
@@ -14,7 +14,7 @@ public class TestRenderPipeline extends engine.renderingEngine.RenderPipeline {
     HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID);
     SkyboxShaderBlock skyboxShaderBlock = new SkyboxShaderBlock(skyboxShaderBlockID);
 
-    public TestRenderPipeline(Game game) {
+    public DefaultRenderPipeline(Game game) {
         super(game);
 
     }

@@ -1,4 +1,4 @@
-package RenderPipeline;
+package engine.renderingEngine.defaultRenderPipeline;
 
 import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Matrix;
@@ -13,10 +13,7 @@ import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.shader.ShaderProgram;
-import engine.utils.Utils;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,11 +67,8 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
         try {
 
-            Path thisFilePath = Utils.getClassPath("SceneShaderBlock.java");
-            File shadersDir = thisFilePath.getParent().getParent().getParent().toFile();
-
-            scene_shader.createVertexShader(shadersDir.getAbsolutePath()+"/Shaders/SceneVertexShader.glsl");
-            scene_shader.createFragmentShader(shadersDir.getAbsolutePath()+"/Shaders/SceneFragmentShader.glsl");
+            scene_shader.createVertexShader("src/engine/renderingEngine/defaultShaders/SceneVertexShader.glsl");
+            scene_shader.createFragmentShader("src/engine/renderingEngine/defaultShaders/SceneFragmentShader.glsl");
             scene_shader.link();
 
             scene_shader.createUniform("projectionMatrix");
@@ -109,8 +103,8 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
     public void setupShadowShader() {
         shadow_shader = new ShaderProgram(shadow_ShaderID);
         try {
-            shadow_shader.createVertexShader("projects/testProject/Shaders/depthDirectionalLightVertexShader.glsl");
-            shadow_shader.createFragmentShader("projects/testProject/Shaders/depthDirectionalLightFragmentShader.glsl");
+            shadow_shader.createVertexShader("src/engine/renderingEngine/defaultShaders/depthDirectionalLightVertexShader.glsl");
+            shadow_shader.createFragmentShader("src/engine/renderingEngine/defaultShaders/depthDirectionalLightFragmentShader.glsl");
             shadow_shader.link();
 
             shadow_shader.createUniform("projectionMatrix");

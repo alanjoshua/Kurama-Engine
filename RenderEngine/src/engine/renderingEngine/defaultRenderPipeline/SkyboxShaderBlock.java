@@ -1,13 +1,9 @@
-package RenderPipeline;
+package engine.renderingEngine.defaultRenderPipeline;
 
 import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;
 import engine.shader.ShaderProgram;
-import engine.utils.Utils;
-
-import java.io.File;
-import java.nio.file.Path;
 
 public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
 
@@ -23,11 +19,8 @@ public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
         try {
             skyboxShader = new ShaderProgram(skyboxShaderID);
 
-            Path thisFilePath = Utils.getClassPath("SkyboxShaderBlock.java");
-            File shadersDir = thisFilePath.getParent().getParent().getParent().toFile();
-
-            skyboxShader.createVertexShader(shadersDir.getAbsolutePath()+"/Shaders/SkyBoxVertexShader.glsl");
-            skyboxShader.createFragmentShader(shadersDir.getAbsolutePath()+"/Shaders/SkyBoxFragmentShader.glsl");
+            skyboxShader.createVertexShader("src/engine/renderingEngine/defaultShaders/SkyBoxVertexShader.glsl");
+            skyboxShader.createFragmentShader("src/engine/renderingEngine/defaultShaders/SkyBoxFragmentShader.glsl");
             skyboxShader.link();
 
             skyboxShader.createUniform("projectionMatrix");

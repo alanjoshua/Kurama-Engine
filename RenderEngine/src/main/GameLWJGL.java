@@ -1,7 +1,6 @@
 package main;
 
 import HUD.TestHUD;
-import RenderPipeline.TestRenderPipeline;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Fog;
@@ -24,13 +23,12 @@ import engine.model.MeshBuilderHints;
 import engine.model.Model;
 import engine.model.Model.MiniBehaviour;
 import engine.renderingEngine.RenderingEngineGL;
+import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
 import engine.scene.SceneUtils;
-import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -90,7 +88,7 @@ public class GameLWJGL extends Game implements Runnable {
         input = new InputLWJGL(this);
 
 //        initScene();
-        scene = loadScene();
+        scene = SceneUtils.loadScene(this, "projects/testProject");
 
         initPauseScreen();
 
@@ -102,32 +100,12 @@ public class GameLWJGL extends Game implements Runnable {
         targetFPS = display.getRefreshRate();
 
 //        writeSceneToFile();
-
-    }
-
-    public Scene loadScene() {
-        try {
-            Scene scene = SceneUtils.loadScene(this, "projects/testProject");
-            return scene;
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return null;
     }
 
     public void writeSceneToFile() {
-        Logger.log("Writing scene to file...");
-        try {
-            if(!SceneUtils.writeSceneToKE(scene, "projects", "testProject", "projects/testProject/Shaders",
-                    "projects/testProject/code/RenderPipeline", "projects/testProject/code/HUD",
-                    "projects/testProject/code/ModelBehaviour",
-                    "Kurama Engine ver alpha-2.0")) {
-                Logger.logError("Error during saving scene. Please check files written so far and so required cleanup");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        SceneUtils.writeSceneToKE(scene, "projects", "testProject", null,
+                null, "projects/testProject/code/HUD",
+                "projects/testProject/code/ModelBehaviour", "Kurama Engine ver alpha-2.0");
     }
 
     public void initScene() {
@@ -151,7 +129,7 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
-        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -174,7 +152,7 @@ public class GameLWJGL extends Game implements Runnable {
         spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
         spotLight.shouldCastShadow = false;
 
-        scene.addSplotLight(spotLight, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+        scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         Material quadMat = new Material();
@@ -225,7 +203,7 @@ public class GameLWJGL extends Game implements Runnable {
         float yRange = 60;
 
         Model skybox = scene.createModel(scene.loadMesh("res/misc/skybox.obj",
-                "skybox_mesh", hints), "skybox", Arrays.asList(new String[]{TestRenderPipeline.skyboxShaderBlockID}));
+                "skybox_mesh", hints), "skybox", Arrays.asList(new String[]{DefaultRenderPipeline.skyboxShaderBlockID}));
         skybox.setScale(skyBoxScale);
 
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
@@ -247,12 +225,12 @@ public class GameLWJGL extends Game implements Runnable {
                 cube.setScale(boxScale);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
                 cube.mesh.materials.set(0,cubeMat);
-                scene.addModel(cube, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+                scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
         }
 
         Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
-                "plantMesh", hints), "plant", Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+                "plantMesh", hints), "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         plant.setPos(new Vector(15, 30, 5));
         plant.setScale(0.005f);
 
@@ -269,9 +247,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         terrain.mesh.initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
-        scene.addModel(terrain, Arrays.asList(new String[]{TestRenderPipeline.sceneShaderBlockID}));
+        scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
-        scene.renderPipeline = new TestRenderPipeline(this);
+        scene.renderPipeline = new DefaultRenderPipeline(this);
 
     }
 

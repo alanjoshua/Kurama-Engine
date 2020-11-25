@@ -1,6 +1,6 @@
 package ENED_Simulation;
 
-import RenderPipeline.TestRenderPipeline;
+import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
@@ -159,7 +159,7 @@ public class Simulation extends Game {
 
     public void initModels() {
 
-        TestRenderPipeline renderPipeline = (TestRenderPipeline)scene.renderPipeline;
+        DefaultRenderPipeline renderPipeline = (DefaultRenderPipeline)scene.renderPipeline;
 
         MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
@@ -260,7 +260,7 @@ public class Simulation extends Game {
 
 //    This method initialises boxes
     public void initCrates() {
-        TestRenderPipeline renderPipeline = (TestRenderPipeline)scene.renderPipeline;
+        DefaultRenderPipeline renderPipeline = (DefaultRenderPipeline)scene.renderPipeline;
 
         Random rand = new Random();
         //rand.setSeed(seed);

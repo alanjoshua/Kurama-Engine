@@ -4,7 +4,7 @@
 
 RENDER PIPELINE INFO
 
-renderPipeline_class:RenderPipeline.TestRenderPipeline
+renderPipeline_class:engine.renderingEngine.defaultRenderPipeline.TestRenderPipeline
 
 MESH INFO
 
