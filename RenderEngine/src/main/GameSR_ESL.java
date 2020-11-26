@@ -35,7 +35,6 @@ public class GameSR_ESL extends GameSR {
 
         Model grid = new Model(this, MeshBuilder.buildGridDeprecated(gridWidth, gridDepth),"grid");
         modelsOnlyOutline.add(grid);
-        grid.displayMeshInformation();
 
         for(int i = 0;i < MODELCOUNT;i++) {
 

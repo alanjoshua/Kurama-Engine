@@ -18,7 +18,7 @@ public class SimulationHUD extends HUD {
         super(game);
         demoText = new Text(game, "Alan's 3D ENED Simulation", new FontTexture(FONT,CHARSET), "text");
         hudElements.add(demoText);
-        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1f,1f,1});
+        demoText.meshes.get(0).materials.get(0).ambientColor = new Vector(new float[]{1,1f,1f,1});
     }
 
     public void tick() {

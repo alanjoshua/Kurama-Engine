@@ -224,7 +224,7 @@ public class Utils {
 		dataMax[2] = Float.NEGATIVE_INFINITY;
 
 		for (Model m : models) {
-			for (Vector vv : m.getMesh().getVertices()) {
+			for (Vector vv : m.meshes.get(0).getVertices()) {
 
 				Vector temp = new Vector(new float[] {vv.get(0),vv.get(1),vv.get(2)});
 				Vector v = (temp.mul(m.getScale())).add(m.getPos());

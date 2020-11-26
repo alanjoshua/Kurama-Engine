@@ -164,7 +164,7 @@ public class Camera {
 		dataMax[1] = Float.NEGATIVE_INFINITY;
 		dataMax[2] = Float.NEGATIVE_INFINITY;
 
-		for (Vector v : m.getMesh().getVertices()) {
+		for (Vector v : m.meshes.get(0).getVertices()) {
 			if (v.get(0) < dataMin[0]) {
 				dataMin[0] = v.get(0);
 			}

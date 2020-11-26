@@ -1,15 +1,13 @@
 package engine.model;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Vertex;
+import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.DataStructure.Mesh.Mesh;
-import engine.display.DisplayLWJGL;
 import engine.game.Game;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11C.GL_LINES;
@@ -36,35 +34,55 @@ public class Model {
 	public boolean shouldLinearizeDepthInHUD = false;
 	public boolean shouldRender = true;
 
-	public Mesh mesh;
+	public List<Mesh> meshes;
 	public Game game;
 
-	public Model(Game game, Mesh mesh, String identifier) {
-		this.mesh = mesh;
-		this.game = game;
-		scale = new Vector(new float[] { 1, 1, 1 });
-		pos = new Vector(3, 0);
-		behaviour = null;
-		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
-		this.identifier = identifier;
-		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
-		calculateBoundingBox();
-	}
-
-	public Model(Game game, Mesh mesh, String identifier,boolean shouldCreateBoundingBox) {
-		this.mesh = mesh;
-		this.game = game;
-		scale = new Vector(new float[] { 1, 1, 1 });
-		pos = new Vector(3, 0);
-		behaviour = null;
-		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
-		this.identifier = identifier;
-
-		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
-		if(shouldCreateBoundingBox) {
-			calculateBoundingBox();
+	public Model(Game game, List<Mesh> meshes, String identifier) {
+		this.meshes = meshes;
+		if(this.meshes == null) {
+			this.meshes = new ArrayList<>();
 		}
+
+		this.game = game;
+		scale = new Vector(new float[] { 1, 1, 1 });
+		pos = new Vector(3, 0);
+		behaviour = null;
+		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+		this.identifier = identifier;
+		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 	}
+
+	public Model(Game game, Mesh mesh, String identifier) {
+		if(mesh != null) {
+			this.meshes = Arrays.asList(new Mesh[]{mesh});
+		}
+		else {
+			this.meshes = new ArrayList<>();
+		}
+
+		this.game = game;
+		scale = new Vector(new float[] { 1, 1, 1 });
+		pos = new Vector(3, 0);
+		behaviour = null;
+		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+		this.identifier = identifier;
+		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
+	}
+
+//	public Model(Game game, List<Mesh> meshes, String identifier,boolean shouldCreateBoundingBox) {
+//		this.meshes = meshes;
+//		this.game = game;
+//		scale = new Vector(new float[] { 1, 1, 1 });
+//		pos = new Vector(3, 0);
+//		behaviour = null;
+//		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
+//		this.identifier = identifier;
+//
+//		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
+//		if(shouldCreateBoundingBox) {
+//			calculateBoundingBox();
+//		}
+//	}
 
 	public void tick(ModelBehaviourTickInput params) {
 		if (behaviour != null) {
@@ -123,153 +141,153 @@ public class Model {
 		boundingbox.initOpenGLMeshData();
 	}
 
-	public void calculateBoundingBox() {
-		if(mesh == null) {
-			return;
-		}
-
-		Vector[] bounds = Model.getBounds(mesh);
-		Vector boundMin = bounds[0];
-		Vector boundMax = bounds[1];
-
-//		Code to create bounding box mesh
-
-		Vector v1 = new Vector(boundMin.getData()).addDimensionToVec(1);
-		Vector v7 = new Vector(boundMax.getData()).addDimensionToVec(1);
-
-		Vector v2 = new Vector(new float[]{v7.get(0),v1.get(1),v1.get(2),1});
-		Vector v3 = new Vector(new float[]{v7.get(0),v1.get(1),v7.get(2),1});
-		Vector v4 = new Vector(new float[]{v1.get(0),v1.get(1),v7.get(2),1});
-
-		Vector v5 = new Vector(new float[]{v1.get(0),v7.get(1),v1.get(2),1});
-		Vector v6 = new Vector(new float[]{v7.get(0),v7.get(1),v1.get(2),1});
-		Vector v8 = new Vector(new float[]{v1.get(0),v7.get(1),v7.get(2),1});
-
-		List<Vector> vertices = new ArrayList<>();
-		vertices.add(v1);
-		vertices.add(v2);
-		vertices.add(v2);
-		vertices.add(v3);
-		vertices.add(v3);
-		vertices.add(v4);
-		vertices.add(v4);
-		vertices.add(v1);
-
-		vertices.add(v5);
-		vertices.add(v6);
-		vertices.add(v6);
-		vertices.add(v7);
-		vertices.add(v7);
-		vertices.add(v8);
-		vertices.add(v8);
-		vertices.add(v5);
-
-		vertices.add(v1);
-		vertices.add(v5);
-		vertices.add(v2);
-		vertices.add(v6);
-		vertices.add(v3);
-		vertices.add(v7);
-		vertices.add(v4);
-		vertices.add(v8);
-
-		List<Face> faces = new ArrayList<>(8);
-
-		for(int i = 0;i < 4;i++) {
-			Face tempFace = new Face();
-			Vertex vert1 = new Vertex();
-			Vertex vert2 = new Vertex();
-			if(i != 3) {
-				vert1.setAttribute(i,Vertex.POSITION);
-				vert2.setAttribute(i+1,Vertex.POSITION);
-				vert1.setAttribute(0,Vertex.MATERIAL);
-				vert2.setAttribute(0,Vertex.MATERIAL);
-			}else {
-				vert1.setAttribute(i,Vertex.POSITION);
-				vert2.setAttribute(0,Vertex.POSITION);
-				vert1.setAttribute(0,Vertex.MATERIAL);
-				vert2.setAttribute(0,Vertex.MATERIAL);
-			}
-			tempFace.addVertex(vert1);
-			tempFace.addVertex(vert2);
-			faces.add(tempFace);
-		}
-
-		for(int i = 4;i < 8;i++) {
-			Face tempFace = new Face();
-			Vertex vert1 = new Vertex();
-			Vertex vert2 = new Vertex();
-			if(i != 7) {
-				vert1.setAttribute(i, Vertex.POSITION);
-				vert2.setAttribute(i+1,Vertex.POSITION);
-				vert1.setAttribute(0,Vertex.MATERIAL);
-				vert2.setAttribute(0,Vertex.MATERIAL);
-			}else {
-				vert1.setAttribute(i,Vertex.POSITION);
-				vert2.setAttribute(i+4,Vertex.POSITION);
-				vert1.setAttribute(0,Vertex.MATERIAL);
-				vert2.setAttribute(0,Vertex.MATERIAL);
-			}
-			tempFace.addVertex(vert1);
-			tempFace.addVertex(vert2);
-			faces.add(tempFace);
-		}
-
-		Face tempFace = new Face();
-		Vertex vert1 = new Vertex();
-		Vertex vert2 = new Vertex();
-		vert1.setAttribute(0,Vertex.POSITION);
-		vert2.setAttribute(4,Vertex.POSITION);
-		vert1.setAttribute(0,Vertex.MATERIAL);
-		vert2.setAttribute(0,Vertex.MATERIAL);
-		tempFace.addVertex(vert1);
-		tempFace.addVertex(vert2);
-		faces.add(tempFace);
-
-		tempFace = new Face();
-		vert1 = new Vertex();
-		vert2 = new Vertex();
-		vert1.setAttribute(1,Vertex.POSITION);
-		vert2.setAttribute(5,Vertex.POSITION);
-		vert1.setAttribute(0,Vertex.MATERIAL);
-		vert2.setAttribute(0,Vertex.MATERIAL);
-		tempFace.addVertex(vert1);
-		tempFace.addVertex(vert2);
-		faces.add(tempFace);
-
-		tempFace = new Face();
-		vert1 = new Vertex();
-		vert2 = new Vertex();
-		vert1.setAttribute(2,Vertex.POSITION);
-		vert2.setAttribute(6,Vertex.POSITION);
-		vert1.setAttribute(0,Vertex.MATERIAL);
-		vert2.setAttribute(0,Vertex.MATERIAL);
-		tempFace.addVertex(vert1);
-		tempFace.addVertex(vert2);
-		faces.add(tempFace);
-
-		tempFace = new Face();
-		vert1 = new Vertex();
-		vert2 = new Vertex();
-		vert1.setAttribute(3,Vertex.POSITION);
-		vert2.setAttribute(7,Vertex.POSITION);
-		vert1.setAttribute(0,Vertex.MATERIAL);
-		vert2.setAttribute(0,Vertex.MATERIAL);
-		tempFace.addVertex(vert1);
-		tempFace.addVertex(vert2);
-		faces.add(tempFace);
-
-		List<List<Vector>> vertAttribs = new ArrayList<>(1);
-		vertAttribs.add(vertices);
-
-		boundingbox = new Mesh(null,faces,vertAttribs,null, null, null);
-		MeshBuilder.addColor(boundingbox,boundingBoxColor);
-		boundingbox.drawMode = GL_LINES;
-
-		if(game.getDisplay() instanceof DisplayLWJGL) {
-			boundingbox.initOpenGLMeshData();
-		}
-	}
+//	public void calculateBoundingBox() {
+//		if(mesh == null) {
+//			return;
+//		}
+//
+//		Vector[] bounds = Model.getBounds(mesh);
+//		Vector boundMin = bounds[0];
+//		Vector boundMax = bounds[1];
+//
+////		Code to create bounding box mesh
+//
+//		Vector v1 = new Vector(boundMin.getData()).addDimensionToVec(1);
+//		Vector v7 = new Vector(boundMax.getData()).addDimensionToVec(1);
+//
+//		Vector v2 = new Vector(new float[]{v7.get(0),v1.get(1),v1.get(2),1});
+//		Vector v3 = new Vector(new float[]{v7.get(0),v1.get(1),v7.get(2),1});
+//		Vector v4 = new Vector(new float[]{v1.get(0),v1.get(1),v7.get(2),1});
+//
+//		Vector v5 = new Vector(new float[]{v1.get(0),v7.get(1),v1.get(2),1});
+//		Vector v6 = new Vector(new float[]{v7.get(0),v7.get(1),v1.get(2),1});
+//		Vector v8 = new Vector(new float[]{v1.get(0),v7.get(1),v7.get(2),1});
+//
+//		List<Vector> vertices = new ArrayList<>();
+//		vertices.add(v1);
+//		vertices.add(v2);
+//		vertices.add(v2);
+//		vertices.add(v3);
+//		vertices.add(v3);
+//		vertices.add(v4);
+//		vertices.add(v4);
+//		vertices.add(v1);
+//
+//		vertices.add(v5);
+//		vertices.add(v6);
+//		vertices.add(v6);
+//		vertices.add(v7);
+//		vertices.add(v7);
+//		vertices.add(v8);
+//		vertices.add(v8);
+//		vertices.add(v5);
+//
+//		vertices.add(v1);
+//		vertices.add(v5);
+//		vertices.add(v2);
+//		vertices.add(v6);
+//		vertices.add(v3);
+//		vertices.add(v7);
+//		vertices.add(v4);
+//		vertices.add(v8);
+//
+//		List<Face> faces = new ArrayList<>(8);
+//
+//		for(int i = 0;i < 4;i++) {
+//			Face tempFace = new Face();
+//			Vertex vert1 = new Vertex();
+//			Vertex vert2 = new Vertex();
+//			if(i != 3) {
+//				vert1.setAttribute(i,Vertex.POSITION);
+//				vert2.setAttribute(i+1,Vertex.POSITION);
+//				vert1.setAttribute(0,Vertex.MATERIAL);
+//				vert2.setAttribute(0,Vertex.MATERIAL);
+//			}else {
+//				vert1.setAttribute(i,Vertex.POSITION);
+//				vert2.setAttribute(0,Vertex.POSITION);
+//				vert1.setAttribute(0,Vertex.MATERIAL);
+//				vert2.setAttribute(0,Vertex.MATERIAL);
+//			}
+//			tempFace.addVertex(vert1);
+//			tempFace.addVertex(vert2);
+//			faces.add(tempFace);
+//		}
+//
+//		for(int i = 4;i < 8;i++) {
+//			Face tempFace = new Face();
+//			Vertex vert1 = new Vertex();
+//			Vertex vert2 = new Vertex();
+//			if(i != 7) {
+//				vert1.setAttribute(i, Vertex.POSITION);
+//				vert2.setAttribute(i+1,Vertex.POSITION);
+//				vert1.setAttribute(0,Vertex.MATERIAL);
+//				vert2.setAttribute(0,Vertex.MATERIAL);
+//			}else {
+//				vert1.setAttribute(i,Vertex.POSITION);
+//				vert2.setAttribute(i+4,Vertex.POSITION);
+//				vert1.setAttribute(0,Vertex.MATERIAL);
+//				vert2.setAttribute(0,Vertex.MATERIAL);
+//			}
+//			tempFace.addVertex(vert1);
+//			tempFace.addVertex(vert2);
+//			faces.add(tempFace);
+//		}
+//
+//		Face tempFace = new Face();
+//		Vertex vert1 = new Vertex();
+//		Vertex vert2 = new Vertex();
+//		vert1.setAttribute(0,Vertex.POSITION);
+//		vert2.setAttribute(4,Vertex.POSITION);
+//		vert1.setAttribute(0,Vertex.MATERIAL);
+//		vert2.setAttribute(0,Vertex.MATERIAL);
+//		tempFace.addVertex(vert1);
+//		tempFace.addVertex(vert2);
+//		faces.add(tempFace);
+//
+//		tempFace = new Face();
+//		vert1 = new Vertex();
+//		vert2 = new Vertex();
+//		vert1.setAttribute(1,Vertex.POSITION);
+//		vert2.setAttribute(5,Vertex.POSITION);
+//		vert1.setAttribute(0,Vertex.MATERIAL);
+//		vert2.setAttribute(0,Vertex.MATERIAL);
+//		tempFace.addVertex(vert1);
+//		tempFace.addVertex(vert2);
+//		faces.add(tempFace);
+//
+//		tempFace = new Face();
+//		vert1 = new Vertex();
+//		vert2 = new Vertex();
+//		vert1.setAttribute(2,Vertex.POSITION);
+//		vert2.setAttribute(6,Vertex.POSITION);
+//		vert1.setAttribute(0,Vertex.MATERIAL);
+//		vert2.setAttribute(0,Vertex.MATERIAL);
+//		tempFace.addVertex(vert1);
+//		tempFace.addVertex(vert2);
+//		faces.add(tempFace);
+//
+//		tempFace = new Face();
+//		vert1 = new Vertex();
+//		vert2 = new Vertex();
+//		vert1.setAttribute(3,Vertex.POSITION);
+//		vert2.setAttribute(7,Vertex.POSITION);
+//		vert1.setAttribute(0,Vertex.MATERIAL);
+//		vert2.setAttribute(0,Vertex.MATERIAL);
+//		tempFace.addVertex(vert1);
+//		tempFace.addVertex(vert2);
+//		faces.add(tempFace);
+//
+//		List<List<Vector>> vertAttribs = new ArrayList<>(1);
+//		vertAttribs.add(vertices);
+//
+//		boundingbox = new Mesh(null,faces,vertAttribs,null, null, null);
+//		MeshBuilder.addColor(boundingbox,boundingBoxColor);
+//		boundingbox.drawMode = GL_LINES;
+//
+//		if(game.getDisplay() instanceof DisplayLWJGL) {
+//			boundingbox.initOpenGLMeshData();
+//		}
+//	}
 
 	public Matrix getObjectToWorldMatrix() {
 		if(isChanged) {
@@ -292,12 +310,6 @@ public class Model {
 		res = res.addRow(new Vector(new float[]{0,0,0,1}));
 		return res;
 	}
-
-	public void displayMeshInformation() {
-		mesh.displayMeshInformation();
-	}
-
-	public Mesh getMesh() {return mesh;}
 
 	public ModelBehaviour getBehaviour() {
 		return behaviour;
@@ -351,16 +363,16 @@ public class Model {
 		isChanged = true;
 	}
 
-	public Vector getCentre() {
-		Vector res = new Vector(new float[]{0,0,0});
-		for(Vector v: mesh.getVertices()) {
-			res = res.add(v.removeDimensionFromVec(3).mul(scale));
-		}
-		res = res.scalarMul(1f/mesh.getVertices().size());
-		res = res.add(pos);
-
-		return res;
-	}
+//	public Vector getCentre() {
+//		Vector res = new Vector(new float[]{0,0,0});
+//		for(Vector v: mesh.getVertices()) {
+//			res = res.add(v.removeDimensionFromVec(3).mul(scale));
+//		}
+//		res = res.scalarMul(1f/mesh.getVertices().size());
+//		res = res.add(pos);
+//
+//		return res;
+//	}
 
 	public Quaternion getOrientation() {
 		return orientation;
@@ -388,7 +400,8 @@ public class Model {
 	}
 
 	public void cleanUp() {
-		mesh.cleanUp();
+		meshes.stream().forEach(m -> m.cleanUp());
+
 		if(boundingbox!=null) {
 			boundingbox.cleanUp();
 		}

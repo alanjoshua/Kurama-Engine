@@ -102,7 +102,7 @@ public class Terrain extends Model {
             zCoord = (reqPos.get(2)) / this.scale.get(2) * height;
             Face selected = null;
             boolean isFound = false;
-            List<Vector> vertices = this.mesh.getVertices();
+            List<Vector> vertices = this.meshes.get(0).getVertices();
             List<Vector> selectedTrigCoords = null;
             Vector avg = null;
             int count = 0;
@@ -110,22 +110,22 @@ public class Terrain extends Model {
             do {
                 int faceCoord = (int) ((xCoord * height * facesPerCell) + (zCoord * facesPerCell));
 
-                if (faceCoord >= this.mesh.faces.size() || faceCoord < 0) {
+                if (faceCoord >= this.meshes.get(0).faces.size() || faceCoord < 0) {
                     isFound = false;
                 }
 
                 else {
-                    Face t1 = this.mesh.faces.get(faceCoord);
-                    Face t2 = this.mesh.faces.get(faceCoord+1);
+                    Face t1 = this.meshes.get(0).faces.get(faceCoord);
+                    Face t2 = this.meshes.get(0).faces.get(faceCoord+1);
                     List<Vector> t1Coords = new ArrayList<>();
                     for (Vertex v : t1.vertices) {
-                        Vector currVec = this.mesh.getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
+                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
                         Vector trans = modelToWorld.matMul(currVec).getColumn(0).removeDimensionFromVec(3);
                         t1Coords.add(trans);
                     }
                     List<Vector> t2Coords = new ArrayList<>();
                     for (Vertex v : t2.vertices) {
-                        Vector currVec = this.mesh.getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
+                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
                         Vector trans = modelToWorld.matMul(currVec).getColumn(0).removeDimensionFromVec(3);
                         t2Coords.add(trans);
                     }

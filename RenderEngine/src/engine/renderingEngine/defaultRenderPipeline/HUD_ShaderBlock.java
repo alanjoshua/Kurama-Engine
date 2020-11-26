@@ -1,5 +1,6 @@
 package engine.renderingEngine.defaultRenderPipeline;
 
+import engine.DataStructure.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;
@@ -52,6 +53,7 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
         hudShaderProgram.setUniform("texture_sampler", 0);
 
         for(String meshId :input.scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
+            Mesh mesh = input.scene.meshID_mesh_map.get(meshId);
 
             for(String modelId : input.scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                 Model m = input.scene.modelID_model_map.get(modelId);
@@ -60,12 +62,12 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
                     // Set orthographic and model matrix for this HUD item
                     Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
                     hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-                    hudShaderProgram.setUniform("color", m.mesh.materials.get(0).ambientColor);
+                    hudShaderProgram.setUniform("color", mesh.materials.get(0).ambientColor);
 
                     hudShaderProgram.setUniform("shouldGreyScale", m.shouldGreyScale ? 1 : 0);
                     hudShaderProgram.setUniform("shouldLinearizeDepth", m.shouldLinearizeDepthInHUD ? 1 : 0);
 
-                    m.mesh.initToEndFullRender(0);
+                    mesh.initToEndFullRender(0);
                 }
             }
         }

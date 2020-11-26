@@ -47,7 +47,11 @@ public abstract class RenderingEngine {
         directionalLightsRes = directionalLights.stream()
                 .map(l -> {
                     DirectionalLight currDirectionalLight = new DirectionalLight(l);
-                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-1).addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
+
+                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getOrientation().
+                            getRotationMatrix().getColumn(2).scalarMul(-1).addDimensionToVec(0)).
+                            getColumn(0).removeDimensionFromVec(3);
+
                     return currDirectionalLight;
                 })
                 .collect(Collectors.toList());
@@ -57,7 +61,8 @@ public abstract class RenderingEngine {
                     SpotLight currSpotLight = new SpotLight(l);
 
                     //Vector dir = new Vector(currSpotLight.coneDirection).addDimensionToVec(0);
-                    currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-1).addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
+                    currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getOrientation().getRotationMatrix().
+                            getColumn(2).scalarMul(-1).addDimensionToVec(0)).getColumn(0).removeDimensionFromVec(3);
 
                     Vector spotLightPos = currSpotLight.pointLight.pos;
                     Vector auxSpot = new Vector(spotLightPos).addDimensionToVec(1);

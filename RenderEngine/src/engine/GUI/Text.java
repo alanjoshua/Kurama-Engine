@@ -23,11 +23,11 @@ public class Text extends Model {
     public float width;
 
     public Text(Game game, String text, FontTexture fontTexture,String identifier) {
-        super(game,null,identifier);
+        super(game, (Mesh) null,identifier);
         this.text = text;
         this.fontTexture = fontTexture;
-
-        this.mesh = buildMesh();
+        this.meshes = new ArrayList<>();
+        this.meshes.add(buildMesh());
     }
 
     public Mesh buildMesh() {
@@ -135,8 +135,9 @@ public class Text extends Model {
 
     public void setText(String text) {
         this.text = text;
-        this.mesh.deleteBuffers();
-        this.mesh = buildMesh();
+        this.meshes.forEach(m -> m.deleteBuffers());
+        this.meshes = new ArrayList<>();
+        this.meshes.add(buildMesh());
     }
 
 }

@@ -1,7 +1,6 @@
 package main;
 
 import HUD.TestHUD;
-import ModelBehaviour.rotate;
 import engine.DataStructure.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Fog;
@@ -88,8 +87,8 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-//        initScene();
-        scene = SceneUtils.loadScene(this, "projects/testProject");
+        initScene();
+//        scene = SceneUtils.loadScene(this, "projects/testProject");
 
         initPauseScreen();
 
@@ -122,10 +121,11 @@ public class GameLWJGL extends Game implements Runnable {
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
         scene.ambientLight = new Vector(0.1f,0.1f,0.1f);
+
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),0f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
-                null, null, directionalLightOrthoProjection, "light");
+                (Mesh) null, null, directionalLightOrthoProjection, "light");
 
         directionalLight.setPos(new Vector(0,30,0));
         directionalLight.lightPosScale = 500;
@@ -144,13 +144,18 @@ public class GameLWJGL extends Game implements Runnable {
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
-                null, null, null,"spotlight 1");
+                (Mesh) null, null, null,"spotlight 1");
 
         spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
 
-        spotLight.mesh =  scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints);
-        spotLight.setScale(0.05f);
-        spotLight.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
+        spotLight.meshes.add(scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints));
+//        spotLight.meshes.add(scene.loadMesh("res/apricot/Apricot_02_hi_poly.obj", "apricot", hints));
+        spotLight.setScale(0.5f);
+        spotLight.setPos(new Vector(new float[]{20,45f,12f}));
+
+        spotLight.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1, 0, 0}), -30).
+                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
+
         spotLight.shouldCastShadow = false;
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
@@ -158,7 +163,7 @@ public class GameLWJGL extends Game implements Runnable {
         Material quadMat = new Material();
         quadMat.matName = "shadowMapVisualizer";
         quadMat.texture = spotLight.shadowMap.depthMap;
-        scene.hud.hudElements.get(0).mesh.materials.set(0, quadMat);
+        scene.hud.hudElements.get(0).meshes.get(0).materials.set(0, quadMat);
 //     -------------------------------------------------------------------------------------------------------------------
 //                                                   Second Spot Light
 
@@ -208,10 +213,10 @@ public class GameLWJGL extends Game implements Runnable {
 
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
-        skybox.mesh.materials.set(0,skyMat);
+        skybox.meshes.get(0).materials.set(0,skyMat);
         scene.skybox = skybox;
 
-        Vector[] bounds = Model.getBounds(scene.skybox.mesh);
+        Vector[] bounds = Model.getBounds(scene.skybox.meshes.get(0));
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
@@ -224,19 +229,19 @@ public class GameLWJGL extends Game implements Runnable {
                 Model cube = new Model(this,cubeMesh , "cube");
                 cube.setScale(boxScale);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-                cube.behaviour = new rotate();
-                cube.mesh.materials.set(0,cubeMat);
+//                cube.behaviour = new rotate();
+                cube.meshes.get(0).materials.set(0,cubeMat);
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
         }
 
         Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
                 "plantMesh", hints), "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-        plant.setPos(new Vector(15, 30, 5));
+        plant.setPos(new Vector(15, 45, 10));
         plant.setScale(0.005f);
 
         Model terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-        terrain.mesh.meshIdentifier = "Terrain_mesh";
+        terrain.meshes.get(0).meshIdentifier = "Terrain_mesh";
         Material ter = new Material();
         ter.matName = "TERRAIN";
         ter.texture = new Texture("res/misc/crystalTexture.jpg");
@@ -244,9 +249,9 @@ public class GameLWJGL extends Game implements Runnable {
         ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
         ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
         ter.reflectance = 1f;
-        terrain.mesh.materials.set(0,ter);
+        terrain.meshes.get(0).materials.set(0,ter);
 
-        terrain.mesh.initOpenGLMeshData();
+        terrain.meshes.get(0).initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
@@ -370,8 +375,8 @@ public class GameLWJGL extends Game implements Runnable {
 
 //            scene.pointLights.get(0).pos = cam.getPos();
 //            scene.spotLights.get(0).setPos(cam.getPos());
-            scene.spotLights.get(0).setPos(scene.camera.getPos().sub(scene.camera.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
-            scene.spotLights.get(0).setOrientation(scene.camera.getOrientation());
+//            scene.spotLights.get(0).setPos(scene.camera.getPos().sub(scene.camera.getOrientation().getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));
+//            scene.spotLights.get(0).setOrientation(scene.camera.getOrientation());
 
 //            scene.spotLights.get(1).setPos(cam.getPos());
 //            scene.spotLights.get(1).setOrientation(cam.getOrientation());
@@ -409,7 +414,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                spotLight.setOrientation(rot.multiply(spotLight.getOrientation()));
 //                spotLight.setPos(spotLight.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-10).add(new Vector(0,50,0)));
 
-                scene.skybox.mesh.materials.get(0).ambientColor = new Vector(4, directionalLight.intensity);
+                scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, directionalLight.intensity);
 
 //                System.out.println(currentPitch);
 //                directionalLight.direction = cam.getOrientation().getRotationMatrix().getColumn(2);

@@ -235,7 +235,7 @@ public class Robot extends Movable {
 
 //    Returns true if actually orienting towards the box
     public boolean orientTowardsBoxIfNear(ModelBehaviourTickInput params) {
-        if(pathModel != null && pathModel.mesh != null && pathModel.mesh.getVertices().size() >= 2) {
+        if(pathModel != null && pathModel.meshes.get(0) != null && pathModel.meshes.get(0).getVertices().size() >= 2) {
             return false;
         }
 
@@ -410,17 +410,17 @@ public class Robot extends Movable {
 
     //        Logic to update path model
     public void refactorPath() {
-        if(pathModel != null && pathModel.mesh.getVertices().size() > 2) {
-            Vector next = pathModel.mesh.getVertices().get(1);
+        if(pathModel != null && pathModel.meshes.get(0).getVertices().size() > 2) {
+            Vector next = pathModel.meshes.get(0).getVertices().get(1);
             float diff = next.sub(this.pos).getNorm();
 
 //            if(diff < next.sub(oldV).getNorm()) {
             if(diff <= 2) {
-                pathModel.mesh.getVertices().remove(0);
+                pathModel.meshes.get(0).getVertices().remove(0);
             }
-            pathModel.mesh.getVertices().set(0,this.pos);
+            pathModel.meshes.get(0).getVertices().set(0,this.pos);
 
-            pathModel.mesh =  createMeshFromPath(pathModel.mesh.getVertices());
+            pathModel.meshes.set(0, createMeshFromPath(pathModel.meshes.get(0).getVertices()));
 //            }
         }
     }
@@ -464,7 +464,7 @@ public class Robot extends Movable {
             return null;
         }
 
-        List<Vector> vertices = pathModel.mesh.getVertices();
+        List<Vector> vertices = pathModel.meshes.get(0).getVertices();
         Vector deltaZMove = new Vector(new float[]{0,0,1}).scalarMul(movementSpeed * params.timeDelta);
         Vector deltaZTurn = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), rotationSpeed * params.timeDelta).getRotationMatrix().getColumn(2);
         Vector avgMove = deltaZMove.add(deltaZTurn);
@@ -510,7 +510,7 @@ public class Robot extends Movable {
             return false;
         }
 
-        Vector start = pathModel.mesh.getVertices().get(0);
+        Vector start = pathModel.meshes.get(0).getVertices().get(0);
 //        if(!isCollidingModel(start,this)) {
 //            return false;
 //        }
@@ -518,12 +518,12 @@ public class Robot extends Movable {
             return false;
         }
 
-        Vector goal = pathModel.mesh.getVertices().get(pathModel.mesh.getVertices().size() - 1);
+        Vector goal = pathModel.meshes.get(0).getVertices().get(pathModel.meshes.get(0).getVertices().size() - 1);
         if(!isCollidingModel(goal,m)) {
             return false;
         }
 
-        for(Vector v: pathModel.mesh.getVertices()) {
+        for(Vector v: pathModel.meshes.get(0).getVertices()) {
             int i = (int)v.get(0);
             int j = -(int)v.get(2);
             if(collisionArray[i][j] == 1) {
@@ -540,20 +540,20 @@ public class Robot extends Movable {
             return true;
         }
 
-        Vector start = pathModel.mesh.getVertices().get(0);
+        Vector start = pathModel.meshes.get(0).getVertices().get(0);
 
         if(!areVectorsApproximatelyEqual(start,this.pos)) {
             return true;
         }
 
-        Vector goal = pathModel.mesh.getVertices().get(pathModel.mesh.getVertices().size() - 1);
+        Vector goal = pathModel.meshes.get(0).getVertices().get(pathModel.meshes.get(0).getVertices().size() - 1);
         if(!areVectorsApproximatelyEqual(goal,vecGoal)) {
             return true;
         }
 
-        for(int i = 0;i < pathModel.mesh.getVertices().size() - 1;i++) {
-            Vector v0 = pathModel.mesh.getVertices().get(i);
-            Vector v1 = pathModel.mesh.getVertices().get(i+1);
+        for(int i = 0;i < pathModel.meshes.get(0).getVertices().size() - 1;i++) {
+            Vector v0 = pathModel.meshes.get(0).getVertices().get(i);
+            Vector v1 = pathModel.meshes.get(0).getVertices().get(i+1);
             Vector dir = v1.sub(v0);
             float dist = dir.getNorm();
             dir = dir.normalise();
@@ -567,7 +567,7 @@ public class Robot extends Movable {
             }
         }
 
-        for(Vector v: pathModel.mesh.getVertices()) {
+        for(Vector v: pathModel.meshes.get(0).getVertices()) {
             int i = (int)v.get(0);
             int j = -(int)v.get(2);
             if(collisionArray[i][j] == 1) {
@@ -701,10 +701,10 @@ public class Robot extends Movable {
                     Mesh pathMesh = createMeshFromPath(smoothenPath(finalPath));
 
                     if(pathModel == null) {
-                        pathModel = new Model(game, pathMesh, identifier + "-path", false);
+                        pathModel = new Model(game, pathMesh, identifier + "-path");
                     }
                     else {
-                        pathModel.mesh = pathMesh;
+                        pathModel.meshes.set(0, pathMesh);
                     }
                 }
                 else {

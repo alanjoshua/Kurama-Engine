@@ -59,8 +59,10 @@ public class RenderingEngineSR extends RenderingEngine {
                 Matrix transformedV;
 
                 if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
+
+//                    Assumes model only has one mesh
                     Vector[] temp = (m.getOrientation()
-                            .rotatePoints((new Matrix(m.mesh.getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+                            .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
 
                     for (int i = 0; i < temp.length; i++) {
                         temp[i] = temp[i].add(m.getPos());
@@ -82,7 +84,7 @@ public class RenderingEngineSR extends RenderingEngine {
             } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
                 Matrix transformedV = null;
                 if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-                    transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
+                    transformedV = (m.getObjectToWorldMatrix().matMul(m.meshes.get(0).getVertices()));  //Assumes model only has one mesh, but it could actually have more meshes
                     m.setChanged(false);
                     m.setTransformedVertices(transformedV);
                 } else {
@@ -134,7 +136,7 @@ public class RenderingEngineSR extends RenderingEngine {
             }
 
 //			Render model using new Mesh model
-            for (Face f : m.mesh.faces) {
+            for (Face f : m.meshes.get(0).faces) {
                 for (int i = 0; i < f.size(); i++) {
                     if (i != f.size() - 1) {
 //						if (isVisible[f.get(i)] && isVisible[f.get(i+1)]) {
@@ -184,13 +186,13 @@ public class RenderingEngineSR extends RenderingEngine {
         for (Model m : models) {
             List<Vector> projectedVectors = getRasterizedVectors(m, worldToCam, camInverseQuat);
 
-            for (Face f : m.mesh.faces) {
+            for (Face f : m.meshes.get(0).faces) {
 
 //				Skips face if n < 3
                 if (!(f.vertices.size() < 3)) {
 
                     List<Face> tempFaces = new ArrayList<>();
-                    tempFaces.addAll(MeshBuilder.triangulate(f,m.mesh.getVertices(),false));
+                    tempFaces.addAll(MeshBuilder.triangulate(f,m.meshes.get(0).getVertices(),false));
 
                     for (Face currFace : tempFaces) {
 
@@ -315,7 +317,7 @@ public class RenderingEngineSR extends RenderingEngine {
 
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
                 Vector[] temp = (m.getOrientation()
-                        .rotatePoints((new Matrix(m.mesh.getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+                        .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
 
                 for (int i = 0; i < temp.length; i++) {
                     temp[i] = temp[i].add(m.getPos());
@@ -337,7 +339,7 @@ public class RenderingEngineSR extends RenderingEngine {
         } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
             Matrix transformedV = null;
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
-                transformedV = (m.getObjectToWorldMatrix().matMul(m.getMesh().getVertices()));
+                transformedV = (m.getObjectToWorldMatrix().matMul(m.meshes.get(0).getVertices()));
                 m.setChanged(false);
                 m.setTransformedVertices(transformedV);
             } else {

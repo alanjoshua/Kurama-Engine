@@ -133,6 +133,12 @@ public class Scene {
         return newModel;
     }
 
+    public Model createModel(List<Mesh> meshes, String modelID, List<String> shaderID) {
+        Model newModel = new Model(game, meshes, modelID);
+        addModel(newModel, shaderID);
+        return newModel;
+    }
+
     public void addModel(Model newModel, List<String> shaderIDs) {
 
 //        Check whether modelID is unique. If not, assign a random ID
@@ -145,29 +151,35 @@ public class Scene {
         modelID_shaderID_map.put(newModel.identifier, shaderIDs);
 
 //        If model does not have a mesh or shaderIds = Null, return immediately as there is no need to render Model
-        if (newModel.mesh == null || shaderIDs == null) {
+        if (newModel.meshes == null || (newModel.meshes.size() == 0) || shaderIDs == null) {
             return;
         }
 
 //        Mesh does not exists in scene's database
-        if (!meshID_mesh_map.containsKey(newModel.mesh.meshIdentifier)) {
-            meshID_mesh_map.put(newModel.mesh.meshIdentifier, newModel.mesh);
-        }
-
-//      Loop through all shaderIds
-        for (String shaderID: shaderIDs) {
-            shaderblock_mesh_model_map.putIfAbsent(shaderID, new HashMap<>());  // Enter a new hashmap if shaderID does not exist yet
-
-//        Shader is not associated with model mesh, so add new mesh entry to shader ID
-            if (!shaderblock_mesh_model_map.get(shaderID).containsKey(newModel.mesh.meshIdentifier)) {
-                shaderblock_mesh_model_map.get(shaderID).put(newModel.mesh.meshIdentifier, new HashMap<>());
+        for(Mesh mesh: newModel.meshes) {
+            if(mesh == null) {
+                continue;
             }
 
-//            Link model with shader
-            shaderblock_mesh_model_map.get(shaderID).
-                    get(newModel.mesh.meshIdentifier).
-                    put(newModel.identifier, newModel);  // Insert new model into mesh_model map
+            if (!meshID_mesh_map.containsKey(mesh.meshIdentifier)) {
+                meshID_mesh_map.put(mesh.meshIdentifier, mesh);
+            }
 
+//      Loop through all shaderIds
+            for (String shaderID : shaderIDs) {
+                shaderblock_mesh_model_map.putIfAbsent(shaderID, new HashMap<>());  // Enter a new hashmap if shaderID does not exist yet
+
+//        Shader is not associated with model mesh, so add new mesh entry to shader ID
+                if (!shaderblock_mesh_model_map.get(shaderID).containsKey(mesh.meshIdentifier)) {
+                    shaderblock_mesh_model_map.get(shaderID).put(mesh.meshIdentifier, new HashMap<>());
+                }
+
+//            Link model with shader
+                shaderblock_mesh_model_map.get(shaderID).
+                        get(mesh.meshIdentifier).
+                        put(newModel.identifier, newModel);  // Insert new model into mesh_model map
+
+            }
         }
     }
 
@@ -178,7 +190,7 @@ public class Scene {
             skyblock.identifier = Utils.getUniqueID();
         }
 
-        setUniqueMeshID(skyblock.mesh);
+        setUniqueMeshID(skyblock.meshes.get(0));  //Assumes skyblock must only have one mesh
         addModel(skyblock, shaderID);
         this.skybox = skyblock;
     }

@@ -101,7 +101,7 @@ public class Simulation extends Game {
 
         scene.directionalLights.add(new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getQuaternionFromEuler(90,0,0),1,new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 1,
-                ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1),null, null, null, "light"));  //Add shadowlight projection code
+                ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 1), (Mesh) null, null, null, "light"));  //Add shadowlight projection code
         scene.directionalLights.get(0).shadowProjectionMatrix = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
         boxesToBeSearched = new ArrayList<>();
         boxesAlreadySearched = new ArrayList<>();
@@ -171,7 +171,7 @@ public class Simulation extends Game {
         Model grid = new Model(this, MeshBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
         grid.setPos(new Vector(new float[]{0,0,-simDepth}));
         grid.isCollidable = false;
-        grid.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1});
+        grid.meshes.get(0).materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
         flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",hints),"flag");
@@ -207,7 +207,7 @@ public class Simulation extends Game {
 
         try {
             Texture tex = new Texture(robotTextureLoc);
-            robot.mesh.materials.get(0).texture = tex;
+            robot.meshes.get(0).materials.get(0).texture = tex;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -226,7 +226,7 @@ public class Simulation extends Game {
         }
         Material skyMat = new Material(tex,1, "skyMat");
         skyMat.ambientColor = new Vector(new float[]{1,1,1,1});
-        scene.skybox.mesh.materials.set(0,skyMat);
+        scene.skybox.meshes.get(0).materials.set(0,skyMat);
 
         hints.convertToLines = false;
 

@@ -29,10 +29,8 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class SceneUtils {
 
@@ -388,7 +386,7 @@ public class SceneUtils {
                         String line2;
                         String id = null;
                         String location = null;
-                        String meshID = null;
+                        List<String> meshIDs = new ArrayList<>();
                         String type = null;
                         Vector scale = null;
                         Vector pos = null;
@@ -428,7 +426,7 @@ public class SceneUtils {
                                     type = tokens2[1];
                                     break;
                                 case "mesh_ID":
-                                    meshID = tokens2[1];
+                                    meshIDs = Arrays.asList(tokens2[1].split(","));
                                     break;
                                 case "shouldCastShadow":
                                     shouldCastShadow = Boolean.parseBoolean(tokens2[1]);
@@ -559,18 +557,18 @@ public class SceneUtils {
 
                         }
 
+                        List<Mesh> meshes = new ArrayList<>();
+                        for(String meshId: meshIDs) {
+                            meshes.add(scene.meshID_mesh_map.get(meshId));
+                        }
+
                         if(type.equals("DirectionalLight")) {
                             DirectionalLight l;
-                            if(meshID.equals("null")) {
-                                l = new DirectionalLight(game, color, orientation, intensity,
-                                        new ShadowMap(shadowMapWidth, shadowMapHeight), null, null,
-                                        shadowProjectMatrix, id);
-                            }
-                            else {
-                                l = new DirectionalLight(game, color, orientation, intensity,
-                                        new ShadowMap(shadowMapWidth, shadowMapHeight), scene.meshID_mesh_map.get(meshID),
-                                        null, shadowProjectMatrix, id);
-                            }
+
+                            l = new DirectionalLight(game, color, orientation, intensity,
+                                    new ShadowMap(shadowMapWidth, shadowMapHeight), meshes,
+                                    null, shadowProjectMatrix, id);
+
                             l.setPos(pos);
                             l.setScale(scale);
                             l.shouldRender = shouldRender;
@@ -582,16 +580,10 @@ public class SceneUtils {
 
                         else if(type.equals("SpotLight")) {
                             SpotLight s;
-                            Mesh mesh;
-                            if(meshID.equals("null")) {
-                                mesh = null;
-                            }
-                            else {
-                                mesh = scene.meshID_mesh_map.get(meshID);
-                            }
+
                             s = new SpotLight(game, new PointLight(color, pos, intensity, new PointLight.Attenuation(att_constant, att_linear, att_exp)),
                                     orientation, angle, new ShadowMap(shadowMapWidth, shadowMapHeight),
-                                    mesh, null, shadowProjectMatrix, id);
+                                    meshes, null, shadowProjectMatrix, id);
                             s.setPos(pos);
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
@@ -607,14 +599,15 @@ public class SceneUtils {
                             Font font = new Font(font_name, font_style, font_size);
                             s = new Text(game, text, new FontTexture(font, "ISO-8859-1"), id);
 
-                            if(!meshID.equals("null")) {
-                                mesh = scene.meshID_mesh_map.get(meshID);
-                                s.mesh.meshIdentifier = mesh.meshIdentifier;
+                            if(meshes.size() > 0) {
+                                mesh = meshes.get(0); //Assumes Text will only have one mesh
+                                s.meshes.get(0).meshIdentifier = mesh.meshIdentifier;
+
                                 // Do this only if material list size are the same
-                                if(mesh.materials.size() == s.mesh.materials.size()) {
+                                if(mesh.materials.size() == s.meshes.get(0).materials.size()) {
                                     for (int i =0;i < mesh.materials.size();i++) {
-                                        mesh.materials.get(i).texture = s.mesh.materials.get(i).texture;
-                                        s.mesh.materials.set(i, mesh.materials.get(i));
+                                        mesh.materials.get(i).texture = s.meshes.get(0).materials.get(i).texture;
+                                        s.meshes.get(0).materials.set(i, mesh.materials.get(i));
                                     }
                                 }
 
@@ -630,14 +623,7 @@ public class SceneUtils {
 
                         else {
                             Model m;
-                            Mesh mesh;
-                            if(meshID.equals("null")) {
-                                mesh = null;
-                            }
-                            else {
-                                mesh = scene.meshID_mesh_map.get(meshID);
-                            }
-                            m = new Model(game, mesh, id);
+                            m = new Model(game, meshes, id);
                             m.setPos(pos);
                             m.setScale(scale);
                             m.shouldRender = shouldRender;
@@ -1542,11 +1528,27 @@ public class SceneUtils {
                 writer.write("type:"+type+"\n");
                 writer.write("shader_ID:"+scene.modelID_shaderID_map.get(model.identifier)+"\n");
 
-                if (model.mesh != null) {
-                    writer.write("mesh_ID:"+model.mesh.meshIdentifier+"\n");
+                if(model.meshes == null) {
+                    writer.write("mesh_ID:null\n");
                 }
                 else {
-                    writer.write("mesh_ID:null\n");
+                    writer.write("mesh_ID:");
+                    StringBuilder meshIds = new StringBuilder();
+                    for(Mesh m: model.meshes) {
+                        if(m != null) {
+                            meshIds.append(m.meshIdentifier+",");
+                        }
+                    }
+//                    System.out.println(meshIds.toString());
+//                    if(meshIds.length() <= 1) {
+//                        System.out.println("Model id with empty mesh IDs: "+model.identifier + "  #meshes="+model.meshes.size() + " type: "+model.getClass().getSimpleName());
+//                    }
+                    if(model.meshes.size() > 0) {
+                        writer.write(meshIds.substring(0, meshIds.length() - 1) + "\n");
+                    }
+                    else {
+                        writer.write("null\n");
+                    }
                 }
 
                 writer.write("scale:"+model.getScale().toString()+"\n");

@@ -102,7 +102,7 @@ public class GameSR extends Game implements Runnable {
 		display.cleanUp();
 		renderingEngine.cleanUp();
 		for(Model m:models) {
-			m.mesh.cleanUp();
+			m.meshes.forEach( mesh -> mesh.cleanUp());
 		}
 	}
 

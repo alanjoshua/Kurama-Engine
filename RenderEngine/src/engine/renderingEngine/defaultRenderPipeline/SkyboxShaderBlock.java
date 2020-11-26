@@ -56,9 +56,9 @@ public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
             skyBox.setPos(input.scene.camera.getPos());
             Matrix modelViewMatrix = input.scene.camera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-            skyBoxShaderProgram.setUniform("ambientLight", skyBox.mesh.materials.get(0).ambientColor);
+            skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 
-            input.scene.skybox.getMesh().initToEndFullRender(0);
+            input.scene.skybox.meshes.get(0).initToEndFullRender(0);
         }
         skyBoxShaderProgram.unbind();
 

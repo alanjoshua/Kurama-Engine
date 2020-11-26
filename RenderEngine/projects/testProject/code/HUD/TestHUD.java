@@ -27,19 +27,19 @@ public class TestHUD extends HUD {
                 "HUD_texquad_mesh", null), "texQuad",
                 Arrays.asList(new String[]{DefaultRenderPipeline.hudShaderBlockID}));
 
-        for (int i = 0; i < texquad.mesh.vertAttributes.get(Mesh.TEXTURE).size(); i++) {
-            Vector v = texquad.mesh.vertAttributes.get(Mesh.TEXTURE).get(i);
+        for (int i = 0; i < texquad.meshes.get(0).vertAttributes.get(Mesh.TEXTURE).size(); i++) {
+            Vector v = texquad.meshes.get(0).vertAttributes.get(Mesh.TEXTURE).get(i);
             v = v.removeDimensionFromVec(2);
-            texquad.mesh.vertAttributes.get(Mesh.TEXTURE).set(i, v);
+            texquad.meshes.get(0).vertAttributes.get(Mesh.TEXTURE).set(i, v);
         }
 
-        for (int i = 0; i < texquad.mesh.vertAttributes.get(Mesh.POSITION).size(); i++) {
-            Vector v = texquad.mesh.vertAttributes.get(Mesh.POSITION).get(i);
-            texquad.mesh.vertAttributes.get(Mesh.POSITION).set(i, v);
+        for (int i = 0; i < texquad.meshes.get(0).vertAttributes.get(Mesh.POSITION).size(); i++) {
+            Vector v = texquad.meshes.get(0).vertAttributes.get(Mesh.POSITION).get(i);
+            texquad.meshes.get(0).vertAttributes.get(Mesh.POSITION).set(i, v);
         }
 
         texquad.setScale(300);
-        texquad.mesh.initOpenGLMeshData();
+        texquad.meshes.forEach(Mesh::initOpenGLMeshData);
         texquad.shouldCastShadow =false;
         texquad.shouldGreyScale = true;
         texquad.shouldLinearizeDepthInHUD = true;
@@ -47,8 +47,8 @@ public class TestHUD extends HUD {
         hudElements.add(texquad);
 
         demoText = new Text(game, "Kurama Engine -alpha 2.1", new FontTexture(FONT,CHARSET), "HUD_text");
-        demoText.mesh.meshIdentifier = "hud_text_mesh";
-        game.scene.setUniqueMeshID(demoText.mesh);
+        demoText.meshes.get(0).meshIdentifier = "hud_text_mesh";
+        game.scene.setUniqueMeshID(demoText.meshes.get(0));
 
         String temp = demoText.fontTexture.font.getAttributes().toString();
 //        System.out.println(temp);
@@ -56,7 +56,7 @@ public class TestHUD extends HUD {
 //        System.out.println(f.getFontName());
 //        Font f1 = new Font();
 
-        demoText.mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
+        demoText.meshes.get(0).materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
 
         demoText.shouldGreyScale = false;
         demoText.shouldLinearizeDepthInHUD = false;
