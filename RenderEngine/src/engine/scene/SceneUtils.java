@@ -701,8 +701,19 @@ public class SceneUtils {
 
                 if(line.equals("TEXTURE POSITIONS")) {
                     String line2;
+                    boolean isFirstLine = true;
 
                     while(!(line2 = reader.readLine()).equals("")) {
+
+                        if(isFirstLine && (line2.equals("ALL NULL"))) {
+                            for(int i = 0;i < pos.size();i++) {
+                                tex.add(null);
+                            }
+                            reader.readLine();
+                            break;
+                        }
+                        isFirstLine = false;
+
                         if(!line2.equals("null")) {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
@@ -720,8 +731,19 @@ public class SceneUtils {
 
                 if(line.equals("NORMAL POSITIONS")) {
                     String line2;
+                    boolean isFirstLine = true;
 
                     while(!(line2 = reader.readLine()).equals("")) {
+
+                        if(isFirstLine && (line2.equals("ALL NULL"))) {
+                            for(int i = 0;i < pos.size();i++) {
+                                normals.add(null);
+                            }
+                            reader.readLine();
+                            break;
+                        }
+                        isFirstLine = false;
+
                         if(!line2.equals("null")) {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
@@ -739,8 +761,19 @@ public class SceneUtils {
 
                 if(line.equals("COLORS")) {
                     String line2;
+                    boolean isFirstLine = true;
 
                     while(!(line2 = reader.readLine()).equals("")) {
+
+                        if(isFirstLine && (line2.equals("ALL NULL"))) {
+                            for(int i = 0;i < pos.size();i++) {
+                                colors.add(null);
+                            }
+                            reader.readLine();
+                            break;
+                        }
+                        isFirstLine = false;
+
                         if(!line2.equals("null")) {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
@@ -758,8 +791,19 @@ public class SceneUtils {
 
                 if(line.equals("TANGENTS")) {
                     String line2;
+                    boolean isFirstLine = true;
 
                     while(!(line2 = reader.readLine()).equals("")) {
+
+                        if(isFirstLine && (line2.equals("ALL NULL"))) {
+                            for(int i = 0;i < pos.size();i++) {
+                                tangents.add(null);
+                            }
+                            reader.readLine();
+                            break;
+                        }
+                        isFirstLine = false;
+
                         if(!line2.equals("null")) {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
@@ -777,8 +821,19 @@ public class SceneUtils {
 
                 if(line.equals("BI-TANGENTS")) {
                     String line2;
+                    boolean isFirstLine = true;
 
                     while(!(line2 = reader.readLine()).equals("")) {
+
+                        if(isFirstLine && (line2.equals("ALL NULL"))) {
+                            for(int i = 0;i < pos.size();i++) {
+                                bitangents.add(null);
+                            }
+                            reader.readLine();
+                            break;
+                        }
+                        isFirstLine = false;
+
                         if(!line2.equals("null")) {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
@@ -1174,68 +1229,139 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("TEXTURE POSITIONS\n");
-            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.TEXTURE)) {
-                if (val != null) {
-                    writer.write(val.toString());
-                }
-                else {
-                    writer.write("null");
-                }
-                writer.newLine();
-            }
-            writer.newLine();
 
-            writer.write("NORMAL POSITIONS\n");
-            for(engine.Math.Vector val: mesh.getAttributeList(Mesh.NORMAL)) {
-                if (val != null) {
-                    writer.write(val.toString());
-                }
-                else {
-                    writer.write("null");
-                }
-                writer.newLine();
+            boolean nullsOnly = false;
+            if(mesh.getAttributeList(Mesh.TEXTURE) == null) {
+                nullsOnly = true;
             }
-            writer.newLine();
-
-            writer.write("COLORS\n");
-            if(mesh.getAttributeList(Mesh.COLOR) != null) {
-                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.COLOR)) {
+            else {
+                nullsOnly = mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(x -> x==null);
+                if(mesh.meshIdentifier.equals("sun_mesh")) {
+                    System.err.println("only nulls: "+mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(x -> x==null));
+//                    for(engine.Math.Vector val : mesh.getAttributeList(Mesh.TEXTURE)) {
+//                        System.err.println(val);
+//                    }
+                }
+            }
+            if(nullsOnly) {  //To save space if all values are null
+                writer.write("ALL NULL\n");
+            }
+            else {
+                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.TEXTURE)) {
                     if (val != null) {
                         writer.write(val.toString());
                     } else {
                         writer.write("null");
                     }
                     writer.newLine();
+                }
+            }
+            writer.newLine();
+
+            writer.write("NORMAL POSITIONS\n");
+            nullsOnly = false;
+            if(mesh.getAttributeList(Mesh.NORMAL) == null) {
+                nullsOnly = true;
+            }
+            else {
+                nullsOnly = mesh.getAttributeList(Mesh.NORMAL).stream().allMatch(x -> x==null);
+            }
+
+            if(nullsOnly) {  //To save space if all values are null
+                writer.write("ALL NULL\n");
+            }
+            else {
+                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.NORMAL)) {
+                    if (val != null) {
+                        writer.write(val.toString());
+                    } else {
+                        writer.write("null");
+                    }
+                    writer.newLine();
+                }
+            }
+            writer.newLine();
+
+
+            writer.write("COLORS\n");
+            nullsOnly = false;
+            if(mesh.getAttributeList(Mesh.COLOR) == null) {
+                nullsOnly = true;
+            }
+            else {
+                nullsOnly = mesh.getAttributeList(Mesh.COLOR).stream().allMatch(x -> x==null);
+            }
+
+            if(nullsOnly) {  //To save space if all values are null
+                writer.write("ALL NULL\n");
+            }
+            else {
+                if (mesh.getAttributeList(Mesh.COLOR) != null) {
+                    for (engine.Math.Vector val : mesh.getAttributeList(Mesh.COLOR)) {
+                        if (val != null) {
+                            writer.write(val.toString());
+                        } else {
+                            writer.write("null");
+                        }
+                        writer.newLine();
+                    }
                 }
             }
 
             writer.newLine();
 
             writer.write("TANGENTS\n");
-            if(mesh.getAttributeList(Mesh.TANGENT) != null) {
-                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.TANGENT)) {
-                    if (val != null) {
-                        writer.write(val.toString());
-                    } else {
-                        writer.write("null");
+            nullsOnly = false;
+            if(mesh.getAttributeList(Mesh.TANGENT) == null) {
+                nullsOnly = true;
+            }
+            else {
+                nullsOnly = mesh.getAttributeList(Mesh.TANGENT).stream().allMatch(x -> x==null);
+            }
+
+            if(nullsOnly) {  //To save space if all values are null
+                writer.write("ALL NULL\n");
+            }
+            else {
+                if (mesh.getAttributeList(Mesh.TANGENT) != null) {
+                    for (engine.Math.Vector val : mesh.getAttributeList(Mesh.TANGENT)) {
+                        if (val != null) {
+                            writer.write(val.toString());
+                        } else {
+                            writer.write("null");
+                        }
+                        writer.newLine();
                     }
-                    writer.newLine();
                 }
             }
             writer.newLine();
 
             writer.write("BI-TANGENTS\n");
-            if(mesh.getAttributeList(Mesh.BITANGENT) != null) {
-                for (engine.Math.Vector val : mesh.getAttributeList(Mesh.BITANGENT)) {
-                    if (val != null) {
-                        writer.write(val.toString());
-                    } else {
-                        writer.write("null");
+            nullsOnly = false;
+            if(mesh.getAttributeList(Mesh.BITANGENT) == null) {
+                nullsOnly = true;
+            }
+            else {
+                nullsOnly = mesh.getAttributeList(Mesh.BITANGENT).stream().allMatch(x -> x==null);
+            }
+
+            if(nullsOnly) {  //To save space if all values are null
+                writer.write("ALL NULL\n");
+            }
+            else {
+                if (mesh.getAttributeList(Mesh.BITANGENT) != null) {
+                    for (engine.Math.Vector val : mesh.getAttributeList(Mesh.BITANGENT)) {
+                        if (val != null) {
+                            writer.write(val.toString());
+                        } else {
+                            writer.write("null");
+                        }
+                        writer.newLine();
                     }
-                    writer.newLine();
                 }
             }
             writer.newLine();
+
 
             writer.write("MATERIALS\n");
             for(engine.Math.Vector val: mesh.getAttributeList(Mesh.MATERIAL)) {

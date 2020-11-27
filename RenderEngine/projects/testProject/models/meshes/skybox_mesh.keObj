@@ -80,80 +80,10 @@ TEXTURE POSITIONS
 1.0 1.0 0.0
 
 NORMAL POSITIONS
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
+ALL NULL
 
 COLORS
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
-null
+ALL NULL
 
 TANGENTS
 1.0 0.0 -8.940697E-8

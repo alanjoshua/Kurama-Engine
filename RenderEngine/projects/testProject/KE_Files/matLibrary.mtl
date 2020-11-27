@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-27T18:17:26.519336100
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-27T20:01:07.577370400
 # Material Count: 16
 
 newmtl plantMesh|DEFAULT
@@ -48,7 +48,7 @@ ns 96.07843
 reflectance 1.0
 
 newmtl skybox_mesh|SkyBox
-ka 1.0 1.0 1.0 1.0
+ka 0.0 0.0 0.0 0.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
 ns 10.0
