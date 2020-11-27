@@ -201,10 +201,6 @@ public class Scene {
         }
     }
 
-    public void updateAllModels(ModelBehaviourTickInput params) {
-        modelID_model_map.values().forEach(m -> m.tick(params));
-    }
-
     public Collection<Model> getModels() {
         return modelID_model_map.values();
     }

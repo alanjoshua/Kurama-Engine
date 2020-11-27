@@ -11,6 +11,7 @@ import engine.Effects.Material;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.io.*;
@@ -71,6 +72,12 @@ public class MeshBuilder {
 					resMesh = dumbBake(resMesh, hints);
 					System.out.println("Finished dumb bake");
 				}
+			}
+
+			if(hints.shouldReverseWindingOrder) {
+				Logger.log("Reversing winding order...");
+				resMesh = reverseWindingOrder(resMesh, null);
+				Logger.log("Finished winding order of mesh");
 			}
 
 			if(hints.addRandomColor) {

@@ -18,6 +18,18 @@ public class Vector {
 		this.numberOfDimensions = data.length;
 	}
 
+	// Load Vector from string
+	public static Vector loadFromString(String string) {
+		String[] tokens = string.split(" ");
+		List<Float> val = new ArrayList<>();
+
+		for(int i = 0; i < tokens.length; i++) {
+			val.add(Float.parseFloat(tokens[i]));
+		}
+
+		return new Vector(val);
+	}
+
 	public Vector(List<Float> data) {
 		this.data = new float[data.size()];
 		for(int i = 0;i < data.size();i++) {

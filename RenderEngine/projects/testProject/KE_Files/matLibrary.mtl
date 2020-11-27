@@ -1,23 +1,5 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-11-26T23:53:48.666718900
+# Created by Kurama Engine ver alpha-2.0 on 2020-11-27T18:17:26.519336100
 # Material Count: 16
-
-newmtl apricot|DEFAULT
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-
-newmtl apricot|Apricot_02_material
-ka 0.588 0.588 0.598 1.0
-kd 0.6275 0.6275 0.6275 1.0
-ks 0.0 0.0 0.0 1.0
-ns 70.0
-reflectance 1.0
-map_ka Apricot_02_diffuse.png
-map_kd Apricot_02_diffuse.png
-map_ks Apricot_02_specular.png
-map_bump Apricot_02_normal.png
 
 newmtl plantMesh|DEFAULT
 ka 1.0 1.0 1.0 1.0
@@ -50,6 +32,20 @@ map_ka crystalTexture.jpg
 map_kd crystalTexture.jpg
 map_ks crystalSpecularMap.jpg
 map_bump crystalNormalMap.jpg
+
+newmtl sun_mesh|DEFAULT
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+
+newmtl sun_mesh|Material
+ka 1.0 1.0 1.0 1.0
+kd 0.64 0.64 0.64 1.0
+ks 0.5 0.5 0.5 1.0
+ns 96.07843
+reflectance 1.0
 
 newmtl skybox_mesh|SkyBox
 ka 1.0 1.0 1.0 1.0

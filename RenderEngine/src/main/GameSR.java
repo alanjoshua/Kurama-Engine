@@ -259,8 +259,7 @@ public class GameSR extends Game implements Runnable {
 		else
 			display.enableCursor();
 
-		ModelBehaviourTickInput params = new ModelBehaviourTickInput();
-		params.timeDelta = timeDelta;
+		ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
 
 		models.forEach(m -> m.tick(params));
 		modelsOnlyOutline.forEach(m -> m.tick(params));

@@ -125,13 +125,14 @@ void setupColors(Material material, vec2 textCoord) {
 float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDir, int isSpotLight) {
 
      vec3 projCoords = position.xyz;
-     float bias = 0.001;   //default bias for spot lights
+     float bias = 0;
      projCoords = projCoords * 0.5 + 0.5;  //Transform from screen coordinates to texture coordinates
      float shadowFactor = 0;
 
-    bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+    bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0001);
 
     vec2 inc = 1.0 / textureSize(shadowMap, 0);
+
     for(int row = -1; row <= 1; row++) {
         for(int col = -1; col <= 1; col++) {
             float textDepth = texture(shadowMap, projCoords.xy + vec2(row, col) * inc).r;
@@ -140,14 +141,14 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
     }
     shadowFactor /= 9.0;
 
-    shadowFactor = 0;
-    float textDepth = texture(shadowMap, projCoords.xy).r;
-    shadowFactor = projCoords.z - bias > textDepth ? 1.0 : 0;
+//    shadowFactor = 0;
+//    float textDepth = texture(shadowMap, projCoords.xy).r;
+//    shadowFactor = projCoords.z - bias > textDepth ? 1.0 : 0;
 
     if(projCoords.z > 1.0) {
         shadowFactor = 0;
     }
-    return (shadowFactor);
+    return shadowFactor;
 }
 
 vec4 calculateLight(vec3 lightColor, float intensity, vec3 pos, vec3 lightDir, vec3 normal) {

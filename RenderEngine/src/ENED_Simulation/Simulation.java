@@ -520,8 +520,7 @@ public class Simulation extends Game {
         }
 
         if(isGameRunning) {
-            ModelBehaviourTickInput params = new ModelBehaviourTickInput();
-            params.timeDelta = timeDelta;
+            ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
 
             scene.getModels()
                     .stream()

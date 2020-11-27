@@ -419,8 +419,11 @@ public class SceneUtils {
 //                            Logger.log(line2);
 //                            Logger.log(tokens2[0]);
                             switch (tokens2[0]) {
+                                case "lightPosScale":
+                                    lightPosScale = Float.parseFloat(tokens2[1]);
                                 case "ID":
                                     id = tokens2[1];
+                                    Logger.log("Loading model ID: "+id);
                                     break;
                                 case "type":
                                     type = tokens2[1];
@@ -475,7 +478,7 @@ public class SceneUtils {
                                             Logger.logError("Was not able to load Model behaviour class. Returning  null...");
                                             return null;
                                         }
-                                        Logger.log("Successfully loaded model behaviour");
+                                        Logger.log("Successfully loaded model behaviour: "+behaviour.getClass().getSimpleName()+" for model ID: "+id);
                                     }
                                     break;
 
@@ -571,6 +574,7 @@ public class SceneUtils {
 
                             l.setPos(pos);
                             l.setScale(scale);
+                            Logger.logError("Directional light scale: "+scale.toString());
                             l.shouldRender = shouldRender;
                             l.shouldCastShadow = shouldCastShadow;
                             l.lightPosScale = lightPosScale;
@@ -708,6 +712,9 @@ public class SceneUtils {
                             }
                             tex.add(new Vector(val));
                         }
+                        else {
+                            tex.add(null);
+                        }
                     }
                 }
 
@@ -723,6 +730,9 @@ public class SceneUtils {
                                 val.add(Float.parseFloat(tokens2[i]));
                             }
                             normals.add(new Vector(val));
+                        }
+                        else {
+                            normals.add(null);
                         }
                     }
                 }
@@ -740,6 +750,9 @@ public class SceneUtils {
                             }
                             colors.add(new Vector(val));
                         }
+                        else {
+                            colors.add(null);
+                        }
                     }
                 }
 
@@ -756,6 +769,9 @@ public class SceneUtils {
                             }
                             tangents.add(new Vector(val));
                         }
+                        else {
+                            tangents.add(null);
+                        }
                     }
                 }
 
@@ -771,6 +787,9 @@ public class SceneUtils {
                                 val.add(Float.parseFloat(tokens2[i]));
                             }
                             bitangents.add(new Vector(val));
+                        }
+                        else {
+                            bitangents.add(null);
                         }
                     }
                 }

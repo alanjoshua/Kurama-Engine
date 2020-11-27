@@ -14,6 +14,7 @@ public class MeshBuilderHints {
     public boolean convertToLines = false;
     public boolean shouldInvertNormals = false;
     public int shouldRotate = 180;
+    public boolean shouldReverseWindingOrder = false;
 
     public String toString() {
         return "shouldSmartBakeVertexAttributes:" + shouldSmartBakeVertexAttributes +

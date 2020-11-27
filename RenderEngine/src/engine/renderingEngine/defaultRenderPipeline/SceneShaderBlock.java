@@ -49,7 +49,10 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     @Override
     public void render(RenderBlockInput input) {
+//        glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
+//        glCullFace(GL_BACK);
+
         glViewport(0,0,input.game.getDisplay().getWidth(),input.game.getDisplay().getHeight());
         RenderingEngineGL.clear();
         renderScene(input.scene,shadowPackage);
@@ -231,8 +234,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     public ShadowDepthRenderPackage renderDepthMap(Scene scene) {
 
-        glCullFace(GL_BACK);
-
         ShaderProgram depthShaderProgram = shadow_shader;
         depthShaderProgram.bind();
         List<Matrix> worldToDirectionalLights = new ArrayList<>();
@@ -299,7 +300,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         }
 
         depthShaderProgram.unbind();
-        glCullFace(GL_BACK);
         return new ShadowDepthRenderPackage(worldToDirectionalLights,worldToSpotLights);
     }
 

@@ -72,9 +72,8 @@ public class KuramaEngineEditor extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-            ModelBehaviourTickInput params = new ModelBehaviourTickInput();
-            params.timeDelta = timeDelta;
-            scene.updateAllModels(params);
+            ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
+            scene.modelID_model_map.values().forEach(m -> m.tick(params));
 //        scene.models.forEach(m -> m.tick(params));
         }
 
