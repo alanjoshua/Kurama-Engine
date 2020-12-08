@@ -31,6 +31,3 @@
 
 ## Test Program
 * Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases  (Very outdated)
-
-
-
