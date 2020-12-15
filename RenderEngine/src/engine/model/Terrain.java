@@ -5,7 +5,7 @@ import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
 import engine.Math.Matrix;
 import engine.Math.Vector;
-import engine.Terrain.TerrainUtils;
+import engine.geometry.TerrainUtils;
 import engine.game.Game;
 
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class Terrain extends Model {
         max2.setDataElement(1,0);
         max2 = max2.sub(min2);
 
-        reqPos = worldToModel.matMul(reqPos.addDimensionToVec(1)).getColumn(0).removeDimensionFromVec(3);
+        reqPos = worldToModel.matMul(reqPos.append(1)).getColumn(0).removeDimensionFromVec(3);
         reqPos.setDataElement(1,0);
         reqPos = reqPos.sub(min2);
 
@@ -119,13 +119,13 @@ public class Terrain extends Model {
                     Face t2 = this.meshes.get(0).faces.get(faceCoord+1);
                     List<Vector> t1Coords = new ArrayList<>();
                     for (Vertex v : t1.vertices) {
-                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
+                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).append(1);
                         Vector trans = modelToWorld.matMul(currVec).getColumn(0).removeDimensionFromVec(3);
                         t1Coords.add(trans);
                     }
                     List<Vector> t2Coords = new ArrayList<>();
                     for (Vertex v : t2.vertices) {
-                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).addDimensionToVec(1);
+                        Vector currVec = this.meshes.get(0).getVertices().get(v.getAttribute(Vertex.POSITION)).append(1);
                         Vector trans = modelToWorld.matMul(currVec).getColumn(0).removeDimensionFromVec(3);
                         t2Coords.add(trans);
                     }

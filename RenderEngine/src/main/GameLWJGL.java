@@ -2,32 +2,33 @@ package main;
 
 import HUD.TestHUD;
 import ModelBehaviour.AttachToPlayer;
-import ModelBehaviour.SunRevolve;
-import engine.Mesh.Mesh;
-import engine.DataStructure.Texture;
 import engine.Effects.Fog;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.Terrain.TerrainUtils;
+import engine.Mesh.Mesh;
 import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
+import engine.geometry.MD5.MD5Model;
+import engine.geometry.MD5.MD5Utils;
+import engine.geometry.MeshBuilderHints;
+import engine.geometry.SceneUtils;
+import engine.geometry.TerrainUtils;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.Mesh.MeshBuilderHints;
+import engine.misc_structures.Texture;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
-import engine.scene.SceneUtils;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -89,8 +90,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-//        initScene();
-        scene = SceneUtils.loadScene(this, "projects/testProject");
+        initScene();
+//        scene = SceneUtils.loadScene(this, "projects/testProject");
+
         initPauseScreen();
 
         renderingEngine.renderPipeline = scene.renderPipeline;
@@ -120,25 +122,24 @@ public class GameLWJGL extends Game implements Runnable {
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
-        scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
+        scene.ambientLight = new Vector(1f,1f,1f);
 
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
                 (Mesh) null, null, directionalLightOrthoProjection, "Sun");
 
-        directionalLight.setPos(new Vector(0,30,0));
+        directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
         directionalLight.setScale(100);
-        directionalLight.setBehaviour(new SunRevolve());
+//        directionalLight.setBehaviour(new SunRevolve());
         directionalLight.meshes.add(scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints));
-        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+//        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
         scene.fog = Fog.NOFOG;
-        shouldDayNight = false;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Vector lightPos = new Vector(new float[]{0,0,10});
@@ -216,8 +217,8 @@ public class GameLWJGL extends Game implements Runnable {
         skybox.setScale(skyBoxScale);
 
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
-        skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1});
-        skyMat.ambientColor = scene.ambientLight;
+        skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1f});
+//        skyMat.ambientColor = scene.ambientLight;
         skybox.meshes.get(0).materials.set(0,skyMat);
         scene.skybox = skybox;
 
@@ -225,20 +226,20 @@ public class GameLWJGL extends Game implements Runnable {
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
-        float[][] heightMap = TerrainUtils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
+        float[][] heightMap = engine.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
 
-        for(int i = 0;i < 20;i++) {
-            for(int y = 0;y < 20;y++) {
-                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
-                Model cube = new Model(this,cubeMesh , "cube");
-                cube.setScale(boxScale);
-                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-//                cube.behaviour = new rotate();
-                cube.meshes.get(0).materials.set(0,cubeMat);
-                scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-            }
-        }
+//        for(int i = 0;i < 20;i++) {
+//            for(int y = 0;y < 20;y++) {
+//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
+//                Model cube = new Model(this,cubeMesh , "cube");
+//                cube.setScale(boxScale);
+//                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+////                cube.behaviour = new rotate();
+//                cube.meshes.get(0).materials.set(0,cubeMat);
+//                scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+//            }
+//        }
 
         Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
                 "plantMesh", hints), "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -255,6 +256,15 @@ public class GameLWJGL extends Game implements Runnable {
         ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
         ter.reflectance = 1f;
         terrain.meshes.get(0).materials.set(0,ter);
+
+
+        MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
+        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
+        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+        Model monster = scene.createModel(monsterMeshes, "monster",
+                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        monster.setScale(0.1f);
+        monster.setPos(new Vector(0, 30, 0));
 
         terrain.meshes.get(0).initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);

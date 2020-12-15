@@ -1,11 +1,8 @@
 package engine.Effects;
 
-import engine.DataStructure.Texture;
+import engine.misc_structures.Texture;
 import engine.Math.Vector;
-import engine.model.Terrain;
 import engine.utils.Utils;
-
-import java.util.UUID;
 
 // Inspired by LWJGL book
 

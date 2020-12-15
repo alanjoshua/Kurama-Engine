@@ -7,10 +7,10 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
 import engine.game.Game;
-import engine.Mesh.MeshBuilder;
+import engine.geometry.Utils;
+import engine.geometry.MeshBuilder;
 import engine.model.Model;
 import engine.scene.Scene;
-import engine.utils.Utils;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -62,13 +62,13 @@ public class RenderingEngineSR extends RenderingEngine {
 
 //                    Assumes model only has one mesh
                     Vector[] temp = (m.getOrientation()
-                            .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+                            .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().append(1)))));
 
                     for (int i = 0; i < temp.length; i++) {
                         temp[i] = temp[i].add(m.getPos());
                     }
 
-                    m.setTransformedVertices(new Matrix(Vector.addDimensionToVec(temp, 1)));
+                    m.setTransformedVertices(new Matrix(Vector.append(temp, 1)));
                     m.setChanged(false);
 
                 }
@@ -80,7 +80,7 @@ public class RenderingEngineSR extends RenderingEngine {
                 for (int i = 0; i < camSpaceV.length; i++) {
                     camSpaceV[i] = camSpaceV[i].sub(pos_);
                 }
-                camSpace = new Matrix(Vector.addDimensionToVec(camSpaceV, 1));
+                camSpace = new Matrix(Vector.append(camSpaceV, 1));
             } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
                 Matrix transformedV = null;
                 if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
@@ -226,7 +226,7 @@ public class RenderingEngineSR extends RenderingEngine {
  						v0 = projectedVectors.get(currFace.getVertex(0).getAttribute(Vertex.POSITION));
  						v1 = projectedVectors.get(currFace.getVertex(1).getAttribute(Vertex.POSITION));
  						v2 = projectedVectors.get(currFace.getVertex(2).getAttribute(Vertex.POSITION));
- 						area = Utils.edge(v0, v1, v2);
+ 						area = engine.geometry.Utils.edge(v0, v1, v2);
 
  						for (int i = yMin; i <= yMax; i++) {
  							for (int j = xMin; j <= xMax; j++) {
@@ -236,9 +236,9 @@ public class RenderingEngineSR extends RenderingEngine {
 								float[] lambda = new float[currFace.vertices.size()];
 
 //								Calculating lambda values for a triangle
-								lambda[0] = Utils.edge(v1, v2, p) / area;
-								lambda[1] = Utils.edge(v2, v0, p) / area;
-								lambda[2] = Utils.edge(v0, v1, p) / area;
+								lambda[0] = engine.geometry.Utils.edge(v1, v2, p) / area;
+								lambda[1] = engine.geometry.Utils.edge(v2, v0, p) / area;
+								lambda[2] = engine.geometry.Utils.edge(v0, v1, p) / area;
 
 //								Check whether point is inside polygon
 								boolean isOverlap = true;
@@ -317,13 +317,13 @@ public class RenderingEngineSR extends RenderingEngine {
 
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though
                 Vector[] temp = (m.getOrientation()
-                        .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().addDimensionToVec(1)))));
+                        .rotatePoints((new Matrix(m.meshes.get(0).getVertices()).columnMul(m.getScale().append(1)))));
 
                 for (int i = 0; i < temp.length; i++) {
                     temp[i] = temp[i].add(m.getPos());
                 }
 
-                m.setTransformedVertices(new Matrix(Vector.addDimensionToVec(temp, 1)));
+                m.setTransformedVertices(new Matrix(Vector.append(temp, 1)));
                 m.setChanged(false);
 
             }
@@ -335,7 +335,7 @@ public class RenderingEngineSR extends RenderingEngine {
             for (int i = 0; i < camSpaceV.length; i++) {
                 camSpaceV[i] = camSpaceV[i].sub(pos_);
             }
-            camSpace = new Matrix(Vector.addDimensionToVec(camSpaceV, 1));
+            camSpace = new Matrix(Vector.append(camSpaceV, 1));
         } else if (renderMultiplicationModeDeprecated == RenderMultiplicationMode_Deprecated.Matrix) {
             Matrix transformedV = null;
             if (m.isChanged()) { // Optimization to not calculate world coords repeatedly if model has not changed its position,rotation or scaling. This takes up more memory though

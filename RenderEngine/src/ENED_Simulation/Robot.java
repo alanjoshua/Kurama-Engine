@@ -1,6 +1,6 @@
 package ENED_Simulation;
 
-import engine.DataStructure.GridNode;
+import engine.misc_structures.GridNode;
 import engine.Mesh.Face;
 import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
@@ -9,7 +9,7 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
-import engine.Mesh.MeshBuilder;
+import engine.geometry.MeshBuilder;
 import engine.model.ModelBehaviourTickInput;
 import engine.model.Movable;
 
@@ -242,10 +242,10 @@ public class Robot extends Movable {
         Vector directionFromCentre = getDirectionToFrontFromCentre(boxBeingPathFounded);
 
         Matrix robotMatrix = this.getOrientation().getRotationMatrix();
-        Matrix robotInBoxView = boxBeingPathFounded.getWorldToObject().matMul(pos.addDimensionToVec(1));
+        Matrix robotInBoxView = boxBeingPathFounded.getWorldToObject().matMul(pos.append(1));
 
-        float robotZ = robotInBoxView.getColumn(0).add(directionFromCentre.addDimensionToVec(1)).get(2);  // z position of robot from box's perspective
-        float robotX = robotInBoxView.getColumn(0).sub(directionFromCentre.addDimensionToVec(1)).get(0);
+        float robotZ = robotInBoxView.getColumn(0).add(directionFromCentre.append(1)).get(2);  // z position of robot from box's perspective
+        float robotX = robotInBoxView.getColumn(0).sub(directionFromCentre.append(1)).get(0);
         float dist = new Vector(new float[]{robotX,robotZ}).getNorm();
 
         if (dist <= scanRadius && robotZ >= 0  && robotX <= boxBeingPathFounded.scanXProximity && robotX >= -boxBeingPathFounded.scanXProximity) {

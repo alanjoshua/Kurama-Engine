@@ -43,7 +43,7 @@ public class Box extends Model {
             Vector temp = new Vector(new float[]{1,1,1});
             float travelDir = cross.dot(temp);
 
-            Matrix robotInBoxView = this.getWorldToObject().matMul(robot.getPos().addDimensionToVec(1));
+            Matrix robotInBoxView = this.getWorldToObject().matMul(robot.getPos().append(1));
             float robotZ = robotInBoxView.getColumn(0).get(2);  // z position of robot from box's perspective
 
             float verticalDirection = boxMatrix.getColumn(2).dot(robot.getOrientation().getRotationMatrix().getColumn(0));

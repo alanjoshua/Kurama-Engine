@@ -4,7 +4,7 @@ import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.game.Game;
-import engine.utils.Utils;
+import engine.geometry.Utils;
 import engine.model.Model;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
 
@@ -133,8 +133,8 @@ public class Camera {
 			else if(game.getRenderingEngine().getProjectionMode() == ProjectionMode.ORTHO) {
 				
 				Vector[] bounds = Utils.getWorldBoundingBox(new ArrayList<>(game.scene.getModels()));
-				Vector minCam = (getWorldToCam().matMul(bounds[0].addDimensionToVec(1))).toVector();
-				Vector maxCam = (getWorldToCam().matMul(bounds[1].addDimensionToVec(1))).toVector();
+				Vector minCam = (getWorldToCam().matMul(bounds[0].append(1))).toVector();
+				Vector maxCam = (getWorldToCam().matMul(bounds[1].append(1))).toVector();
 //				maxCam.display();
 				float maxX = Math.max(Math.abs(minCam.get(0)), Math.abs(maxCam.get(0)));
 				float maxY = Math.max(Math.abs(minCam.get(1)), Math.abs(maxCam.get(1)));

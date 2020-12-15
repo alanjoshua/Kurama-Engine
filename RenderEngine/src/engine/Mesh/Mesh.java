@@ -2,6 +2,7 @@ package engine.Mesh;
 
 import engine.Effects.Material;
 import engine.Math.Vector;
+import engine.geometry.MeshBuilderHints;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;

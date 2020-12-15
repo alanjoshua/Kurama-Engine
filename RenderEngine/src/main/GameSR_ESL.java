@@ -1,8 +1,8 @@
 package main;
 
 import engine.Math.Vector;
-import engine.Mesh.MeshBuilder;
-import engine.Mesh.MeshBuilderHints;
+import engine.geometry.MeshBuilder;
+import engine.geometry.MeshBuilderHints;
 import engine.model.Model;
 import engine.renderingEngine.RenderingEngine;
 

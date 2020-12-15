@@ -114,18 +114,24 @@ public class Quaternion {
 	}
 
 	public Vector rotatePoint(Vector p) {
-//		New Method
-		Vector w = this.getPureVec();
-		float w2 = (float)Math.pow(w.getNorm(),2);
-
-		return p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
-
-//		Old method
-//		Quaternion q_ = getInverse();
-//		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
-//		res = this.multiply(res);
-//		return res.getPureVec();
+		var p_ = new Quaternion(new Vector(0, p.get(0), p.get(1), p.get(2)));
+		var res = this.multiply(p_).multiply(this.getInverse());
+		return res.getPureVec();
 	}
+
+//	public Vector rotatePoint(Vector p) {
+////		New Method
+//		Vector w = this.getPureVec();
+//		float w2 = (float)Math.pow(w.getNorm(),2);
+//
+//		return p.scalarMul((float)Math.pow(this.coordinate.get(0),2) - w2).add(w.scalarMul(2).scalarMul(p.dot(w))).add((w.cross(p)).scalarMul(2f * coordinate.get(0)));
+//
+////		Old method
+////		Quaternion q_ = getInverse();
+////		Quaternion res = (new Quaternion(new Vector(new float[] {0,v.get(0),v.get(1),v.get(2)}))).multiply(q_);
+////		res = this.multiply(res);
+////		return res.getPureVec();
+//	}
 
 	public Vector[] rotatePoints(Vector[] vList) {
 

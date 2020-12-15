@@ -1,22 +1,18 @@
 package engine.game;
 
-import engine.DataStructure.GridNode;
+import engine.misc_structures.GridNode;
 import engine.scene.Scene;
-import engine.model.HUD;
 import engine.Math.Vector;
 import engine.display.Display;
 import engine.inputs.Input;
-import engine.model.Model;
 import engine.camera.Camera;
 import engine.renderingEngine.RenderingEngine;
-import engine.utils.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 
 public abstract class Game implements Runnable {
 

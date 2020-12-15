@@ -384,8 +384,8 @@ public class Vector {
 		}
 
 		if(u.getNumberOfDimensions() == 2) {
-			u = u.addDimensionToVec(0);
-			v = v.addDimensionToVec(0);
+			u = u.append(0);
+			v = v.append(0);
 		}
 
 		float[] res = new float[3];
@@ -436,8 +436,8 @@ public class Vector {
 		}
 
 		if(u.getNumberOfDimensions() == 2) {
-			u = u.addDimensionToVec(0);
-			v = v.addDimensionToVec(1);
+			u = u.append(0);
+			v = v.append(1);
 		}
 
 		float[] res = new float[3];
@@ -499,7 +499,7 @@ public class Vector {
 		}
 	}
 
-	public static Vector[] addDimensionToVec(Vector[] v, float val) {
+	public static Vector[] append(Vector[] v, float val) {
 
 		Vector[] resData = new Vector[v.length];
 
@@ -515,7 +515,7 @@ public class Vector {
 		return resData;
 	}
 	
-	public static Matrix addDimensionToVec(List<Vector> v, float val) {
+	public static Matrix append(List<Vector> v, float val) {
 
 		Vector[] resData = new Vector[v.size()];
 
@@ -531,7 +531,7 @@ public class Vector {
 		return new Matrix(resData);
 	}
 
-	public Vector addDimensionToVec(float val) {
+	public Vector append(float val) {
 
 		float[] tempDat = new float[this.getNumberOfDimensions() + 1];
 		

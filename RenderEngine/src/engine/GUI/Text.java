@@ -7,7 +7,7 @@ import engine.Effects.Material;
 import engine.Math.Vector;
 import engine.font.FontTexture;
 import engine.game.Game;
-import engine.Mesh.MeshBuilder;
+import engine.geometry.MeshBuilder;
 import engine.model.Model;
 import engine.utils.Utils;
 

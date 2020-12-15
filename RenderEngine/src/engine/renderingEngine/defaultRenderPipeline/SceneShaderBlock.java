@@ -5,7 +5,7 @@ import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.lighting.DirectionalLight;
 import engine.lighting.SpotLight;
-import engine.Mesh.MeshBuilder;
+import engine.geometry.MeshBuilder;
 import engine.model.Model;
 import engine.renderingEngine.LightDataPackage;
 import engine.renderingEngine.RenderBlockInput;
