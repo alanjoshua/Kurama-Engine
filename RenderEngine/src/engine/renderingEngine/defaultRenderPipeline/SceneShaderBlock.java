@@ -1,11 +1,11 @@
 package engine.renderingEngine.defaultRenderPipeline;
 
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.lighting.DirectionalLight;
 import engine.lighting.SpotLight;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.Model;
 import engine.renderingEngine.LightDataPackage;
 import engine.renderingEngine.RenderBlockInput;

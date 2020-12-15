@@ -3,6 +3,8 @@ package main;
 import engine.GUI.Button;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.Mesh.MeshBuilder;
+import engine.Mesh.MeshBuilderHints;
 import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplaySR;
@@ -129,11 +131,11 @@ public class GameSR extends Game implements Runnable {
 
 		MeshBuilderHints hints = new MeshBuilderHints();
 
-		Model deer = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/deer.obj",hints),"deer");
+		Model deer = new Model(this, MeshBuilder.buildMesh("/Resources/deer.obj",hints),"deer");
 		deer.setPos(new Vector(new float[] {-20,7,-20}));
 		deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
 
-		Model mill = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/low-poly-mill.obj",hints),"mill");
+		Model mill = new Model(this, MeshBuilder.buildMesh("/Resources/low-poly-mill.obj",hints),"mill");
 		mill.setPos(new Vector(new float[] {10,5,-10}));
 		mill.setScale(new Vector(new float[] { 0.05f, 0.05f, 0.05f }));
 //		mill.triangulate();
@@ -141,7 +143,7 @@ public class GameSR extends Game implements Runnable {
 		Model grid = new Model(this, MeshBuilder.buildGridDeprecated(100, 100),"grid");
 		grid.setPos(new Vector(new float[] {0,0,0}));
 
-		Model pot = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/TeapotHex3.obj",hints),"pot");
+		Model pot = new Model(this, MeshBuilder.buildMesh("/Resources/TeapotHex3.obj",hints),"pot");
 		pot.setPos(new Vector(new float[]{0,10,0}));
 		pot.setScale(new Vector(new float[]{0.2f,0.2f,0.2f}));
 //		pot.setMiniBehaviourObj(tempRot);

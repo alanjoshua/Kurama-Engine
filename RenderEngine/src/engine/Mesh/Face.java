@@ -1,4 +1,4 @@
-package engine.DataStructure.Mesh;
+package engine.Mesh;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,8 @@
 package engine.scene;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.DataStructure.Texture;
 import engine.Effects.Fog;
 import engine.Effects.Material;
@@ -18,7 +18,7 @@ import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.HUD;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.ModelBehaviour;
 import engine.model.Model;
 import engine.renderingEngine.RenderPipeline;
@@ -38,17 +38,10 @@ public class SceneUtils {
         Logger.log("Retrieving rendering pipeline...");
         try {
             Class renderPipeline_class = Class.forName(renderPipelineClass_name);
-            Constructor  constructor = renderPipeline_class.getConstructor(new Class[]{Game.class});
-            RenderPipeline renderPipeline = (RenderPipeline) constructor.newInstance(new Object[]{game});
-            return renderPipeline;
+            Constructor  constructor = renderPipeline_class.getConstructor(Game.class);
+            return (RenderPipeline) constructor.newInstance(new Object[]{game});
 
-        }  catch (ClassNotFoundException | NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        }  catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             e.printStackTrace();
         }
         return null;
@@ -58,37 +51,23 @@ public class SceneUtils {
         Logger.log("Retrieving HUD...");
         try {
             Class hud_class = Class.forName(HUD_class_name);
-            Constructor  constructor = hud_class.getConstructor(new Class[]{Game.class});
-            HUD hud = (HUD) constructor.newInstance(new Object[]{game});
-            return hud;
+            Constructor  constructor = hud_class.getConstructor(Game.class);
+            return (HUD) constructor.newInstance(new Object[]{game});
 
-        }  catch (ClassNotFoundException | NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        }  catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static ModelBehaviour getMiniBehaviour(String behaviour_classname, Game game) {
+    public static ModelBehaviour getMiniBehaviour(String behaviour_classname) {
         Logger.log("Retrieving model behaviour...");
         try {
             Class behaviour_class = Class.forName(behaviour_classname);
             Constructor  constructor = behaviour_class.getConstructor();
-            ModelBehaviour beh = (ModelBehaviour) constructor.newInstance();
-            return beh;
+            return (ModelBehaviour) constructor.newInstance();
 
-        }  catch (ClassNotFoundException | NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        }  catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
         return null;
@@ -128,7 +107,7 @@ public class SceneUtils {
         String skyBoxID = null;
         Vector ambientColor = new Vector(new float[]{1,1,1,1});
 
-        try(BufferedReader reader = new BufferedReader(new FileReader(new File(directory+"/KE_Files/master.ke")))) {
+        try(BufferedReader reader = new BufferedReader(new FileReader(directory+"/KE_Files/master.ke"))) {
             String line;
             while((line=reader.readLine()) != null) {
 
@@ -159,8 +138,8 @@ public class SceneUtils {
                     List<Float> val = new ArrayList<>();
                     String[] token3 = tokens[1].split(" ");
 
-                    for(int i = 0; i < token3.length; i++) {
-                        val.add(Float.parseFloat(token3[i]));
+                    for (String s : token3) {
+                        val.add(Float.parseFloat(s));
                     }
                     ambientColor = new Vector(val);
                 }
@@ -231,7 +210,7 @@ public class SceneUtils {
                         }
                         if(!location.equals("null")) {
                             try {
-                                Mesh newMesh = loadKEOBJ(directory + "/models/meshes/" + location, id, materials_map);
+                                Mesh newMesh = loadKEOBJ(directory + "/models/meshes/" + location, materials_map);
                                 if(newMesh == null) {
                                     Logger.logError("Mesh ID:"+id+" returned as null");
                                 }
@@ -265,8 +244,8 @@ public class SceneUtils {
                                 List<Float> val = new ArrayList<>();
                                 String[] token3 = tokens2[1].split(" ");
 
-                                for(int i = 0; i < token3.length; i++) {
-                                    val.add(Float.parseFloat(token3[i]));
+                                for (String s : token3) {
+                                    val.add(Float.parseFloat(s));
                                 }
                                 color = new Vector(val);
                                 break;
@@ -307,8 +286,8 @@ public class SceneUtils {
                                 List<Float> val = new ArrayList<>();
                                 String[] token3 = tokens2[1].split(" ");
 
-                                for(int i = 0; i < token3.length; i++) {
-                                    val.add(Float.parseFloat(token3[i]));
+                                for (String s : token3) {
+                                    val.add(Float.parseFloat(s));
                                 }
                                 pos = new Vector(val);
                                 break;
@@ -317,8 +296,8 @@ public class SceneUtils {
                                 val = new ArrayList<>();
                                 token3 = tokens2[1].split(" ");
 
-                                for(int i = 0; i < token3.length; i++) {
-                                    val.add(Float.parseFloat(token3[i]));
+                                for (String s : token3) {
+                                    val.add(Float.parseFloat(s));
                                 }
                                 orientation = new Quaternion(new Vector(val));
                                 break;
@@ -357,8 +336,8 @@ public class SceneUtils {
                                     List<Float> val = new ArrayList<>();
                                     String[] token3 = tokens2[1].split(" ");
 
-                                    for(int i = 0; i < token3.length; i++) {
-                                        val.add(Float.parseFloat(token3[i]));
+                                    for (String s : token3) {
+                                        val.add(Float.parseFloat(s));
                                     }
                                     color = new Vector(val);
                                     break;
@@ -367,8 +346,8 @@ public class SceneUtils {
                                     val = new ArrayList<>();
                                     token3 = tokens2[1].split(" ");
 
-                                    for(int i = 0; i < token3.length; i++) {
-                                        val.add(Float.parseFloat(token3[i]));
+                                    for (String s : token3) {
+                                        val.add(Float.parseFloat(s));
                                     }
                                     pos = new Vector(val);
                                     break;
@@ -385,7 +364,6 @@ public class SceneUtils {
                     if (line.equalsIgnoreCase("start new model")) {
                         String line2;
                         String id = null;
-                        String location = null;
                         List<String> meshIDs = new ArrayList<>();
                         String type = null;
                         Vector scale = null;
@@ -416,8 +394,7 @@ public class SceneUtils {
 
                         while(!(line2 = reader.readLine()).equals("")) {
                             String[] tokens2 = line2.split(":");
-//                            Logger.log(line2);
-//                            Logger.log(tokens2[0]);
+
                             switch (tokens2[0]) {
                                 case "lightPosScale":
                                     lightPosScale = Float.parseFloat(tokens2[1]);
@@ -473,7 +450,7 @@ public class SceneUtils {
 
                                 case "modelBehaviour":
                                     if(!tokens2[1].equals("null")) {
-                                        behaviour = getMiniBehaviour(tokens2[1], game);
+                                        behaviour = getMiniBehaviour(tokens2[1]);
                                         if (behaviour == null) {
                                             Logger.logError("Was not able to load Model behaviour class. Returning  null...");
                                             return null;
@@ -485,8 +462,8 @@ public class SceneUtils {
                                 case "shader_ID":
                                     String withoutBrackets = tokens2[1].substring(1, tokens2[1].length()-1);
                                     String[] shaders = withoutBrackets.split(",");
-                                    for(int i = 0; i < shaders.length; i++) {
-                                        String shader_rev = shaders[i].strip();
+                                    for (String shader : shaders) {
+                                        String shader_rev = shader.strip();
                                         shaderIds.add(shader_rev);
                                     }
                                     break;
@@ -495,8 +472,8 @@ public class SceneUtils {
                                     List<Float> val = new ArrayList<>();
                                     String[] token3 = tokens2[1].split(" ");
 
-                                    for(int i = 0; i < token3.length; i++) {
-                                        val.add(Float.parseFloat(token3[i]));
+                                    for (String value : token3) {
+                                        val.add(Float.parseFloat(value));
                                     }
                                     scale = new Vector(val);
                                     break;
@@ -525,8 +502,8 @@ public class SceneUtils {
                                     val = new ArrayList<>();
                                     token3 = tokens2[1].split(" ");
 
-                                    for(int i = 0; i < token3.length; i++) {
-                                        val.add(Float.parseFloat(token3[i]));
+                                    for (String s : token3) {
+                                        val.add(Float.parseFloat(s));
                                     }
                                     orientation = new Quaternion(new Vector(val));
                                     break;
@@ -651,10 +628,10 @@ public class SceneUtils {
         return scene;
     }
 
-    public static Mesh loadKEOBJ(String file, String id, Map<String, Material> materialsMap) {
+    public static Mesh loadKEOBJ(String file, Map<String, Material> materialsMap) {
         Mesh ret = null;
 
-        try(BufferedReader reader = new BufferedReader(new FileReader(new File(file)))) {
+        try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
 
             List<Vector> pos = new ArrayList<>();
@@ -692,8 +669,8 @@ public class SceneUtils {
                         String[] tokens2 = line2.split(" ");
                         List<Float> val = new ArrayList<>();
 
-                        for(int i = 0; i < tokens2.length; i++) {
-                            val.add(Float.parseFloat(tokens2[i]));
+                        for (String s : tokens2) {
+                            val.add(Float.parseFloat(s));
                         }
                        pos.add(new Vector(val));
                     }
@@ -718,8 +695,8 @@ public class SceneUtils {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
 
-                            for (int i = 0; i < tokens2.length; i++) {
-                                val.add(Float.parseFloat(tokens2[i]));
+                            for (String s : tokens2) {
+                                val.add(Float.parseFloat(s));
                             }
                             tex.add(new Vector(val));
                         }
@@ -748,8 +725,8 @@ public class SceneUtils {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
 
-                            for (int i = 0; i < tokens2.length; i++) {
-                                val.add(Float.parseFloat(tokens2[i]));
+                            for (String s : tokens2) {
+                                val.add(Float.parseFloat(s));
                             }
                             normals.add(new Vector(val));
                         }
@@ -778,8 +755,8 @@ public class SceneUtils {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
 
-                            for (int i = 0; i < tokens2.length; i++) {
-                                val.add(Float.parseFloat(tokens2[i]));
+                            for (String s : tokens2) {
+                                val.add(Float.parseFloat(s));
                             }
                             colors.add(new Vector(val));
                         }
@@ -808,8 +785,8 @@ public class SceneUtils {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
 
-                            for (int i = 0; i < tokens2.length; i++) {
-                                val.add(Float.parseFloat(tokens2[i]));
+                            for (String s : tokens2) {
+                                val.add(Float.parseFloat(s));
                             }
                             tangents.add(new Vector(val));
                         }
@@ -838,8 +815,8 @@ public class SceneUtils {
                             String[] tokens2 = line2.split(" ");
                             List<Float> val = new ArrayList<>();
 
-                            for (int i = 0; i < tokens2.length; i++) {
-                                val.add(Float.parseFloat(tokens2[i]));
+                            for (String s : tokens2) {
+                                val.add(Float.parseFloat(s));
                             }
                             bitangents.add(new Vector(val));
                         }
@@ -856,8 +833,8 @@ public class SceneUtils {
                         String[] tokens2 = line2.split(" ");
                         List<Float> val = new ArrayList<>();
 
-                        for(int i = 0; i < tokens2.length; i++) {
-                            val.add(Float.parseFloat(tokens2[i]));
+                        for (String s : tokens2) {
+                            val.add(Float.parseFloat(s));
                         }
                         materialInds.add(new Vector(val));
                     }
@@ -873,7 +850,7 @@ public class SceneUtils {
 
                 List<Material> materials = new ArrayList<>();
                 for(int i = 0;i < matIndexMap.size();i++) {
-                    String matKey = meshID+"|"+matIndexMap.get(new Integer(i));
+                    String matKey = meshID+"|"+matIndexMap.get(i);
                     Material m = materialsMap.get(matKey);
                     materials.add(m);
                 }
@@ -910,8 +887,6 @@ public class SceneUtils {
                 ret.initOpenGLMeshData();
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -1016,11 +991,7 @@ public class SceneUtils {
             return false;
         }
 
-        if(!writeMasterKEFile(scene, directory, filePrefix, engineVersion)) {
-            return false;
-        }
-
-        return true;
+        return writeMasterKEFile(scene, directory, filePrefix, engineVersion);
     }
 
     public static boolean copyShaders(String directory, String filePrefix, String shadersDirectory) {
@@ -1230,17 +1201,14 @@ public class SceneUtils {
 
             writer.write("TEXTURE POSITIONS\n");
 
-            boolean nullsOnly = false;
+            boolean nullsOnly;
             if(mesh.getAttributeList(Mesh.TEXTURE) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(x -> x==null);
+                nullsOnly = mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(Objects::isNull);
                 if(mesh.meshIdentifier.equals("sun_mesh")) {
-                    System.err.println("only nulls: "+mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(x -> x==null));
-//                    for(engine.Math.Vector val : mesh.getAttributeList(Mesh.TEXTURE)) {
-//                        System.err.println(val);
-//                    }
+                    System.err.println("only nulls: "+mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(Objects::isNull));
                 }
             }
             if(nullsOnly) {  //To save space if all values are null
@@ -1259,12 +1227,11 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("NORMAL POSITIONS\n");
-            nullsOnly = false;
             if(mesh.getAttributeList(Mesh.NORMAL) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.NORMAL).stream().allMatch(x -> x==null);
+                nullsOnly = mesh.getAttributeList(Mesh.NORMAL).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
@@ -1284,12 +1251,11 @@ public class SceneUtils {
 
 
             writer.write("COLORS\n");
-            nullsOnly = false;
             if(mesh.getAttributeList(Mesh.COLOR) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.COLOR).stream().allMatch(x -> x==null);
+                nullsOnly = mesh.getAttributeList(Mesh.COLOR).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
@@ -1311,7 +1277,6 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("TANGENTS\n");
-            nullsOnly = false;
             if(mesh.getAttributeList(Mesh.TANGENT) == null) {
                 nullsOnly = true;
             }
@@ -1337,12 +1302,11 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("BI-TANGENTS\n");
-            nullsOnly = false;
             if(mesh.getAttributeList(Mesh.BITANGENT) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.BITANGENT).stream().allMatch(x -> x==null);
+                nullsOnly = mesh.getAttributeList(Mesh.BITANGENT).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
@@ -1377,7 +1341,7 @@ public class SceneUtils {
 
             writer.write("INDICES\n");
             for(Integer index: mesh.indices) {
-                writer.write(index.intValue()+"");
+                writer.write(index +"");
                 writer.newLine();
             }
             writer.newLine();
@@ -1681,13 +1645,10 @@ public class SceneUtils {
                     StringBuilder meshIds = new StringBuilder();
                     for(Mesh m: model.meshes) {
                         if(m != null) {
-                            meshIds.append(m.meshIdentifier+",");
+                            meshIds.append(m.meshIdentifier).append(",");
                         }
                     }
-//                    System.out.println(meshIds.toString());
-//                    if(meshIds.length() <= 1) {
-//                        System.out.println("Model id with empty mesh IDs: "+model.identifier + "  #meshes="+model.meshes.size() + " type: "+model.getClass().getSimpleName());
-//                    }
+
                     if(model.meshes.size() > 0) {
                         writer.write(meshIds.substring(0, meshIds.length() - 1) + "\n");
                     }
@@ -1832,13 +1793,6 @@ public class SceneUtils {
                     else {
                         matName = mat.matName;
                     }
-//                    Integer times = matNamesSoFar.get(matName);
-//                    if (times == null) {
-//                        matNamesSoFar.put(matName, 1);
-//                    } else {
-//                        matName += times;
-//                        matNamesSoFar.put(matName, times + 1);
-//                    }
 
                     writer.write("newmtl " + matName + "\n");
 

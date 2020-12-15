@@ -1,15 +1,15 @@
 package ENED_Simulation;
 
 import engine.DataStructure.GridNode;
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.inputs.Input;
 import engine.model.Model;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.ModelBehaviourTickInput;
 import engine.model.Movable;
 

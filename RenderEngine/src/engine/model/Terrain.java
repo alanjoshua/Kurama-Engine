@@ -1,8 +1,8 @@
 package engine.model;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Terrain.TerrainUtils;

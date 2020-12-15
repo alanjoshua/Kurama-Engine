@@ -1,8 +1,8 @@
 package main;
 
 import engine.Math.Vector;
-import engine.model.MeshBuilder;
-import engine.model.MeshBuilderHints;
+import engine.Mesh.MeshBuilder;
+import engine.Mesh.MeshBuilderHints;
 import engine.model.Model;
 import engine.renderingEngine.RenderingEngine;
 
@@ -44,7 +44,7 @@ public class GameSR_ESL extends GameSR {
 
             MeshBuilderHints hints = new MeshBuilderHints();
 
-            Model deer = new Model(this, MeshBuilder.buildModelFromFileGL(testModel,hints),"deer: +i");
+            Model deer = new Model(this, MeshBuilder.buildMesh(testModel,hints),"deer: +i");
             deer.setScale(new Vector(new float[] { 0.01f, 0.01f, 0.01f }));
             deer.setPos(x,y,z);
 

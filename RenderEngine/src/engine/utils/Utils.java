@@ -1,8 +1,8 @@
 package engine.utils;
 
 import engine.DataStructure.LinkedList.DoublyLinkedList;
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Vertex;
 import engine.Math.Perlin;
 import engine.Math.Vector;
 import engine.game.Game;

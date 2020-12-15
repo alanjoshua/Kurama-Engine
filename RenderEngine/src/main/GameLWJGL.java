@@ -3,7 +3,7 @@ package main;
 import HUD.TestHUD;
 import ModelBehaviour.AttachToPlayer;
 import ModelBehaviour.SunRevolve;
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Fog;
 import engine.Effects.Material;
@@ -21,7 +21,7 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.model.MeshBuilderHints;
+import engine.Mesh.MeshBuilderHints;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
@@ -120,7 +120,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
-        scene.ambientLight = new Vector(1f,1f,1f);
+        scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
 
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,

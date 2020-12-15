@@ -1,13 +1,13 @@
 package engine.renderingEngine;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Vertex;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.camera.Camera;
 import engine.game.Game;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.Model;
 import engine.scene.Scene;
 import engine.utils.Utils;

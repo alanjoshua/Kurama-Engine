@@ -2,7 +2,7 @@ package ENED_Simulation;
 
 import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
@@ -16,8 +16,8 @@ import engine.game.Game;
 import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
-import engine.model.MeshBuilder;
-import engine.model.MeshBuilderHints;
+import engine.Mesh.MeshBuilder;
+import engine.Mesh.MeshBuilderHints;
 import engine.model.Model;
 import engine.scene.Scene;
 
@@ -174,7 +174,7 @@ public class Simulation extends Game {
         grid.meshes.get(0).materials.get(0).ambientColor = new Vector(new float[]{1,1,1,1});
 
         hints.convertToLines = true;
-        flag = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/objFlag.obj",hints),"flag");
+        flag = new Model(this, MeshBuilder.buildMesh("/Resources/objFlag.obj",hints),"flag");
         flag.setPos(new Vector(new float[]{0,10,0}));
         flag.isCollidable = false;
 
@@ -199,7 +199,7 @@ public class Simulation extends Game {
 
         hints.addConstantColor = null;
         hints.convertToLines = true;
-        robot = new Robot(this, MeshBuilder.buildModelFromFileGL(robotModelLoc,hints),"robot");
+        robot = new Robot(this, MeshBuilder.buildMesh(robotModelLoc,hints),"robot");
         robot.shouldShowCollisionBox = false;
         robot.shouldShowPath = true;
         robot.home = towerA;
@@ -216,7 +216,7 @@ public class Simulation extends Game {
 
         hints.shouldSmartBakeVertexAttributes = true;
         hints.convertToLines = false;
-        scene.skybox = new Model(this, MeshBuilder.buildModelFromFileGL("/Resources/skybox.obj",hints),"skybox");
+        scene.skybox = new Model(this, MeshBuilder.buildMesh("/Resources/skybox.obj",hints),"skybox");
         scene.skybox.setScale(skyBoxScale);
         Texture tex = null;
         try {
@@ -282,7 +282,7 @@ public class Simulation extends Game {
         hints.shouldSmartBakeVertexAttributes = false;
         hints.initLWJGLAttribs = true;
 
-        boxMesh = MeshBuilder.buildModelFromFileGL(boxModelLoc,hints);
+        boxMesh = MeshBuilder.buildMesh(boxModelLoc,hints);
         try {
             Texture tex = new Texture(boxTextureLoc);
             boxMesh.materials.get(0).texture = tex;
@@ -290,7 +290,7 @@ public class Simulation extends Game {
             e.printStackTrace();
         }
 
-        platformMesh = MeshBuilder.buildModelFromFileGL("/Resources/platform2.obj",hints);
+        platformMesh = MeshBuilder.buildMesh("/Resources/platform2.obj",hints);
         try {
             Texture tex = new Texture("textures/oldwood.jpg");
             platformMesh.materials.get(0).texture = tex;

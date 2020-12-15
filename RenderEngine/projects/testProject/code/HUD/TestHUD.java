@@ -1,7 +1,7 @@
 package HUD;
 
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.GUI.Text;
 import engine.Math.Quaternion;
 import engine.Math.Vector;

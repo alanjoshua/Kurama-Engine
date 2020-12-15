@@ -1,6 +1,6 @@
 package ENED_Simulation;
 
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.game.Game;

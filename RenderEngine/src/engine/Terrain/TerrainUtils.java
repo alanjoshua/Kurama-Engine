@@ -1,12 +1,12 @@
 package engine.Terrain;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.Math.Perlin;
 import engine.Math.Vector;
 import engine.game.Game;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.Terrain;
 
 import java.util.ArrayList;

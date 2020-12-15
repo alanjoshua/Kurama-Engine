@@ -1,6 +1,6 @@
 package engine.lighting;
 
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;

@@ -1,6 +1,6 @@
 package engine.renderingEngine.defaultRenderPipeline;
 
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;

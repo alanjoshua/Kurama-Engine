@@ -1,4 +1,4 @@
-package engine.model;
+package engine.Mesh;
 
 import engine.Math.Vector;
 

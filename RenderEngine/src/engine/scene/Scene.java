@@ -1,8 +1,10 @@
 package engine.scene;
 
-import engine.DataStructure.Mesh.Mesh;
+import engine.Mesh.Mesh;
 import engine.Effects.Fog;
 import engine.Math.Vector;
+import engine.Mesh.MeshBuilder;
+import engine.Mesh.MeshBuilderHints;
 import engine.camera.Camera;
 import engine.game.Game;
 import engine.lighting.DirectionalLight;
@@ -81,7 +83,7 @@ public class Scene {
     public Mesh loadMesh(String location, String meshID, MeshBuilderHints hints) {
 
         log("Loading mesh "+meshID + " ...");
-        Mesh newMesh = MeshBuilder.buildModelFromFileGL(location, hints);
+        Mesh newMesh = MeshBuilder.buildMesh(location, hints);
         log("Finished loading mesh");
 
         log("Checking whether input meshID is unique...");

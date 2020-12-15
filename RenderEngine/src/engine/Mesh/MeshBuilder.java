@@ -1,11 +1,8 @@
-package engine.model;
+package engine.Mesh;
 
 import engine.DataStructure.LinkedList.CircularDoublyLinkedList;
 import engine.DataStructure.LinkedList.DoublyLinkedList;
 import engine.DataStructure.LinkedList.Node;
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
 import engine.DataStructure.Texture;
 import engine.Effects.Material;
 import engine.Math.Matrix;
@@ -23,11 +20,27 @@ import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
 public class MeshBuilder {
 
-	public static Mesh buildModelFromFileGL(String loc, MeshBuilderHints hints) {
+	public static Mesh buildMesh(String loc, MeshBuilderHints hints) {
 		Mesh resMesh;
 
-		System.out.println("loading raw data for: "+loc);
-		resMesh = loadRawData(loc, hints);
+		Logger.log("loading raw data for: "+loc);
+
+		var split = loc.split("\\.");
+		var fileType = split[split.length - 1].toLowerCase();
+
+		switch (fileType) {
+			case "obj": {
+				resMesh = loadMeshFromOBJ(loc, hints);
+				break;
+			}
+			case "md5mesh": {
+				resMesh = loadMeshFromMD5Mesh(loc, hints);
+				break;
+			}
+			default:
+				Logger.logError("Cannot read file format "+fileType+". Returning null...");
+				return null;
+		}
 
 		if(hints == null) {
 			resMesh = triangulate(resMesh,false, null);
@@ -400,7 +413,19 @@ public class MeshBuilder {
 		return res;
 	}
 
-	public static Mesh loadRawData(String loc, MeshBuilderHints hints) {
+	public static Mesh loadMeshFromMD5Mesh(String loc, MeshBuilderHints hints) {
+
+		URL url = MeshBuilder.class.getResource(loc);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	public static Mesh loadMeshFromOBJ(String loc, MeshBuilderHints hints) {
 
 		MeshBuilder m = new MeshBuilder();
 		if(!loc.substring(loc.length() - 3).equalsIgnoreCase("obj")) {
@@ -408,7 +433,7 @@ public class MeshBuilder {
 			loc = loc+"/"+split[split.length-1]+".obj";
 		}
 
-		URL url = m.getClass().getResource(loc);
+		URL url = MeshBuilder.class.getResource(loc);
 		BufferedReader br = null;
 
 		if(loc.charAt(0)=='/') {
@@ -622,6 +647,8 @@ public class MeshBuilder {
 
 				}
 			}
+
+			br.close();
 
 			float[] dataMin = new float[4];
 			dataMin[0] = Float.POSITIVE_INFINITY;

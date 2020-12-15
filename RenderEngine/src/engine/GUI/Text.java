@@ -1,13 +1,13 @@
 package engine.GUI;
 
-import engine.DataStructure.Mesh.Face;
-import engine.DataStructure.Mesh.Mesh;
-import engine.DataStructure.Mesh.Vertex;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.Effects.Material;
 import engine.Math.Vector;
 import engine.font.FontTexture;
 import engine.game.Game;
-import engine.model.MeshBuilder;
+import engine.Mesh.MeshBuilder;
 import engine.model.Model;
 import engine.utils.Utils;
 
