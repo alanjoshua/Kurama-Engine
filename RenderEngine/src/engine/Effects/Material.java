@@ -8,9 +8,11 @@ import engine.utils.Utils;
 
 public class Material {
 
-    public static Vector DEFAULTCOLOR = new Vector(new float[]{1,1,1,1});
-    public static float DEFAULT_SPECULAR_POWER = 10;
-    public static float DEFAULT_REFLECTANCE = 1;
+    public static Vector DEFAULTAMBIENTCOLOR = new Vector(new float[]{1,1,1,1});
+    public static Vector DEFAULTDIFFUSECOLOR = new Vector(new float[]{1f,1f,1f,1f});
+    public static Vector DEFAULTSPECULARCOLOR = new Vector(new float[]{1,1,1,1});
+    public static float DEFAULT_SPECULAR_POWER = 10f;
+    public static float DEFAULT_REFLECTANCE = 1f;
     public static String DEFAULT_MATERIAL_NAME = "DEFAULT";
 
     public Texture texture;
@@ -24,13 +26,13 @@ public class Material {
     public float specularPower = DEFAULT_SPECULAR_POWER;
     public String matName;
 
-    public static Material DEFAULT_MATERIAL = new Material(DEFAULTCOLOR, DEFAULTCOLOR, DEFAULTCOLOR, null,
+    public static Material DEFAULT_MATERIAL = new Material(DEFAULTAMBIENTCOLOR, DEFAULTAMBIENTCOLOR, DEFAULTAMBIENTCOLOR, null,
             null,null,null, DEFAULT_REFLECTANCE, DEFAULT_SPECULAR_POWER, DEFAULT_MATERIAL_NAME);
 
     public Material() {
-        this.ambientColor = DEFAULTCOLOR;
-        this.diffuseColor = DEFAULTCOLOR;
-        this.specularColor = DEFAULTCOLOR;
+        this.ambientColor = DEFAULTAMBIENTCOLOR;
+        this.diffuseColor = DEFAULTDIFFUSECOLOR;
+        this.specularColor = DEFAULTSPECULARCOLOR;
         this.texture = null;
         this.normalMap = null;
         this.diffuseMap = null;
@@ -39,9 +41,9 @@ public class Material {
     }
 
     public Material(String matName) {
-        this.ambientColor = DEFAULTCOLOR;
-        this.diffuseColor = DEFAULTCOLOR;
-        this.specularColor = DEFAULTCOLOR;
+        this.ambientColor = DEFAULTAMBIENTCOLOR;
+        this.diffuseColor = DEFAULTDIFFUSECOLOR;
+        this.specularColor = DEFAULTSPECULARCOLOR;
         this.texture = null;
         this.normalMap = null;
         this.diffuseMap = null;
@@ -54,11 +56,11 @@ public class Material {
     }
 
     public Material(Texture texture, String matName) {
-        this(DEFAULTCOLOR, DEFAULTCOLOR, DEFAULTCOLOR, texture, null, null,null, DEFAULT_REFLECTANCE, DEFAULT_SPECULAR_POWER, matName);
+        this(DEFAULTAMBIENTCOLOR, DEFAULTDIFFUSECOLOR, DEFAULTSPECULARCOLOR, texture, null, null,null, DEFAULT_REFLECTANCE, DEFAULT_SPECULAR_POWER, matName);
     }
 
     public Material(Texture texture, float reflectance, String matName) {
-        this(DEFAULTCOLOR, DEFAULTCOLOR, DEFAULTCOLOR, texture, null,null,null, reflectance, DEFAULT_SPECULAR_POWER, matName);
+        this(DEFAULTAMBIENTCOLOR, DEFAULTDIFFUSECOLOR, DEFAULTSPECULARCOLOR, texture, null,null,null, reflectance, DEFAULT_SPECULAR_POWER, matName);
     }
 
     public Material(Vector ambientColour, Vector diffuseColour, Vector specularColour, Texture texture,

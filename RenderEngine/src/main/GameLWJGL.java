@@ -2,6 +2,7 @@ package main;
 
 import HUD.TestHUD;
 import ModelBehaviour.AttachToPlayer;
+import ModelBehaviour.SunRevolve;
 import engine.Effects.Fog;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
@@ -129,7 +130,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
-        scene.ambientLight = new Vector(1f,1f,1f);
+        scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
 
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
@@ -140,9 +141,9 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
         directionalLight.setScale(100);
-//        directionalLight.setBehaviour(new SunRevolve());
+        directionalLight.setBehaviour(new SunRevolve());
         directionalLight.meshes.add(scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints));
-//        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -150,7 +151,7 @@ public class GameLWJGL extends Game implements Runnable {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Vector lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 0f);
+        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
@@ -169,7 +170,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         spotLight.shouldCastShadow = false;
         spotLight.setBehaviour(new AttachToPlayer());
-//        scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         Material quadMat = new Material();
@@ -268,6 +269,10 @@ public class GameLWJGL extends Game implements Runnable {
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
         monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+        monsterMeshes.stream().forEach(m -> {
+            m.materials.get(0).reflectance=0f;
+            m.materials.get(0).specularPower=0f;
+        });
         Model monster = scene.createModel(monsterMeshes, "monster",
                 Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         monster.setScale(0.1f);

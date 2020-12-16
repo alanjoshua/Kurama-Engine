@@ -1,6 +1,6 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-12-16T00:47:10.958807300
+# Created by Kurama Engine ver alpha-2.0 on 2020-12-16T20:10:09.634846100
 # Mesh Count: 12
-# Model count: 7
+# Model count: 6
 
 renderPipeline_class:engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline
 
@@ -43,21 +43,9 @@ location:skybox_mesh.keObj
 hints:shouldSmartBakeVertexAttributes:true shouldDumbBakeVertexAttributes:false shouldTriangulate:true forceEarClipping:false initLWJGLAttribs:true addRandomColor:false shouldGenerateTangentBiTangent:true addConstantColor:null convertToLines:false shouldInvertNormals:false shouldRotate:180
 
 start new mesh
-ID:506f5d2d-d92e-4c34-99e7-87682c0514d7
-Face count:46
-location:506f5d2d-d92e-4c34-99e7-87682c0514d7.keObj
-hints:null
-
-start new mesh
-ID:0798b62a-a976-42d5-ba3e-fc40fafa4f97
-Face count:12
-location:0798b62a-a976-42d5-ba3e-fc40fafa4f97.keObj
-hints:null
-
-start new mesh
-ID:a02d9dae-0ef1-418c-83dd-3bea693c92b1
+ID:7cfc0b91-6c0a-4973-a553-b502326d5f26
 Face count:2626
-location:a02d9dae-0ef1-418c-83dd-3bea693c92b1.keObj
+location:7cfc0b91-6c0a-4973-a553-b502326d5f26.keObj
 hints:null
 
 start new mesh
@@ -73,15 +61,27 @@ location:torchlight_mesh.keObj
 hints:shouldSmartBakeVertexAttributes:true shouldDumbBakeVertexAttributes:false shouldTriangulate:true forceEarClipping:false initLWJGLAttribs:true addRandomColor:false shouldGenerateTangentBiTangent:true addConstantColor:null convertToLines:false shouldInvertNormals:false shouldRotate:180
 
 start new mesh
+ID:a17ac1d5-3b51-4fd7-995b-16ba28fd3ae5
+Face count:58
+location:a17ac1d5-3b51-4fd7-995b-16ba28fd3ae5.keObj
+hints:null
+
+start new mesh
 ID:cube_mesh
 Face count:12
 location:cube_mesh.keObj
 hints:shouldSmartBakeVertexAttributes:true shouldDumbBakeVertexAttributes:false shouldTriangulate:true forceEarClipping:false initLWJGLAttribs:true addRandomColor:false shouldGenerateTangentBiTangent:true addConstantColor:null convertToLines:false shouldInvertNormals:false shouldRotate:180
 
 start new mesh
-ID:04e15750-3de4-43f9-b124-df5ccc9cfd2a
-Face count:58
-location:04e15750-3de4-43f9-b124-df5ccc9cfd2a.keObj
+ID:1c99a8fb-ceed-4f03-8725-37e75c1e3604
+Face count:12
+location:1c99a8fb-ceed-4f03-8725-37e75c1e3604.keObj
+hints:null
+
+start new mesh
+ID:84eb8633-b7f0-47ed-9e38-fc962849012b
+Face count:46
+location:84eb8633-b7f0-47ed-9e38-fc962849012b.keObj
 hints:null
 
 MODEL INFO
@@ -92,7 +92,7 @@ type:Model
 shader_ID:[hudShaderBlock]
 mesh_ID:HUD_texquad_mesh
 scale:300.0 300.0 300.0
-pos:500.0 940.0 0.0
+pos:500.0 220.0 0.0
 orientation:-4.371139E-8 0.0 -1.0 0.0
 shouldCastShadow:false
 shouldRender:false
@@ -104,7 +104,7 @@ type:Model
 shader_ID:[skyboxShaderBlock]
 mesh_ID:skybox_mesh
 scale:1000.0 1000.0 1000.0
-pos:11.921312 30.92381 -14.898018
+pos:-0.8468605 41.179195 12.22617
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -116,7 +116,7 @@ type:Text
 shader_ID:[hudShaderBlock]
 mesh_ID:hud_text_mesh
 scale:1.0 1.0 1.0
-pos:3040.0 1390.0 0.0
+pos:880.0 670.0 0.0
 orientation:1.0 0.0 0.0 0.0
 shouldCastShadow:true
 shouldRender:true
@@ -139,28 +139,6 @@ shouldRender:true
 modelBehaviour:null
 
 start new model
-ID:spotlight 1
-type:SpotLight
-shader_ID:[sceneShaderBlock]
-mesh_ID:torchlight_mesh
-scale:0.05 0.05 0.05
-pos:11.811688 30.791706 -13.9128685
-orientation:-0.05525997 0.0036660887 -0.9962736 -0.066094935
-shouldCastShadow:false
-shouldRender:true
-modelBehaviour:ModelBehaviour.AttachToPlayer
-angle:45.0
-angle:45.0
-shadowMap_width:4096
-shadowMap_height:4096
-shadowProjectionMatrix:1.0 0.0 0.0 0.0,0.0 1.0 0.0 0.0,0.0 0.0 -1.002002 -0.2002002,0.0 0.0 -1.0 0.0
-color:1.0 1.0 1.0
-intensity:0.0
-att_constant:0.0
-att_linear:0.0
-att_exp:0.01
-
-start new model
 ID:terrain
 type:Terrain
 shader_ID:[sceneShaderBlock]
@@ -176,10 +154,10 @@ start new model
 ID:monster
 type:Model
 shader_ID:[sceneShaderBlock]
-mesh_ID:a02d9dae-0ef1-418c-83dd-3bea693c92b1,0798b62a-a976-42d5-ba3e-fc40fafa4f97,506f5d2d-d92e-4c34-99e7-87682c0514d7,04e15750-3de4-43f9-b124-df5ccc9cfd2a
+mesh_ID:7cfc0b91-6c0a-4973-a553-b502326d5f26,1c99a8fb-ceed-4f03-8725-37e75c1e3604,84eb8633-b7f0-47ed-9e38-fc962849012b,a17ac1d5-3b51-4fd7-995b-16ba28fd3ae5
 scale:0.1 0.1 0.1
 pos:0.0 30.0 0.0
-orientation:1.0 0.0 0.0 0.0
+orientation:0.70710677 -0.70710677 -0.0 -0.0
 shouldCastShadow:true
 shouldRender:true
 modelBehaviour:null
@@ -187,13 +165,13 @@ modelBehaviour:null
 POINTLIGHTS INFO
 
 CAMERA INFO
-pos:11.921312 30.92381 -14.898018
-orientation:-0.05525997 0.0036660887 -0.9962736 -0.066094935
+pos:-0.8468605 41.179195 12.22617
+orientation:0.99300045 -0.09461086 -0.070375904 -0.006705241
 fovX:90.0
 near:0.001
 far:5000.0
-imageWidth:3440
-imageHeight:1440
+imageWidth:1280
+imageHeight:720
 
 FOG INFO
 active:false

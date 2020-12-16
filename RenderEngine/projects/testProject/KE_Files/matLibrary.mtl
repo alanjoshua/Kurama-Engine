@@ -1,4 +1,4 @@
-# Created by Kurama Engine ver alpha-2.0 on 2020-12-16T00:47:10.941090800
+# Created by Kurama Engine ver alpha-2.0 on 2020-12-16T20:10:09.617890900
 # Material Count: 20
 
 newmtl plantMesh|DEFAULT
@@ -55,23 +55,7 @@ ns 10.0
 reflectance 1.0
 map_ka skybox.png
 
-newmtl 506f5d2d-d92e-4c34-99e7-87682c0514d7|835d754b-9c22-4d3f-969f-79a13900a2f5
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-map_ka gob.png
-
-newmtl 0798b62a-a976-42d5-ba3e-fc40fafa4f97|530f5faf-4f32-4b78-ada7-20a5b325b357
-ka 1.0 1.0 1.0 1.0
-kd 1.0 1.0 1.0 1.0
-ks 1.0 1.0 1.0 1.0
-ns 10.0
-reflectance 1.0
-map_ka gob2.png
-
-newmtl a02d9dae-0ef1-418c-83dd-3bea693c92b1|d45f494a-d5d2-4bc3-8708-2cdbdb77ed4e
+newmtl 7cfc0b91-6c0a-4973-a553-b502326d5f26|9812bf43-20a7-4f44-b1a0-c3ac66ccf34f
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
@@ -135,6 +119,14 @@ ks 0.5 0.5 0.5 1.0
 ns 225.0
 reflectance 1.0
 
+newmtl a17ac1d5-3b51-4fd7-995b-16ba28fd3ae5|fa0fb2e2-6680-43a5-8e9a-8e9e37de300e
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka tongue.png
+
 newmtl cube_mesh|DEFAULT
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
@@ -142,11 +134,19 @@ ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
 
-newmtl 04e15750-3de4-43f9-b124-df5ccc9cfd2a|6263198a-be4b-4e3b-8a80-9a486ee95cd1
+newmtl 1c99a8fb-ceed-4f03-8725-37e75c1e3604|b482c30e-754b-49b4-b687-62ded792f6e8
 ka 1.0 1.0 1.0 1.0
 kd 1.0 1.0 1.0 1.0
 ks 1.0 1.0 1.0 1.0
 ns 10.0
 reflectance 1.0
-map_ka tongue.png
+map_ka gob2.png
+
+newmtl 84eb8633-b7f0-47ed-9e38-fc962849012b|81d0b566-8a21-4b45-bcec-a9479c9aec1a
+ka 1.0 1.0 1.0 1.0
+kd 1.0 1.0 1.0 1.0
+ks 1.0 1.0 1.0 1.0
+ns 10.0
+reflectance 1.0
+map_ka gob.png
 

@@ -53,13 +53,18 @@ public class MD5Utils {
                 var p2 = vertPositions.get(t.get(2));
 
                 var normal = p2.sub(p0).cross(p1.sub(p0));
-                normals.get(t.get(0)).add(normal);
-                normals.get(t.get(1)).add(normal);
-                normals.get(t.get(2)).add(normal);
+                normals.set(t.get(0), normals.get(t.get(0)).add(normal));
+                normals.set(t.get(1), normals.get(t.get(1)).add(normal));
+                normals.set(t.get(2), normals.get(t.get(2)).add(normal));
+
+//                normals.get(t.get(0)).add(normal);
+//                normals.get(t.get(1)).add(normal);
+//                normals.get(t.get(2)).add(normal);
             }
 
             for(int i = 0;i < normals.size();i++) {
                 normals.set(i, normals.get(i).normalise());
+//                Logger.log(normals.get(i));
             }
 
             List<List<Vector>> vertAttribs = new ArrayList<>();
@@ -70,9 +75,13 @@ public class MD5Utils {
 
             if(mesh.texture != null) {
                 mats.get(0).texture = new Texture(mesh.texture);
+                mats.get(0).diffuseMap = mats.get(0).texture;
+                mats.get(0).specularMap = mats.get(0).texture;
             }
             else {
                 mats.get(0).ambientColor = defColor;
+                mats.get(0).diffuseColor = defColor;
+                mats.get(0).specularColor = defColor;
             }
 
             var tempSplit = mesh.texture.split("\\.");
@@ -86,6 +95,7 @@ public class MD5Utils {
             Mesh m = new Mesh(indexList, mesh.triangles, vertAttribs, mats, null, null);
             m.setAttribute(vertPositions, Mesh.POSITION);
             m.setAttribute(textCoords, Mesh.TEXTURE);
+            m.setAttribute(normals, Mesh.NORMAL);
             m.setAttribute(matList,Mesh.MATERIAL);
             m.drawMode = GL_TRIANGLES;
             m.meshIdentifier = Utils.getUniqueID();
