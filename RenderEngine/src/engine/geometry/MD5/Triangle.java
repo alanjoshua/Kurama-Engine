@@ -13,14 +13,14 @@ public class Triangle extends Face {
         var v22 = new engine.Mesh.Vertex();
         var v33 = new engine.Mesh.Vertex();
 
-        v11.setAttribute(engine.Mesh.Vertex.POSITION, v1);
-        v11.setAttribute(engine.Mesh.Vertex.TEXTURE, v1);
+        v11.setAttribute(v1, engine.Mesh.Vertex.POSITION);
+        v11.setAttribute(v1, engine.Mesh.Vertex.TEXTURE);
 
-        v22.setAttribute(engine.Mesh.Vertex.POSITION, v2);
-        v22.setAttribute(engine.Mesh.Vertex.TEXTURE, v2);
+        v22.setAttribute(v2, engine.Mesh.Vertex.POSITION);
+        v22.setAttribute(v2, engine.Mesh.Vertex.TEXTURE);
 
-        v33.setAttribute(engine.Mesh.Vertex.POSITION, v3);
-        v33.setAttribute(engine.Mesh.Vertex.TEXTURE, v3);
+        v33.setAttribute(v3, engine.Mesh.Vertex.POSITION);
+        v33.setAttribute(v3, engine.Mesh.Vertex.TEXTURE);
 
         this.addVertex(v11);
         this.addVertex(v22);

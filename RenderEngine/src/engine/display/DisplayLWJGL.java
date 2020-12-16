@@ -1,16 +1,18 @@
 package engine.display;
 
+import engine.game.Game;
+import engine.utils.Logger;
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
+
 import java.awt.*;
 
-import engine.game.Game;
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
-
-import static org.lwjgl.glfw.Callbacks.*;
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class DisplayLWJGL extends Display {
 
@@ -181,7 +183,7 @@ public class DisplayLWJGL extends Display {
     protected void startGLFW() {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
-        System.out.println("started GLFW");
+        Logger.log("started GLFW");
         GLFWErrorCallback.createPrint(System.err).set();
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.

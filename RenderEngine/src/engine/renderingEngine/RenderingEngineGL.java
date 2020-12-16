@@ -19,8 +19,8 @@ public class RenderingEngineGL extends RenderingEngine {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        enable(GL_CULL_FACE);
+        setCullFace(GL_BACK);
 
         renderPipeline.setup(scene);
 
@@ -44,6 +44,18 @@ public class RenderingEngineGL extends RenderingEngine {
 
     public void render(Scene scene) {
         renderPipeline.render(scene);
+    }
+
+    public void enable(int param) {
+        glEnable(param);
+    }
+
+    public void disable(int param) {
+        glDisable(param);
+    }
+
+    public void setCullFace(int param) {
+        glCullFace(param);
     }
 
     public class ShadowDepthRenderPackage {

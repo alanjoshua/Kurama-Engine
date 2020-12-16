@@ -35,6 +35,9 @@ public class Mesh {
 
     public int drawMode = GL_TRIANGLES;
 
+    public boolean shouldCull = true;
+    public int cullmode = GL_BACK;
+
     public int vaoId;
     public List<Integer> vboIdList;
     public List<Material> materials = new ArrayList<>();

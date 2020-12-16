@@ -23,5 +23,6 @@ public class Joint {
             w = (float) -Math.sqrt(t);
         }
         this.orient = new Quaternion(new Vector(w, orient.get(0), orient.get(1), orient.get(2)));
+        this.orient.normalise();
     }
 }

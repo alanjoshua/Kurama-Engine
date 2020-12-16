@@ -29,6 +29,7 @@ import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -75,6 +76,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         renderingEngine = new RenderingEngineGL(this);
         display = new DisplayLWJGL(this);
+        display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -89,6 +91,11 @@ public class GameLWJGL extends Game implements Runnable {
         });
 
         input = new InputLWJGL(this);
+
+        Quaternion test = Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90);
+        Vector p = new Vector(0, 0, 1);
+        var p_ = test.rotatePoint(p);
+        Logger.log("rotated point: "+p_.toString());
 
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
@@ -162,7 +169,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         spotLight.shouldCastShadow = false;
         spotLight.setBehaviour(new AttachToPlayer());
-        scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+//        scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         Material quadMat = new Material();
@@ -265,6 +272,7 @@ public class GameLWJGL extends Game implements Runnable {
                 Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         monster.setScale(0.1f);
         monster.setPos(new Vector(0, 30, 0));
+        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90));
 
         terrain.meshes.get(0).initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);

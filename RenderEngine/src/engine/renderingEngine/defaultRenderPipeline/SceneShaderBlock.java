@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
@@ -121,6 +122,12 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     public void renderScene(Scene scene, ShadowDepthRenderPackage shadowPackage) {
 
+        boolean curShouldCull = true;
+        int currCull = GL_BACK;
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(currCull);
+
         ShaderProgram sceneShaderProgram = scene_shader;
         sceneShaderProgram.bind();
 
@@ -166,6 +173,21 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 //            glBindTexture(GL_TEXTURE_2D, lights.directionalLights[0].shadowMap.depthMap.getId());
 
             mesh.initRender();
+
+            if (curShouldCull != mesh.shouldCull) {
+                if(mesh.shouldCull) {
+                    glEnable(GL_CULL_FACE);
+                }
+                else {
+                    glDisable(GL_CULL_FACE);
+                }
+                curShouldCull = mesh.shouldCull;
+            }
+
+            if(currCull != mesh.cullmode) {
+                glCullFace(mesh.cullmode);
+                currCull = mesh.cullmode;
+            }
 
             for(String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                 Model model = scene.modelID_model_map.get(modelId);

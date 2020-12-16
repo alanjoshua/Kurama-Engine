@@ -42,7 +42,7 @@ public class MD5Mesh {
                 }
                 case "vert": {
                     var vertIndex = Integer.parseInt(split[2]);
-                    var texCoord = new Vector(Float.parseFloat(split[4]), Float.parseFloat(split[5]));
+                    var texCoord = new Vector(Float.parseFloat(split[4]),Float.parseFloat(split[5]));
                     var startWeight = Integer.parseInt(split[7]);
                     var countWeight = Integer.parseInt(split[8]);
                     verts.add(new Vertex(vertIndex, texCoord, startWeight, countWeight));
