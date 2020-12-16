@@ -94,6 +94,7 @@ public class GameLWJGL extends Game implements Runnable {
         input = new InputLWJGL(this);
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
+        var frames = MD5Utils.generateAnimationFrames(monsterAnim);
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 

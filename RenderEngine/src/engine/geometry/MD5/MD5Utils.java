@@ -1,6 +1,7 @@
 package engine.geometry.MD5;
 
 import engine.Effects.Material;
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Face;
 import engine.Mesh.Mesh;
@@ -14,6 +15,74 @@ import java.util.List;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 
 public class MD5Utils {
+
+    public static List<AnimationFrame> generateAnimationFrames(MD5AnimModel anim) {
+        List<AnimationFrame> results = new ArrayList<>(anim.numFrames);
+
+        for(var frame: anim.frames) {
+
+            var newFrame = new AnimationFrame(anim.numJoints);
+            results.add(newFrame);
+
+            for (int i = 0; i < anim.numJoints; i++) {
+
+                var joint = anim.joints.get(i);
+                Vector animatedPos = new Vector(3, 0);
+                Vector animatedOrient_temp = new Vector(3, 0);
+                int startIndex = joint.startIndex;
+
+                if ((joint.flags & 1) > 0) {
+                    animatedPos.setDataElement(0, frame.components.get(startIndex++));
+                }
+                if ((joint.flags & 2) > 0) {
+                    animatedPos.setDataElement(1, frame.components.get(startIndex++));
+                }
+                if ((joint.flags & 4) > 0) {
+                    animatedPos.setDataElement(2, frame.components.get(startIndex++));
+                }
+                if ((joint.flags & 8) > 0) {
+                    animatedOrient_temp.setDataElement(0, frame.components.get(startIndex++));
+                }
+                if ((joint.flags & 16) > 0) {
+                    animatedOrient_temp.setDataElement(1, frame.components.get(startIndex++));
+                }
+                if ((joint.flags & 32) > 0) {
+                    animatedOrient_temp.setDataElement(2, frame.components.get(startIndex++));
+                }
+
+//                Calculate w component for quaternion
+                float t = 1f - (animatedOrient_temp.get(0) * animatedOrient_temp.get(0)) -
+                        (animatedOrient_temp.get(1) * animatedOrient_temp.get(1)) -
+                        (animatedOrient_temp.get(2) * animatedOrient_temp.get(2));
+                float w;
+                if (t < 0f) {
+                    w = 0f;
+                } else {
+                    w = (float) -Math.sqrt(t);
+                }
+
+                var animated_orient = new Quaternion(new Vector(w, animatedOrient_temp.get(0), animatedOrient_temp.get(1),
+                        animatedOrient_temp.get(2)));
+                animated_orient.normalise();
+
+                var newJoint = new Joint(joint.name, joint.parent, animatedPos, animatedOrient_temp);
+                newFrame.joints.add(newJoint);
+
+//                Not a parent joint
+                if(newJoint.parent >= 0) {
+                    var parentJoint = newFrame.joints.get(newJoint.parent);
+                    var rotatedPoint = parentJoint.orient.rotatePoint(animatedPos);
+                    newJoint.pos = rotatedPoint.add(parentJoint.pos);
+                    newJoint.orient = parentJoint.orient.multiply(animated_orient);
+                    newJoint.orient.normalise();
+                }
+
+            }
+
+        }
+
+        return results;
+    }
 
     public static List<Mesh> generateMeshes(MD5Model model, Vector defColor) {
         List<Mesh> results = new ArrayList<>();

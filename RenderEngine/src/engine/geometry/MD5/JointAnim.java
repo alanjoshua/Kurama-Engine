@@ -1,5 +1,6 @@
 package engine.geometry.MD5;
 
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 
 public class JointAnim {
@@ -9,7 +10,7 @@ public class JointAnim {
     public int flags;
     public int startIndex;
     public Vector base_pos;
-    public Vector base_orient;
+    public Quaternion base_orient;
 
     public JointAnim(String name, int parent, int flags, int startIndex) {
         this.name = name;
