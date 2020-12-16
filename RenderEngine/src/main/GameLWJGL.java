@@ -14,6 +14,7 @@ import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
 import engine.game.Game;
+import engine.geometry.MD5.MD5AnimModel;
 import engine.geometry.MD5.MD5Model;
 import engine.geometry.MD5.MD5Utils;
 import engine.geometry.MeshBuilderHints;
@@ -30,7 +31,6 @@ import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
-import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -93,11 +93,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-        Quaternion test = Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90);
-        Vector p = new Vector(0, 0, 1);
-        var p_ = test.rotatePoint(p);
-        Logger.log("rotated point: "+p_.toString());
-
+        var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 
