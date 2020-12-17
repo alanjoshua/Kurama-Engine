@@ -112,8 +112,8 @@ public class GameLWJGL extends Game implements Runnable {
                 Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         monster.setScale(0.1f);
         monster.setPos(new Vector(10, 30, 10));
-        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90));
-
+        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
+//
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 
@@ -180,6 +180,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        spotLight.meshes.add(scene.loadMesh("res/apricot/Apricot_02_hi_poly.obj", "apricot", hints));
         spotLight.setScale(0.05f);
         spotLight.setPos(new Vector(new float[]{20,45f,12f}));
+        spotLight.shouldRender = false;
 
 //        spotLight.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1, 0, 0}), -30).
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
@@ -434,7 +435,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(input.keyDown(input.UP_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(1f);
+            monster.cycleFrame(0.5f);
             monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
@@ -442,7 +443,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(input.keyDown(input.DOWN_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(1f);
+            monster.cycleFrame(0.5f);
             monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
