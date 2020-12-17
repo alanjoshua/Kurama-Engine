@@ -102,17 +102,7 @@ public class MD5AnimModel {
                             var pos = new Vector(Float.parseFloat(spaceSplit[2]), Float.parseFloat(spaceSplit[3]), Float.parseFloat(spaceSplit[4]));
                             var orient = new Vector(Float.parseFloat(spaceSplit[7]), Float.parseFloat(spaceSplit[8]), Float.parseFloat(spaceSplit[9]));
 
-//                        Calculate w component for quqaternion
-                            float t = 1f - (orient.get(0) * orient.get(0)) - (orient.get(1) * orient.get(1)) - (orient.get(2) * orient.get(2));
-                            float w;
-                            if (t < 0f) {
-                                w = 0f;
-                            } else {
-                                w = (float) -Math.sqrt(t);
-                            }
-
-                            var orient_quat = new Quaternion(new Vector(w, orient.get(0), orient.get(1), orient.get(2)));
-                            orient_quat.normalise();
+                            var orient_quat = Quaternion.calculateWFromXYZ(orient);
                             joints.get(jointCounter).base_pos = pos;
                             joints.get(jointCounter).base_orient = orient_quat;
                             jointCounter++;

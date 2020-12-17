@@ -16,6 +16,8 @@ import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 
 public class MD5Utils {
 
+    public static int MAXWEIGHTSPERVERTEX = 4;
+
     public static List<AnimationFrame> generateAnimationFrames(MD5AnimModel anim) {
         List<AnimationFrame> results = new ArrayList<>(anim.numFrames);
 
@@ -50,22 +52,8 @@ public class MD5Utils {
                     animatedOrient_temp.setDataElement(2, frame.components.get(startIndex++));
                 }
 
-//                Calculate w component for quaternion
-                float t = 1f - (animatedOrient_temp.get(0) * animatedOrient_temp.get(0)) -
-                        (animatedOrient_temp.get(1) * animatedOrient_temp.get(1)) -
-                        (animatedOrient_temp.get(2) * animatedOrient_temp.get(2));
-                float w;
-                if (t < 0f) {
-                    w = 0f;
-                } else {
-                    w = (float) -Math.sqrt(t);
-                }
-
-                var animated_orient = new Quaternion(new Vector(w, animatedOrient_temp.get(0), animatedOrient_temp.get(1),
-                        animatedOrient_temp.get(2)));
-                animated_orient.normalise();
-
-                var newJoint = new Joint(joint.name, joint.parent, animatedPos, animatedOrient_temp);
+                var animated_orient = Quaternion.calculateWFromXYZ(animatedOrient_temp);
+                var newJoint = new Joint(joint.name, joint.parent, animatedPos, animated_orient);
                 newFrame.joints.add(newJoint);
 
 //                Not a parent joint
@@ -92,24 +80,36 @@ public class MD5Utils {
             List<Vector> textCoords = new ArrayList<>(mesh.numVerts);
             List<Vector> normals = new ArrayList<>(mesh.numVerts);
             List<Integer> indexList = new ArrayList<>(mesh.numVerts);
+            List<Vector> weightBiasesPerVert = new ArrayList<>(mesh.numVerts);
+            List<Vector> jointIndicesPerVert = new ArrayList<>(mesh.numVerts);
 
             for(int i = 0; i < mesh.numVerts; i++) {
 
                 Vector finalVertexPos = new Vector(3, 0);
+                Vector weightBias = new Vector(MAXWEIGHTSPERVERTEX, -1);
+                Vector jointIndices = new Vector(MAXWEIGHTSPERVERTEX, -1);
                 Vertex vert = mesh.verts.get(i);
                 normals.add(new Vector(3, 0));
 
-                for(int j = vert.startWeight;j < vert.startWeight + vert.countWeight; j++) {
-                    var weight = mesh.weights.get(j);
+                for(int j = 0;j < vert.countWeight; j++) {
+                    var weight = mesh.weights.get(vert.startWeight+j);
                     var joint = model.joints.get(weight.joint);
 
 //                    var transformedPoint = joint.orient.getRotationMatrix().matMul(weight.pos).getColumn(0).add(joint.pos);
                     var transformedPoint = joint.orient.rotatePoint(weight.pos).add(joint.pos).scalarMul(weight.bias);
                     finalVertexPos = finalVertexPos.add(transformedPoint);
+
+                    if(j < MAXWEIGHTSPERVERTEX) {
+                        weightBias.setDataElement(j, weight.joint);
+                        jointIndices.setDataElement(j, weight.joint);
+                    }
+
                 }
 
                 vertPositions.add(finalVertexPos);
                 textCoords.add(vert.texCoords);
+                weightBiasesPerVert.add(weightBias);
+                jointIndicesPerVert.add(jointIndices);
             }
 
             for(Face t: mesh.triangles) {
@@ -166,6 +166,8 @@ public class MD5Utils {
             m.setAttribute(textCoords, Mesh.TEXTURE);
             m.setAttribute(normals, Mesh.NORMAL);
             m.setAttribute(matList,Mesh.MATERIAL);
+            m.setAttribute(weightBiasesPerVert, Mesh.WEIGHTBIASESPERVERT);
+            m.setAttribute(jointIndicesPerVert, Mesh.JOINTINDICESPERVERT);
             m.drawMode = GL_TRIANGLES;
             m.meshIdentifier = Utils.getUniqueID();
             m.shouldCull = false;

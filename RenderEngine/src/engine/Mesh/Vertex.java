@@ -12,6 +12,8 @@ public class Vertex {
     public static final int TANGENT = 4;
     public static final int BITANGENT = 5;
     public static final int MATERIAL = 6;
+    public static final int WEIGHTBIASESPERVERT = 7;
+    public static final int JOINTINDICESPERVERT = 8;
 
     public List<Integer> vertAttributes;
 

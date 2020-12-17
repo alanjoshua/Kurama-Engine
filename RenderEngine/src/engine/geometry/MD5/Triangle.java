@@ -1,6 +1,7 @@
 package engine.geometry.MD5;
 
 import engine.Mesh.Face;
+import engine.Mesh.Vertex;
 
 public class Triangle extends Face {
 
@@ -15,12 +16,18 @@ public class Triangle extends Face {
 
         v11.setAttribute(v1, engine.Mesh.Vertex.POSITION);
         v11.setAttribute(v1, engine.Mesh.Vertex.TEXTURE);
+        v11.setAttribute(v1, Vertex.WEIGHTBIASESPERVERT);
+        v11.setAttribute(v1, Vertex.JOINTINDICESPERVERT);
 
         v22.setAttribute(v2, engine.Mesh.Vertex.POSITION);
         v22.setAttribute(v2, engine.Mesh.Vertex.TEXTURE);
+        v22.setAttribute(v2, Vertex.WEIGHTBIASESPERVERT);
+        v22.setAttribute(v2, Vertex.JOINTINDICESPERVERT);
 
         v33.setAttribute(v3, engine.Mesh.Vertex.POSITION);
         v33.setAttribute(v3, engine.Mesh.Vertex.TEXTURE);
+        v33.setAttribute(v3, Vertex.WEIGHTBIASESPERVERT);
+        v33.setAttribute(v3, Vertex.JOINTINDICESPERVERT);
 
         this.addVertex(v11);
         this.addVertex(v22);

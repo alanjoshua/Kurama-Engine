@@ -77,6 +77,22 @@ public class Quaternion {
 				coordinate.get(3) });
 	}
 
+
+//	Calculate w component for quaternion
+	public static Quaternion calculateWFromXYZ(Vector orient) {
+		float t = 1f - (orient.get(0) * orient.get(0)) - (orient.get(1) * orient.get(1)) - (orient.get(2) * orient.get(2));
+		float w;
+		if (t < 0f) {
+			w = 0f;
+		} else {
+			w = (float) -Math.sqrt(t);
+		}
+
+		var orient_quat = new Quaternion(new Vector(w, orient.get(0), orient.get(1), orient.get(2)));
+		orient_quat.normalise();
+		return orient_quat;
+	}
+
 	public Matrix getRotationMatrix() {
 
 		float[] q = this.getCoordinate().getData();

@@ -1,5 +1,6 @@
 package engine.geometry.MD5;
 
+import engine.Math.Quaternion;
 import engine.Math.Vector;
 
 import java.io.BufferedReader;
@@ -69,7 +70,7 @@ public class MD5Model {
                             var orient = new Vector(Float.parseFloat(spaceSplit[9]), Float.parseFloat(spaceSplit[10]),
                                     Float.parseFloat(spaceSplit[11]));
 
-                            var joint = new Joint(name, parent, pos, orient);
+                            var joint = new Joint(name, parent, pos, Quaternion.calculateWFromXYZ(orient));
                             joints.add(joint);
                         }
                         break;
