@@ -23,6 +23,7 @@
 * Input handling
 * Built-in simple benchmarking tool
 * Modular rendering pipeline to allow users to stack and use multiple custom shaders with the engine. 
+* Skeletal animation support (MD5 format)
 
 <br>
 <br>
