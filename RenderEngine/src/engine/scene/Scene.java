@@ -3,6 +3,7 @@ package engine.scene;
 import engine.Mesh.Mesh;
 import engine.Effects.Fog;
 import engine.Math.Vector;
+import engine.geometry.MD5.AnimationFrame;
 import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
 import engine.camera.Camera;
@@ -130,13 +131,25 @@ public class Scene {
     }
 
     public Model createModel(Mesh mesh, String modelID, List<String> shaderID) {
-        Model newModel = new Model(game, mesh, modelID);
+        Model newModel = new Model(game, Arrays.asList(new Mesh[]{mesh}), modelID);
         addModel(newModel, shaderID);
         return newModel;
     }
 
     public Model createModel(List<Mesh> meshes, String modelID, List<String> shaderID) {
         Model newModel = new Model(game, meshes, modelID);
+        addModel(newModel, shaderID);
+        return newModel;
+    }
+
+    public Model createAnimatedModel(Mesh mesh, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, Arrays.asList(new Mesh[]{mesh}), frames, frameRate, modelID);
+        addModel(newModel, shaderID);
+        return newModel;
+    }
+
+    public Model createAnimatedModel(List<Mesh> meshes, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, meshes, frames, frameRate, modelID);
         addModel(newModel, shaderID);
         return newModel;
     }

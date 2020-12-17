@@ -1,11 +1,12 @@
 package engine.renderingEngine.defaultRenderPipeline;
 
-import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Vector;
+import engine.Mesh.Mesh;
+import engine.geometry.MeshBuilder;
 import engine.lighting.DirectionalLight;
 import engine.lighting.SpotLight;
-import engine.geometry.MeshBuilder;
+import engine.model.AnimatedModel;
 import engine.model.Model;
 import engine.renderingEngine.LightDataPackage;
 import engine.renderingEngine.RenderBlockInput;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
@@ -35,6 +35,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
     public int MAX_DIRECTIONAL_LIGHTS = 5;
     public int MAX_SPOTLIGHTS = 10;
     public int MAX_POINTLIGHTS = 10;
+    public int MAX_JOINTS = 150;
     protected Mesh axes;
 
     public SceneShaderBlock(String id) {
@@ -97,6 +98,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
             scene_shader.createUniformArray("directionalLightOrthoMatrix", 5);
             scene_shader.createUniformArray("spotlightPerspMatrix", 5);
+            scene_shader.createUniformArray("jointMatrices", MAX_JOINTS);
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -193,6 +195,16 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 Model model = scene.modelID_model_map.get(modelId);
 
                 if (model.shouldRender) {
+
+                    if(model instanceof AnimatedModel) {
+//                        Logger.log("detecting animated model");
+                        AnimatedModel anim = (AnimatedModel) model;
+                        for(int i = 0;i < anim.animationFrames.get(anim.currentFrame).jointMatrices.length;i++) {
+                            var matrix = anim.animationFrames.get(anim.currentFrame).jointMatrices[i];
+                            sceneShaderProgram.setUniform("jointMatrices["+i+"]", matrix);
+                        }
+                    }
+
                     Matrix objectToWorld = model.getObjectToWorldMatrix();
                     sceneShaderProgram.setUniform("modelViewMatrix", worldToCam.matMul(objectToWorld));
                     for (int i = 0; i < scene.directionalLights.size(); i++) {

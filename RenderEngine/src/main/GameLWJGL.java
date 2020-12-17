@@ -26,11 +26,13 @@ import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.misc_structures.Texture;
+import engine.model.AnimatedModel;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.awt.*;
@@ -93,8 +95,23 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
+        MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
+        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
+        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+        monsterMeshes.stream().forEach(m -> {
+            m.materials.get(0).reflectance=0f;
+            m.materials.get(0).specularPower=0f;
+        });
+
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
-        var frames = MD5Utils.generateAnimationFrames(monsterAnim);
+        var frames = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
+
+        Model monster = scene.createAnimatedModel(monsterMeshes, frames, monsterAnim.frameRate, "monster",
+                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        monster.setScale(0.1f);
+        monster.setPos(new Vector(0, 30, 0));
+        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90));
+
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 
@@ -262,20 +279,6 @@ public class GameLWJGL extends Game implements Runnable {
         ter.reflectance = 1f;
         terrain.meshes.get(0).materials.set(0,ter);
 
-
-        MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
-        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
-        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
-        monsterMeshes.stream().forEach(m -> {
-            m.materials.get(0).reflectance=0f;
-            m.materials.get(0).specularPower=0f;
-        });
-        Model monster = scene.createModel(monsterMeshes, "monster",
-                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-        monster.setScale(0.1f);
-        monster.setPos(new Vector(0, 30, 0));
-        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90));
-
         terrain.meshes.get(0).initOpenGLMeshData();
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -424,6 +427,20 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDownOnce(input.B)) {
             writeSceneToFile();
+        }
+
+        if(input.keyDown(input.UP_ARROW)) {
+            Logger.log("cycling frames");
+            AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
+            monster.cycleFrame(1);
+            Logger.log("Current frame: "+monster.currentFrame);
+        }
+
+        if(input.keyDown(input.DOWN_ARROW)) {
+            Logger.log("cycling frames");
+            AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
+            monster.cycleFrame(-1);
+            Logger.log("Current frame: "+monster.currentFrame);
         }
 
         if(input.keyDown(input.S)) {

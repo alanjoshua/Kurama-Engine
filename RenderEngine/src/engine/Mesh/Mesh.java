@@ -2,6 +2,7 @@ package engine.Mesh;
 
 import engine.Effects.Material;
 import engine.Math.Vector;
+import engine.geometry.MD5.MD5Utils;
 import engine.geometry.MeshBuilderHints;
 import org.lwjgl.system.MemoryUtil;
 
@@ -147,6 +148,24 @@ public class Mesh {
         List<Integer> offsets = new ArrayList<>(vertAttributes.size());
         List<Integer> sizePerAttrib = new ArrayList<>(vertAttributes.size());
         int stride = 0;
+
+        if(!isAttributePresent(Mesh.WEIGHTBIASESPERVERT)) {
+            Vector negs = new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1);
+            List<Vector> att = new ArrayList<>(vertAttributes.get(Mesh.POSITION).size());
+            att.add(negs);
+//            for(int i = 0;i < indices.size(); i++) {
+//                att.add(negs);
+//            }
+            setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
+            setAttribute(att, Mesh.JOINTINDICESPERVERT);
+
+            for(var f: faces) {
+                for(var vert: f.vertices) {
+                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
+                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
+                }
+            }
+        }
 
         final int sizeOfFloat = Float.SIZE / Byte.SIZE;
 

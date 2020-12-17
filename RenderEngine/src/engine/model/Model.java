@@ -1,11 +1,11 @@
 package engine.model;
 
-import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.geometry.MeshBuilder;
+import engine.Mesh.Mesh;
 import engine.game.Game;
+import engine.geometry.MeshBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;

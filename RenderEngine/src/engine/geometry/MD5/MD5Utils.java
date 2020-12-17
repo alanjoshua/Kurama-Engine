@@ -1,6 +1,7 @@
 package engine.geometry.MD5;
 
 import engine.Effects.Material;
+import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Face;
@@ -18,19 +19,21 @@ public class MD5Utils {
 
     public static int MAXWEIGHTSPERVERTEX = 4;
 
-    public static List<AnimationFrame> generateAnimationFrames(MD5AnimModel anim) {
+    public static List<AnimationFrame> generateAnimationFrames(MD5AnimModel anim, MD5Model bindModel) {
         List<AnimationFrame> results = new ArrayList<>(anim.numFrames);
+        List<Matrix> invmatrices = getInvJointMatrices(bindModel);
 
         for(var frame: anim.frames) {
 
             var newFrame = new AnimationFrame(anim.numJoints);
+//            var newJoints = new ArrayList<Joint>(anim.numJoints);
             results.add(newFrame);
 
             for (int i = 0; i < anim.numJoints; i++) {
 
                 var joint = anim.joints.get(i);
-                Vector animatedPos = new Vector(3, 0);
-                Vector animatedOrient_temp = new Vector(3, 0);
+                Vector animatedPos = joint.base_pos;
+                Vector animatedOrient_temp = joint.base_orient.getPureVec();
                 int startIndex = joint.startIndex;
 
                 if ((joint.flags & 1) > 0) {
@@ -57,18 +60,33 @@ public class MD5Utils {
                 newFrame.joints.add(newJoint);
 
 //                Not a parent joint
-                if(newJoint.parent >= 0) {
+                if(newJoint.parent > -1) {
                     var parentJoint = newFrame.joints.get(newJoint.parent);
                     var rotatedPoint = parentJoint.orient.rotatePoint(animatedPos);
                     newJoint.pos = rotatedPoint.add(parentJoint.pos);
                     newJoint.orient = parentJoint.orient.multiply(animated_orient);
+//                    newJoint.orient = parentJoint.orient.getRotationMatrix().matMul(animated_orient.getRotationMatrix())
                     newJoint.orient.normalise();
                 }
-
+                newFrame.setMatrix(i, newJoint.pos, newJoint.orient, invmatrices.get(i));
             }
 
         }
 
+        return results;
+    }
+
+    public static List<Matrix> getInvJointMatrices(MD5Model model) {
+        List<Matrix> results = new ArrayList<>(model.numJoints);
+        for(var joint: model.joints) {
+//            Matrix m_ = joint.orient.getInverse().getRotationMatrix();
+//            Vector pos_ = (m_.matMul(joint.pos).toVector()).scalarMul(-1);
+//            Matrix res = m_.addColumn(pos_);
+//            res = res.addRow(new Vector(new float[]{0,0,0,1}));
+//            results.add(res);
+            var mat = joint.orient.getRotationMatrix().addColumn(joint.pos).addRow(new Vector(0, 0, 0, 1));
+            results.add(mat.getInverse());
+        }
         return results;
     }
 
@@ -100,7 +118,7 @@ public class MD5Utils {
                     finalVertexPos = finalVertexPos.add(transformedPoint);
 
                     if(j < MAXWEIGHTSPERVERTEX) {
-                        weightBias.setDataElement(j, weight.joint);
+                        weightBias.setDataElement(j, weight.bias);
                         jointIndices.setDataElement(j, weight.joint);
                     }
 

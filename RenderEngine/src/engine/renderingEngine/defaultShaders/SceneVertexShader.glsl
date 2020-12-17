@@ -1,15 +1,20 @@
 #version 460
 
-layout (location = 0) in vec4 position;
+layout (location = 0) in vec3 position;
 layout (location = 3) in vec4 color;
 layout (location = 1) in vec2 texCoord;
 layout (location = 2) in vec3 normal;
 layout (location = 4) in vec3 tangent;
 layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
+layout (location = 7) in vec4 biases;
+layout (location = 8) in vec4 jointIndices;
 
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 const int MAX_SPOT_LIGHTS = 10;
+
+const int MAX_WEIGHTS = 4;
+const int MAX_JOINTS = 150;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -19,6 +24,7 @@ uniform mat4 directionalLightOrthoMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 spotlightPerspMatrix[MAX_SPOT_LIGHTS];
 uniform int numDirectionalLights;
 uniform int numberOfSpotLights;
+uniform mat4 jointMatrices[MAX_JOINTS];
 
 out vec4 exColor;
 out vec2 outTex;
@@ -33,7 +39,24 @@ flat out int numDirLight;
 flat out int numSpotLights;
 
 void main() {
-    vec4 tempPos = modelViewMatrix * position;
+    vec4 initPos = vec4(0, 0, 0, 0);
+    int count = 0;
+    for(int i = 0;i < MAX_WEIGHTS;i++) {
+        float weight = biases[i];
+        if(weight > 0f) {
+            count++;
+            int jointIndex = int(jointIndices[i]);
+            vec4 temp = jointMatrices[jointIndex] * vec4(position,1.0);
+            initPos += weight * temp;
+        }
+    }
+
+    if (count == 0) {
+        initPos = vec4(position, 1.0);
+    }
+
+
+    vec4 tempPos = modelViewMatrix * initPos;
     gl_Position = projectionMatrix * tempPos;
 
     exColor = color;
@@ -49,10 +72,10 @@ void main() {
     TBN = mat3(T, B, N);
 
     for(int i = 0;i < numDirectionalLights;i++) {
-        mLightViewVertexPos[i] = directionalLightOrthoMatrix[i] * modelLightViewMatrix[i] * position;
+        mLightViewVertexPos[i] = directionalLightOrthoMatrix[i] * modelLightViewMatrix[i] * vec4(position, 1.0);
     }
     for(int i = 0;i < numberOfSpotLights;i++) {
-        mSpotLightViewVertexPos[i] = spotlightPerspMatrix[i] * modelSpotLightViewMatrix[i] * position;
+        mSpotLightViewVertexPos[i] = spotlightPerspMatrix[i] * modelSpotLightViewMatrix[i] * vec4(position, 1.0);
         mSpotLightViewVertexPos[i] = mSpotLightViewVertexPos[i]/mSpotLightViewVertexPos[i].w;
     }
     materialInd = materialIndex;
