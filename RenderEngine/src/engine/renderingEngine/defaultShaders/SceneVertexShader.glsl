@@ -40,6 +40,10 @@ flat out int numSpotLights;
 
 void main() {
     vec4 initPos = vec4(0, 0, 0, 0);
+    vec4 initNormal = vec4(0, 0, 0, 0);
+    vec4 initTangent = vec4(0, 0, 0, 0);
+    vec4 initBitangent = vec4(0, 0, 0, 0);
+
     int count = 0;
     for(int i = 0;i < MAX_WEIGHTS;i++) {
         float weight = biases[i];
@@ -48,11 +52,23 @@ void main() {
             int jointIndex = int(jointIndices[i]);
             vec4 temp = jointMatrices[jointIndex] * vec4(position,1.0);
             initPos += weight * temp;
+
+            vec4 tempNormal = jointMatrices[jointIndex] * vec4(normal,0.0);
+            initNormal += weight * tempNormal;
+
+            vec4 tempTangent = jointMatrices[jointIndex] * vec4(tangent,0.0);
+            initTangent += weight * tempTangent;
+
+            vec4 tempBitangent = jointMatrices[jointIndex] * vec4(biTangent,0.0);
+            initBitangent += weight * tempBitangent;
         }
     }
 
     if (count == 0) {
         initPos = vec4(position, 1.0);
+        initNormal = vec4(normal, 0.0);
+        initTangent = vec4(tangent, 0.0);
+        initBitangent = vec4(biTangent, 0.0);
     }
 
 
@@ -62,13 +78,13 @@ void main() {
     exColor = color;
     outTex = texCoord;
 
-    vertNormal = normalize(modelViewMatrix * vec4(normal, 0.0)).xyz;
+    vertNormal = normalize(modelViewMatrix * initNormal).xyz;
     vertPos = tempPos.xyz;
     outModelViewMatrix = modelViewMatrix;
 
-    vec3 T = normalize(vec3(modelViewMatrix * vec4(tangent, 0.0)));
-    vec3 B = normalize(vec3(modelViewMatrix * vec4(biTangent, 0.0)));
-    vec3 N = normalize(vec3(modelViewMatrix * vec4(normal, 0.0)));
+    vec3 T = normalize(vec3(modelViewMatrix * initTangent));
+    vec3 B = normalize(vec3(modelViewMatrix * initBitangent));
+    vec3 N = normalize(vec3(modelViewMatrix * initNormal));
     TBN = mat3(T, B, N);
 
     for(int i = 0;i < numDirectionalLights;i++) {

@@ -129,7 +129,7 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
      projCoords = projCoords * 0.5 + 0.5;  //Transform from screen coordinates to texture coordinates
      float shadowFactor = 0;
 
-    bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0001);
+    bias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.001);
 
     vec2 inc = 1.0 / textureSize(shadowMap, 0);
 

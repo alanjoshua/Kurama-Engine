@@ -111,7 +111,7 @@ public class GameLWJGL extends Game implements Runnable {
         Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster",
                 Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         monster.setScale(0.1f);
-        monster.setPos(new Vector(0, 30, 0));
+        monster.setPos(new Vector(10, 30, 10));
         monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90));
 
         initScene();
@@ -253,17 +253,17 @@ public class GameLWJGL extends Game implements Runnable {
         float[][] heightMap = engine.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
 
-//        for(int i = 0;i < 20;i++) {
-//            for(int y = 0;y < 20;y++) {
-//                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
-//                Model cube = new Model(this,cubeMesh , "cube");
-//                cube.setScale(boxScale);
-//                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
-////                cube.behaviour = new rotate();
-//                cube.meshes.get(0).materials.set(0,cubeMat);
-//                scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-//            }
-//        }
+        for(int i = 0;i < 20;i++) {
+            for(int y = 0;y < 20;y++) {
+                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
+                Model cube = new Model(this,cubeMesh , "cube");
+                cube.setScale(boxScale);
+                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
+//                cube.behaviour = new rotate();
+                cube.meshes.get(0).materials.set(0,cubeMat);
+                scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+            }
+        }
 
         Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
                 "plantMesh", hints), "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -434,7 +434,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(input.keyDown(input.UP_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(0.1f);
+            monster.cycleFrame(1f);
             monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
@@ -442,7 +442,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(input.keyDown(input.DOWN_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(-0.1f);
+            monster.cycleFrame(1f);
             monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
