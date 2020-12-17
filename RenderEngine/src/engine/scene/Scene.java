@@ -1,17 +1,20 @@
 package engine.scene;
 
-import engine.Mesh.Mesh;
 import engine.Effects.Fog;
+import engine.Math.Matrix;
 import engine.Math.Vector;
+import engine.Mesh.Mesh;
+import engine.camera.Camera;
+import engine.game.Game;
 import engine.geometry.MD5.AnimationFrame;
 import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
-import engine.camera.Camera;
-import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.model.*;
+import engine.model.AnimatedModel;
+import engine.model.HUD;
+import engine.model.Model;
 import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 import engine.utils.Utils;
@@ -142,14 +145,14 @@ public class Scene {
         return newModel;
     }
 
-    public Model createAnimatedModel(Mesh mesh, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
-        Model newModel = new AnimatedModel(game, Arrays.asList(new Mesh[]{mesh}), frames, frameRate, modelID);
+    public Model createAnimatedModel(Mesh mesh, List<AnimationFrame> frames, List<Matrix> invMatrices, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, Arrays.asList(new Mesh[]{mesh}), frames, invMatrices, frameRate, modelID);
         addModel(newModel, shaderID);
         return newModel;
     }
 
-    public Model createAnimatedModel(List<Mesh> meshes, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
-        Model newModel = new AnimatedModel(game, meshes, frames, frameRate, modelID);
+    public Model createAnimatedModel(List<Mesh> meshes, List<AnimationFrame> frames, List<Matrix> invMatrices, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, meshes, frames, invMatrices, frameRate, modelID);
         addModel(newModel, shaderID);
         return newModel;
     }

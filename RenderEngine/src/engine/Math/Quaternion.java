@@ -49,6 +49,49 @@ public class Quaternion {
 		return new Quaternion(new Vector(data));
 	}
 
+	public static Quaternion getAxisAsQuat(float x, float y, float z, float angle) {
+		Vector v = new Vector(x, y, z);
+		float a = (float) Math.toRadians(angle / 2f);
+		float sin = (float)Math.sin(a);
+		float[] data = new float[] { (float) Math.cos(a), sin * v.get(0), sin * v.get(1), sin * v.get(2) };
+		return new Quaternion(new Vector(data));
+	}
+
+
+//	https://en.wikipedia.org/wiki/Slerp#:~:text=Writing%20a%20unit%20quaternion%20q,%CE%A9%20%2B%20v%20sin%20t%20%CE%A9.&text=Here%20are%20four%20equivalent%20quaternion%20expressions%20for%20Slerp.
+	public static Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
+		q1.normalise();
+		q2.normalise();
+
+		double dot = q1.coordinate.dot(q2.coordinate);
+		if(dot < 0f) {
+			q1.coordinate = q1.coordinate.scalarMul(-1);
+			dot = -dot;
+		}
+
+		double DOT_THRESHOLD = 0.9995;
+		if (dot > DOT_THRESHOLD) {
+			// If the inputs are too close for comfort, linearly interpolate
+			// and normalize the result.
+
+			var result = new Quaternion(q1.coordinate.add((q2.coordinate.sub(q1.coordinate)).scalarMul(t)));
+			result.normalise();
+			return result;
+		}
+
+		// Since dot is in range [0, DOT_THRESHOLD], acos is safe
+		double theta_0 = Math.acos(dot);        // theta_0 = angle between input vectors
+		double theta = theta_0*t;          // theta = angle between v0 and result
+		double sin_theta = Math.sin(theta);     // compute this value only once
+		double sin_theta_0 = Math.sin(theta_0); // compute this value only once
+
+		double s0 = Math.cos(theta) - dot * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
+		double s1 = sin_theta / sin_theta_0;
+
+		return new Quaternion((q1.coordinate.scalarMul((float)s0)).add(q2.coordinate.scalarMul((float) s1)));
+
+	}
+
 	public static Quaternion getQuaternionFromEuler(float pitch, float yaw, float roll) {
 		Quaternion p = Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),pitch);
 		Quaternion y = Quaternion.getAxisAsQuat(new Vector(new float[]{0,1,0}),yaw);

@@ -19,15 +19,15 @@ public class MD5Utils {
 
     public static int MAXWEIGHTSPERVERTEX = 4;
 
-    public static List<AnimationFrame> generateAnimationFrames(MD5AnimModel anim, MD5Model bindModel) {
-        List<AnimationFrame> results = new ArrayList<>(anim.numFrames);
+    public static List<List> generateAnimationFrames(MD5AnimModel anim, MD5Model bindModel) {
+        List<AnimationFrame> animationFrames = new ArrayList<>(anim.numFrames);
         List<Matrix> invmatrices = getInvJointMatrices(bindModel);
 
         for(var frame: anim.frames) {
 
             var newFrame = new AnimationFrame(anim.numJoints);
 //            var newJoints = new ArrayList<Joint>(anim.numJoints);
-            results.add(newFrame);
+            animationFrames.add(newFrame);
 
             for (int i = 0; i < anim.numJoints; i++) {
 
@@ -68,11 +68,14 @@ public class MD5Utils {
 //                    newJoint.orient = parentJoint.orient.getRotationMatrix().matMul(animated_orient.getRotationMatrix())
                     newJoint.orient.normalise();
                 }
-                newFrame.setMatrix(i, newJoint.pos, newJoint.orient, invmatrices.get(i));
+//                newFrame.setMatrix(i, newJoint.pos, newJoint.orient, invmatrices.get(i));
             }
 
         }
 
+        List<List> results = new ArrayList<>();
+        results.add(animationFrames);
+        results.add(invmatrices);
         return results;
     }
 

@@ -104,9 +104,11 @@ public class GameLWJGL extends Game implements Runnable {
         });
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
-        var frames = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
+        var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
+        var frames = frames_inv.get(0);
+        var invMats = frames_inv.get(1);
 
-        Model monster = scene.createAnimatedModel(monsterMeshes, frames, monsterAnim.frameRate, "monster",
+        Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster",
                 Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         monster.setScale(0.1f);
         monster.setPos(new Vector(0, 30, 0));
@@ -432,14 +434,16 @@ public class GameLWJGL extends Game implements Runnable {
         if(input.keyDown(input.UP_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(1);
+            monster.cycleFrame(0.1f);
+            monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
 
         if(input.keyDown(input.DOWN_ARROW)) {
             Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(-1);
+            monster.cycleFrame(-0.1f);
+            monster.generateCurrentSkeleton(monster.currentFrame);
             Logger.log("Current frame: "+monster.currentFrame);
         }
 

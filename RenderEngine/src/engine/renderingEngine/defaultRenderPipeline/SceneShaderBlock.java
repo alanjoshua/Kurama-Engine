@@ -199,8 +199,8 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     if(model instanceof AnimatedModel) {
 //                        Logger.log("detecting animated model");
                         AnimatedModel anim = (AnimatedModel) model;
-                        for(int i = 0;i < anim.animationFrames.get(anim.currentFrame).jointMatrices.length;i++) {
-                            var matrix = anim.animationFrames.get(anim.currentFrame).jointMatrices[i];
+                        for(int i = 0;i < anim.currentJointTransformations.size();i++) {
+                            var matrix = anim.currentJointTransformations.get(i);
                             sceneShaderProgram.setUniform("jointMatrices["+i+"]", matrix);
                         }
                     }
