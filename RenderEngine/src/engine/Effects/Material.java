@@ -1,6 +1,5 @@
 package engine.Effects;
 
-import engine.misc_structures.Texture;
 import engine.Math.Vector;
 import engine.utils.Utils;
 

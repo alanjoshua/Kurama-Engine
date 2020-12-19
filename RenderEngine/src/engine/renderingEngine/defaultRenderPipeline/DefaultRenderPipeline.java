@@ -38,11 +38,10 @@ public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline
     public void render(Scene scene) {
         sceneShaderBlock.render(new RenderBlockInput(scene, game));
         skyboxShaderBlock.render(new RenderBlockInput(scene, game));
+        particleShaderBlock.render(new RenderBlockInput(scene, game));
 
         //Hud should be rendered at last, or else text would have background
         hudShaderBlock.render(new RenderBlockInput(scene, game));
-
-        particleShaderBlock.render(new RenderBlockInput(scene, game));
     }
 
     @Override

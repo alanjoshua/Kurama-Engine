@@ -1,6 +1,5 @@
 package engine.Effects;
 
-import engine.misc_structures.Texture;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 

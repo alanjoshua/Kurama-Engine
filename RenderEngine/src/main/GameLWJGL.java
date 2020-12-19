@@ -26,7 +26,7 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 import engine.model.AnimatedModel;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
@@ -101,16 +101,18 @@ public class GameLWJGL extends Game implements Runnable {
 
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", null);
         partMesh.initOpenGLMeshData();
-        Texture partTex = new Texture("res/misc/particle_tmp.png");
+        Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
         partMesh.materials.get(0).texture = partTex;
 
-        Particle particle = new Particle(this, partMesh, new Vector(0, 1, 0), new Vector(0, 0, 0), "baseParticle");
-        particle.timeToLive = 100;
+        Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
+                3,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
-        particle.pos = new Vector(10, 30, 20);
-        var particleGenerator = new FlowParticleGenerator(particle, 200, 0.1f, "generator");
-        particleGenerator.posRange = 0.2f;
-        particleGenerator.velRange = 0.2f;
+        particle.pos = new Vector(8.5f, 39, 30);
+        var particleGenerator = new FlowParticleGenerator(particle, 10000, 0.01f, "generator");
+        particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
+        particleGenerator.velRange = new Vector(-0.1f, 2f, 0.5f);
+        particleGenerator.accelRange = new Vector(0,0,0);
+        particleGenerator.animUpdateRange = 0.1f;
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");

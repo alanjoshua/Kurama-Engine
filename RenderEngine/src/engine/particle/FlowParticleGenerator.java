@@ -1,17 +1,18 @@
 package engine.particle;
 
 import engine.Math.Vector;
-import engine.utils.Logger;
 
 public class FlowParticleGenerator extends ParticleGenerator {
 
     public int maxParticles;
     public boolean active;
     public long lastCreationTime;  //Nanoseconds
-    public float posRange = 0;
+    public Vector posRange = new Vector(0,0,0);
     public float creationPeriodSeconds;
-    public float velRange = 0;
-    public float scaleRange = 0;
+    public Vector velRange = new Vector(0,0,0);
+    public Vector accelRange = new Vector(0,0,0);
+    public Vector scaleRange = new Vector(0,0,0);
+    public float animUpdateRange = 0;
 
     public FlowParticleGenerator(Particle baseParticle, int maxParticles, float creationPeriodSeconds, String id) {
         super(id);
@@ -54,16 +55,20 @@ public class FlowParticleGenerator extends ParticleGenerator {
     }
 
     public void createParticle() {
-        Logger.log("Creating new particle");
         var particle = new Particle(this.baseParticle);
         float sign = Math.random() > 0.5d ? -1.0f : 1.0f;
-        float speedInc = sign * (float)Math.random() * this.velRange;
-        float posInc = sign * (float)Math.random() * this.posRange;
-        float scaleInc = sign * (float)Math.random() * this.scaleRange;
 
-        particle.pos = particle.pos.add(new Vector(posInc, posInc, posInc));
-        particle.velocity = particle.velocity.add(new Vector(speedInc, speedInc, speedInc));
-        particle.scale = particle.scale.add(new Vector(scaleInc, scaleInc, scaleInc));
+        Vector speedInc = Vector.randomVector(3).mul(velRange);
+        Vector posInc = Vector.randomVector(3).mul(posRange);
+        Vector scaleInc = Vector.randomVector(3).mul(scaleRange);
+        Vector accelInc = Vector.randomVector(3).mul(accelRange);
+        float updateAnimInc = (long)sign *(long)(Math.random() * (float)this.animUpdateRange);
+
+        particle.acceleration = particle.acceleration.add(accelInc);
+        particle.pos = particle.pos.add(posInc);
+        particle.velocity = particle.velocity.add(speedInc);
+        particle.scale = particle.scale.add(scaleInc);
+        particle.updateTexture += updateAnimInc;
         particles.add(particle);
     }
 

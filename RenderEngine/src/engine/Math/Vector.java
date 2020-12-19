@@ -18,6 +18,15 @@ public class Vector {
 		this.numberOfDimensions = data.length;
 	}
 
+	public static Vector randomVector(int size) {
+		float[] data = new float[size];
+		for(int i = 0;i < size;i++) {
+			float sign = Math.random() > 0.5d ? -1.0f : 1.0f;
+			data[i] = sign * (float)Math.random();
+		}
+		return new Vector(data);
+	}
+
 	// Load Vector from string
 	public static Vector loadFromString(String string) {
 		String[] tokens = string.split(" ");

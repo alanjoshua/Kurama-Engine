@@ -1,6 +1,6 @@
 package engine.font;
 
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

@@ -10,7 +10,7 @@ import engine.Mesh.Vertex;
 import engine.misc_structures.LinkedList.CircularDoublyLinkedList;
 import engine.misc_structures.LinkedList.DoublyLinkedList;
 import engine.misc_structures.LinkedList.Node;
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 import engine.utils.Logger;
 
 import java.io.*;

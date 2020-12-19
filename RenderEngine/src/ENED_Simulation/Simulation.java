@@ -3,7 +3,7 @@ package ENED_Simulation;
 import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.Mesh.Mesh;
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
 import engine.Math.Matrix;

@@ -7,6 +7,8 @@ import engine.scene.Scene;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11C.GL_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11C.glBlendFunc;
 
 public class RenderingEngineGL extends RenderingEngine {
 
@@ -18,6 +20,7 @@ public class RenderingEngineGL extends RenderingEngine {
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
         enable(GL_CULL_FACE);
         setCullFace(GL_BACK);

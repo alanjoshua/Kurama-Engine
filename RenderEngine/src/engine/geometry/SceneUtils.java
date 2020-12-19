@@ -3,7 +3,7 @@ package engine.geometry;
 import engine.Mesh.Face;
 import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 import engine.Effects.Fog;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;

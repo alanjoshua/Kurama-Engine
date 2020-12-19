@@ -6,7 +6,7 @@ import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Face;
 import engine.Mesh.Mesh;
-import engine.misc_structures.Texture;
+import engine.Effects.Texture;
 import engine.utils.Utils;
 
 import java.io.File;
