@@ -42,8 +42,11 @@ public class Particle extends Model {
     }
 
     public void tick(float timeDelta) {
+//        Logger.log("ticking");
         velocity = velocity.add(acceleration.scalarMul(timeDelta));
-        pos = pos.add(velocity.scalarMul(timeDelta));
+        var detlaV = velocity.scalarMul(timeDelta);
+        pos = pos.add(detlaV);
+//        Logger.log("delta V: "+detlaV.toString());
     }
 
 }

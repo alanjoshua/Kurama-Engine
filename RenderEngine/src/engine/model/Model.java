@@ -128,17 +128,17 @@ public class Model {
 	}
 
 	public Matrix getObjectToWorldMatrix() {
-		if(isChanged) {
+//		if(isChanged) {
 			Matrix rotationMatrix = this.orientation.getRotationMatrix();
 			Matrix scalingMatrix = Matrix.getDiagonalMatrix(this.getScale());
 			Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
 			Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
 			transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
-			isChanged = false;
-			cacheViewMatrix = transformationMatrix;
-		}
-		return cacheViewMatrix;
+//			isChanged = false;
+//			cacheViewMatrix = transformationMatrix;
+//		}
+		return transformationMatrix;
 	}
 
 	public Matrix getWorldToObject() {

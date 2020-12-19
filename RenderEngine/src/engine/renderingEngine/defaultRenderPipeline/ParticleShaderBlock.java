@@ -5,6 +5,7 @@ import engine.Mesh.Mesh;
 import engine.renderingEngine.RenderBlock;
 import engine.renderingEngine.RenderBlockInput;
 import engine.shader.ShaderProgram;
+import engine.utils.Logger;
 
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
@@ -59,13 +60,11 @@ public class ParticleShaderBlock extends RenderBlock {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, mesh.materials.get(0).texture.getId());
                 }
-
                 mesh.initRender();
+
                 for(var particle: generator.particles) {
-//                    Logger.log("particle scale: "+particle.scale.toString());
                     Matrix objectToWorld = particle.getObjectToWorldMatrix();
                     particleShader.setUniform("modelViewMatrix", worldToCam.matMul(objectToWorld));
-//                    mesh.initToEndFullRender(0);
                     mesh.render();
                 }
                 mesh.endRender();

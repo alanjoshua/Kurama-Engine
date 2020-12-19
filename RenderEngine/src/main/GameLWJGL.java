@@ -99,16 +99,16 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-        Mesh partMesh = MeshBuilder.loadMeshFromOBJ("res/misc/particle.obj", null);
+        Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", null);
         partMesh.initOpenGLMeshData();
         Texture partTex = new Texture("res/misc/particle_tmp.png");
         partMesh.materials.get(0).texture = partTex;
 
         Particle particle = new Particle(this, partMesh, new Vector(0, 1, 0), new Vector(0, 0, 0), "baseParticle");
         particle.timeToLive = 100;
-        particle.scale = new Vector(3, 0.5f);
+        particle.scale = new Vector(3, 1f);
         particle.pos = new Vector(10, 30, 20);
-        var particleGenerator = new FlowParticleGenerator(particle, 200, 1f, "generator");
+        var particleGenerator = new FlowParticleGenerator(particle, 200, 0.1f, "generator");
         particleGenerator.posRange = 0.2f;
         particleGenerator.velRange = 0.2f;
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
