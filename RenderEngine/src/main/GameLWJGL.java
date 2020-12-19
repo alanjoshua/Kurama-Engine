@@ -17,6 +17,7 @@ import engine.game.Game;
 import engine.geometry.MD5.MD5AnimModel;
 import engine.geometry.MD5.MD5Model;
 import engine.geometry.MD5.MD5Utils;
+import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
 import engine.geometry.SceneUtils;
 import engine.geometry.TerrainUtils;
@@ -29,6 +30,9 @@ import engine.misc_structures.Texture;
 import engine.model.AnimatedModel;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
+import engine.particle.FlowParticleGenerator;
+import engine.particle.Particle;
+import engine.particle.ParticleGeneratorTickInput;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import engine.scene.Scene;
@@ -95,25 +99,19 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-        MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
-        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
-        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
-        monsterMeshes.stream().forEach(m -> {
-            m.materials.get(0).reflectance=0f;
-            m.materials.get(0).specularPower=0f;
-        });
+        Mesh partMesh = MeshBuilder.loadMeshFromOBJ("res/misc/particle.obj", null);
+        partMesh.initOpenGLMeshData();
+        Texture partTex = new Texture("res/misc/particle_tmp.png");
+        partMesh.materials.get(0).texture = partTex;
 
-        var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
-        var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
-        var frames = frames_inv.get(0);
-        var invMats = frames_inv.get(1);
-
-        Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster",
-                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-        monster.setScale(0.1f);
-        monster.setPos(new Vector(10, 30, 10));
-        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-//
+        Particle particle = new Particle(this, partMesh, new Vector(0, 1, 0), new Vector(0, 0, 0), "baseParticle");
+        particle.timeToLive = 100;
+        particle.scale = new Vector(3, 0.5f);
+        particle.pos = new Vector(10, 30, 20);
+        var particleGenerator = new FlowParticleGenerator(particle, 200, 1f, "generator");
+        particleGenerator.posRange = 0.2f;
+        particleGenerator.velRange = 0.2f;
+        scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 
@@ -168,7 +166,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightPos = new Vector(new float[]{0,0,10});
         PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
-        sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
+        sl_pointLight.attenuation = new PointLight.Attenuation(0f,0.1f, 0f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*4),
@@ -286,6 +284,37 @@ public class GameLWJGL extends Game implements Runnable {
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
+        MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
+        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
+        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+//        monsterMeshes.stream().forEach(m -> {
+//            m.materials.get(0).reflectance=0f;
+//            m.materials.get(0).specularPower=0f;
+//        });
+
+        var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
+        var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
+        var frames = frames_inv.get(0);
+        var invMats = frames_inv.get(1);
+
+        Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster",
+                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        monster.setScale(0.1f);
+        monster.setPos(new Vector(10, 30, 10));
+        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
+
+        var madara = new MD5Model("res/madara/madara.md5mesh");
+        var madara_meshes = MD5Utils.generateMeshes(madara, new Vector(1f, 1f, 1f, 1f));
+        madara_meshes.stream().forEach(Mesh::initOpenGLMeshData);
+        var madara_model = scene.createModel(madara_meshes, "madara", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        madara_model.setScale(5f);
+        madara_model.setPos(new Vector(10, 30, 30));
+        madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
+//        madara_meshes.stream().forEach(m -> {
+//            m.materials.get(0).reflectance=0f;
+//            m.materials.get(0).specularPower=0f;
+//        });
+
         scene.renderPipeline = new DefaultRenderPipeline(this);
 
     }
@@ -401,6 +430,9 @@ public class GameLWJGL extends Game implements Runnable {
         if(isGameRunning) {
             ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
             scene.modelID_model_map.values().forEach(m -> m.tick(params));
+
+            ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
+            scene.particleGenerators.forEach(gen -> gen.tick(param));
         }
 
         if(!isGameRunning) {

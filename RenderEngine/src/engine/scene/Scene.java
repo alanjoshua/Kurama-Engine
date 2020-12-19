@@ -15,8 +15,8 @@ import engine.lighting.SpotLight;
 import engine.model.AnimatedModel;
 import engine.model.HUD;
 import engine.model.Model;
+import engine.particle.ParticleGenerator;
 import engine.renderingEngine.RenderPipeline;
-import engine.shader.ShaderProgram;
 import engine.utils.Utils;
 
 import java.util.*;
@@ -30,8 +30,13 @@ public class Scene {
     public Map<String, HashMap<String, HashMap<String, Model>>> shaderblock_mesh_model_map = new HashMap<>();
     public Map<String, Model> modelID_model_map = new HashMap<>();
     public Map<String, List<String>> modelID_shaderID_map = new HashMap<>();
-    public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
+//    public Map<String, ShaderProgram> shaderID_shader_map = new HashMap<>();
 
+    public Map<String, ParticleGenerator> particleGenID_generator_map = new HashMap<>();
+    public Map<String, List<String>> particleGenID_shaderID_map = new HashMap<>();
+    public Map<String, List<String>> shaderBlockID_particelGenID_map = new HashMap<>();
+
+    public List<ParticleGenerator> particleGenerators = new ArrayList<>();
     public List<PointLight> pointLights = new ArrayList<>();
     public List<DirectionalLight> directionalLights = new ArrayList<>();
     public List<SpotLight> spotLights = new ArrayList<>();
@@ -82,6 +87,28 @@ public class Scene {
         if (!isIDUniqueMeshID(mesh.meshIdentifier)) {
             mesh.meshIdentifier = Utils.getUniqueID();
         }
+    }
+
+    public void addParticleGenerator(ParticleGenerator generator, List<String> shaderID) {
+        var id = generator.ID;
+
+        if (id == null) {
+            id = Utils.getUniqueID();
+        }
+
+        if (particleGenID_generator_map.containsKey(id)) {
+            id = Utils.getUniqueID();
+        }
+
+        generator.ID = id;
+        particleGenID_generator_map.put(id, generator);
+        particleGenerators.add(generator);
+        particleGenID_shaderID_map.put(id, shaderID);
+        for(var shaID: shaderID) {
+            shaderBlockID_particelGenID_map.putIfAbsent(shaID, new ArrayList<>());
+            shaderBlockID_particelGenID_map.get(shaID).add(generator.ID);
+        }
+
     }
 
     public Mesh loadMesh(String location, String meshID, MeshBuilderHints hints) {

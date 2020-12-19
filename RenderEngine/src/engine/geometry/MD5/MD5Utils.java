@@ -164,9 +164,16 @@ public class MD5Utils {
             matList.add(new Vector(new float[]{0}));
 
             if(mesh.texture != null) {
-                mats.get(0).texture = new Texture(mesh.texture);
-                mats.get(0).diffuseMap = mats.get(0).texture;
-                mats.get(0).specularMap = mats.get(0).texture;
+                try {
+                    mats.get(0).texture = new Texture(mesh.texture);
+                    mats.get(0).diffuseMap = mats.get(0).texture;
+                    mats.get(0).specularMap = mats.get(0).texture;
+                }
+                catch (Exception e) {
+                    mats.get(0).ambientColor = defColor;
+                    mats.get(0).diffuseColor = defColor;
+                    mats.get(0).specularColor = defColor;
+                }
             }
             else {
                 mats.get(0).ambientColor = defColor;

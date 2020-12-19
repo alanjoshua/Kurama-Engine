@@ -15,18 +15,18 @@ import static org.lwjgl.opengl.GL11C.GL_LINES;
 
 public class Model {
 
-	protected Vector scale;
-	protected Vector pos;
+	public Vector scale;
+	public  Vector pos;
 	public ModelBehaviour behaviour;
-	protected Quaternion orientation;
+	public Quaternion orientation;
 	protected Matrix transformedVertices;
 	protected Matrix cacheViewMatrix;
-	protected boolean isChanged = true;
+	public boolean isChanged = true;
 	public boolean isCollidable = true;
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
 	public boolean shouldShowAxes = false;
-	protected Mesh boundingbox;
+	public Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
 	public boolean shouldCastShadow = true;

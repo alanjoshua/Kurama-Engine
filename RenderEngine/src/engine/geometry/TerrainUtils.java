@@ -5,7 +5,7 @@ import engine.Mesh.Face;
 import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
 import engine.game.Game;
-import engine.model.Terrain;
+import engine.Terrain.Terrain;
 
 import java.util.ArrayList;
 import java.util.List;

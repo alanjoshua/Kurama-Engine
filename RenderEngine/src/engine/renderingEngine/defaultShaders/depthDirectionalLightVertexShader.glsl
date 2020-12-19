@@ -12,6 +12,7 @@ layout (location = 8) in vec4 jointIndices;
 
 uniform mat4 modelLightViewMatrix;
 uniform mat4 projectionMatrix;
+uniform int isAnimated = 0;
 
 const int MAX_WEIGHTS = 4;
 const int MAX_JOINTS = 150;
@@ -23,13 +24,15 @@ void main() {
     vec4 initPos = vec4(0, 0, 0, 0);
 
     int count = 0;
-    for(int i = 0;i < MAX_WEIGHTS;i++) {
-        float weight = biases[i];
-        if(weight > 0f) {
-            count++;
-            int jointIndex = int(jointIndices[i]);
-            vec4 temp = jointMatrices[jointIndex] * vec4(position,1.0);
-            initPos += weight * temp;
+    if (isAnimated != 0) {
+        for (int i = 0;i < MAX_WEIGHTS;i++) {
+            float weight = biases[i];
+            if (weight > 0f) {
+                count++;
+                int jointIndex = int(jointIndices[i]);
+                vec4 temp = jointMatrices[jointIndex] * vec4(position, 1.0);
+                initPos += weight * temp;
+            }
         }
     }
 

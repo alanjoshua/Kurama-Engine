@@ -8,7 +8,7 @@ import engine.shader.ShaderProgram;
 public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
 
     public static String skyboxShaderID = "skyboxshader";
-    ShaderProgram skyboxShader;
+    public ShaderProgram skyboxShader;
 
     public SkyboxShaderBlock(String id) {
         super(id);

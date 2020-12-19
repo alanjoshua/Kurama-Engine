@@ -25,6 +25,7 @@ uniform mat4 spotlightPerspMatrix[MAX_SPOT_LIGHTS];
 uniform int numDirectionalLights;
 uniform int numberOfSpotLights;
 uniform mat4 jointMatrices[MAX_JOINTS];
+uniform int isAnimated = 0;
 
 out vec4 exColor;
 out vec2 outTex;
@@ -45,22 +46,24 @@ void main() {
     vec4 initBitangent = vec4(0, 0, 0, 0);
 
     int count = 0;
-    for(int i = 0;i < MAX_WEIGHTS;i++) {
-        float weight = biases[i];
-        if(weight > 0f) {
-            count++;
-            int jointIndex = int(jointIndices[i]);
-            vec4 temp = jointMatrices[jointIndex] * vec4(position,1.0);
-            initPos += weight * temp;
+    if (isAnimated != 0) {
+        for (int i = 0;i < MAX_WEIGHTS;i++) {
+            float weight = biases[i];
+            if (weight > 0f) {
+                count++;
+                int jointIndex = int(jointIndices[i]);
+                vec4 temp = jointMatrices[jointIndex] * vec4(position, 1.0);
+                initPos += weight * temp;
 
-            vec4 tempNormal = jointMatrices[jointIndex] * vec4(normal,0.0);
-            initNormal += weight * tempNormal;
+                vec4 tempNormal = jointMatrices[jointIndex] * vec4(normal, 0.0);
+                initNormal += weight * tempNormal;
 
-            vec4 tempTangent = jointMatrices[jointIndex] * vec4(tangent,0.0);
-            initTangent += weight * tempTangent;
+                vec4 tempTangent = jointMatrices[jointIndex] * vec4(tangent, 0.0);
+                initTangent += weight * tempTangent;
 
-            vec4 tempBitangent = jointMatrices[jointIndex] * vec4(biTangent,0.0);
-            initBitangent += weight * tempBitangent;
+                vec4 tempBitangent = jointMatrices[jointIndex] * vec4(biTangent, 0.0);
+                initBitangent += weight * tempBitangent;
+            }
         }
     }
 

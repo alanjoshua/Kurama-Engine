@@ -85,6 +85,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             scene_shader.createUniform("modelViewMatrix");
             scene_shader.createUniform("numDirectionalLights");
             scene_shader.createUniform("numberOfSpotLights");
+            scene_shader.createUniform("isAnimated");
             scene_shader.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",26);
 
             scene_shader.createUniform("ambientLight");
@@ -116,6 +117,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             shadow_shader.createUniform("projectionMatrix");
             shadow_shader.createUniform("modelLightViewMatrix");
             shadow_shader.createUniformArray("jointMatrices", MAX_JOINTS);
+            shadow_shader.createUniform("isAnimated");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -198,12 +200,16 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 if (model.shouldRender) {
 
                     if(model instanceof AnimatedModel) {
+                        scene_shader.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
                         AnimatedModel anim = (AnimatedModel) model;
                         for(int i = 0;i < anim.currentJointTransformations.size();i++) {
                             var matrix = anim.currentJointTransformations.get(i);
                             sceneShaderProgram.setUniform("jointMatrices["+i+"]", matrix);
                         }
+                    }
+                    else {
+                        scene_shader.setUniform("isAnimated", 0);
                     }
 
                     Matrix objectToWorld = model.getObjectToWorldMatrix();
@@ -315,12 +321,16 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     Model m = scene.modelID_model_map.get(modelId);
 
                     if(m instanceof AnimatedModel) {
+                        depthShaderProgram.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
                         AnimatedModel anim = (AnimatedModel) m;
                         for(int j = 0;j < anim.currentJointTransformations.size();j++) {
                             var matrix = anim.currentJointTransformations.get(j);
                             depthShaderProgram.setUniform("jointMatrices["+j+"]", matrix);
                         }
+                    }
+                    else {
+                        depthShaderProgram.setUniform("isAnimated", 0);
                     }
 
                     if (m.shouldCastShadow && m.shouldRender) {
@@ -370,12 +380,16 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     Model m = scene.modelID_model_map.get(modelId);
 
                     if(m instanceof AnimatedModel) {
+                        depthShaderProgram.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
                         AnimatedModel anim = (AnimatedModel) m;
                         for(int j = 0;j < anim.currentJointTransformations.size();j++) {
                             var matrix = anim.currentJointTransformations.get(j);
                             depthShaderProgram.setUniform("jointMatrices["+j+"]", matrix);
                         }
+                    }
+                    else {
+                        depthShaderProgram.setUniform("isAnimated", 0);
                     }
 
                     if (m.shouldCastShadow) {
