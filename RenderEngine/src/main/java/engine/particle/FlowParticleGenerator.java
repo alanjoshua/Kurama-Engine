@@ -1,6 +1,7 @@
 package engine.particle;
 
 import engine.Math.Vector;
+import engine.model.Model;
 
 public class FlowParticleGenerator extends ParticleGenerator {
 
@@ -23,7 +24,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
 
     @Override
     public void cleanup() {
-        for(Particle p: particles) {
+        for(Model p: particles) {
             p.cleanUp();
         }
     }
@@ -39,7 +40,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
 
         var it = particles.iterator();
         while(it.hasNext()) {
-            var particle = it.next();
+            var particle = (Particle)it.next();
             if(particle.updateTimeToLive(timeDelta) < 0) {
                 it.remove();
             }

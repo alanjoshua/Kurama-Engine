@@ -5,6 +5,7 @@ import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Face;
+import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
 import engine.misc_structures.LinkedList.CircularDoublyLinkedList;
@@ -108,6 +109,11 @@ public class MeshBuilder {
 				System.out.println("Converting to lines...");
 				resMesh = convertToLines(resMesh,hints);
 				System.out.println("Finished converting to lines");
+			}
+
+			if(hints.isInstanced) {
+				Logger.log("Converting to instanced mesh...");
+				resMesh = new InstancedMesh(resMesh, hints.numInstances);
 			}
 
 			if(hints.initLWJGLAttribs) {

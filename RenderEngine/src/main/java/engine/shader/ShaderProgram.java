@@ -181,7 +181,8 @@ public class ShaderProgram {
     public int setAndActivateMaterials(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
         int offset = off;
         for(int i = 0;i < materials.size();i++) {
-            offset = setUniform(uniformName+"["+i+"]",textureName+"["+i+"]",normalName+"["+i+"]",diffuseName+"["+i+"]",specularName+"["+i+"]",materials.get(i),offset);
+            offset = setUniform(uniformName+"["+i+"]",textureName+"["+i+"]",normalName+"["+i+"]",
+                    diffuseName+"["+i+"]",specularName+"["+i+"]",materials.get(i),offset);
         }
         return offset;
     }
@@ -215,25 +216,25 @@ public class ShaderProgram {
         setUniform(uniformName + ".reflectance", material.reflectance);
         setUniform(uniformName+".specularPower",material.specularPower);
 
-        if (material.texture != null) {
-            glActiveTexture(offset+GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
-        }
-
-        if (material.normalMap != null) {
-            glActiveTexture(offset+GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
-        }
-
-        if (material.diffuseMap != null) {
-            glActiveTexture(offset+GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
-        }
-
-        if (material.specularMap != null) {
-            glActiveTexture(offset+GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
-        }
+//        if (material.texture != null) {
+//            glActiveTexture(offset+GL_TEXTURE0);
+//            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+//        }
+//
+//        if (material.normalMap != null) {
+//            glActiveTexture(offset+GL_TEXTURE1);
+//            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+//        }
+//
+//        if (material.diffuseMap != null) {
+//            glActiveTexture(offset+GL_TEXTURE2);
+//            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+//        }
+//
+//        if (material.specularMap != null) {
+//            glActiveTexture(offset+GL_TEXTURE3);
+//            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+//        }
 //        if (material.reflectionMap != null) {
 //            glActiveTexture(offset+GL_TEXTURE4);
 //            glBindTexture(GL_TEXTURE_2D, material.reflectionMap.getId());
@@ -252,6 +253,7 @@ public class ShaderProgram {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
             value.setValuesToFloatBuffer(fb);
+            fb.flip();
             glUniformMatrix4fv(uniforms.get(uniformName),false,fb);
         }
     }

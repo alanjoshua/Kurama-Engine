@@ -9,6 +9,8 @@ layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
 layout (location = 7) in vec4 biases;
 layout (location = 8) in vec4 jointIndices;
+layout (location = 9) in mat4 modelToWorldInstancedMatrix;
+layout (location = 13) in vec2 texOff;
 
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 const int MAX_SPOT_LIGHTS = 10;
@@ -16,12 +18,17 @@ const int MAX_SPOT_LIGHTS = 10;
 const int MAX_WEIGHTS = 4;
 const int MAX_JOINTS = 150;
 
-uniform mat4 modelViewMatrix;
+uniform mat4 modelToWorldMatrix;
 uniform mat4 projectionMatrix;
-uniform mat4 modelLightViewMatrix[MAX_DIRECTIONAL_LIGHTS];
-uniform mat4 modelSpotLightViewMatrix[MAX_SPOT_LIGHTS];
-uniform mat4 directionalLightOrthoMatrix[MAX_DIRECTIONAL_LIGHTS];
-uniform mat4 spotlightPerspMatrix[MAX_SPOT_LIGHTS];
+uniform int isInstanced;
+
+//uniform mat4 modelLightViewMatrix[MAX_DIRECTIONAL_LIGHTS];  //Eliminate these
+//uniform mat4 modelSpotLightViewMatrix[MAX_SPOT_LIGHTS];    // Eliminate these
+
+uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
+uniform mat4 worldToSpotlightMatrix[MAX_SPOT_LIGHTS];
+uniform mat4 worldToCam;
+
 uniform int numDirectionalLights;
 uniform int numberOfSpotLights;
 uniform mat4 jointMatrices[MAX_JOINTS];
@@ -44,6 +51,15 @@ void main() {
     vec4 initNormal = vec4(0, 0, 0, 0);
     vec4 initTangent = vec4(0, 0, 0, 0);
     vec4 initBitangent = vec4(0, 0, 0, 0);
+
+    mat4 modelToWorld_local;
+
+    if(isInstanced > 0) {
+        modelToWorld_local = modelToWorldInstancedMatrix;
+    }
+    else {
+        modelToWorld_local = modelToWorldMatrix;
+    }
 
     int count = 0;
     if (isAnimated != 0) {
@@ -74,11 +90,15 @@ void main() {
         initBitangent = vec4(biTangent, 0.0);
     }
 
-
+    mat4 modelViewMatrix = worldToCam * modelToWorld_local;
     vec4 tempPos = modelViewMatrix * initPos;
     gl_Position = projectionMatrix * tempPos;
 
     exColor = color;
+
+//    float x = (texCoord.x / numCols + texOffset.x);
+//    float y = (texCoord.y / numRows + texOffset.y);
+//    outTex = vec2(x, y);
     outTex = texCoord;
 
     vertNormal = normalize(modelViewMatrix * initNormal).xyz;
@@ -91,10 +111,10 @@ void main() {
     TBN = mat3(T, B, N);
 
     for(int i = 0;i < numDirectionalLights;i++) {
-        mLightViewVertexPos[i] = directionalLightOrthoMatrix[i] * modelLightViewMatrix[i] * vec4(position, 1.0);
+        mLightViewVertexPos[i] = worldToDirectionalLightMatrix[i] * modelToWorld_local * vec4(position, 1.0);
     }
     for(int i = 0;i < numberOfSpotLights;i++) {
-        mSpotLightViewVertexPos[i] = spotlightPerspMatrix[i] * modelSpotLightViewMatrix[i] * vec4(position, 1.0);
+        mSpotLightViewVertexPos[i] = worldToSpotlightMatrix[i] * modelToWorld_local * vec4(position, 1.0);
         mSpotLightViewVertexPos[i] = mSpotLightViewVertexPos[i]/mSpotLightViewVertexPos[i].w;
     }
     materialInd = materialIndex;

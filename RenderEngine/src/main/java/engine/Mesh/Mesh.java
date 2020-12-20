@@ -152,20 +152,40 @@ public class Mesh {
         }
     }
 
+    public int initRender(int offset) {
+
+        for(Material material:materials) {
+            if (material.texture != null) {
+                glActiveTexture(offset+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+            }
+
+            if (material.normalMap != null) {
+                glActiveTexture(offset+1+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+            }
+
+            if (material.diffuseMap != null) {
+                glActiveTexture(offset+2+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+            }
+
+            if (material.specularMap != null) {
+                glActiveTexture(offset+3+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+            }
+            offset+=4;
+        }
+        glBindVertexArray(vaoId);
+        return offset;
+    }
+
     public void initRender() {
         glBindVertexArray(vaoId);
     }
 
     public void endRender() {
         glBindVertexArray(0);
-//        int ind = 0;
-//        for(Material material:materials) {
-//            glBindTexture(GL_TEXTURE_2D,ind);
-//            glBindTexture(GL_TEXTURE_2D,ind+1);
-//            glBindTexture(GL_TEXTURE_2D,ind+2);
-//            glBindTexture(GL_TEXTURE_2D,ind+3);
-//            ind+=4;
-//        }
     }
 
     public void initOpenGLMeshData() {

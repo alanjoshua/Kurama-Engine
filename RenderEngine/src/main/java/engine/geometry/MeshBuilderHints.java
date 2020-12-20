@@ -15,6 +15,8 @@ public class MeshBuilderHints {
     public boolean shouldInvertNormals = false;
     public int shouldRotate = 180;
     public boolean shouldReverseWindingOrder = false;
+    public boolean isInstanced = false;
+    public int numInstances = 0;
 
     public String toString() {
         return "shouldSmartBakeVertexAttributes:" + shouldSmartBakeVertexAttributes +
@@ -27,7 +29,9 @@ public class MeshBuilderHints {
                 " addConstantColor:" + addConstantColor +
                 " convertToLines:" + convertToLines +
                 " shouldInvertNormals:" + shouldInvertNormals +
-                " shouldRotate:" + shouldRotate;
+                " shouldRotate:" + shouldRotate +
+                "isInstanced:" + isInstanced +
+                "numInstanced:" + numInstances;
     }
 
 }

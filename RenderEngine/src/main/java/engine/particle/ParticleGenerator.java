@@ -1,11 +1,13 @@
 package engine.particle;
 
+import engine.model.Model;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ParticleGenerator {
 
-    public List<Particle> particles = new ArrayList<>();
+    public List<Model> particles = new ArrayList<>();
     public Particle baseParticle = null;
     public String ID;
 

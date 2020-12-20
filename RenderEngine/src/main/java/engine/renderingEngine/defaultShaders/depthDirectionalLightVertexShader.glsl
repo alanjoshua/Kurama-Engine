@@ -9,10 +9,13 @@ layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
 layout (location = 7) in vec4 biases;
 layout (location = 8) in vec4 jointIndices;
+layout (location = 9) in mat4 modelToWorldInstancedMatrix;
+layout (location = 13) in vec2 texOff;
 
 uniform mat4 modelLightViewMatrix;
 uniform mat4 projectionMatrix;
 uniform int isAnimated = 0;
+//uniform int isInstanced;
 
 const int MAX_WEIGHTS = 4;
 const int MAX_JOINTS = 150;

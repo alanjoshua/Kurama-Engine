@@ -3,6 +3,7 @@ package engine.model;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
 import engine.game.Game;
 import engine.geometry.MD5.AnimationFrame;
@@ -21,6 +22,19 @@ public class AnimatedModel extends Model {
 
     public AnimatedModel(Game game, List<Mesh> meshes, List<AnimationFrame> frames, List<Matrix> jointUnbindMatrices, float frameRate, String identifier) {
         super(game, meshes, identifier);
+
+        // Temporary until support for animation instancing support is added
+        for(var m: meshes) {
+            if(m instanceof InstancedMesh) {
+                try {
+                    throw new Exception("Animated Models do not yet support instanced rendering");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }
+        }
+
         this.animationFrames = frames;
         this.frameRate = frameRate;
         this.jointUnbindMatrices = jointUnbindMatrices;

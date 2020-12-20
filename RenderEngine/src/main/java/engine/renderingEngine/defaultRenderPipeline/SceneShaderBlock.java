@@ -2,6 +2,7 @@ package engine.renderingEngine.defaultRenderPipeline;
 
 import engine.Math.Matrix;
 import engine.Math.Vector;
+import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
 import engine.geometry.MeshBuilder;
 import engine.lighting.DirectionalLight;
@@ -16,11 +17,10 @@ import engine.scene.Scene;
 import engine.shader.ShaderProgram;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
@@ -78,16 +78,15 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
             scene_shader.createUniform("projectionMatrix");
 
-            scene_shader.createUniformArray("modelLightViewMatrix",MAX_DIRECTIONAL_LIGHTS);
-            scene_shader.createUniformArray("modelSpotLightViewMatrix",MAX_SPOTLIGHTS);
+//            scene_shader.createUniformArray("modelLightViewMatrix",MAX_DIRECTIONAL_LIGHTS);
+//            scene_shader.createUniformArray("modelSpotLightViewMatrix",MAX_SPOTLIGHTS);
             scene_shader.createUniformArray("directionalShadowMaps",MAX_DIRECTIONAL_LIGHTS);
             scene_shader.createUniformArray("spotLightShadowMaps",MAX_SPOTLIGHTS);
-            scene_shader.createUniform("modelViewMatrix");
             scene_shader.createUniform("numDirectionalLights");
             scene_shader.createUniform("numberOfSpotLights");
             scene_shader.createUniform("isAnimated");
             scene_shader.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",26);
-
+            scene_shader.createUniform("isInstanced");
             scene_shader.createUniform("ambientLight");
 
             scene_shader.createPointLightListUniform("pointLights",MAX_POINTLIGHTS);
@@ -97,9 +96,11 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             scene_shader.createFogUniform("fog");
             scene_shader.createUniform("allDirectionalLightStatic");
 
-            scene_shader.createUniformArray("directionalLightOrthoMatrix", 5);
-            scene_shader.createUniformArray("spotlightPerspMatrix", 5);
+            scene_shader.createUniformArray("worldToDirectionalLightMatrix", MAX_DIRECTIONAL_LIGHTS);
+            scene_shader.createUniformArray("worldToSpotlightMatrix", MAX_SPOTLIGHTS);
             scene_shader.createUniformArray("jointMatrices", MAX_JOINTS);
+            scene_shader.createUniform("modelToWorldMatrix");
+            scene_shader.createUniform("worldToCam");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -118,6 +119,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             shadow_shader.createUniform("modelLightViewMatrix");
             shadow_shader.createUniformArray("jointMatrices", MAX_JOINTS);
             shadow_shader.createUniform("isAnimated");
+//            shadow_shader.createUniform("isInstanced");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -140,6 +142,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         Matrix projectionMatrix = scene.camera.getPerspectiveProjectionMatrix();
 
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
+        sceneShaderProgram.setUniform("worldToCam", worldToCam);
 
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
 
@@ -155,29 +158,25 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         for(int i = 0;i < scene.directionalLights.size(); i++) {
             DirectionalLight l = scene.directionalLights.get(i);
             c = c.add(l.color.scalarMul(l.intensity));
-            sceneShaderProgram.setUniform("directionalLightOrthoMatrix["+i+"]", l.shadowProjectionMatrix);
+            sceneShaderProgram.setUniform("worldToDirectionalLightMatrix["+i+"]",
+                    l.shadowProjectionMatrix.matMul(shadowPackage.worldToDirectionalLights.get(i)));
         }
         sceneShaderProgram.setUniform("allDirectionalLightStatic", c);
 
         for(int i = 0;i < scene.spotLights.size(); i++) {
             SpotLight l = scene.spotLights.get(i);
-            sceneShaderProgram.setUniform("spotlightPerspMatrix["+i+"]", l.shadowProjectionMatrix);
+            sceneShaderProgram.setUniform("worldToSpotlightMatrix["+i+"]",
+                    l.shadowProjectionMatrix.matMul(shadowPackage.worldToSpotLights.get(i)));
         }
 
-        Map<Mesh, List<Model>> accessoryModels = new HashMap<>();
-        //int offset = 0;
         int offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,0);
         offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
         for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
+
             Mesh mesh = scene.meshID_mesh_map.get(meshId);
             sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
                     "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
-//            sceneShaderProgram.setUniform("directionalShadowMaps[0]",offset);
-//            glActiveTexture(offset+GL_TEXTURE0);
-//            glBindTexture(GL_TEXTURE_2D, lights.directionalLights[0].shadowMap.depthMap.getId());
-
-            mesh.initRender();
 
             if (curShouldCull != mesh.shouldCull) {
                 if(mesh.shouldCull) {
@@ -194,79 +193,69 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 currCull = mesh.cullmode;
             }
 
-            for(String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                Model model = scene.modelID_model_map.get(modelId);
+            mesh.initRender(offset);
 
-                if (model.shouldRender) {
+            if(mesh instanceof InstancedMesh) {
 
-                    if(model instanceof AnimatedModel) {
-                        scene_shader.setUniform("isAnimated", 1);
-//                        Logger.log("detecting animated model");
-                        AnimatedModel anim = (AnimatedModel) model;
-                        for(int i = 0;i < anim.currentJointTransformations.size();i++) {
-                            var matrix = anim.currentJointTransformations.get(i);
-                            sceneShaderProgram.setUniform("jointMatrices["+i+"]", matrix);
+                sceneShaderProgram.setUniform("isInstanced", 1);
+
+                List<Model> models = new ArrayList<>();
+                for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                    Model model = scene.modelID_model_map.get(modelId);
+                    if(model.shouldRender) {
+                        models.add(model);
+                    }
+                }
+
+                var inst_mesh = (InstancedMesh) mesh;
+                var chunks = inst_mesh.getRenderChunks(models);
+                for (var chunk: chunks) {
+                    inst_mesh.instanceDataBuffer.clear();
+
+                    for(Model m: chunk) {
+                        Matrix objectToWorld = m.getObjectToWorldMatrix();
+                        objectToWorld.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+                        inst_mesh.instanceDataBuffer.put(0f);
+                        inst_mesh.instanceDataBuffer.put(0f);
+                    }
+                    inst_mesh.instanceDataBuffer.flip();
+
+                    glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
+                    glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+
+                    inst_mesh.render(chunk.size());
+                }
+            }
+
+            else {  // Non instanced meshes
+
+                sceneShaderProgram.setUniform("isInstanced", 0);
+
+                for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                    Model model = scene.modelID_model_map.get(modelId);
+
+                    if (model.shouldRender) {
+
+                        if (model instanceof AnimatedModel) {
+                            scene_shader.setUniform("isAnimated", 1);
+
+                            AnimatedModel anim = (AnimatedModel) model;
+                            for (int i = 0; i < anim.currentJointTransformations.size(); i++) {
+                                var matrix = anim.currentJointTransformations.get(i);
+                                sceneShaderProgram.setUniform("jointMatrices[" + i + "]", matrix);
+                            }
+                        } else {
+                            scene_shader.setUniform("isAnimated", 0);
                         }
-                    }
-                    else {
-                        scene_shader.setUniform("isAnimated", 0);
-                    }
 
-                    Matrix objectToWorld = model.getObjectToWorldMatrix();
-                    sceneShaderProgram.setUniform("modelViewMatrix", worldToCam.matMul(objectToWorld));
-                    for (int i = 0; i < scene.directionalLights.size(); i++) {
-                        sceneShaderProgram.setUniform("modelLightViewMatrix[" + i + "]",
-                                shadowPackage.worldToDirectionalLights.get(i).matMul(objectToWorld));
-                    }
-                    for (int i = 0; i < scene.spotLights.size(); i++) {
-                        sceneShaderProgram.setUniform("modelSpotLightViewMatrix[" + i + "]",
-                                shadowPackage.worldToSpotLights.get(i).matMul(objectToWorld));
-                    }
-                    mesh.render();
-
-                    if (model.shouldShowCollisionBox && model.getBoundingBox() != null) {
-                        List<Model> l = accessoryModels.get(model.getBoundingBox());
-                        if (l == null) {
-                            l = new ArrayList<>();
-                            accessoryModels.put(model.getBoundingBox(), l);
-                        }
-                        l.add(model);
-                    }
-                    if (model.shouldShowAxes && axes != null) {
-                        List<Model> l = accessoryModels.get(axes);
-                        if (l == null) {
-                            l = new ArrayList<>();
-                            accessoryModels.put(axes, l);
-                        }
-                        l.add(model);
+                        Matrix objectToWorld = model.getObjectToWorldMatrix();
+                        scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
+//
+                        mesh.render();
                     }
                 }
             }
 
-            mesh.endRender();
-        }
-
-        for(Mesh mesh:accessoryModels.keySet()) {
-            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
-                    "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",
-                    mesh.materials,offset);
-
-            mesh.initRender();
-            for(Model model:accessoryModels.get(mesh)) {
-
-                if (model.shouldRender) {
-                    Matrix objectToWorld = model.getObjectToWorldMatrix();
-                    sceneShaderProgram.setUniform("modelViewMatrix", worldToCam.matMul(objectToWorld));
-                    for (int i = 0; i < scene.directionalLights.size(); i++) {
-                        sceneShaderProgram.setUniform("modelLightViewMatrix[" + i + "]", shadowPackage.worldToDirectionalLights.get(i).matMul(objectToWorld));
-                    }
-                    for (int i = 0; i < scene.spotLights.size(); i++) {
-                        sceneShaderProgram.setUniform("modelSpotLightViewMatrix[" + i + "]", shadowPackage.worldToSpotLights.get(i).matMul(objectToWorld));
-                    }
-                    mesh.render();
-                }
-
-            }
             mesh.endRender();
         }
 
@@ -300,8 +289,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
-                mesh.initRender();
-
                 if (curShouldCull != mesh.shouldCull) {
                     if(mesh.shouldCull) {
                         glEnable(GL_CULL_FACE);
@@ -317,28 +304,35 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                for(String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                    Model m = scene.modelID_model_map.get(modelId);
+                mesh.initRender(0);
 
-                    if(m instanceof AnimatedModel) {
-                        depthShaderProgram.setUniform("isAnimated", 1);
+//                if(mesh instanceof InstancedMesh) {
+//                    sceneShaderProgram.setUniform("isInstanced", 1);
+//                }
+//
+//                else {
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                        Model m = scene.modelID_model_map.get(modelId);
+
+                        if (m instanceof AnimatedModel) {
+                            depthShaderProgram.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
-                        AnimatedModel anim = (AnimatedModel) m;
-                        for(int j = 0;j < anim.currentJointTransformations.size();j++) {
-                            var matrix = anim.currentJointTransformations.get(j);
-                            depthShaderProgram.setUniform("jointMatrices["+j+"]", matrix);
+                            AnimatedModel anim = (AnimatedModel) m;
+                            for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
+                                var matrix = anim.currentJointTransformations.get(j);
+                                depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
+                            }
+                        } else {
+                            depthShaderProgram.setUniform("isAnimated", 0);
+                        }
+
+                        if (m.shouldCastShadow && m.shouldRender) {
+                            Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
+                            depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                            mesh.render();
                         }
                     }
-                    else {
-                        depthShaderProgram.setUniform("isAnimated", 0);
-                    }
-
-                    if (m.shouldCastShadow && m.shouldRender) {
-                        Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                        mesh.render();
-                    }
-                }
+//                }
                 mesh.endRender();
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -359,7 +353,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
-                mesh.initRender();
+                mesh.initRender(0);
 
                 if (curShouldCull != mesh.shouldCull) {
                     if(mesh.shouldCull) {

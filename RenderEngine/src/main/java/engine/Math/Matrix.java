@@ -1046,7 +1046,6 @@ public class Matrix {
 				fb.put(val);
 			}
 		}
-		fb.flip();
 	}
 
 	public float getNorm() {

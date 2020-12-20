@@ -232,7 +232,10 @@ public class GameLWJGL extends Game implements Runnable {
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
         float[][] heightMap = engine.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
+        hints.isInstanced = true;
+        hints.numInstances = 400;
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
+        hints.isInstanced = false;
 
         for(int i = 0;i < 20;i++) {
             for(int y = 0;y < 20;y++) {
@@ -293,7 +296,10 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
 
-        Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", null);
+        var partHints = new MeshBuilderHints();
+        partHints.isInstanced = true;
+        partHints.numInstances = 1000;
+        Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         partMesh.initOpenGLMeshData();
         Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
         partMesh.materials.get(0).texture = partTex;
@@ -302,7 +308,7 @@ public class GameLWJGL extends Game implements Runnable {
                 3,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
         particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(particle, 10000, 0.01f, "generator");
+        var particleGenerator = new FlowParticleGenerator(particle, 1000, 0.01f, "generator");
         particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
         particleGenerator.velRange = new Vector(-0.1f, 2f, 0.5f);
         particleGenerator.accelRange = new Vector(0,0,0);
