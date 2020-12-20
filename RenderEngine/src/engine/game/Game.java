@@ -21,7 +21,7 @@ public abstract class Game implements Runnable {
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     protected float fps;
-    public float displayFPS;
+    public String displayFPS;
     protected boolean shouldBenchMark = false;
 
     public Vector boundMin;
@@ -135,7 +135,7 @@ public abstract class Game implements Runnable {
             }
 
             if (timer >= 1000000000.0) {
-                displayFPS = fps;
+                displayFPS = String.valueOf((int)fps);
                 fps = 0;
                 timer = 0;
                 timerStartTime = System.nanoTime();

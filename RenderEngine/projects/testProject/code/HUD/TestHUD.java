@@ -41,6 +41,8 @@ public class TestHUD extends HUD {
 
     public void tick() {
 
+        engineInfo.setPos(new Vector(new float[]{game.getDisplay().getWidth() - 400,game.getDisplay().getHeight() - 50,0}));
+
         game.scene.removeModel(FPS, false);
         hudElements.remove(1);
 
