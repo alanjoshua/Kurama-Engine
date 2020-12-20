@@ -193,7 +193,6 @@ public class MD5Utils {
             m.setAttribute(vertPositions, Mesh.POSITION);
             m.setAttribute(textCoords, Mesh.TEXTURE);
             m.setAttribute(normals, Mesh.NORMAL);
-            m.setAttribute(matList,Mesh.MATERIAL);
             m.setAttribute(weightBiasesPerVert, Mesh.WEIGHTBIASESPERVERT);
             m.setAttribute(jointIndicesPerVert, Mesh.JOINTINDICESPERVERT);
             m.drawMode = GL_TRIANGLES;

@@ -20,7 +20,7 @@ public abstract class Game implements Runnable {
     protected double targetFPS = 1000;
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
-    protected float fps;
+    public float fps;
     public String displayFPS;
     protected boolean shouldBenchMark = false;
 

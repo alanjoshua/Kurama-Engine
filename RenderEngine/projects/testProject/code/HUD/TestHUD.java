@@ -43,8 +43,9 @@ public class TestHUD extends HUD {
 
         engineInfo.setPos(new Vector(new float[]{game.getDisplay().getWidth() - 400,game.getDisplay().getHeight() - 50,0}));
 
-        game.scene.removeModel(FPS, false);
+        game.scene.removeModel(FPS);
         hudElements.remove(1);
+        FPS.meshes.forEach(m -> m.cleanUp(false));
 
         FPS = new Text(game, "FPS: "+game.displayFPS, fpsTextFont, "FPS");
         FPS.meshes.get(0).meshIdentifier = "fps_mesh";

@@ -148,7 +148,7 @@ public class Scene {
         return newMesh;
     }
 
-    public void removeModel(Model model, boolean shouldDeleteMats) {
+    public void removeModel(Model model) {
         var id = model.identifier;
         List<String> shaders = null;
 
@@ -168,7 +168,6 @@ public class Scene {
                 mesh_model.remove(id);
                 if(mesh_model.size() == 0) {
                     shaderBlock.remove(mesh.meshIdentifier);
-                    mesh.cleanUp(shouldDeleteMats);
                 }
             }
 
