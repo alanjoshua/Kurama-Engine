@@ -17,6 +17,7 @@ import engine.model.HUD;
 import engine.model.Model;
 import engine.particle.ParticleGenerator;
 import engine.renderingEngine.RenderPipeline;
+import engine.utils.Logger;
 import engine.utils.Utils;
 
 import java.util.*;
@@ -145,6 +146,38 @@ public class Scene {
         meshID_mesh_map.put(id, newMesh);
 //        mesh_model_map.put(id, new HashMap<>());
         return newMesh;
+    }
+
+    public void removeModel(Model model, boolean shouldDeleteMats) {
+        var id = model.identifier;
+        List<String> shaders = null;
+
+        if(modelID_model_map.containsKey(id)) {
+            modelID_model_map.remove(id);
+            shaders = modelID_shaderID_map.remove(id);
+        }
+        else {
+            Logger.logError("Error while removing model. Model does not exist");
+        }
+
+        for(var shader: shaders) {
+            var shaderBlock = shaderblock_mesh_model_map.get(shader);
+
+            for(var mesh: model.meshes) {
+                var mesh_model = shaderBlock.get(mesh.meshIdentifier);
+                mesh_model.remove(id);
+                if(mesh_model.size() == 0) {
+                    shaderBlock.remove(mesh.meshIdentifier);
+                    mesh.cleanUp(shouldDeleteMats);
+                }
+            }
+
+            if(shaderBlock.size() == 0) {
+                shaderblock_mesh_model_map.remove(shader);
+            }
+
+        }
+
     }
 
     public void addMesh(Mesh mesh) {

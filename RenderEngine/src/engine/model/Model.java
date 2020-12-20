@@ -22,6 +22,15 @@ public class Model {
 	protected Matrix transformedVertices;
 	protected Matrix cacheViewMatrix;
 	public boolean isChanged = true;
+
+	public boolean shouldCastShadow = true;
+	public String identifier;
+	public boolean shouldRender = true;
+
+	public List<Mesh> meshes;
+	public Game game;
+
+	// These should be removed. Are here to preserve compatibility with ENED simulation program
 	public boolean isCollidable = true;
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
@@ -29,14 +38,7 @@ public class Model {
 	public Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
-	public boolean shouldCastShadow = true;
-	public String identifier;
-	public boolean shouldGreyScale = false;
-	public boolean shouldLinearizeDepthInHUD = false;
-	public boolean shouldRender = true;
-
-	public List<Mesh> meshes;
-	public Game game;
+	//--------------------------------------------------------------------------------------------
 
 	public Model(Game game, List<Mesh> meshes, String identifier) {
 		this.meshes = meshes;

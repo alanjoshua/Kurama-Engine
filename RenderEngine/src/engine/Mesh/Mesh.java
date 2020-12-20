@@ -89,6 +89,30 @@ public class Mesh {
         }
     }
 
+    public void cleanUp(boolean shouldCleanMaterials) {
+        try {
+            for(int i = 0;i < vertAttributes.size();i++) {
+                glDisableVertexAttribArray(i);
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            for (Integer vbo : vboIdList) {
+                glDeleteBuffers(vbo);
+            }
+
+            if(shouldCleanMaterials) {
+                for (Material material : materials) {
+                    material.texture.cleanUp();
+                }
+            }
+
+            glBindVertexArray(0);
+            glDeleteVertexArrays(vaoId);
+        }catch(Exception e) {
+            //System.out.println("Couldn't clean OPENGL atrtibs of mesh: "+meshIdentifier);
+        }
+    }
+
     public void initToEndFullRender(int offset) {
         for(Material material:materials) {
             if (material.texture != null) {

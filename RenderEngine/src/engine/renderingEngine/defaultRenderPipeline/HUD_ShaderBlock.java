@@ -30,8 +30,6 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
             hud_shader.createUniform("texture_sampler");
             hud_shader.createUniform("projModelMatrix");
             hud_shader.createUniform("color");
-            hud_shader.createUniform("shouldGreyScale");
-            hud_shader.createUniform("shouldLinearizeDepth");
 
         }catch(Exception e) {
             e.printStackTrace();
@@ -63,9 +61,6 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
                     Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
                     hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
                     hudShaderProgram.setUniform("color", mesh.materials.get(0).ambientColor);
-
-                    hudShaderProgram.setUniform("shouldGreyScale", m.shouldGreyScale ? 1 : 0);
-                    hudShaderProgram.setUniform("shouldLinearizeDepth", m.shouldLinearizeDepthInHUD ? 1 : 0);
 
                     mesh.initToEndFullRender(0);
                 }

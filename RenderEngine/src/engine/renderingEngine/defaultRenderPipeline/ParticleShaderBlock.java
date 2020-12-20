@@ -93,8 +93,6 @@ public class ParticleShaderBlock extends RenderBlock {
                     float textXOffset = (float) col / text.numCols;
                     float textYOffset = (float) row / text.numRows;
 
-                    Logger.log("texPos:"+ particle.texPos + " texX: "+textXOffset+ " texY: "+textYOffset);
-
                     particleShader.setUniform("texXOffset", textXOffset);
                     particleShader.setUniform("texYOffset", textYOffset);
                     particleShader.setUniform("numCols", text.numCols);

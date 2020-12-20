@@ -6,6 +6,7 @@ import ModelBehaviour.SunRevolve;
 import engine.Effects.Fog;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
+import engine.Effects.Texture;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
@@ -26,7 +27,6 @@ import engine.inputs.InputLWJGL;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
-import engine.Effects.Texture;
 import engine.model.AnimatedModel;
 import engine.model.Model;
 import engine.model.ModelBehaviourTickInput;
@@ -99,21 +99,6 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this);
 
-        Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", null);
-        partMesh.initOpenGLMeshData();
-        Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
-        partMesh.materials.get(0).texture = partTex;
-
-        Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
-                3,0.1f, "baseParticle");
-        particle.scale = new Vector(3, 1f);
-        particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(particle, 10000, 0.01f, "generator");
-        particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
-        particleGenerator.velRange = new Vector(-0.1f, 2f, 0.5f);
-        particleGenerator.accelRange = new Vector(0,0,0);
-        particleGenerator.animUpdateRange = 0.1f;
-        scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
 
@@ -189,11 +174,6 @@ public class GameLWJGL extends Game implements Runnable {
         spotLight.setBehaviour(new AttachToPlayer());
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Material quadMat = new Material();
-        quadMat.matName = "shadowMapVisualizer";
-        quadMat.texture = spotLight.shadowMap.depthMap;
-        scene.hud.hudElements.get(0).meshes.get(0).materials.set(0, quadMat);
 //     -------------------------------------------------------------------------------------------------------------------
 //                                                   Second Spot Light
 
@@ -312,10 +292,22 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setScale(5f);
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-//        madara_meshes.stream().forEach(m -> {
-//            m.materials.get(0).reflectance=0f;
-//            m.materials.get(0).specularPower=0f;
-//        });
+
+        Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", null);
+        partMesh.initOpenGLMeshData();
+        Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
+        partMesh.materials.get(0).texture = partTex;
+
+        Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
+                3,0.1f, "baseParticle");
+        particle.scale = new Vector(3, 1f);
+        particle.pos = new Vector(8.5f, 39, 30);
+        var particleGenerator = new FlowParticleGenerator(particle, 10000, 0.01f, "generator");
+        particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
+        particleGenerator.velRange = new Vector(-0.1f, 2f, 0.5f);
+        particleGenerator.accelRange = new Vector(0,0,0);
+        particleGenerator.animUpdateRange = 0.1f;
+        scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
         scene.renderPipeline = new DefaultRenderPipeline(this);
 
