@@ -24,6 +24,7 @@ public class Material {
     public float reflectance = DEFAULT_REFLECTANCE;
     public float specularPower = DEFAULT_SPECULAR_POWER;
     public String matName;
+    public int globalSceneID;
 
     public static Material DEFAULT_MATERIAL = new Material(DEFAULTAMBIENTCOLOR, DEFAULTAMBIENTCOLOR, DEFAULTAMBIENTCOLOR, null,
             null,null,null, DEFAULT_REFLECTANCE, DEFAULT_SPECULAR_POWER, DEFAULT_MATERIAL_NAME);
@@ -38,6 +39,18 @@ public class Material {
         this.specularMap = null;
         this.matName = Utils.getUniqueID();
     }
+
+//    Shallow Copy
+//    public Material(Material mat) {
+//        this.ambientColor = new Vector(mat.ambientColor);
+//        this.diffuseColor = new Vector(mat.diffuseColor);
+//        this.specularColor = new Vector(mat.specularColor);
+//        this.texture = mat.texture;
+//        this.diffuseMap = mat.diffuseMap;
+//        this.specularMap = mat.specularMap;
+//        this.matName = mat.matName;
+//        this.globalSceneID = mat.globalSceneID;
+//    }
 
     public Material(String matName) {
         this.ambientColor = DEFAULTAMBIENTCOLOR;

@@ -1,36 +1,33 @@
 package engine.geometry;
 
-import engine.Mesh.Face;
-import engine.Mesh.Mesh;
-import engine.Mesh.Vertex;
-import engine.Effects.Texture;
 import engine.Effects.Fog;
 import engine.Effects.Material;
 import engine.Effects.ShadowMap;
+import engine.Effects.Texture;
 import engine.GUI.Text;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
+import engine.Mesh.Face;
+import engine.Mesh.Mesh;
+import engine.Mesh.Vertex;
 import engine.camera.Camera;
-import engine.font.FontTexture;
 import engine.game.Game;
 import engine.lighting.DirectionalLight;
 import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.HUD;
-import engine.model.ModelBehaviour;
 import engine.model.Model;
+import engine.model.ModelBehaviour;
 import engine.renderingEngine.RenderPipeline;
 import engine.scene.Scene;
 import engine.utils.Logger;
 
-import java.awt.*;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.List;
 
 public class SceneUtils {
 
@@ -573,33 +570,33 @@ public class SceneUtils {
                             scene.addSplotLight(s, shaderIds);
                         }
 
-                        else if(type.equals("Text")) {
-                            Text s;
-                            Mesh mesh;
-
-                            Font font = new Font(font_name, font_style, font_size);
-                            s = new Text(game, text, new FontTexture(font, "ISO-8859-1"), id);
-
-                            if(meshes.size() > 0) {
-                                mesh = meshes.get(0); //Assumes Text will only have one mesh
-                                s.meshes.get(0).meshIdentifier = mesh.meshIdentifier;
-
-                                // Do this only if material list size are the same
-                                if(mesh.materials.size() == s.meshes.get(0).materials.size()) {
-                                    for (int i =0;i < mesh.materials.size();i++) {
-                                        mesh.materials.get(i).texture = s.meshes.get(0).materials.get(i).texture;
-                                        s.meshes.get(0).materials.set(i, mesh.materials.get(i));
-                                    }
-                                }
-
-                            }
-
-                            s.setPos(pos);
-                            s.setScale(scale);
-                            s.shouldRender = shouldRender;
-                            s.shouldCastShadow = shouldCastShadow;
-                            s.setBehaviour(behaviour);
-                            scene.addModel(s, shaderIds);
+                        else if(type.equals("Text")) {  // Fix this
+//                            Text s;
+//                            Mesh mesh;
+//
+//                            Font font = new Font(font_name, font_style, font_size);
+//                            s = new Text(game, text, new FontTexture(font, "ISO-8859-1"), id);
+//
+//                            if(meshes.size() > 0) {
+//                                mesh = meshes.get(0); //Assumes Text will only have one mesh
+//                                s.meshes.get(0).meshIdentifier = mesh.meshIdentifier;
+//
+//                                // Do this only if material list size are the same
+//                                if(mesh.materials.size() == s.meshes.get(0).materials.size()) {
+//                                    for (int i =0;i < mesh.materials.size();i++) {
+//                                        mesh.materials.get(i).texture = s.meshes.get(0).materials.get(i).texture;
+//                                        s.meshes.get(0).materials.set(i, mesh.materials.get(i));
+//                                    }
+//                                }
+//
+//                            }
+//
+//                            s.setPos(pos);
+//                            s.setScale(scale);
+//                            s.shouldRender = shouldRender;
+//                            s.shouldCastShadow = shouldCastShadow;
+//                            s.setBehaviour(behaviour);
+//                            scene.addModel(s, shaderIds);
                         }
 
                         else {

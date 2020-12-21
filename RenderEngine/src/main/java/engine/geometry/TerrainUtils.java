@@ -4,15 +4,13 @@ import engine.Math.Vector;
 import engine.Mesh.Face;
 import engine.Mesh.Mesh;
 import engine.Mesh.Vertex;
-import engine.game.Game;
-import engine.Terrain.Terrain;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TerrainUtils {
 
-    public static Terrain createTerrainFromHeightMap(float[][] heightMap, int textInc, Game game, String identifier) {
+    public static Mesh createTerrainFromHeightMap(float[][] heightMap, int textInc, String meshIdentifier) {
         List<Vector> positions = new ArrayList<>();
         List<Vector> texCoords = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
@@ -105,12 +103,12 @@ public class TerrainUtils {
 
         Mesh resMesh = new Mesh(indices,faces,vertAttribs,null, null, null);
         resMesh = MeshBuilder.generateTangentAndBiTangentVectors(resMesh, null);
-
+        resMesh.meshIdentifier = meshIdentifier;
 //        for(Face f: resMesh.faces) {
 //            resMesh.getVertices().get(f.get(0, Vertex.POSITION)).display();
 //        }
 
-        return new Terrain(game,resMesh,identifier,w,h,2);
+        return resMesh;
     }
 
     public static float interpolateHeightFromTriangle(List<Vector> trig, Vector pos) {

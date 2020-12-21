@@ -1,5 +1,6 @@
 package engine.model;
 
+import engine.Effects.Material;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
@@ -9,6 +10,7 @@ import engine.geometry.MeshBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11C.GL_LINES;
@@ -38,12 +40,26 @@ public class Model {
 	public Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
+	public HashMap<String, List<Material>> materials = new HashMap<>();  	    //List per mesh could only have a maximum of 8 mats.
+	public HashMap<String, List<Integer>> matAtlasOffset = new HashMap<>();  //List per mesh could only have a maximum of 8 mats.
 	//--------------------------------------------------------------------------------------------
 
 	public Model(Game game, List<Mesh> meshes, String identifier) {
 		this.meshes = meshes;
 		if(this.meshes == null) {
 			this.meshes = new ArrayList<>();
+		}
+
+		for(Mesh mesh: meshes) {
+			materials.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			matAtlasOffset.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			if(mesh.materials.size() > 4) {
+				throw new IllegalArgumentException("A mesh could only have a maximum of 8 materials");
+			}
+			for(Material mat: mesh.materials) {
+				materials.get(mesh.meshIdentifier).add(mat);
+				matAtlasOffset.get(mesh.meshIdentifier).add(0);
+			}
 		}
 
 		this.game = game;
@@ -55,12 +71,38 @@ public class Model {
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 	}
 
+	public void addMesh(Mesh mesh) {
+		if(mesh != null) {
+			materials.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			matAtlasOffset.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			if (mesh.materials.size() > 4) {
+				throw new IllegalArgumentException("A mesh could only have a maximum of 4 materials");
+			}
+			for (Material mat : mesh.materials) {
+				materials.get(mesh.meshIdentifier).add(mat);
+				matAtlasOffset.get(mesh.meshIdentifier).add(0);
+			}
+		}
+	}
+
 	public Model(Game game, Mesh mesh, String identifier) {
 		if(mesh != null) {
 			this.meshes = Arrays.asList(new Mesh[]{mesh});
 		}
 		else {
 			this.meshes = new ArrayList<>();
+		}
+
+		if(mesh != null) {
+			materials.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			matAtlasOffset.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
+			if (mesh.materials.size() > 8) {
+				throw new IllegalArgumentException("A mesh could only have a maximum of 4 materials");
+			}
+			for (Material mat : mesh.materials) {
+				materials.get(mesh.meshIdentifier).add(mat);
+				matAtlasOffset.get(mesh.meshIdentifier).add(0);
+			}
 		}
 
 		this.game = game;

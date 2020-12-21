@@ -58,11 +58,6 @@ public class Mesh {
 
         if(materials == null) {
             this.materials.add(new Material());
-//            List<Vector> matList = new ArrayList<>();
-//            for(int i = 0; i < vertAttributes.get(0).size();i++) {
-//                matList.add(new Vector(new float[]{0}));
-//            }
-//            setAttribute(matList,MATERIAL);
         }
         else {
             this.materials = materials;

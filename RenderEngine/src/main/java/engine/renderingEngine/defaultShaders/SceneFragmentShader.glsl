@@ -36,6 +36,9 @@ struct Material {
     int hasNormalMap;
     int hasDiffuseMap;
     int hasSpecularMap;
+    int numRows;
+    int numCols;
+//    int texPos;
 };
 
 struct Fog {
@@ -48,8 +51,8 @@ struct Fog {
 const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 5;
-const int MAX_MATERIALS = 26;
 
+const int MAX_MATERIALS = 26;
 uniform Material materials[MAX_MATERIALS];
 uniform sampler2D mat_textures[MAX_MATERIALS];
 uniform sampler2D mat_normalMaps[MAX_MATERIALS];
@@ -77,7 +80,7 @@ in mat4 outModelViewMatrix;
 in mat3 TBN;
 in vec4 mLightViewVertexPos[MAX_DIRECTIONAL_LIGHTS];
 in vec4 mSpotLightViewVertexPos[MAX_SPOT_LIGHTS];
-flat in float materialInd;
+flat in int materialInd;
 flat in int numDirLight;
 flat in int numSpotLights;
 
@@ -86,7 +89,6 @@ vec4 diffuseC;
 vec4 speculrC;
 float specPower;
 Material material;
-int matInd;
 
 out vec4 fragColor;
 
@@ -95,14 +97,14 @@ void setupColors(Material material, vec2 textCoord) {
     specPower = material.specularPower;
 
     if (material.hasTexture == 1) {
-        ambientC = texture(mat_textures[matInd], textCoord);
+        ambientC = texture(mat_textures[materialInd], textCoord);
     }
     else {
         ambientC = material.ambient;
     }
 
     if(material.hasDiffuseMap == 1) {
-        diffuseC = texture(mat_diffuseMaps[matInd],textCoord);
+        diffuseC = texture(mat_diffuseMaps[materialInd],textCoord);
     }
     else {
         //material.diffuse = ambientC + vec4(0,0,0,0) *  0.0000001;
@@ -110,7 +112,7 @@ void setupColors(Material material, vec2 textCoord) {
     }
 
      if(material.hasSpecularMap == 1) {
-        speculrC = texture(mat_specularMaps[matInd],textCoord);
+        speculrC = texture(mat_specularMaps[materialInd],textCoord);
         specPower = speculrC.w;
         speculrC = vec4(speculrC.xyz,1.0);
      }
@@ -218,7 +220,7 @@ vec4 calculateFog(vec3 pos, vec4 color, Fog fog, vec3 ambientColor) {
 vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord) {
     vec3 newNormal = normal;
     if(material.hasNormalMap == 1) {
-        newNormal = texture(mat_normalMaps[matInd], texCoord).rgb;
+        newNormal = texture(mat_normalMaps[materialInd], texCoord).rgb;
         newNormal = normalize(newNormal * 2 - 1);
         newNormal = normalize(TBN * newNormal);
     }
@@ -226,8 +228,9 @@ vec3 calculateNormal(Material material, vec3 normal, vec2 texCoord) {
 }
 
 void main() {
-     matInd = int(materialInd);
-     material = materials[matInd];
+
+     material = materials[materialInd];
+
      setupColors(material, outTex);
      vec4 color = vec4(0,0,0,0);
      vec3 normal = calculateNormal(material, vertNormal, outTex);

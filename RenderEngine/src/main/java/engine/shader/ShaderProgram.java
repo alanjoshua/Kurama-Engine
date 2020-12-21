@@ -80,6 +80,10 @@ public class ShaderProgram {
         createUniform(uniformName + ".hasSpecularMap");
         createUniform(uniformName + ".reflectance");
         createUniform(uniformName + ".specularPower");
+
+        createUniform(uniformName + ".numRows");
+        createUniform(uniformName + ".numCols");
+//        createUniform(uniformName + ".texPos");
     }
 
     public void createMaterialListUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName,int size) {
@@ -181,6 +185,28 @@ public class ShaderProgram {
     public int setAndActivateMaterials(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
         int offset = off;
         for(int i = 0;i < materials.size();i++) {
+
+            var material = materials.get(i);
+            if (material.texture != null) {
+                glActiveTexture(offset+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+            }
+
+            if (material.normalMap != null) {
+                glActiveTexture(offset+1+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+            }
+
+            if (material.diffuseMap != null) {
+                glActiveTexture(offset+2+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+            }
+
+            if (material.specularMap != null) {
+                glActiveTexture(offset+3+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+            }
+
             offset = setUniform(uniformName+"["+i+"]",textureName+"["+i+"]",normalName+"["+i+"]",
                     diffuseName+"["+i+"]",specularName+"["+i+"]",materials.get(i),offset);
         }
@@ -216,35 +242,13 @@ public class ShaderProgram {
         setUniform(uniformName + ".reflectance", material.reflectance);
         setUniform(uniformName+".specularPower",material.specularPower);
 
-//        if (material.texture != null) {
-//            glActiveTexture(offset+GL_TEXTURE0);
-//            glBindTexture(GL_TEXTURE_2D, material.texture.getId());
-//        }
-//
-//        if (material.normalMap != null) {
-//            glActiveTexture(offset+GL_TEXTURE1);
-//            glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
-//        }
-//
-//        if (material.diffuseMap != null) {
-//            glActiveTexture(offset+GL_TEXTURE2);
-//            glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
-//        }
-//
-//        if (material.specularMap != null) {
-//            glActiveTexture(offset+GL_TEXTURE3);
-//            glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
-//        }
-//        if (material.reflectionMap != null) {
-//            glActiveTexture(offset+GL_TEXTURE4);
-//            glBindTexture(GL_TEXTURE_2D, material.reflectionMap.getId());
-//        }
+        setUniform(uniformName+".numCols", material.texture == null ? 1 : material.texture.numCols);
+        setUniform(uniformName+".numRows", material.texture == null ? 1 : material.texture.numRows);
 
         this.setUniform(textureName,offset);
         this.setUniform(normalName,offset+1);
         this.setUniform(diffuseName,offset+2);
         this.setUniform(specularName,offset+3);
-        //this.setUniform(reflectionName,offset+4);
 
         return (offset + 4);
     }

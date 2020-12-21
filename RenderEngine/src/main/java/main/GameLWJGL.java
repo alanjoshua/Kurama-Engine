@@ -11,6 +11,7 @@ import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Mesh;
+import engine.Terrain.Terrain;
 import engine.camera.Camera;
 import engine.display.Display;
 import engine.display.DisplayLWJGL;
@@ -111,6 +112,12 @@ public class GameLWJGL extends Game implements Runnable {
         scene.camera.updateValues();
         targetFPS = display.getRefreshRate();
 
+        Logger.log("");
+        for(var mat: scene.materialLibrary) {
+            Logger.log(mat.matName);
+        }
+        Logger.log("");
+
     }
 
     public void writeSceneToFile() {
@@ -132,18 +139,17 @@ public class GameLWJGL extends Game implements Runnable {
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 
         scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
-
+        var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
-                (Mesh) null, null, directionalLightOrthoProjection, "Sun");
+                sunMesh, null, directionalLightOrthoProjection, "Sun");
 
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
         directionalLight.setScale(100);
         directionalLight.setBehaviour(new SunRevolve());
-        directionalLight.meshes.add(scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints));
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -161,7 +167,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
 
-        spotLight.meshes.add(scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints));
+//        spotLight.addMesh(scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints));
 //        spotLight.meshes.add(scene.loadMesh("res/apricot/Apricot_02_hi_poly.obj", "apricot", hints));
         spotLight.setScale(0.05f);
         spotLight.setPos(new Vector(new float[]{20,45f,12f}));
@@ -199,32 +205,18 @@ public class GameLWJGL extends Game implements Runnable {
 //            m.setOrientation(newQ);
 //        });
 
-        Texture tex = null;
-        try {
-            tex = new Texture("res/misc/grassblock.png");
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Material cubeMat = new Material(tex, "minecraftCubeMat");
-        cubeMat.diffuseMap = cubeMat.texture;
-        cubeMat.specularMap = cubeMat.texture;
-        cubeMat.specularPower = 10;
-        cubeMat.reflectance = 0.5f;
-
         float skyBoxScale = 1000;
         float boxScale = 1f;
         int boxCount = 100;
         float yRange = 60;
 
-        Model skybox = scene.createModel(scene.loadMesh("res/misc/skybox.obj",
-                "skybox_mesh", hints), "skybox", Arrays.asList(new String[]{DefaultRenderPipeline.skyboxShaderBlockID}));
-        skybox.setScale(skyBoxScale);
-
+        var skybox_mesh = scene.loadMesh("res/misc/skybox.obj", "skybox_mesh", hints);
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1f});
-//        skyMat.ambientColor = scene.ambientLight;
-        skybox.meshes.get(0).materials.set(0,skyMat);
+        skybox_mesh.materials.set(0, skyMat);
+
+        Model skybox = scene.createModel(skybox_mesh, "skybox", Arrays.asList(new String[]{DefaultRenderPipeline.skyboxShaderBlockID}));
+        skybox.setScale(skyBoxScale);
         scene.skybox = skybox;
 
         Vector[] bounds = Model.getBounds(scene.skybox.meshes.get(0));
@@ -237,6 +229,14 @@ public class GameLWJGL extends Game implements Runnable {
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
         hints.isInstanced = false;
 
+        Texture cubeTexture = new Texture("res/misc/grassblock.png");
+        Material cubeMat = new Material(cubeTexture, "minecraftCubeMat");
+        cubeMat.diffuseMap = cubeMat.texture;
+        cubeMat.specularMap = cubeMat.texture;
+        cubeMat.specularPower = 10;
+        cubeMat.reflectance = 0.5f;
+        cubeMesh.materials.set(0, cubeMat);
+
         for(int i = 0;i < 20;i++) {
             for(int y = 0;y < 20;y++) {
                 Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
@@ -244,7 +244,6 @@ public class GameLWJGL extends Game implements Runnable {
                 cube.setScale(boxScale);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
 //                cube.behaviour = new rotate();
-                cube.meshes.get(0).materials.set(0,cubeMat);
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
         }
@@ -254,18 +253,17 @@ public class GameLWJGL extends Game implements Runnable {
         plant.setPos(new Vector(15, 45, 10));
         plant.setScale(0.005f);
 
-        Model terrain = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,this,"terrain");
-        terrain.meshes.get(0).meshIdentifier = "Terrain_mesh";
-        Material ter = new Material();
-        ter.matName = "TERRAIN";
-        ter.texture = new Texture("res/misc/crystalTexture.jpg");
-        ter.diffuseMap = ter.texture;
-        ter.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
-        ter.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
-        ter.reflectance = 1f;
-        terrain.meshes.get(0).materials.set(0,ter);
-
-        terrain.meshes.get(0).initOpenGLMeshData();
+        Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
+        Material ter_mat = new Material();
+        ter_mat.matName = "TERRAIN";
+        ter_mat.texture = new Texture("res/misc/crystalTexture.jpg");
+        ter_mat.diffuseMap = ter_mat.texture;
+        ter_mat.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
+        ter_mat.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
+        ter_mat.reflectance = 1f;
+        terrain_mesh.materials.set(0,ter_mat);
+        terrain_mesh.initOpenGLMeshData();
+        var terrain = new Terrain(this, terrain_mesh, "Terrain", heightMap.length, heightMap[0].length, 2);
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
@@ -294,20 +292,20 @@ public class GameLWJGL extends Game implements Runnable {
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
-        partHints.numInstances = 1000;
+        partHints.numInstances = 100;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         partMesh.initOpenGLMeshData();
         Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
         partMesh.materials.get(0).texture = partTex;
 
         Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
-                3,0.1f, "baseParticle");
+                5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
         particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(particle, 1000, 0.01f, "generator");
+        var particleGenerator = new FlowParticleGenerator(particle, 100, 0.1f, "generator");
         particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
-        particleGenerator.velRange = new Vector(-0.1f, 2f, 0.5f);
-        particleGenerator.accelRange = new Vector(0,0,0);
+        particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
+        particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
@@ -461,19 +459,15 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(input.UP_ARROW)) {
-            Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
             monster.cycleFrame(0.5f);
             monster.generateCurrentSkeleton(monster.currentFrame);
-            Logger.log("Current frame: "+monster.currentFrame);
         }
 
         if(input.keyDown(input.DOWN_ARROW)) {
-            Logger.log("cycling frames");
             AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
             monster.cycleFrame(0.5f);
             monster.generateCurrentSkeleton(monster.currentFrame);
-            Logger.log("Current frame: "+monster.currentFrame);
         }
 
         if(input.keyDown(input.S)) {

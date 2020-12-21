@@ -27,8 +27,8 @@ public class InstancedMesh extends Mesh {
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * InstancedMesh.VECTOR4F_SIZE_BYTES;
     public static final int MATRIX_SIZE_FLOATS = 16;
-    public static final int INSTANCE_SIZE_BYTES = InstancedMesh.MATRIX_SIZE_BYTES + (InstancedMesh.FLOAT_SIZE_BYTES * 2);
-    public static final int INSTANCE_SIZE_FLOATS = InstancedMesh.MATRIX_SIZE_FLOATS + 2;
+    public static final int INSTANCE_SIZE_BYTES = InstancedMesh.MATRIX_SIZE_BYTES + (2*VECTOR4F_SIZE_BYTES);
+    public static final int INSTANCE_SIZE_FLOATS = InstancedMesh.MATRIX_SIZE_FLOATS + (2*4);
 
     public int numInstances;
 
@@ -227,10 +227,19 @@ public class InstancedMesh extends Mesh {
                 strideStart += VECTOR4F_SIZE_BYTES;
             }
 
+            // Material global ind and atlas offset
+            for(int i = 0;i < 2; i++) {
+                glVertexAttribPointer(attribIndex, 4, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
+                glVertexAttribDivisor(attribIndex, 1);
+                glEnableVertexAttribArray(attribIndex);
+                attribIndex++;
+                strideStart += VECTOR4F_SIZE_BYTES;
+            }
+
             // Texture offsets
-            glVertexAttribPointer(attribIndex, 2, GL_FLOAT, false, InstancedMesh.INSTANCE_SIZE_BYTES, strideStart);
-            glVertexAttribDivisor(attribIndex, 1);
-            glEnableVertexAttribArray(attribIndex);
+//            glVertexAttribPointer(attribIndex, 2, GL_FLOAT, false, InstancedMesh.INSTANCE_SIZE_BYTES, strideStart);
+//            glVertexAttribDivisor(attribIndex, 1);
+//            glEnableVertexAttribArray(attribIndex);
 
             glBindBuffer(GL_ARRAY_BUFFER,0);
             glBindVertexArray(0);

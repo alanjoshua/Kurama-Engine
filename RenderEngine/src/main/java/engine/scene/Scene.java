@@ -1,6 +1,7 @@
 package engine.scene;
 
 import engine.Effects.Fog;
+import engine.Effects.Material;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Mesh.Mesh;
@@ -49,7 +50,9 @@ public class Scene {
     public HUD hud;
     public Camera camera;
     public RenderPipeline renderPipeline;
-
+    public List<Material> materialLibrary = new ArrayList<>();
+    public HashMap<String, Material> materialInd_mat = new HashMap<>();
+    public boolean hasMatLibraryUpdated = false;
     private Game game;
 
     public Scene(Game game) {
@@ -179,6 +182,30 @@ public class Scene {
 
     }
 
+//    This will add materials to scene mat library only if the matname does not already exist
+    public void addMaterialsToLibrary(List<Material> mats) {
+        for(var mat: mats) {
+            addMaterialToLibrary(mat);
+        }
+    }
+
+    public Integer addMaterialToLibrary(Material mat) {
+        if(!materialInd_mat.containsKey(mat.matName)) {
+            materialInd_mat.put(mat.matName, mat);
+            int id = materialLibrary.size();
+            mat.globalSceneID = id;
+            materialLibrary.add(mat);
+            hasMatLibraryUpdated = true;
+            return id;
+        }
+        else {
+            mat.globalSceneID = materialInd_mat.get(mat.matName).globalSceneID;
+            materialInd_mat.put(mat.matName, mat);
+            materialLibrary.set(mat.globalSceneID, mat);
+        }
+        return null;
+    }
+
     public void addMesh(Mesh mesh) {
         log("Checking whether input meshID is unique...");
         boolean idPresent = meshID_mesh_map.containsKey(mesh.meshIdentifier);
@@ -193,12 +220,16 @@ public class Scene {
     }
 
     public Model createModel(Mesh mesh, String modelID, List<String> shaderID) {
+        addMaterialsToLibrary(mesh.materials);
         Model newModel = new Model(game, Arrays.asList(new Mesh[]{mesh}), modelID);
         addModel(newModel, shaderID);
         return newModel;
     }
 
     public Model createModel(List<Mesh> meshes, String modelID, List<String> shaderID) {
+        for(var mesh: meshes) {
+            addMaterialsToLibrary(mesh.materials);
+        }
         Model newModel = new Model(game, meshes, modelID);
         addModel(newModel, shaderID);
         return newModel;
@@ -217,6 +248,10 @@ public class Scene {
     }
 
     public void addModel(Model newModel, List<String> shaderIDs) {
+
+        for(var mesh: newModel.meshes) {
+            addMaterialsToLibrary(mesh.materials);
+        }
 
 //        Check whether modelID is unique. If not, assign a random ID
         if (modelID_model_map.containsKey(newModel.identifier)) {

@@ -63,7 +63,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
         Vector posInc = Vector.randomVector(3).mul(posRange);
         Vector scaleInc = Vector.randomVector(3).mul(scaleRange);
         Vector accelInc = Vector.randomVector(3).mul(accelRange);
-        float updateAnimInc = (long)sign *(long)(Math.random() * (float)this.animUpdateRange);
+        float updateAnimInc = (long)sign *(long)(Math.random() * this.animUpdateRange);
 
         particle.acceleration = particle.acceleration.add(accelInc);
         particle.pos = particle.pos.add(posInc);

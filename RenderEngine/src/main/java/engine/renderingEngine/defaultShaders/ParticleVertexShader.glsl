@@ -4,7 +4,11 @@ layout (location=0) in vec4 position;
 layout (location=1) in vec2 texCoord;
 layout (location=2) in vec3 vertexNormal;
 layout (location=9) in mat4 modelViewMatrix;
-layout (location=13) in vec2 texOffset;
+layout (location = 6) in float materialIndex;
+//layout (location=13) in vec2 texOffset;
+layout (location = 13) in vec4 materialsGlobalLocInstanced;
+//layout (location = 14) in vec4 materialsAtlasInstanced;
+
 
 out vec2 outTexCoord;
 
@@ -18,9 +22,13 @@ void main() {
     gl_Position = projectionMatrix * modelViewMatrix * position;
 
     // Support for texture atlas, update texture coordinates
-    float x = (texCoord.x / numCols + texOffset.x);
-    float y = (texCoord.y / numRows + texOffset.y);
-    
-    outTexCoord = vec2(x, y);
+    float texXOff = materialsGlobalLocInstanced.x;
+    float texYOff = materialsGlobalLocInstanced.y;
+    float x = (texCoord.x / numCols + texXOff);
+    float y = (texCoord.y / numRows + texYOff);
+    vec2 texCoords_local = vec2(x,y);
+
+    outTexCoord = texCoords_local;
+
 
 }

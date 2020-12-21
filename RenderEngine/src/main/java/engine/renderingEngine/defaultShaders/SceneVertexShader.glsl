@@ -10,7 +10,9 @@ layout (location = 6) in float materialIndex;
 layout (location = 7) in vec4 biases;
 layout (location = 8) in vec4 jointIndices;
 layout (location = 9) in mat4 modelToWorldInstancedMatrix;
-layout (location = 13) in vec2 texOff;
+layout (location = 13) in vec4 materialsGlobalLocInstanced;
+layout (location = 14) in vec4 materialsAtlasInstanced;
+//layout (location = 13) in vec2 texOff;
 
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 const int MAX_SPOT_LIGHTS = 10;
@@ -21,7 +23,24 @@ const int MAX_JOINTS = 150;
 uniform mat4 modelToWorldMatrix;
 uniform mat4 projectionMatrix;
 uniform int isInstanced;
+uniform vec4 materialsGlobalLoc;
+uniform vec4 materialsAtlas;
 
+struct Material {
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    float specularPower;
+    float reflectance;
+    int hasTexture;
+    int hasNormalMap;
+    int hasDiffuseMap;
+    int hasSpecularMap;
+    int numRows;
+    int numCols;
+};
+const int MAX_MATERIALS = 26;
+uniform Material materials[MAX_MATERIALS];
 uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 worldToSpotlightMatrix[MAX_SPOT_LIGHTS];
 uniform mat4 worldToCam;
@@ -39,7 +58,7 @@ out mat4 outModelViewMatrix;
 out mat3 TBN;
 out vec4 mLightViewVertexPos[MAX_DIRECTIONAL_LIGHTS];
 out vec4 mSpotLightViewVertexPos[MAX_SPOT_LIGHTS];
-flat out float materialInd;
+flat out int materialInd;
 flat out int numDirLight;
 flat out int numSpotLights;
 
@@ -50,13 +69,35 @@ void main() {
     vec4 initBitangent = vec4(0, 0, 0, 0);
 
     mat4 modelToWorld_local;
+    vec4 materialsGlobalLoc_local;
+    vec4 materialsAtlas_local;
 
     if(isInstanced > 0) {
         modelToWorld_local = modelToWorldInstancedMatrix;
+        materialsGlobalLoc_local = materialsGlobalLocInstanced;
+        materialsAtlas_local = materialsAtlasInstanced;
     }
     else {
         modelToWorld_local = modelToWorldMatrix;
+        materialsGlobalLoc_local = materialsGlobalLoc;
+        materialsAtlas_local = materialsAtlas;
     }
+
+//    Calculate texture coordinate for for texture atlas
+    int localMatInd = int(materialIndex);
+//    int r = localMatInd / 4;
+//    int c = localMatInd % 4;
+    int globalInd = int(materialsGlobalLoc_local[localMatInd]);
+    int atlasOffset = int(materialsAtlas[localMatInd]);
+
+    Material material = materials[globalInd];
+    int col = atlasOffset % material.numCols;
+    int row = atlasOffset / material.numCols;
+    float texXOff = float(col / material.numCols);
+    float texYOff = float(row / material.numRows);
+    float x = (texCoord.x / material.numCols + texXOff);
+    float y = (texCoord.y / material.numRows + texYOff);
+    vec2 texCoords_local = vec2(x,y);
 
     int count = 0;
     if (isAnimated != 0) {
@@ -93,10 +134,7 @@ void main() {
 
     exColor = color;
 
-//    float x = (texCoord.x / numCols + texOffset.x);
-//    float y = (texCoord.y / numRows + texOffset.y);
-//    outTex = vec2(x, y);
-    outTex = texCoord;
+    outTex = texCoords_local;
 
     vertNormal = normalize(modelViewMatrix * initNormal).xyz;
     vertPos = tempPos.xyz;
@@ -114,7 +152,7 @@ void main() {
         mSpotLightViewVertexPos[i] = worldToSpotlightMatrix[i] * modelToWorld_local * vec4(position, 1.0);
         mSpotLightViewVertexPos[i] = mSpotLightViewVertexPos[i]/mSpotLightViewVertexPos[i].w;
     }
-    materialInd = materialIndex;
+    materialInd = globalInd;
     numDirLight = numDirectionalLights;
     numSpotLights = numberOfSpotLights;
 }

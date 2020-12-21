@@ -22,15 +22,14 @@ public class Text extends Model {
     public FontTexture fontTexture;
     public float width;
 
-    public Text(Game game, String text, FontTexture fontTexture,String identifier) {
-        super(game, (Mesh) null,identifier);
+    public Text(Game game, String text, Mesh mesh, FontTexture fontTexture, float width, String modelIdentifier) {
+        super(game, mesh, modelIdentifier);
         this.text = text;
         this.fontTexture = fontTexture;
-        this.meshes = new ArrayList<>();
-        this.meshes.add(buildMesh());
+        this.width = width;
     }
 
-    public Mesh buildMesh() {
+    public static List<Object> buildTextMesh(String text, FontTexture fontTexture) {
         List<Vector> positions = new ArrayList<>();
         List<Vector> textCoords = new ArrayList<>();
         List<Integer> indices= new ArrayList<>();
@@ -113,7 +112,7 @@ public class Text extends Model {
             faces.add(f1);
             startx += charInfo.width;
         }
-        width = startx;
+        float width = startx;
 
         List<List<Vector>> vertAttribs = new ArrayList<>();
         vertAttribs.add(positions);
@@ -130,14 +129,17 @@ public class Text extends Model {
         res.initOpenGLMeshData();
 
         res.meshIdentifier = Utils.getUniqueID();
-        return res;
+        List<Object> results = new ArrayList<>();
+        results.add(res);
+        results.add(new Float(width));
+        return results;
     }
 
-    public void setText(String text) {
-        this.text = text;
-        this.meshes.forEach(m -> m.deleteBuffers());
-        this.meshes = new ArrayList<>();
-        this.meshes.add(buildMesh());
-    }
+//    public void setText(String text) {
+//        this.text = text;
+//        this.meshes.forEach(m -> m.deleteBuffers());
+//        this.meshes = new ArrayList<>();
+//        this.meshes.add(buildMesh());
+//    }
 
 }

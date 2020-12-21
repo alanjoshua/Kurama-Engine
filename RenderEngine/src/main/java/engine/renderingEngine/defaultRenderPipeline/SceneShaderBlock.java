@@ -1,5 +1,6 @@
 package engine.renderingEngine.defaultRenderPipeline;
 
+import engine.Effects.Material;
 import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Mesh.InstancedMesh;
@@ -102,6 +103,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             scene_shader.createUniform("modelToWorldMatrix");
             scene_shader.createUniform("worldToCam");
 
+            scene_shader.createUniform("materialsGlobalLoc");
+            scene_shader.createUniform("materialsAtlas");
+
         }catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -125,6 +129,17 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public Matrix generateMaterialMatrix(List<Material> mats, List<Integer> altasOffsets) {
+        float[][] res = new float[4][4];
+        for(int i = 0;i < mats.size();i++) {
+            int r = i / 4;
+            int c = i % 4;
+            res[r][c] = mats.get(i).globalSceneID;
+            res[r+2][c] = altasOffsets.get(i);
+        }
+        return new Matrix(res);
     }
 
     public void renderScene(Scene scene, ShadowDepthRenderPackage shadowPackage) {
@@ -154,6 +169,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         sceneShaderProgram.setUniform("numberOfSpotLights",scene.spotLights.size());
         sceneShaderProgram.setUniform("fog", scene.fog);
 
+        int offset = sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
+                "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",scene.materialLibrary,0);
+
         Vector c = new Vector(3,0);
         for(int i = 0;i < scene.directionalLights.size(); i++) {
             DirectionalLight l = scene.directionalLights.get(i);
@@ -169,15 +187,12 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     l.shadowProjectionMatrix.matMul(shadowPackage.worldToSpotLights.get(i)));
         }
 
-        int offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,0);
+        offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,offset);
         offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
         for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
 
             Mesh mesh = scene.meshID_mesh_map.get(meshId);
-            sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
-                    "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",mesh.materials,offset);
-
             if (curShouldCull != mesh.shouldCull) {
                 if(mesh.shouldCull) {
                     glEnable(GL_CULL_FACE);
@@ -193,7 +208,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 currCull = mesh.cullmode;
             }
 
-            mesh.initRender(offset);
+            mesh.initRender();
 
             if(mesh instanceof InstancedMesh) {
 
@@ -215,8 +230,23 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     for(Model m: chunk) {
                         Matrix objectToWorld = m.getObjectToWorldMatrix();
                         objectToWorld.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
-                        inst_mesh.instanceDataBuffer.put(0f);
-                        inst_mesh.instanceDataBuffer.put(0f);
+
+                        Vector matsGlobalLoc = new Vector(4, 0);
+                        for(int i = 0;i < m.materials.get(meshId).size();i++) {
+                            matsGlobalLoc.setDataElement(i, m.materials.get(meshId).get(i).globalSceneID);
+                        }
+
+                        Vector matsAtlas = new Vector(4, 0);
+                        for(int i = 0;i < m.matAtlasOffset.get(meshId).size();i++) {
+                            matsAtlas.setDataElement(i, m.matAtlasOffset.get(meshId).get(i));
+                        }
+
+                        for(var v: matsGlobalLoc.getData()) {
+                            inst_mesh.instanceDataBuffer.put(v);
+                        }
+                        for(var v: matsAtlas.getData()) {
+                            inst_mesh.instanceDataBuffer.put(v);
+                        }
                     }
                     inst_mesh.instanceDataBuffer.flip();
 
@@ -248,6 +278,18 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             scene_shader.setUniform("isAnimated", 0);
                         }
 
+                        Vector matsGlobalLoc = new Vector(4, 0);
+                        for(int i = 0;i < model.materials.get(meshId).size();i++) {
+                            matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
+                        }
+
+                        Vector matsAtlas = new Vector(4, 0);
+                        for(int i = 0;i < model.matAtlasOffset.get(meshId).size();i++) {
+                            matsAtlas.setDataElement(i, model.matAtlasOffset.get(meshId).get(i));
+                        }
+
+                        scene_shader.setUniform("materialsGlobalLoc", matsGlobalLoc);
+                        scene_shader.setUniform("materialsAtlas", matsAtlas);
                         Matrix objectToWorld = model.getObjectToWorldMatrix();
                         scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
 //
@@ -304,7 +346,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                mesh.initRender(0);
+                mesh.initRender();
 
                 if(mesh instanceof InstancedMesh) {
                     depthShaderProgram.setUniform("isInstanced", 1);
@@ -324,8 +366,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         for(Model m: chunk) {
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
                             objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
-                            inst_mesh.instanceDataBuffer.put(0f);
-                            inst_mesh.instanceDataBuffer.put(0f);
+                            for(int counter = 0;counter < 8;counter++) {
+                                inst_mesh.instanceDataBuffer.put(0f);
+                            }
                         }
                         inst_mesh.instanceDataBuffer.flip();
 
@@ -395,7 +438,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                mesh.initRender(0);
+                mesh.initRender();
 
                 if(mesh instanceof InstancedMesh) {
                     depthShaderProgram.setUniform("isInstanced", 1);
@@ -415,8 +458,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         for (Model m : chunk) {
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
                             objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
-                            inst_mesh.instanceDataBuffer.put(0f);
-                            inst_mesh.instanceDataBuffer.put(0f);
+                            for(int counter = 0;counter < 8;counter++) {
+                                inst_mesh.instanceDataBuffer.put(0f);
+                            }
                         }
                         inst_mesh.instanceDataBuffer.flip();
 

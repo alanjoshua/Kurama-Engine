@@ -3,18 +3,16 @@ package engine.renderingEngine.defaultRenderPipeline;
 import engine.Math.Matrix;
 import engine.Mesh.InstancedMesh;
 import engine.model.Model;
-import engine.particle.Particle;
 import engine.renderingEngine.RenderBlock;
 import engine.renderingEngine.RenderBlockInput;
 import engine.shader.ShaderProgram;
+import engine.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13C.glActiveTexture;
 import static org.lwjgl.opengl.GL15.*;
 
 public class ParticleShaderBlock extends RenderBlock {
@@ -102,8 +100,8 @@ public class ParticleShaderBlock extends RenderBlock {
                 for(var chunk: chunks) {
 
                     inst_mesh.instanceDataBuffer.clear();
-                    for(var particle: chunk) {
 
+                    for(var particle: chunk) {
                         Matrix objectToWorld = particle.getObjectToWorldMatrix();
                         Matrix modelView = worldToCam.matMul(objectToWorld);
 
@@ -111,16 +109,21 @@ public class ParticleShaderBlock extends RenderBlock {
                                 addColumn(modelView.getColumn(3).
                                         removeDimensionFromVec(3)).addRow(modelView.getRow(3));
 
-                        var text = particle.meshes.get(i).materials.get(0).texture;
-
-                        int col = ((Particle)particle).texPos % text.numCols;
-                        int row = ((Particle)particle).texPos / text.numCols;
-                        float textXOffset = (float) col / text.numCols;
-                        float textYOffset = (float) row / text.numRows;
+                        var mat = particle.materials.get(inst_mesh.meshIdentifier).get(0);
+                        var tex = mat.texture;
+                        int texPos = particle.matAtlasOffset.get(inst_mesh.meshIdentifier).get(0);
+                        int col = texPos % tex.numCols;
+                        int row = texPos / tex.numCols;
+                        float textXOffset = (float) col / tex.numCols;
+                        float textYOffset = (float) row / tex.numRows;
 
                         billboard.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+
                         inst_mesh.instanceDataBuffer.put(textXOffset);
                         inst_mesh.instanceDataBuffer.put(textYOffset);
+                        for(int counter = 0; counter < 6; counter++) {
+                            inst_mesh.instanceDataBuffer.put(0);
+                        }
                     }
 
                     inst_mesh.instanceDataBuffer.flip();
@@ -131,30 +134,6 @@ public class ParticleShaderBlock extends RenderBlock {
                     inst_mesh.render(chunk.size());
                 }
                 mesh.endRender();
-
-//                for(var particle: generator.particles) {
-//
-//                    var text = particle.meshes.get(i).materials.get(0).texture;
-//
-//                    int col = ((Particle)particle).texPos % text.numCols;
-//                    int row = ((Particle)particle).texPos / text.numCols;
-//                    float textXOffset = (float) col / text.numCols;
-//                    float textYOffset = (float) row / text.numRows;
-//
-//                    particleShader.setUniform("texXOffset", textXOffset);
-//                    particleShader.setUniform("texYOffset", textYOffset);
-//
-//                    Matrix objectToWorld = particle.getObjectToWorldMatrix();
-//                    Matrix modelView = worldToCam.matMul(objectToWorld);
-//
-//                    Matrix billboard = Matrix.getDiagonalMatrix(particle.scale).
-//                            addColumn(modelView.getColumn(3).
-//                            removeDimensionFromVec(3)).addRow(modelView.getRow(3));
-//
-//                    particleShader.setUniform("modelViewMatrix", billboard);
-//                    mesh.render();
-//                }
-//                mesh.endRender();
             }
 
         }

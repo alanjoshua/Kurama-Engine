@@ -5,9 +5,8 @@ import engine.Math.Vector;
 import engine.Mesh.Mesh;
 import engine.game.Game;
 import engine.model.Model;
+import engine.utils.Logger;
 import engine.utils.Utils;
-
-import java.util.List;
 
 public class Particle extends Model {
 
@@ -17,26 +16,23 @@ public class Particle extends Model {
     public float updateTexture;
     public float currentAnimationTime = 0;
     public int animationFrames;
-    public int texPos = 0;
 
     public Particle(Game game, Mesh mesh, Vector velocity, Vector acceleration, float timeToLive, float updateTexture,
                     String identifier) {
         super(game, mesh, identifier);
+
+        if(mesh.materials.size() > 1) {
+            Logger.logError("A Particle mesh should only have one material. This mesh:"+mesh.meshIdentifier +
+                    " has multiple materials. The particle shader will ignore the other materials.");
+        }
+
         this.velocity = velocity;
         this.acceleration = acceleration;
         this.timeToLive = timeToLive;
         this.updateTexture = updateTexture;
         this.animationFrames = mesh.materials.get(0).texture.numRows * mesh.materials.get(0).texture.numCols;
-    }
-
-    public Particle(Game game, List<Mesh> meshes, Vector velocity, Vector acceleration, float timeToLive, float updateTexture,
-                    String identifier) {
-        super(game, meshes, identifier);
-        this.velocity = velocity;
-        this.acceleration = acceleration;
-        this.timeToLive = timeToLive;
-        this.updateTexture = updateTexture;
-        this.animationFrames = meshes.get(0).materials.get(0).texture.numRows * meshes.get(0).materials.get(0).texture.numCols;
+//        this.materials = new ArrayList<>(1);
+//        this.materials.add(new Material(mesh.materials.get(0)));
     }
 
     public Particle(Particle p) {
@@ -48,6 +44,9 @@ public class Particle extends Model {
         this.timeToLive = p.timeToLive;
         this.updateTexture = p.updateTexture;
         this.animationFrames = p.animationFrames;
+//        this.materials = p.materials;
+//        this.materials = new ArrayList<>(1);
+//        this.materials.add(new Material(p.materials.get(0)));
     }
 
     public float updateTimeToLive(float elapsedTime) {
@@ -56,13 +55,14 @@ public class Particle extends Model {
 
         if(currentAnimationTime >= updateTexture && this.animationFrames > 0) {
             this.currentAnimationTime = 0;
-            int pos = this.texPos;
+            var mesh1 = meshes.get(0);
+            int pos = matAtlasOffset.get(mesh1.meshIdentifier).get(0);
             pos++;
             if(pos < this.animationFrames) {
-                this.texPos = pos;
+                matAtlasOffset.get(mesh1.meshIdentifier).set(0, pos);
             }
             else {
-                this.texPos = 0;
+                matAtlasOffset.get(mesh1.meshIdentifier).set(0, 0);
             }
         }
 
