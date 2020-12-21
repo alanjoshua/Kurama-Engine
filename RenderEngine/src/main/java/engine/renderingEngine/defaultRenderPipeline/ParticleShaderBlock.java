@@ -70,10 +70,12 @@ public class ParticleShaderBlock extends RenderBlock {
             var camera = input.scene.camera;
             SortedMap<Float, Model> sorted = new TreeMap<>(Collections.reverseOrder());
             generator.particles.stream().forEach(p -> {
-                float dist = (float)Math.sqrt(Math.pow(camera.getPos().get(0) - p.pos.get(0), 2) +
-                        Math.pow(camera.getPos().get(1) - p.pos.get(1), 2) +
-                        Math.pow(camera.getPos().get(2) - p.pos.get(2), 2));
-                sorted.put(dist, p);
+                if(p.shouldRender) {
+                    float dist = (float) Math.sqrt(Math.pow(camera.getPos().get(0) - p.pos.get(0), 2) +
+                            Math.pow(camera.getPos().get(1) - p.pos.get(1), 2) +
+                            Math.pow(camera.getPos().get(2) - p.pos.get(2), 2));
+                    sorted.put(dist, p);
+                }
             });
             generator.particles = new ArrayList<>(sorted.values());
 

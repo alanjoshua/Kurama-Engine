@@ -9,13 +9,13 @@ layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
 layout (location = 7) in vec4 biases;
 layout (location = 8) in vec4 jointIndices;
-layout (location = 9) in mat4 modelToWorldInstancedMatrix;
+layout (location = 9) in mat4 modelLightViewInstancedMatrix;
 layout (location = 13) in vec2 texOff;
 
 uniform mat4 modelLightViewMatrix;
 uniform mat4 projectionMatrix;
 uniform int isAnimated = 0;
-//uniform int isInstanced;
+uniform int isInstanced;
 
 const int MAX_WEIGHTS = 4;
 const int MAX_JOINTS = 150;
@@ -23,6 +23,14 @@ const int MAX_JOINTS = 150;
 uniform mat4 jointMatrices[MAX_JOINTS];
 
 void main() {
+
+    mat4 modelLightViewMatrix_local;
+    if(isInstanced > 0) {
+        modelLightViewMatrix_local = modelLightViewInstancedMatrix;
+    }
+    else {
+        modelLightViewMatrix_local = modelLightViewMatrix;
+    }
 
     vec4 initPos = vec4(0, 0, 0, 0);
 
@@ -43,5 +51,5 @@ void main() {
         initPos = vec4(position, 1.0);
     }
 
-    gl_Position = projectionMatrix * modelLightViewMatrix * initPos;
+    gl_Position = projectionMatrix * modelLightViewMatrix_local * initPos;
 }

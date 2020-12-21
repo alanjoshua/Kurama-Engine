@@ -119,7 +119,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             shadow_shader.createUniform("modelLightViewMatrix");
             shadow_shader.createUniformArray("jointMatrices", MAX_JOINTS);
             shadow_shader.createUniform("isAnimated");
-//            shadow_shader.createUniform("isInstanced");
+            shadow_shader.createUniform("isInstanced");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -306,11 +306,38 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
                 mesh.initRender(0);
 
-//                if(mesh instanceof InstancedMesh) {
-//                    sceneShaderProgram.setUniform("isInstanced", 1);
-//                }
-//
-//                else {
+                if(mesh instanceof InstancedMesh) {
+                    depthShaderProgram.setUniform("isInstanced", 1);
+                    var inst_mesh = (InstancedMesh)mesh;
+                    var models = new ArrayList<Model>();
+
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                         var m = scene.modelID_model_map.get(modelId);
+                         if(m.shouldRender && m.shouldCastShadow) {
+                             models.add(m);
+                         }
+                    }
+                    var chunks = inst_mesh.getRenderChunks(models);
+                    for(var chunk: chunks) {
+                        inst_mesh.instanceDataBuffer.clear();
+
+                        for(Model m: chunk) {
+                            Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
+                            objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+                            inst_mesh.instanceDataBuffer.put(0f);
+                            inst_mesh.instanceDataBuffer.put(0f);
+                        }
+                        inst_mesh.instanceDataBuffer.flip();
+
+                        glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
+                        glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+
+                        inst_mesh.render(chunk.size());
+                    }
+                }
+
+                else {
+                    depthShaderProgram.setUniform("isInstanced", 0);
                     for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                         Model m = scene.modelID_model_map.get(modelId);
 
@@ -332,7 +359,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             mesh.render();
                         }
                     }
-//                }
+                }
                 mesh.endRender();
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -353,8 +380,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
-                mesh.initRender(0);
-
                 if (curShouldCull != mesh.shouldCull) {
                     if(mesh.shouldCull) {
                         glEnable(GL_CULL_FACE);
@@ -370,26 +395,59 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                for(String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                    Model m = scene.modelID_model_map.get(modelId);
+                mesh.initRender(0);
 
-                    if(m instanceof AnimatedModel) {
-                        depthShaderProgram.setUniform("isAnimated", 1);
-//                        Logger.log("detecting animated model");
-                        AnimatedModel anim = (AnimatedModel) m;
-                        for(int j = 0;j < anim.currentJointTransformations.size();j++) {
-                            var matrix = anim.currentJointTransformations.get(j);
-                            depthShaderProgram.setUniform("jointMatrices["+j+"]", matrix);
+                if(mesh instanceof InstancedMesh) {
+                    depthShaderProgram.setUniform("isInstanced", 1);
+                    var inst_mesh = (InstancedMesh) mesh;
+                    var models = new ArrayList<Model>();
+
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                        var m = scene.modelID_model_map.get(modelId);
+                        if (m.shouldRender && m.shouldCastShadow) {
+                            models.add(m);
                         }
                     }
-                    else {
-                        depthShaderProgram.setUniform("isAnimated", 0);
-                    }
+                    var chunks = inst_mesh.getRenderChunks(models);
+                    for (var chunk : chunks) {
+                        inst_mesh.instanceDataBuffer.clear();
 
-                    if (m.shouldCastShadow) {
-                        Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                        depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                        mesh.render();
+                        for (Model m : chunk) {
+                            Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
+                            objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+                            inst_mesh.instanceDataBuffer.put(0f);
+                            inst_mesh.instanceDataBuffer.put(0f);
+                        }
+                        inst_mesh.instanceDataBuffer.flip();
+
+                        glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
+                        glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+
+                        inst_mesh.render(chunk.size());
+                    }
+                }
+                else{
+                    depthShaderProgram.setUniform("isInstanced", 0);
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                        Model m = scene.modelID_model_map.get(modelId);
+
+                        if (m instanceof AnimatedModel) {
+                            depthShaderProgram.setUniform("isAnimated", 1);
+//                        Logger.log("detecting animated model");
+                            AnimatedModel anim = (AnimatedModel) m;
+                            for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
+                                var matrix = anim.currentJointTransformations.get(j);
+                                depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
+                            }
+                        } else {
+                            depthShaderProgram.setUniform("isAnimated", 0);
+                        }
+
+                        if (m.shouldCastShadow) {
+                            Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
+                            depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                            mesh.render();
+                        }
                     }
                 }
                 mesh.endRender();

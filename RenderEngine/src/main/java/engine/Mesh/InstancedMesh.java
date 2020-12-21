@@ -11,6 +11,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
@@ -46,12 +47,43 @@ public class InstancedMesh extends Mesh {
     }
 
     // Assumes all incoming models have shouldRender property be set to True
+    public List<List<Model>> getRenderChunks(List<Model> models, Predicate<Model> filter) {
+        List<List<Model>> chunks = new ArrayList<>();
+
+        List<Model> currChunk = new ArrayList<>(numInstances);
+        for(Model m: models) {
+            if(filter.test(m)) {
+                currChunk.add(m);
+            }
+            if(currChunk.size() >= numInstances) {
+                chunks.add(currChunk);
+                currChunk = new ArrayList<>();
+            }
+        }
+
+        if(currChunk.size() != 0) {
+            chunks.add(currChunk);
+        }
+
+        return chunks;
+    }
+
     public List<List<Model>> getRenderChunks(List<Model> models) {
         List<List<Model>> chunks = new ArrayList<>();
-        for(int i = 0;i < models.size();i+=numInstances) {
-            int end = Math.min(models.size(), i+numInstances);
-            chunks.add(models.subList(i, end));
+
+        List<Model> currChunk = new ArrayList<>(numInstances);
+        for(Model m: models) {
+            currChunk.add(m);
+            if(currChunk.size() >= numInstances) {
+                chunks.add(currChunk);
+                currChunk = new ArrayList<>();
+            }
         }
+
+        if(currChunk.size() != 0) {
+            chunks.add(currChunk);
+        }
+
         return chunks;
     }
 

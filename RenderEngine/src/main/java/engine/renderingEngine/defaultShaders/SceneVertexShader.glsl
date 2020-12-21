@@ -22,9 +22,6 @@ uniform mat4 modelToWorldMatrix;
 uniform mat4 projectionMatrix;
 uniform int isInstanced;
 
-//uniform mat4 modelLightViewMatrix[MAX_DIRECTIONAL_LIGHTS];  //Eliminate these
-//uniform mat4 modelSpotLightViewMatrix[MAX_SPOT_LIGHTS];    // Eliminate these
-
 uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 worldToSpotlightMatrix[MAX_SPOT_LIGHTS];
 uniform mat4 worldToCam;

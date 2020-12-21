@@ -272,10 +272,6 @@ public class GameLWJGL extends Game implements Runnable {
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
         monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
-//        monsterMeshes.stream().forEach(m -> {
-//            m.materials.get(0).reflectance=0f;
-//            m.materials.get(0).specularPower=0f;
-//        });
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
         var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
