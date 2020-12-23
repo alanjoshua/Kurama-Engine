@@ -407,10 +407,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
             for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
 
-                if(meshId == "monsterMesh1") {
-                    Logger.log("here");
-                }
-
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
                 if (curShouldCull != mesh.shouldCull) {

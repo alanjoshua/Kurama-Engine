@@ -479,7 +479,7 @@ public class GameLWJGL extends Game implements Runnable {
                 if(monster == null) {
                     break;
                 }
-                monster.cycleFrame(0.5f);
+                monster.cycleFrame(0.5f * (counter+1));
                 monster.generateCurrentSkeleton(monster.currentFrame);
                 counter++;
             }
@@ -492,7 +492,7 @@ public class GameLWJGL extends Game implements Runnable {
                 if(monster == null) {
                     break;
                 }
-                monster.cycleFrame(-0.5f);
+                monster.cycleFrame(-0.5f * (counter+1));
                 monster.generateCurrentSkeleton(monster.currentFrame);
                 counter++;
             }

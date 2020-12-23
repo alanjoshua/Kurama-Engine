@@ -6,7 +6,6 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.opengl.GLUtil;
 
 import java.awt.*;
 
@@ -102,7 +101,8 @@ public class DisplayLWJGL extends Display {
         glfwMakeContextCurrent(window);
         capabilities = GL.createCapabilities();
 
-        GLUtil.setupDebugMessageCallback();
+//        GLUtil.setupDebugMessageCallback();
+//        glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, false);
         // Enable v-sync
         glfwSwapInterval(1);
     }
