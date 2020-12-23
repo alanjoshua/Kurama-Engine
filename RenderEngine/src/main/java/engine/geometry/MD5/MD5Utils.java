@@ -1,19 +1,20 @@
 package engine.geometry.MD5;
 
 import engine.Effects.Material;
+import engine.Effects.Texture;
 import engine.Math.Matrix;
 import engine.Math.Quaternion;
 import engine.Math.Vector;
 import engine.Mesh.Face;
+import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
-import engine.Effects.Texture;
+import engine.geometry.MeshBuilder;
+import engine.geometry.MeshBuilderHints;
 import engine.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 
 public class MD5Utils {
 
@@ -93,7 +94,7 @@ public class MD5Utils {
         return results;
     }
 
-    public static List<Mesh> generateMeshes(MD5Model model, Vector defColor) {
+    public static List<Mesh> generateMeshes(MD5Model model, Vector defColor, MeshBuilderHints hints) {
         List<Mesh> results = new ArrayList<>();
 
         for (MD5Mesh mesh: model.meshes) {
@@ -161,7 +162,9 @@ public class MD5Utils {
             List<Material> mats = new ArrayList<>();
             mats.add(new Material());
             List<Vector> matList = new ArrayList<>();
-            matList.add(new Vector(new float[]{0}));
+            for(var v: vertPositions) {
+                matList.add(new Vector(new float[]{0}));
+            }
 
             if(mesh.texture != null) {
                 try {
@@ -195,7 +198,12 @@ public class MD5Utils {
             m.setAttribute(normals, Mesh.NORMAL);
             m.setAttribute(weightBiasesPerVert, Mesh.WEIGHTBIASESPERVERT);
             m.setAttribute(jointIndicesPerVert, Mesh.JOINTINDICESPERVERT);
-            m.drawMode = GL_TRIANGLES;
+            m.setAttribute(matList, Mesh.MATERIAL);
+            m = MeshBuilder.bakeMesh(m, null);
+            if(hints != null && hints.isInstanced) {
+                m = new InstancedMesh(m, hints.numInstances);
+            }
+
             m.meshIdentifier = Utils.getUniqueID();
             m.shouldCull = false;
             results.add(m);

@@ -137,14 +137,14 @@ public class GameLWJGL extends Game implements Runnable {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-
+        hints.initLWJGLAttribs = false;
         scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
                 sunMesh, null, directionalLightOrthoProjection, "Sun");
-
+        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
@@ -211,6 +211,7 @@ public class GameLWJGL extends Game implements Runnable {
         float yRange = 60;
 
         var skybox_mesh = scene.loadMesh("res/misc/skybox.obj", "skybox_mesh", hints);
+        skybox_mesh.initOpenGLMeshData();
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1f});
         skybox_mesh.materials.set(0, skyMat);
@@ -225,8 +226,9 @@ public class GameLWJGL extends Game implements Runnable {
         System.out.println("seed: "+seed);
         float[][] heightMap = engine.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         hints.isInstanced = true;
-        hints.numInstances = 400;
+        hints.numInstances = 600;
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
+        cubeMesh.initOpenGLMeshData();
         hints.isInstanced = false;
 
         Texture cubeTexture = new Texture("res/misc/grassblock.png");
@@ -237,7 +239,7 @@ public class GameLWJGL extends Game implements Runnable {
         cubeMat.reflectance = 0.5f;
         cubeMesh.materials.set(0, cubeMat);
 
-        for(int i = 0;i < 20;i++) {
+        for(int i = 0;i < 30;i++) {
             for(int y = 0;y < 20;y++) {
                 Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
@@ -248,11 +250,13 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-        Model plant = scene.createModel(scene.loadMesh("res/plant/01Alocasia_obj.obj",
-                "plantMesh", hints), "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-        plant.setPos(new Vector(15, 45, 10));
-        plant.setScale(0.005f);
+//        var plantMesh = scene.loadMesh("res/plant/01Alocasia_obj.obj", "plantMesh", hints);
+//        plantMesh.initOpenGLMeshData();
+//        Model plant = scene.createModel(plantMesh, "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+//        plant.setPos(new Vector(15, 45, 10));
+//        plant.setScale(0.005f);
 
+        hints.initLWJGLAttribs = false;
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
         ter_mat.matName = "TERRAIN";
@@ -267,29 +271,39 @@ public class GameLWJGL extends Game implements Runnable {
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
+        hints.isInstanced = true;
+        hints.numInstances = 5;
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
-        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f));
-        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+        List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f), hints);
+        monsterMeshes.get(0).meshIdentifier = "monsterMesh1";
+        hints.isInstanced = false;
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
         var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
         var frames = frames_inv.get(0);
         var invMats = frames_inv.get(1);
 
-        Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster",
-                Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-        monster.setScale(0.1f);
-        monster.setPos(new Vector(10, 30, 10));
-        monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-
+        for(int i = 0; i < 5;i++) {
+            Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster"+i,
+                    Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+            monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+            monster.setScale(0.1f);
+            monster.setPos(new Vector(10 + (i*10), 30, 10));
+            monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
+        }
         var madara = new MD5Model("res/madara/madara.md5mesh");
-        var madara_meshes = MD5Utils.generateMeshes(madara, new Vector(1f, 1f, 1f, 1f));
+        hints.isInstanced = true;
+        hints.numInstances = 1;
+        var madara_meshes = MD5Utils.generateMeshes(madara, new Vector(1f, 1f, 1f, 1f), hints);
+        madara_meshes.get(0).meshIdentifier = "madara1";
+        hints.isInstanced = false;
         madara_meshes.stream().forEach(Mesh::initOpenGLMeshData);
+
         var madara_model = scene.createModel(madara_meshes, "madara", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         madara_model.setScale(5f);
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-
+//
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
         partHints.numInstances = 100;
@@ -459,15 +473,29 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(input.keyDown(input.UP_ARROW)) {
-            AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(0.5f);
-            monster.generateCurrentSkeleton(monster.currentFrame);
+            int counter = 0;
+            while(true) {
+                AnimatedModel monster = (AnimatedModel) scene.modelID_model_map.get("monster"+counter);
+                if(monster == null) {
+                    break;
+                }
+                monster.cycleFrame(0.5f);
+                monster.generateCurrentSkeleton(monster.currentFrame);
+                counter++;
+            }
         }
 
         if(input.keyDown(input.DOWN_ARROW)) {
-            AnimatedModel monster = (AnimatedModel)scene.modelID_model_map.get("monster");
-            monster.cycleFrame(0.5f);
-            monster.generateCurrentSkeleton(monster.currentFrame);
+            int counter = 0;
+            while(true) {
+                AnimatedModel monster = (AnimatedModel) scene.modelID_model_map.get("monster"+counter);
+                if(monster == null) {
+                    break;
+                }
+                monster.cycleFrame(-0.5f);
+                monster.generateCurrentSkeleton(monster.currentFrame);
+                counter++;
+            }
         }
 
         if(input.keyDown(input.S)) {
@@ -596,6 +624,7 @@ public class GameLWJGL extends Game implements Runnable {
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
         input.poll();
+        scene.hasMatLibraryUpdated = false;
     }
 
     public RenderingEngineGL getRenderingEngine() {

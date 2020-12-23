@@ -19,6 +19,10 @@ uniform int isInstanced;
 const int MAX_WEIGHTS = 4;
 const int MAX_JOINTS = 150;
 
+layout (column_major, std430, binding=0) buffer joindsDataBlock {
+    mat4 jointsDataInstanced[];
+};
+
 uniform mat4 jointMatrices[MAX_JOINTS];
 
 void main() {
@@ -37,10 +41,19 @@ void main() {
     if (isAnimated != 0) {
         for (int i = 0;i < MAX_WEIGHTS;i++) {
             float weight = biases[i];
+
+            mat4 jointTransMat;
+            int jointIndex = int(jointIndices[i]);
+            if(isInstanced != 0) {
+                jointTransMat = jointsDataInstanced[jointIndex + (gl_InstanceID * MAX_JOINTS)];
+            }
+            else {
+                jointTransMat = jointMatrices[jointIndex];
+            }
+
             if (weight > 0f) {
                 count++;
-                int jointIndex = int(jointIndices[i]);
-                vec4 temp = jointMatrices[jointIndex] * vec4(position, 1.0);
+                vec4 temp = jointTransMat * vec4(position, 1.0);
                 initPos += weight * temp;
             }
         }

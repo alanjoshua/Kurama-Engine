@@ -1,9 +1,9 @@
 #version 460
 
 layout (location = 0) in vec3 position;
-layout (location = 3) in vec4 color;
 layout (location = 1) in vec2 texCoord;
 layout (location = 2) in vec3 normal;
+layout (location = 3) in vec4 color;
 layout (location = 4) in vec3 tangent;
 layout (location = 5) in vec3 biTangent;
 layout (location = 6) in float materialIndex;
@@ -12,7 +12,6 @@ layout (location = 8) in vec4 jointIndices;
 layout (location = 9) in mat4 modelToWorldInstancedMatrix;
 layout (location = 13) in vec4 materialsGlobalLocInstanced;
 layout (location = 14) in vec4 materialsAtlasInstanced;
-//layout (location = 13) in vec2 texOff;
 
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 const int MAX_SPOT_LIGHTS = 10;
@@ -39,6 +38,11 @@ struct Material {
     int numRows;
     int numCols;
 };
+
+layout (column_major, std430, binding=0) buffer joindsDataBlock {
+    mat4 jointsDataInstanced[];
+};
+
 const int MAX_MATERIALS = 26;
 uniform Material materials[MAX_MATERIALS];
 uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
@@ -71,6 +75,7 @@ void main() {
     mat4 modelToWorld_local;
     vec4 materialsGlobalLoc_local;
     vec4 materialsAtlas_local;
+//    mat4 jointMatrices_local[MAX_JOINTS];
 
     if(isInstanced > 0) {
         modelToWorld_local = modelToWorldInstancedMatrix;
@@ -102,20 +107,29 @@ void main() {
     int count = 0;
     if (isAnimated != 0) {
         for (int i = 0;i < MAX_WEIGHTS;i++) {
+
+            mat4 jointTransMat;
+            int jointIndex = int(jointIndices[i]);
+            if(isInstanced != 0) {
+                jointTransMat = jointsDataInstanced[jointIndex + (gl_InstanceID * MAX_JOINTS)];
+            }
+            else {
+                jointTransMat = jointMatrices[jointIndex];
+            }
+
             float weight = biases[i];
             if (weight > 0f) {
                 count++;
-                int jointIndex = int(jointIndices[i]);
-                vec4 temp = jointMatrices[jointIndex] * vec4(position, 1.0);
+                vec4 temp = jointTransMat * vec4(position, 1.0);
                 initPos += weight * temp;
 
-                vec4 tempNormal = jointMatrices[jointIndex] * vec4(normal, 0.0);
+                vec4 tempNormal = jointTransMat * vec4(normal, 0.0);
                 initNormal += weight * tempNormal;
 
-                vec4 tempTangent = jointMatrices[jointIndex] * vec4(tangent, 0.0);
+                vec4 tempTangent = jointTransMat * vec4(tangent, 0.0);
                 initTangent += weight * tempTangent;
 
-                vec4 tempBitangent = jointMatrices[jointIndex] * vec4(biTangent, 0.0);
+                vec4 tempBitangent = jointTransMat * vec4(biTangent, 0.0);
                 initBitangent += weight * tempBitangent;
             }
         }

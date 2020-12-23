@@ -2,7 +2,6 @@ package engine.geometry.MD5;
 
 import engine.Math.Quaternion;
 import engine.Math.Vector;
-import engine.utils.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -115,7 +114,6 @@ public class MD5AnimModel {
                         var frame = frames.get(frameIndex);
 
                         while(!(line = reader.readLine()).equals("}")) {
-                            Logger.log(line);
                             var spaceSplit = line.split("\\s+");
                             for(var val: spaceSplit) {
                                 try {

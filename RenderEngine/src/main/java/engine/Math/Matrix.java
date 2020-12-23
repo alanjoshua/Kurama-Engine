@@ -1,5 +1,8 @@
 package engine.Math;
 
+import org.lwjgl.system.MemoryUtil;
+
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -1044,6 +1047,30 @@ public class Matrix {
 		for(Vector c:this.convertToColumnVectorArray()) {
 			for(float val: c.getData()) {
 				fb.put(val);
+			}
+		}
+	}
+
+	public FloatBuffer getAsFloatBuffer() {
+		FloatBuffer res = MemoryUtil.memAllocFloat(4 * cols * rows);
+		for(Vector c:this.convertToColumnVectorArray()) {
+			for(float val: c.getData()) {
+				res.put(val);
+			}
+		}
+		res.flip();
+		return res;
+	}
+
+//	 From https://stackoverflow.com/questions/14619653/how-to-convert-a-float-into-a-byte-array-and-vice-versa
+	public static byte [] float2ByteArray (float value) {
+		return ByteBuffer.allocate(4).putFloat(value).array();
+	}
+
+	public void setValuesToFloatBuffer(ByteBuffer fb) {
+		for(Vector c:this.convertToColumnVectorArray()) {
+			for(float val: c.getData()) {
+				fb.put(float2ByteArray(val));
 			}
 		}
 	}

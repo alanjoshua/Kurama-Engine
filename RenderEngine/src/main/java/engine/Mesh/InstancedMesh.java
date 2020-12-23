@@ -30,32 +30,33 @@ public class InstancedMesh extends Mesh {
     public static final int INSTANCE_SIZE_BYTES = InstancedMesh.MATRIX_SIZE_BYTES + (2*VECTOR4F_SIZE_BYTES);
     public static final int INSTANCE_SIZE_FLOATS = InstancedMesh.MATRIX_SIZE_FLOATS + (2*4);
 
-    public int numInstances;
+    public int instanceChunkSize;
 
     public int instanceDataVBO;
     public FloatBuffer instanceDataBuffer;
 
     public InstancedMesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes,
-                         List<Material> materials, String meshLocation, MeshBuilderHints hints, int numInstances) {
+                         List<Material> materials, String meshLocation, MeshBuilderHints hints, int instanceChunkSize) {
         super(indices, faces, vertAttributes, materials, meshLocation, hints);
-        this.numInstances = numInstances;
+        this.instanceChunkSize = instanceChunkSize;
     }
 
-    public InstancedMesh(Mesh mesh, int numInstances) {
+    public InstancedMesh(Mesh mesh, int instanceChunkSize) {
         super(mesh.indices, mesh.faces, mesh.vertAttributes, mesh.materials, mesh.meshLocation, mesh.hints);
-        this.numInstances = numInstances;
+        this.instanceChunkSize = instanceChunkSize;
+        this.isAnimatedSkeleton = mesh.isAnimatedSkeleton;
     }
 
     // Assumes all incoming models have shouldRender property be set to True
     public List<List<Model>> getRenderChunks(List<Model> models, Predicate<Model> filter) {
         List<List<Model>> chunks = new ArrayList<>();
 
-        List<Model> currChunk = new ArrayList<>(numInstances);
+        List<Model> currChunk = new ArrayList<>(instanceChunkSize);
         for(Model m: models) {
             if(filter.test(m)) {
                 currChunk.add(m);
             }
-            if(currChunk.size() >= numInstances) {
+            if(currChunk.size() >= instanceChunkSize) {
                 chunks.add(currChunk);
                 currChunk = new ArrayList<>();
             }
@@ -68,13 +69,13 @@ public class InstancedMesh extends Mesh {
         return chunks;
     }
 
-    public List<List<Model>> getRenderChunks(List<Model> models) {
+    public static List<List<Model>> getRenderChunks(List<Model> models, int chunkSize) {
         List<List<Model>> chunks = new ArrayList<>();
 
-        List<Model> currChunk = new ArrayList<>(numInstances);
+        List<Model> currChunk = new ArrayList<>(chunkSize);
         for(Model m: models) {
             currChunk.add(m);
-            if(currChunk.size() >= numInstances) {
+            if(currChunk.size() >= chunkSize) {
                 chunks.add(currChunk);
                 currChunk = new ArrayList<>();
             }
@@ -98,6 +99,17 @@ public class InstancedMesh extends Mesh {
 
     @Override
     public void initOpenGLMeshData() {
+
+        List<Vector> defaultVals = new ArrayList<>();
+        defaultVals.add(new Vector(0,0,0));
+        defaultVals.add(new Vector(2,0));
+        defaultVals.add(new Vector(0,0,0));
+        defaultVals.add(new Vector(0,0,0, 0));
+        defaultVals.add(new Vector(0,0,0));
+        defaultVals.add(new Vector(0,0,0));
+        defaultVals.add(new Vector(new float[]{0}));
+        defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
+        defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
 
         IntBuffer indicesBuffer;
         List<Integer> offsets = new ArrayList<>(vertAttributes.size());
@@ -124,7 +136,7 @@ public class InstancedMesh extends Mesh {
 
 //        Calculate stride and offset
         offsets.add(0);
-
+        try {
         for(int i = 0;i < vertAttributes.size();i++) {
             Vector curr = null;
             int numberOfElements = 0;
@@ -135,6 +147,9 @@ public class InstancedMesh extends Mesh {
                     for (int j = 0; j < vertAttributes.get(i).size(); j++) {
                         curr = vertAttributes.get(i).get(j);
                         if (curr != null) {
+                            if(curr.getNumberOfDimensions() != defaultVals.get(i).getNumberOfDimensions()) {
+                                throw new Exception("Dimensions do not match");
+                            }
                             break;
                         }
                     }
@@ -142,7 +157,7 @@ public class InstancedMesh extends Mesh {
             }
 
             if(curr == null) {
-                numberOfElements = 4;  //Assume a default of 4 if all positions are empty
+                numberOfElements = defaultVals.get(i).getNumberOfDimensions();  //Assume a default of 4 if all positions are empty
             }
             else {
                 numberOfElements = curr.getNumberOfDimensions();
@@ -159,8 +174,6 @@ public class InstancedMesh extends Mesh {
 
         int vboId;
 
-        try {
-
             int attribIndex = 0;  //Keeps track of vertex attribute index
             vaoId = glGenVertexArrays();
             glBindVertexArray(vaoId);
@@ -172,13 +185,9 @@ public class InstancedMesh extends Mesh {
                     for (Vector v : vertAttributes.get(i)) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
-//                            v.display();
                         } else {    //Hack to handle nulls
-                            float[] t = new float[sizePerAttrib.get(i) / sizeOfFloat];
-                            for (int j = 0; j < sizePerAttrib.get(i) / sizeOfFloat; j++) {
-                                t[j] = 0f;
-                            }
-                            tempBuffer.put(t);
+                            float[] t = defaultVals.get(i).getData();
+                            tempBuffer.put(defaultVals.get(i).getData());
                         }
                     }
 
@@ -217,7 +226,7 @@ public class InstancedMesh extends Mesh {
             int strideStart = 0;
             instanceDataVBO = glGenBuffers();
             vboIdList.add(instanceDataVBO);
-            instanceDataBuffer = MemoryUtil.memAllocFloat(numInstances * INSTANCE_SIZE_FLOATS);
+            instanceDataBuffer = MemoryUtil.memAllocFloat(instanceChunkSize * INSTANCE_SIZE_FLOATS);
             glBindBuffer(GL_ARRAY_BUFFER, instanceDataVBO);
             for(int i = 0;i < 4; i++) {
                 glVertexAttribPointer(attribIndex, 4, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
@@ -236,21 +245,14 @@ public class InstancedMesh extends Mesh {
                 strideStart += VECTOR4F_SIZE_BYTES;
             }
 
-            // Texture offsets
-//            glVertexAttribPointer(attribIndex, 2, GL_FLOAT, false, InstancedMesh.INSTANCE_SIZE_BYTES, strideStart);
-//            glVertexAttribDivisor(attribIndex, 1);
-//            glEnableVertexAttribArray(attribIndex);
-
             glBindBuffer(GL_ARRAY_BUFFER,0);
             glBindVertexArray(0);
 
         }
         catch(Exception e) {
             System.out.println("caught exception here");
+            System.exit(1);
         }finally{
-            if(colorBuffer != null) {
-                MemoryUtil.memFree((colorBuffer));
-            }
 
         }
 

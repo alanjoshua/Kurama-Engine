@@ -182,7 +182,7 @@ public class ShaderProgram {
         setUniform(uniformName+".cutOff",spotLight.cutOff);
     }
 
-    public int setAndActivateMaterials(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
+    public int setOnlyMaterials_noTextureBinding(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
         int offset = off;
         for(int i = 0;i < materials.size();i++) {
 

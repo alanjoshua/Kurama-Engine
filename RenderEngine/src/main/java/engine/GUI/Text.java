@@ -57,7 +57,7 @@ public class Text extends Model {
             // Build a character tile composed by two triangles
 
             // Left Top vertex
-            pos = new Vector(new float[]{startx,0,ZPOS,1});
+            pos = new Vector(new float[]{startx,0,ZPOS});
             tex = new Vector(new float[]{(float)charInfo.startX / (float)fontTexture.width,0});
             //tex = new Vector(new float[]{col * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD;
@@ -68,7 +68,7 @@ public class Text extends Model {
             indices.add(index);
 
             // Left Bottom vertex
-            pos = new Vector(new float[]{startx,fontTexture.height,ZPOS,1});
+            pos = new Vector(new float[]{startx,fontTexture.height,ZPOS});
             tex = new Vector(new float[]{(float)charInfo.startX / (float)fontTexture.width,1});
             //tex = new Vector(new float[]{col * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 1;
@@ -80,7 +80,7 @@ public class Text extends Model {
             indices.add(index);
 
             // Right Bottom vertex
-            pos = new Vector(new float[]{startx + charInfo.width, fontTexture.height,ZPOS,1});
+            pos = new Vector(new float[]{startx + charInfo.width, fontTexture.height,ZPOS});
             tex = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)fontTexture.width,1});
             //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, (row+1) * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 2;
@@ -93,7 +93,7 @@ public class Text extends Model {
 
 
             // Right Top vertex
-            pos = new Vector(new float[]{startx + charInfo.width, 0,ZPOS,1});
+            pos = new Vector(new float[]{startx + charInfo.width, 0,ZPOS});
             tex = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)fontTexture.width,0});
             //tex = new Vector(new float[]{(col+1) * tileWidth/texture.width, row * tileHeight/texture.height});
             index = i*VERTICES_PER_QUAD + 3;

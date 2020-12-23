@@ -49,9 +49,9 @@ public class MeshBuilder {
 			if (hints.shouldRotate != 0) {
 				Quaternion rot = Quaternion.getAxisAsQuat(new Vector(0, 1, 0), hints.shouldRotate);
 				List<Vector> listVerts = resMesh.getAttributeList(Mesh.POSITION);
-				Matrix listAsMat = new Matrix(listVerts).getMatrixWithoutLastRow();
+				Matrix listAsMat = new Matrix(listVerts);
 
-				List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).addRow(new Vector(listVerts.size(), 1)).convertToColumnVectorList();
+				List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).convertToColumnVectorList();
 				resMesh.setAttribute(newVertices, Mesh.POSITION);
 			}
 
@@ -683,17 +683,17 @@ public class MeshBuilder {
 
 			Vector[] vertArr = new Vector[vertex.size()];
 			for (int i = 0; i < vertArr.length; i++) {
-				vertArr[i] = vertex.get(i).sub(change);
+				vertArr[i] = vertex.get(i).sub(change).removeDimensionFromVec(3);
 			}
 
 			Vector[] vnArray = new Vector[vn.size()];
 			for (int i = 0; i < vnArray.length; i++) {
-				vnArray[i] = vn.get(i);
+				vnArray[i] = vn.get(i).removeDimensionFromVec(3);
 			}
 
 			Vector[] vtArray = new Vector[vt.size()];
 			for (int i = 0; i < vtArray.length; i++) {
-				vtArray[i] = vt.get(i);
+				vtArray[i] = vt.get(i).removeDimensionFromVec(2);
 			}
 
 			Map<String,Material> onlyUsedMats = new LinkedHashMap<>();

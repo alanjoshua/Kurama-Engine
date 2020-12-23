@@ -5,7 +5,6 @@ import engine.Math.Matrix;
 import engine.Math.Vector;
 import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
-import engine.geometry.MeshBuilder;
 import engine.lighting.DirectionalLight;
 import engine.lighting.SpotLight;
 import engine.model.AnimatedModel;
@@ -16,14 +15,23 @@ import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngineGL;
 import engine.scene.Scene;
 import engine.shader.ShaderProgram;
+import engine.utils.Logger;
+import org.lwjgl.system.MemoryUtil;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
-import static org.lwjgl.opengl.GL30.glBindFramebuffer;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
+import static org.lwjgl.opengl.GL44C.GL_DYNAMIC_STORAGE_BIT;
+import static org.lwjgl.opengl.GL45.glNamedBufferStorage;
+import static org.lwjgl.opengl.GL45.glNamedBufferSubData;
+import static org.lwjgl.opengl.GL45C.glCreateBuffers;
+
+//import static org.lwjgl.opengl.GL30C.*;
 
 public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
@@ -33,11 +41,19 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
     public ShaderProgram shadow_shader;
     public ShaderProgram scene_shader;
 
-    public int MAX_DIRECTIONAL_LIGHTS = 5;
-    public int MAX_SPOTLIGHTS = 10;
-    public int MAX_POINTLIGHTS = 10;
-    public int MAX_JOINTS = 150;
-    protected Mesh axes;
+    public static int MAX_DIRECTIONAL_LIGHTS = 5;
+    public static int MAX_SPOTLIGHTS = 10;
+    public static int MAX_POINTLIGHTS = 10;
+    public static int MAX_JOINTS = 150;
+
+    public static final int FLOAT_SIZE_BYTES = 4;
+    public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
+    public static final int MATRIX_SIZE_BYTES = 4 * InstancedMesh.VECTOR4F_SIZE_BYTES;
+    public static final int MATRIX_SIZE_FLOATS = 16;
+
+    public static int MAX_INSTANCED_SKELETAL_MESHES = 100;
+    public int jointsInstancedBufferID;
+
 
     public SceneShaderBlock(String id) {
         super(id);
@@ -45,9 +61,23 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     @Override
     public void setup(RenderBlockInput input) {
-        axes = MeshBuilder.buildAxes();
         setupSceneShader();
         setupShadowShader();
+        setupSKeletonSSBO();
+    }
+
+//    Sets up SSBO to store instanced joint transformation matrices.
+    public void setupSKeletonSSBO() {
+
+        jointsInstancedBufferID = glCreateBuffers();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, jointsInstancedBufferID);
+
+        var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCED_SKELETAL_MESHES * SceneShaderBlock.MAX_JOINTS * MATRIX_SIZE_BYTES);
+        glNamedBufferStorage(jointsInstancedBufferID, jointsDataInstancedBuffer, GL_DYNAMIC_STORAGE_BIT);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, jointsInstancedBufferID);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        MemoryUtil.memFree(jointsDataInstancedBuffer);
     }
 
     @Override
@@ -131,15 +161,32 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         }
     }
 
-    public Matrix generateMaterialMatrix(List<Material> mats, List<Integer> altasOffsets) {
-        float[][] res = new float[4][4];
-        for(int i = 0;i < mats.size();i++) {
-            int r = i / 4;
-            int c = i % 4;
-            res[r][c] = mats.get(i).globalSceneID;
-            res[r+2][c] = altasOffsets.get(i);
+    public int activateMaterialTextures(List<Material> materials, int offset) {
+        for(int i = 0;i < materials.size();i++) {
+
+            var material = materials.get(i);
+            if (material.texture != null) {
+                glActiveTexture(offset+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+            }
+
+            if (material.normalMap != null) {
+                glActiveTexture(offset+1+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+            }
+
+            if (material.diffuseMap != null) {
+                glActiveTexture(offset+2+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+            }
+
+            if (material.specularMap != null) {
+                glActiveTexture(offset+3+GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+            }
+            offset += 4;
         }
-        return new Matrix(res);
+        return offset;
     }
 
     public void renderScene(Scene scene, ShadowDepthRenderPackage shadowPackage) {
@@ -169,8 +216,12 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         sceneShaderProgram.setUniform("numberOfSpotLights",scene.spotLights.size());
         sceneShaderProgram.setUniform("fog", scene.fog);
 
-        int offset = sceneShaderProgram.setAndActivateMaterials("materials","mat_textures",
-                "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",scene.materialLibrary,0);
+        if(scene.hasMatLibraryUpdated) {
+            Logger.log("setting materials");
+            sceneShaderProgram.setOnlyMaterials_noTextureBinding("materials", "mat_textures",
+                    "mat_normalMaps", "mat_diffuseMaps", "mat_specularMaps", scene.materialLibrary, 0);
+        }
+        int offset = activateMaterialTextures(scene.materialLibrary, 0);
 
         Vector c = new Vector(3,0);
         for(int i = 0;i < scene.directionalLights.size(); i++) {
@@ -223,11 +274,37 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 }
 
                 var inst_mesh = (InstancedMesh) mesh;
-                var chunks = inst_mesh.getRenderChunks(models);
+                List<List<Model>> chunks;
+                if(mesh.isAnimatedSkeleton) {
+                    chunks = InstancedMesh.getRenderChunks(models,
+                            inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
+                            inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
+                    scene_shader.setUniform("isAnimated", 1);
+                }
+                else {
+                    chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                    scene_shader.setUniform("isAnimated", 0);
+                }
                 for (var chunk: chunks) {
                     inst_mesh.instanceDataBuffer.clear();
 
+                    int modelCount = 0;
                     for(Model m: chunk) {
+
+                        if(mesh.isAnimatedSkeleton) {
+                            var anim = (AnimatedModel) m;
+                            for (int i = 0; i < anim.numJoints; i++) {
+                                Matrix jointMat;
+                                jointMat = anim.currentJointTransformations.get(i);
+//                                }
+                                FloatBuffer temp = jointMat.getAsFloatBuffer();
+//                                TODO: Change this to persistent map
+                                glNamedBufferSubData(jointsInstancedBufferID,
+                                        ((modelCount * MAX_JOINTS) + i) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                MemoryUtil.memFree(temp);
+                            }
+                        }
+
                         Matrix objectToWorld = m.getObjectToWorldMatrix();
                         objectToWorld.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
 
@@ -247,9 +324,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         for(var v: matsAtlas.getData()) {
                             inst_mesh.instanceDataBuffer.put(v);
                         }
+                        modelCount++;
                     }
                     inst_mesh.instanceDataBuffer.flip();
-
                     glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
                     glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
@@ -329,6 +406,11 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             worldToDirectionalLights.add(worldToLight);
 
             for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
+
+                if(meshId == "monsterMesh1") {
+                    Logger.log("here");
+                }
+
                 Mesh mesh = scene.meshID_mesh_map.get(meshId);
 
                 if (curShouldCull != mesh.shouldCull) {
@@ -359,16 +441,44 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                              models.add(m);
                          }
                     }
-                    var chunks = inst_mesh.getRenderChunks(models);
+                    List<List<Model>> chunks;
+                    if(mesh.isAnimatedSkeleton) {
+                        chunks = InstancedMesh.getRenderChunks(models,
+                                inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
+                                        inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
+                        depthShaderProgram.setUniform("isAnimated", 1);
+                    }
+                    else {
+                        chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                        depthShaderProgram.setUniform("isAnimated", 0);
+                    }
+
                     for(var chunk: chunks) {
                         inst_mesh.instanceDataBuffer.clear();
 
+                        int modelCount = 0;
                         for(Model m: chunk) {
+
+                            if(mesh.isAnimatedSkeleton) {
+                                var anim = (AnimatedModel) m;
+                                for (int j = 0; j < anim.numJoints; j++) {
+                                    Matrix jointMat;
+                                    jointMat = anim.currentJointTransformations.get(j);
+//                                }
+                                    FloatBuffer temp = jointMat.getAsFloatBuffer();
+//                                TODO: Change this to persistent map
+                                    glNamedBufferSubData(jointsInstancedBufferID,
+                                            ((modelCount * MAX_JOINTS) + j) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                    MemoryUtil.memFree(temp);
+                                }
+                            }
+
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
                             objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
                             for(int counter = 0;counter < 8;counter++) {
                                 inst_mesh.instanceDataBuffer.put(0f);
                             }
+                            modelCount++;
                         }
                         inst_mesh.instanceDataBuffer.flip();
 
@@ -451,16 +561,44 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             models.add(m);
                         }
                     }
-                    var chunks = inst_mesh.getRenderChunks(models);
-                    for (var chunk : chunks) {
+                    List<List<Model>> chunks;
+                    if(mesh.isAnimatedSkeleton) {
+                        chunks = InstancedMesh.getRenderChunks(models,
+                                inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
+                                        inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
+                        depthShaderProgram.setUniform("isAnimated", 1);
+                    }
+                    else {
+                        chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                        depthShaderProgram.setUniform("isAnimated", 0);
+                    }
+
+                    for(var chunk: chunks) {
                         inst_mesh.instanceDataBuffer.clear();
 
-                        for (Model m : chunk) {
+                        int modelCount = 0;
+                        for(Model m: chunk) {
+
+                            if(mesh.isAnimatedSkeleton) {
+                                var anim = (AnimatedModel) m;
+                                for (int j = 0; j < anim.numJoints; j++) {
+                                    Matrix jointMat;
+                                    jointMat = anim.currentJointTransformations.get(j);
+//                                }
+                                    FloatBuffer temp = jointMat.getAsFloatBuffer();
+//                                TODO: Change this to persistent map
+                                    glNamedBufferSubData(jointsInstancedBufferID,
+                                            ((modelCount * MAX_JOINTS) + j) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                    MemoryUtil.memFree(temp);
+                                }
+                            }
+
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
                             objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
                             for(int counter = 0;counter < 8;counter++) {
                                 inst_mesh.instanceDataBuffer.put(0f);
                             }
+                            modelCount++;
                         }
                         inst_mesh.instanceDataBuffer.flip();
 

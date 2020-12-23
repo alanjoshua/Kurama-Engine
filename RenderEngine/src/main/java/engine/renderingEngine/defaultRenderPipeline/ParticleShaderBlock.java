@@ -6,7 +6,6 @@ import engine.model.Model;
 import engine.renderingEngine.RenderBlock;
 import engine.renderingEngine.RenderBlockInput;
 import engine.shader.ShaderProgram;
-import engine.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,7 +95,7 @@ public class ParticleShaderBlock extends RenderBlock {
 
                 mesh.initRender();
 
-                var chunks = inst_mesh.getRenderChunks(generator.particles);
+                var chunks = InstancedMesh.getRenderChunks(generator.particles, inst_mesh.instanceChunkSize);
                 for(var chunk: chunks) {
 
                     inst_mesh.instanceDataBuffer.clear();
