@@ -80,12 +80,12 @@ void main() {
     if(isInstanced > 0) {
         modelToWorld_local = modelToWorldInstancedMatrix;
         materialsGlobalLoc_local = materialsGlobalLocInstanced;
-        materialsAtlas_local = materialsAtlasInstanced;
+//        materialsAtlas_local = materialsAtlasInstanced;
     }
     else {
         modelToWorld_local = modelToWorldMatrix;
         materialsGlobalLoc_local = materialsGlobalLoc;
-        materialsAtlas_local = materialsAtlas;
+//        materialsAtlas_local = materialsAtlas;
     }
 
 //    Calculate texture coordinate for for texture atlas
@@ -93,16 +93,17 @@ void main() {
 //    int r = localMatInd / 4;
 //    int c = localMatInd % 4;
     int globalInd = int(materialsGlobalLoc_local[localMatInd]);
-    int atlasOffset = int(materialsAtlas[localMatInd]);
 
-    Material material = materials[globalInd];
-    int col = atlasOffset % material.numCols;
-    int row = atlasOffset / material.numCols;
-    float texXOff = float(col / material.numCols);
-    float texYOff = float(row / material.numRows);
-    float x = (texCoord.x / material.numCols + texXOff);
-    float y = (texCoord.y / material.numRows + texYOff);
-    vec2 texCoords_local = vec2(x,y);
+//    int atlasOffset = int(materialsAtlas[localMatInd]);
+//
+//    Material material = materials[globalInd];
+//    int col = atlasOffset % material.numCols;
+//    int row = atlasOffset / material.numCols;
+//    float texXOff = float(col / material.numCols);
+//    float texYOff = float(row / material.numRows);
+//    float x = (texCoord.x / material.numCols + texXOff);
+//    float y = (texCoord.y / material.numRows + texYOff);
+    vec2 texCoords_local = texCoord;
 
     int count = 0;
     if (isAnimated != 0) {

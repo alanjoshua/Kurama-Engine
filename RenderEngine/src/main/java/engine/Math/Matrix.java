@@ -1043,7 +1043,7 @@ public class Matrix {
 		return res;
 	}
 
-	public void setValuesToFloatBuffer(FloatBuffer fb) {
+	public void setValuesToBuffer(FloatBuffer fb) {
 		for(Vector c:this.convertToColumnVectorArray()) {
 			for(float val: c.getData()) {
 				fb.put(val);
@@ -1067,10 +1067,10 @@ public class Matrix {
 		return ByteBuffer.allocate(4).putFloat(value).array();
 	}
 
-	public void setValuesToFloatBuffer(ByteBuffer fb) {
+	public void setValuesToBuffer(ByteBuffer bb) {
 		for(Vector c:this.convertToColumnVectorArray()) {
 			for(float val: c.getData()) {
-				fb.put(float2ByteArray(val));
+				bb.putFloat(val);
 			}
 		}
 	}

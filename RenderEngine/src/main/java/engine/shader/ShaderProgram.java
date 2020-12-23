@@ -256,7 +256,7 @@ public class ShaderProgram {
     public void setUniform(String uniformName, Matrix value) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
-            value.setValuesToFloatBuffer(fb);
+            value.setValuesToBuffer(fb);
             fb.flip();
             glUniformMatrix4fv(uniforms.get(uniformName),false,fb);
         }

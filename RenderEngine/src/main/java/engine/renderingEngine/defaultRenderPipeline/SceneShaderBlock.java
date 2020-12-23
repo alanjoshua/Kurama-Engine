@@ -66,7 +66,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         setupSKeletonSSBO();
     }
 
-//    Sets up SSBO to store instanced joint transformation matrices.
+    //    Sets up SSBO to store instanced joint transformation matrices.
     public void setupSKeletonSSBO() {
 
         jointsInstancedBufferID = glCreateBuffers();
@@ -134,7 +134,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             scene_shader.createUniform("worldToCam");
 
             scene_shader.createUniform("materialsGlobalLoc");
-            scene_shader.createUniform("materialsAtlas");
+//            scene_shader.createUniform("materialsAtlas");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -278,7 +278,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 if(mesh.isAnimatedSkeleton) {
                     chunks = InstancedMesh.getRenderChunks(models,
                             inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
-                            inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
+                                    inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
                     scene_shader.setUniform("isAnimated", 1);
                 }
                 else {
@@ -306,24 +306,24 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         }
 
                         Matrix objectToWorld = m.getObjectToWorldMatrix();
-                        objectToWorld.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+                        objectToWorld.setValuesToBuffer(inst_mesh.instanceDataBuffer);
 
                         Vector matsGlobalLoc = new Vector(4, 0);
                         for(int i = 0;i < m.materials.get(meshId).size();i++) {
                             matsGlobalLoc.setDataElement(i, m.materials.get(meshId).get(i).globalSceneID);
                         }
 
-                        Vector matsAtlas = new Vector(4, 0);
-                        for(int i = 0;i < m.matAtlasOffset.get(meshId).size();i++) {
-                            matsAtlas.setDataElement(i, m.matAtlasOffset.get(meshId).get(i));
-                        }
+//                        Vector matsAtlas = new Vector(4, 0);
+//                        for(int i = 0;i < m.matAtlasOffset.get(meshId).size();i++) {
+//                            matsAtlas.setDataElement(i, m.matAtlasOffset.get(meshId).get(i));
+//                        }
 
                         for(var v: matsGlobalLoc.getData()) {
                             inst_mesh.instanceDataBuffer.put(v);
                         }
-                        for(var v: matsAtlas.getData()) {
-                            inst_mesh.instanceDataBuffer.put(v);
-                        }
+//                        for(var v: matsAtlas.getData()) {
+//                            inst_mesh.instanceDataBuffer.put(v);
+//                        }
                         modelCount++;
                     }
                     inst_mesh.instanceDataBuffer.flip();
@@ -360,13 +360,13 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
                         }
 
-                        Vector matsAtlas = new Vector(4, 0);
-                        for(int i = 0;i < model.matAtlasOffset.get(meshId).size();i++) {
-                            matsAtlas.setDataElement(i, model.matAtlasOffset.get(meshId).get(i));
-                        }
+//                        Vector matsAtlas = new Vector(4, 0);
+//                        for(int i = 0;i < model.matAtlasOffset.get(meshId).size();i++) {
+//                            matsAtlas.setDataElement(i, model.matAtlasOffset.get(meshId).get(i));
+//                        }
 
                         scene_shader.setUniform("materialsGlobalLoc", matsGlobalLoc);
-                        scene_shader.setUniform("materialsAtlas", matsAtlas);
+//                        scene_shader.setUniform("materialsAtlas", matsAtlas);
                         Matrix objectToWorld = model.getObjectToWorldMatrix();
                         scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
 //
@@ -432,10 +432,10 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     var models = new ArrayList<Model>();
 
                     for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                         var m = scene.modelID_model_map.get(modelId);
-                         if(m.shouldRender && m.shouldCastShadow) {
-                             models.add(m);
-                         }
+                        var m = scene.modelID_model_map.get(modelId);
+                        if(m.shouldRender && m.shouldCastShadow) {
+                            models.add(m);
+                        }
                     }
                     List<List<Model>> chunks;
                     if(mesh.isAnimatedSkeleton) {
@@ -470,8 +470,8 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             }
 
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
-                            objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
-                            for(int counter = 0;counter < 8;counter++) {
+                            objectToLight.setValuesToBuffer(inst_mesh.instanceDataBuffer);
+                            for(int counter = 0;counter < 4;counter++) {
                                 inst_mesh.instanceDataBuffer.put(0f);
                             }
                             modelCount++;
@@ -590,8 +590,8 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                             }
 
                             Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
-                            objectToLight.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
-                            for(int counter = 0;counter < 8;counter++) {
+                            objectToLight.setValuesToBuffer(inst_mesh.instanceDataBuffer);
+                            for(int counter = 0;counter < 4;counter++) {
                                 inst_mesh.instanceDataBuffer.put(0f);
                             }
                             modelCount++;

@@ -71,6 +71,16 @@ public class Model {
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 	}
 
+	public void replaceMaterial(String meshID, Material currentMat, Material newMat) {
+		for(int i = 0; i < materials.get(meshID).size(); i++) {
+			var mat = materials.get(meshID).get(i);
+			if (mat.matName.equals(currentMat.matName)) {
+				materials.get(meshID).set(i, newMat);
+			}
+		}
+
+	}
+
 	public void addMesh(Mesh mesh) {
 		if(mesh != null) {
 			materials.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());

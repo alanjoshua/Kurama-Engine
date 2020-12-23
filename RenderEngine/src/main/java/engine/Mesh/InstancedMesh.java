@@ -27,8 +27,8 @@ public class InstancedMesh extends Mesh {
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * InstancedMesh.VECTOR4F_SIZE_BYTES;
     public static final int MATRIX_SIZE_FLOATS = 16;
-    public static final int INSTANCE_SIZE_BYTES = InstancedMesh.MATRIX_SIZE_BYTES + (2*VECTOR4F_SIZE_BYTES);
-    public static final int INSTANCE_SIZE_FLOATS = InstancedMesh.MATRIX_SIZE_FLOATS + (2*4);
+    public static final int INSTANCE_SIZE_BYTES = InstancedMesh.MATRIX_SIZE_BYTES + (1*VECTOR4F_SIZE_BYTES);
+    public static final int INSTANCE_SIZE_FLOATS = InstancedMesh.MATRIX_SIZE_FLOATS + (1*4);
 
     public int instanceChunkSize;
 
@@ -237,7 +237,7 @@ public class InstancedMesh extends Mesh {
             }
 
             // Material global ind and atlas offset
-            for(int i = 0;i < 2; i++) {
+            for(int i = 0;i < 1; i++) {
                 glVertexAttribPointer(attribIndex, 4, GL_FLOAT, false, INSTANCE_SIZE_BYTES, strideStart);
                 glVertexAttribDivisor(attribIndex, 1);
                 glEnableVertexAttribArray(attribIndex);

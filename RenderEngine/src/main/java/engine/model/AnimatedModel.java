@@ -25,15 +25,7 @@ public class AnimatedModel extends Model {
         // Temporary until support for animation instancing support is added
         for(var m: meshes) {
             m.isAnimatedSkeleton = true;
-//            if(m instanceof InstancedMesh) {
-//                try {
-//                    throw new Exception("Animated Models do not yet support instanced rendering");
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    System.exit(1);
-//                }
-            }
-//        }
+        }
 
         this.animationFrames = frames;
         this.frameRate = frameRate;

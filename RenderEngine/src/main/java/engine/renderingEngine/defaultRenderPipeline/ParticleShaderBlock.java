@@ -116,11 +116,11 @@ public class ParticleShaderBlock extends RenderBlock {
                         float textXOffset = (float) col / tex.numCols;
                         float textYOffset = (float) row / tex.numRows;
 
-                        billboard.setValuesToFloatBuffer(inst_mesh.instanceDataBuffer);
+                        billboard.setValuesToBuffer(inst_mesh.instanceDataBuffer);
 
                         inst_mesh.instanceDataBuffer.put(textXOffset);
                         inst_mesh.instanceDataBuffer.put(textYOffset);
-                        for(int counter = 0; counter < 6; counter++) {
+                        for(int counter = 0; counter < 2; counter++) {
                             inst_mesh.instanceDataBuffer.put(0);
                         }
                     }

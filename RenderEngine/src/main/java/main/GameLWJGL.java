@@ -272,10 +272,11 @@ public class GameLWJGL extends Game implements Runnable {
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
         hints.isInstanced = true;
-        hints.numInstances = 5;
+        hints.numInstances = 2;
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f), hints);
         monsterMeshes.get(0).meshIdentifier = "monsterMesh1";
+        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
         hints.isInstanced = false;
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
@@ -286,7 +287,6 @@ public class GameLWJGL extends Game implements Runnable {
         for(int i = 0; i < 5;i++) {
             Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster"+i,
                     Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-            monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
             monster.setScale(0.1f);
             monster.setPos(new Vector(10 + (i*10), 30, 10));
             monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
