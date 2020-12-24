@@ -2,16 +2,15 @@ package engine.renderingEngine.defaultRenderPipeline;
 
 import engine.Math.Matrix;
 import engine.Mesh.InstancedMesh;
+import engine.camera.Camera;
 import engine.model.Model;
+import engine.particle.ParticleGenerator;
 import engine.renderingEngine.RenderBlock;
 import engine.renderingEngine.RenderBlockInput;
 import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL15.*;
 
@@ -45,6 +44,100 @@ public class ParticleShaderBlock extends RenderBlock {
         }
     }
 
+    public void renderChunk(List<Model> chunk, InstancedMesh inst_mesh, List<Matrix> objectToCam, int offset) {
+        inst_mesh.instanceDataBuffer.clear();
+
+        int particleCount = 0;
+        for(var particle: chunk) {
+            Matrix modelView = objectToCam.get(offset+particleCount);
+
+            Matrix billboard = Matrix.getDiagonalMatrix(particle.scale).
+                    addColumn(modelView.getColumn(3).
+                            removeDimensionFromVec(3)).addRow(modelView.getRow(3));
+
+            var mat = particle.materials.get(inst_mesh.meshIdentifier).get(0);
+            var tex = mat.texture;
+            int texPos = particle.matAtlasOffset.get(inst_mesh.meshIdentifier).get(0);
+            int col = texPos % tex.numCols;
+            int row = texPos / tex.numCols;
+            float textXOffset = (float) col / tex.numCols;
+            float textYOffset = (float) row / tex.numRows;
+
+            billboard.setValuesToBuffer(inst_mesh.instanceDataBuffer);
+
+            inst_mesh.instanceDataBuffer.put(textXOffset);
+            inst_mesh.instanceDataBuffer.put(textYOffset);
+            for(int counter = 0; counter < 2; counter++) {
+                inst_mesh.instanceDataBuffer.put(0);
+            }
+            particleCount++;
+        }
+
+        inst_mesh.instanceDataBuffer.flip();
+
+        glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
+        glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+
+        ((DefaultRenderPipeline)renderPipeline).renderInstanced(inst_mesh, chunk.size());
+    }
+
+    public void renderGenerator(ParticleGenerator generator, Camera camera, Matrix worldToCam) {
+        var baseParticle = generator.baseParticle;
+
+        SortedMap<Float, List> sorted = new TreeMap<>(Collections.reverseOrder());
+        generator.particles.stream().forEach(p -> {
+            if(p.shouldRender) {
+
+                var objectToCam = worldToCam.matMul(p.getObjectToWorldMatrix());
+                var trans = objectToCam.matMul(p.pos.append(1)).toVector();
+                float dist = -trans.get(2);
+//                float dist = (float) Math.sqrt(Math.pow(camera.getPos().get(0) - p.pos.get(0), 2) +
+//                        Math.pow(camera.getPos().get(1) - p.pos.get(1), 2) +
+//                        Math.pow(camera.getPos().get(2) - p.pos.get(2), 2));
+                var store = new ArrayList();
+                store.add(p);
+                store.add(objectToCam);
+                sorted.put(dist, store);
+            }
+        });
+        List<Model> sortedPartices = new ArrayList<>();
+        List<Matrix> sorted_objectToCam = new ArrayList<>();
+        sorted.values().forEach( m -> {
+            sortedPartices.add((Model)m.get(0));
+            sorted_objectToCam.add((Matrix)m.get(1));
+        });
+        generator.particles = new ArrayList<>(sortedPartices);
+
+        for(int i = 0;i < baseParticle.meshes.size();i++) {
+            var mesh = baseParticle.meshes.get(i);
+
+            if(!(mesh instanceof InstancedMesh)) {
+                throw new IllegalArgumentException("A particle has to be instanced");
+            }
+
+            var inst_mesh = (InstancedMesh)mesh;
+
+            if (inst_mesh.materials.get(0).texture != null) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, inst_mesh.materials.get(0).texture.getId());
+            }
+
+            particleShader.setUniform("numCols", inst_mesh.materials.get(0).texture.numCols);
+            particleShader.setUniform("numRows", inst_mesh.materials.get(0).texture.numRows);
+
+            ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
+
+            int modelsProcessedSoFar = 0;
+            var chunks = InstancedMesh.getRenderChunks(generator.particles, inst_mesh.instanceChunkSize);
+            for(var chunk: chunks) {
+                renderChunk(chunk, inst_mesh, sorted_objectToCam, modelsProcessedSoFar);
+                modelsProcessedSoFar+=chunk.size();
+            }
+            ((DefaultRenderPipeline)renderPipeline).endRender(mesh);
+        }
+
+    }
+
     @Override
     public void render(RenderBlockInput input) {
 
@@ -52,8 +145,8 @@ public class ParticleShaderBlock extends RenderBlock {
             return;
         }
 
-        glDepthMask(false);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+//        glDepthMask(false);
+//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
         particleShader.bind();
         particleShader.setUniform("texture_sampler", 0);
 
@@ -63,84 +156,12 @@ public class ParticleShaderBlock extends RenderBlock {
 
         for(var generatorID: input.scene.shaderBlockID_particelGenID_map.get(blockID)) {
             var generator = input.scene.particleGenID_generator_map.get(generatorID);
-            var baseParticle = generator.baseParticle;
-
-            var camera = input.scene.camera;
-            SortedMap<Float, Model> sorted = new TreeMap<>(Collections.reverseOrder());
-            generator.particles.stream().forEach(p -> {
-                if(p.shouldRender) {
-                    float dist = (float) Math.sqrt(Math.pow(camera.getPos().get(0) - p.pos.get(0), 2) +
-                            Math.pow(camera.getPos().get(1) - p.pos.get(1), 2) +
-                            Math.pow(camera.getPos().get(2) - p.pos.get(2), 2));
-                    sorted.put(dist, p);
-                }
-            });
-            generator.particles = new ArrayList<>(sorted.values());
-
-            for(int i = 0;i < baseParticle.meshes.size();i++) {
-                var mesh = baseParticle.meshes.get(i);
-
-                if(!(mesh instanceof InstancedMesh)) {
-                    throw new IllegalArgumentException("A particle has to be instanced");
-                }
-
-                var inst_mesh = (InstancedMesh)mesh;
-
-                if (inst_mesh.materials.get(0).texture != null) {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, inst_mesh.materials.get(0).texture.getId());
-                }
-
-                particleShader.setUniform("numCols", inst_mesh.materials.get(0).texture.numCols);
-                particleShader.setUniform("numRows", inst_mesh.materials.get(0).texture.numRows);
-
-                ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
-
-                var chunks = InstancedMesh.getRenderChunks(generator.particles, inst_mesh.instanceChunkSize);
-                for(var chunk: chunks) {
-
-                    inst_mesh.instanceDataBuffer.clear();
-
-                    for(var particle: chunk) {
-                        Matrix objectToWorld = particle.getObjectToWorldMatrix();
-                        Matrix modelView = worldToCam.matMul(objectToWorld);
-
-                        Matrix billboard = Matrix.getDiagonalMatrix(particle.scale).
-                                addColumn(modelView.getColumn(3).
-                                        removeDimensionFromVec(3)).addRow(modelView.getRow(3));
-
-                        var mat = particle.materials.get(inst_mesh.meshIdentifier).get(0);
-                        var tex = mat.texture;
-                        int texPos = particle.matAtlasOffset.get(inst_mesh.meshIdentifier).get(0);
-                        int col = texPos % tex.numCols;
-                        int row = texPos / tex.numCols;
-                        float textXOffset = (float) col / tex.numCols;
-                        float textYOffset = (float) row / tex.numRows;
-
-                        billboard.setValuesToBuffer(inst_mesh.instanceDataBuffer);
-
-                        inst_mesh.instanceDataBuffer.put(textXOffset);
-                        inst_mesh.instanceDataBuffer.put(textYOffset);
-                        for(int counter = 0; counter < 2; counter++) {
-                            inst_mesh.instanceDataBuffer.put(0);
-                        }
-                    }
-
-                    inst_mesh.instanceDataBuffer.flip();
-
-                    glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
-                    glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
-
-                    ((DefaultRenderPipeline)renderPipeline).renderInstanced(inst_mesh, chunk.size());
-                }
-                ((DefaultRenderPipeline)renderPipeline).endRender(mesh);
-            }
-
+            renderGenerator(generator, input.scene.camera, worldToCam);
         }
 
         particleShader.unbind();
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthMask(true);
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//        glDepthMask(true);
     }
 
     @Override

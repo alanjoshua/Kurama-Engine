@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
-import static org.lwjgl.opengl.GL11C.GL_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11C.glBlendFunc;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
@@ -69,6 +68,7 @@ public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
         enable(GL_CULL_FACE);
@@ -87,13 +87,16 @@ public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline
 
     @Override
     public void render(Scene scene) {
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
         sceneShaderBlock.render(new RenderBlockInput(scene, game));
         skyboxShaderBlock.render(new RenderBlockInput(scene, game));
-
         particleShaderBlock.render(new RenderBlockInput(scene, game));
 
         //Hud should be rendered at last, or else text would have background
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         hudShaderBlock.render(new RenderBlockInput(scene, game));
+
     }
 
     @Override
@@ -357,9 +360,11 @@ public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline
         int stride = 0;
 
         if(!mesh.isAttributePresent(Mesh.WEIGHTBIASESPERVERT)) {
-            Vector negs = new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1);
+            Vector negs = new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, 0);
             List<Vector> att = new ArrayList<>(mesh.vertAttributes.get(Mesh.POSITION).size());
-            att.add(negs);
+            for(var ind: mesh.indices) {
+                att.add(null);
+            }
 
             mesh.setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
             mesh.setAttribute(att, Mesh.JOINTINDICESPERVERT);

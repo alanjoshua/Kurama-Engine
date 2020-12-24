@@ -311,17 +311,17 @@ public class GameLWJGL extends Game implements Runnable {
         partHints.isInstanced = true;
         partHints.shouldGenerateTangentBiTangent = false;
         partHints.shouldTriangulate = true;
-        partHints.numInstances = 100;
+        partHints.numInstances = 1000;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         scene.renderPipeline.initializeMesh(partMesh);
-        Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
+        Texture partTex = new Texture("res/misc/explosion2.png", 4,5);
         partMesh.materials.get(0).texture = partTex;
 
         Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
         particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(particle, 100, 0.1f, "generator");
+        var particleGenerator = new FlowParticleGenerator(particle, 1000, 0.01f, "generator");
         particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
         particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
         particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
