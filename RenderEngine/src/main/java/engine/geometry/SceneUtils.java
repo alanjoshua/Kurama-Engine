@@ -550,7 +550,7 @@ public class SceneUtils {
                             l.setScale(scale);
                             Logger.logError("Directional light scale: "+scale.toString());
                             l.shouldRender = shouldRender;
-                            l.shouldCastShadow = shouldCastShadow;
+                            l.doesProduceShadow = shouldCastShadow;
                             l.lightPosScale = lightPosScale;
                             l.setBehaviour(behaviour);
                             scene.addDirectionalLight(l, shaderIds);

@@ -22,6 +22,7 @@ public class PointLight {
     public Vector pos;
     public float intensity;
     public Attenuation attenuation;
+    public boolean doesProduceShadow = false;
 
     public PointLight(Vector color, Vector position, float intensity) {
         attenuation = new Attenuation(1, 0, 0);
@@ -37,6 +38,7 @@ public class PointLight {
 
     public PointLight(PointLight pointLight) {
         this(new Vector(pointLight.color), new Vector(pointLight.pos), pointLight.intensity, pointLight.attenuation);
+        this.doesProduceShadow = pointLight.doesProduceShadow;
     }
 
 }

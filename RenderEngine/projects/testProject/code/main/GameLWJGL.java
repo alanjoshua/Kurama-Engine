@@ -21,7 +21,6 @@ import engine.geometry.MD5.MD5Model;
 import engine.geometry.MD5.MD5Utils;
 import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
-import engine.geometry.SceneUtils;
 import engine.geometry.TerrainUtils;
 import engine.inputs.Input;
 import engine.inputs.InputLWJGL;
@@ -121,9 +120,9 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void writeSceneToFile() {
-        SceneUtils.writeSceneToKE(scene, "projects", "testProject", null,
-                null, "projects/testProject/code/HUD",
-                "projects/testProject/code/ModelBehaviour", "Kurama Engine ver alpha-2.0");
+//        SceneUtils.writeSceneToKE(scene, "projects", "testProject", null,
+//                null, "projects/testProject/code/HUD",
+//                "projects/testProject/code/ModelBehaviour", "Kurama Engine ver alpha-2.0");
     }
 
     public void initScene() {
@@ -144,13 +143,14 @@ public class GameLWJGL extends Game implements Runnable {
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
-                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
+                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),
                 sunMesh, null, directionalLightOrthoProjection, "Sun");
         scene.renderPipeline.initializeMesh(sunMesh);
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
+        directionalLight.doesProduceShadow = true;
         directionalLight.setScale(100);
         directionalLight.setBehaviour(new SunRevolve());
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -165,10 +165,12 @@ public class GameLWJGL extends Game implements Runnable {
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0.1f, 0f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
-                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH*4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT*4),
+                null,
                 (Mesh) null, null, null,"spotlight 1");
 
-        spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
+//        spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
+        spotLight.shadowProjectionMatrix = Matrix.getIdentityMatrix(4);
+        spotLight.doesProduceShadow = false;
 
 //        spotLight.addMesh(scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints));
 //        spotLight.meshes.add(scene.loadMesh("res/apricot/Apricot_02_hi_poly.obj", "apricot", hints));
@@ -309,6 +311,7 @@ public class GameLWJGL extends Game implements Runnable {
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
         partHints.shouldGenerateTangentBiTangent = false;
+        partHints.shouldTriangulate = true;
         partHints.numInstances = 100;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         scene.renderPipeline.initializeMesh(partMesh);

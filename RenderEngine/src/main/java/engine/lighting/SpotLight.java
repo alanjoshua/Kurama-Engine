@@ -18,6 +18,7 @@ public class SpotLight extends Model {
     public Vector coneDirection;
     public ShadowMap shadowMap;
     public Matrix shadowProjectionMatrix;
+    public boolean doesProduceShadow = false;
 
     public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
                      Mesh mesh, Mesh boundingBox, Matrix shadowProjectionMatrix, String identifier) {
@@ -48,6 +49,8 @@ public class SpotLight extends Model {
                 spotLight.shadowMap,spotLight.meshes, spotLight.boundingbox, spotLight.shadowProjectionMatrix,
                 spotLight.identifier);
         cutOff = spotLight.cutOff;
+        this.doesProduceShadow = spotLight.doesProduceShadow;
+        this.shouldCastShadow = spotLight.shouldCastShadow;
     }
 
     public void setPos(Vector newPos) {

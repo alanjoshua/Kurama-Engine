@@ -12,18 +12,21 @@ struct PointLight {
     vec3 pos; // Light position is assumed to be in view coordinates
     float intensity;
     Attenuation att;
+    int doesProduceShadow;
 };
 
 struct SpotLight {
     PointLight pl;
     float cutOff;
     vec3 coneDir;
+    int doesProduceShadow;
 };
 
 struct DirectionalLight {
     vec3 color;
     vec3 direction;
     float intensity;
+    int doesProduceShadow;
 };
 
 struct Material {
@@ -243,15 +246,26 @@ void main() {
 
      for(int i = 0;i < numSpotLights;i++) {
         if(spotLights[i].pl.intensity > 0) {
-            float shadowFactor = calculateShadow(mSpotLightViewVertexPos[i],spotLightShadowMaps[i], normal, spotLights[i].coneDir,1);
-            color += (1-shadowFactor)*calculateSpotLight(spotLights[i],vertPos,normal);
+
+            if(spotLights[i].doesProduceShadow != 0) {
+                float shadowFactor = calculateShadow(mSpotLightViewVertexPos[i], spotLightShadowMaps[i], normal, spotLights[i].coneDir, 1);
+                color += (1-shadowFactor)*calculateSpotLight(spotLights[i], vertPos, normal);
+            }
+            else {
+                color += calculateSpotLight(spotLights[i], vertPos, normal);
+            }
         }
      }
 
      for(int i = 0;i < numDirLight;i++) {
         if(directionalLights[i].intensity > 0) {
-            float shadowFactor = calculateShadow(mLightViewVertexPos[i],directionalShadowMaps[i], normal, directionalLights[i].direction,0);
-            color += (1-shadowFactor)*calculateDirectionalLight(directionalLights[i],vertPos,normal);
+            if(directionalLights[i].doesProduceShadow != 0) {
+                float shadowFactor = calculateShadow(mLightViewVertexPos[i], directionalShadowMaps[i], normal, directionalLights[i].direction, 0);
+                color += (1-shadowFactor)*calculateDirectionalLight(directionalLights[i], vertPos, normal);
+            }
+            else {
+                color += calculateDirectionalLight(directionalLights[i], vertPos, normal);
+            }
         }
      }
 

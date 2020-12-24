@@ -18,6 +18,7 @@ public class DirectionalLight extends Model {
     public float lightPosScale = 100;
     public ShadowMap shadowMap;
     public Matrix shadowProjectionMatrix;
+    public boolean doesProduceShadow = false;
 
     public DirectionalLight(Game game,Vector color, Quaternion direction, float intensity, ShadowMap shadowMap,
                             Mesh mesh, Mesh boundingBox,  Matrix shadowProjectionMatrix, String identifier) {
@@ -46,5 +47,7 @@ public class DirectionalLight extends Model {
     public DirectionalLight(DirectionalLight light) {
         this(light.game,new Vector(light.color), new Quaternion(light.orientation), light.intensity, light.shadowMap,
                 light.meshes, light.boundingbox,  light.shadowProjectionMatrix, light.identifier);
+        this.doesProduceShadow = light.doesProduceShadow;
+        this.shouldCastShadow = light.shouldCastShadow;
     }
 }

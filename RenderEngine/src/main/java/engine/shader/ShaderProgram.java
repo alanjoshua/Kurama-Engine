@@ -56,18 +56,21 @@ public class ShaderProgram {
         createUniform(uniformName + ".att.constant");
         createUniform(uniformName + ".att.linear");
         createUniform(uniformName + ".att.exponent");
+        createUniform(uniformName + ".doesProduceShadow");
     }
 
     public void createDirectionalLightUniform(String uniformName) {
         createUniform(uniformName + ".color");
         createUniform(uniformName + ".direction");
         createUniform(uniformName + ".intensity");
+        createUniform(uniformName + ".doesProduceShadow");
     }
 
     public void createSpotLightUniform(String uniformName) {
         createPointLightUniform(uniformName + ".pl");
         createUniform(uniformName + ".coneDir");
         createUniform(uniformName + ".cutOff");
+        createUniform(uniformName + ".doesProduceShadow");
     }
 
     public void createMaterialUniform(String uniformName) {
@@ -168,18 +171,21 @@ public class ShaderProgram {
         setUniform(uniformName + ".att.constant", att.constant);
         setUniform(uniformName + ".att.linear", att.linear);
         setUniform(uniformName + ".att.exponent", att.exponent);
+        setUniform(uniformName + ".doesProduceShadow", pointLight.doesProduceShadow ?1:0);
     }
 
     public void setUniform(String uniformName, DirectionalLight dirLight) {
         setUniform(uniformName + ".color", dirLight.color);
         setUniform(uniformName + ".direction", dirLight.direction_Vector);
         setUniform(uniformName + ".intensity", dirLight.intensity);
+        setUniform(uniformName + ".doesProduceShadow", dirLight.doesProduceShadow?1:0);
     }
 
     public void setUniform(String uniformName, SpotLight spotLight) {
         setUniform(uniformName+".pl",spotLight.pointLight);
         setUniform(uniformName+".coneDir",spotLight.coneDirection);
         setUniform(uniformName+".cutOff",spotLight.cutOff);
+        setUniform(uniformName + ".doesProduceShadow", spotLight.doesProduceShadow?1:0);
     }
 
     public int setOnlyMaterials_noTextureBinding(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
@@ -213,21 +219,25 @@ public class ShaderProgram {
         return offset;
     }
 
-    public int setAndActivateDirectionalShadowMaps(String uniformName, List<DirectionalLight> shadowMaps, int off) {
-        for(int i = 0;i < shadowMaps.size();i++) {
-            glActiveTexture(off+i+GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D,shadowMaps.get(i).shadowMap.depthMap.getId());
-            setUniform(uniformName+"["+i+"]",off+i);
+    public int setAndActivateDirectionalShadowMaps(String uniformName, List<DirectionalLight> lights, int off) {
+        for(int i = 0;i < lights.size();i++) {
+            if(lights.get(i).shadowMap != null) {
+                glActiveTexture(off + i + GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, lights.get(i).shadowMap.depthMap.getId());
+                setUniform(uniformName + "[" + i + "]", off + i);
+            }
         }
-        return off+shadowMaps.size();
+        return off+lights.size();
     }
-    public int setAndActivateSpotLightShadowMaps(String uniformName, List<SpotLight> shadowMaps, int off) {
-        for(int i = 0;i < shadowMaps.size();i++) {
-            glActiveTexture(off+i+GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D,shadowMaps.get(i).shadowMap.depthMap.getId());
-            setUniform(uniformName+"["+i+"]",off+i);
+    public int setAndActivateSpotLightShadowMaps(String uniformName, List<SpotLight> spotlights, int off) {
+        for(int i = 0;i < spotlights.size();i++) {
+            if(spotlights.get(i).shadowMap != null) {
+                glActiveTexture(off + i + GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, spotlights.get(i).shadowMap.depthMap.getId());
+                setUniform(uniformName + "[" + i + "]", off + i);
+            }
         }
-        return off+shadowMaps.size();
+        return off+spotlights.size();
     }
 
     public int setUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName, Material material,int offset) {
