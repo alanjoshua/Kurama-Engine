@@ -8,5 +8,6 @@ out vec4 fragColor;
 uniform sampler2D texture_sampler;
 
 void main() {
-    fragColor = texture(texture_sampler, outTexCoord);
+    fragColor = texture(texture_sampler, outTexCoord).rgba;
+//    fragColor = fragColor*0.00001 + vec4(1,1,1,1);
 }

@@ -248,7 +248,7 @@ public class GameLWJGL extends Game implements Runnable {
             for(int y = 0;y < 20;y++) {
                 Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
-                cube.setScale(boxScale);
+                cube.setScale(boxScale,boxScale,1);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
 //                cube.behaviour = new rotate();
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -276,10 +276,9 @@ public class GameLWJGL extends Game implements Runnable {
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
         hints.isInstanced = true;
-        hints.numInstances = 2;
+        hints.numInstances = 5;
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f), hints);
-        monsterMeshes.get(0).meshIdentifier = "monsterMesh1";
         monsterMeshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
         hints.isInstanced = false;
 

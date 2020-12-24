@@ -104,7 +104,7 @@ public class DisplayLWJGL extends Display {
 //        GLUtil.setupDebugMessageCallback();
 //        glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, false);
         // Enable v-sync
-        glfwSwapInterval(1);
+//        glfwSwapInterval(1);
     }
 
     public int getDPI() {
