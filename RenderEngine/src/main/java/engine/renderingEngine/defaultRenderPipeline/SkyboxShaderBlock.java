@@ -3,6 +3,7 @@ package engine.renderingEngine.defaultRenderPipeline;
 import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;
+import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 
 public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
@@ -10,8 +11,8 @@ public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
     public static String skyboxShaderID = "skyboxshader";
     public ShaderProgram skyboxShader;
 
-    public SkyboxShaderBlock(String id) {
-        super(id);
+    public SkyboxShaderBlock(String id, RenderPipeline pipeline) {
+        super(id, pipeline);
     }
 
     @Override
@@ -58,7 +59,7 @@ public class SkyboxShaderBlock extends engine.renderingEngine.RenderBlock {
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 
-            input.scene.skybox.meshes.get(0).initToEndFullRender(0);
+            ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
         }
         skyBoxShaderProgram.unbind();
 

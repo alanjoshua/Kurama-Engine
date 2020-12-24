@@ -23,6 +23,11 @@ public class RenderingEngineSR extends RenderingEngine {
     public float[][] depthBuffer;
     public Color[][] frameBuffer;
 
+    public enum RenderMultiplicationMode_Deprecated {
+        Matrix, Quat
+    }
+    public RenderMultiplicationMode_Deprecated renderMultiplicationModeDeprecated = RenderMultiplicationMode_Deprecated.Matrix;
+
     public RenderingEngineSR(Game game) {
         super(game);
     }
@@ -35,6 +40,10 @@ public class RenderingEngineSR extends RenderingEngine {
     @Override
     public void cleanUp() {
 
+    }
+
+    public RenderMultiplicationMode_Deprecated getRenderPipeline() {
+        return renderMultiplicationModeDeprecated;
     }
 
     public void resetBuffers() {

@@ -166,7 +166,7 @@ public class Simulation extends Game {
         MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
         hints.addRandomColor = true;
-        hints.initLWJGLAttribs = true;
+//        hints.initLWJGLAttribs = true;
 
         hints.addConstantColor = new Vector(new float[]{1f,1,1f,1f});
         Model grid = new Model(this, MeshBuilder.buildGridLines(simWidth,simDepth,hints),"grid");
@@ -281,7 +281,7 @@ public class Simulation extends Game {
 
         MeshBuilderHints hints = new MeshBuilderHints();
         hints.shouldSmartBakeVertexAttributes = false;
-        hints.initLWJGLAttribs = true;
+//        hints.initLWJGLAttribs = true;
 
         boxMesh = MeshBuilder.buildMesh(boxModelLoc,hints);
         try {

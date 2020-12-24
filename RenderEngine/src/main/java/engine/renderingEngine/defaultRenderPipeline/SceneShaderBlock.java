@@ -6,13 +6,11 @@ import engine.Math.Vector;
 import engine.Mesh.InstancedMesh;
 import engine.Mesh.Mesh;
 import engine.lighting.DirectionalLight;
+import engine.lighting.PointLight;
 import engine.lighting.SpotLight;
 import engine.model.AnimatedModel;
 import engine.model.Model;
-import engine.renderingEngine.LightDataPackage;
-import engine.renderingEngine.RenderBlockInput;
-import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngineGL;
+import engine.renderingEngine.*;
 import engine.scene.Scene;
 import engine.shader.ShaderProgram;
 import engine.utils.Logger;
@@ -21,6 +19,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
@@ -48,15 +47,15 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
-    public static final int MATRIX_SIZE_BYTES = 4 * InstancedMesh.VECTOR4F_SIZE_BYTES;
+    public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
     public static final int MATRIX_SIZE_FLOATS = 16;
 
-    public static int MAX_INSTANCED_SKELETAL_MESHES = 100;
+    public static int MAX_INSTANCED_SKELETAL_MESHES = 50;
     public int jointsInstancedBufferID;
 
 
-    public SceneShaderBlock(String id) {
-        super(id);
+    public SceneShaderBlock(String id, RenderPipeline pipeline) {
+        super(id, pipeline);
     }
 
     @Override
@@ -82,9 +81,9 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     @Override
     public void render(RenderBlockInput input) {
-//        glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
+        glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
-//        glCullFace(GL_BACK);
+        glCullFace(GL_BACK);
 
         glViewport(0,0,input.game.getDisplay().getWidth(),input.game.getDisplay().getHeight());
         RenderingEngineGL.clear();
@@ -191,6 +190,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
     public void renderScene(Scene scene, ShadowDepthRenderPackage shadowPackage) {
 
+        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
         boolean curShouldCull = true;
         int currCull = GL_BACK;
 
@@ -208,7 +208,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
 
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
 
-        LightDataPackage lights = RenderingEngine.processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
+        LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
         sceneShaderProgram.setUniform("pointLights",lights.pointLights);
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
@@ -259,7 +259,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                 currCull = mesh.cullmode;
             }
 
-            mesh.initRender();
+            pipeline.initRender(mesh);
 
             if(mesh instanceof InstancedMesh) {
 
@@ -300,7 +300,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                                 FloatBuffer temp = jointMat.getAsFloatBuffer();
 //                                TODO: Change this to persistent map
                                 glNamedBufferSubData(jointsInstancedBufferID,
-                                        ((modelCount * MAX_JOINTS) + i) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                        ((modelCount * MAX_JOINTS) + i) * MATRIX_SIZE_BYTES, temp);
                                 MemoryUtil.memFree(temp);
                             }
                         }
@@ -330,7 +330,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
                     glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
-                    inst_mesh.render(chunk.size());
+                    pipeline.renderInstanced(inst_mesh, chunk.size());
                 }
             }
 
@@ -370,18 +370,20 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         Matrix objectToWorld = model.getObjectToWorldMatrix();
                         scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
 //
-                        mesh.render();
+                        pipeline.render(mesh);
                     }
                 }
             }
 
-            mesh.endRender();
+            pipeline.endRender(mesh);
         }
 
         sceneShaderProgram.unbind();
     }
 
     public ShadowDepthRenderPackage renderDepthMap(Scene scene) {
+
+        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
 
         boolean curShouldCull = true;
         int currCull = GL_BACK;
@@ -424,7 +426,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                mesh.initRender();
+                pipeline.initRender(mesh);
 
                 if(mesh instanceof InstancedMesh) {
                     depthShaderProgram.setUniform("isInstanced", 1);
@@ -464,7 +466,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                                     FloatBuffer temp = jointMat.getAsFloatBuffer();
 //                                TODO: Change this to persistent map
                                     glNamedBufferSubData(jointsInstancedBufferID,
-                                            ((modelCount * MAX_JOINTS) + j) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                            ((modelCount * MAX_JOINTS) + j) * MATRIX_SIZE_BYTES, temp);
                                     MemoryUtil.memFree(temp);
                                 }
                             }
@@ -481,7 +483,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
                         glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
-                        inst_mesh.render(chunk.size());
+                        pipeline.renderInstanced(inst_mesh, chunk.size());
                     }
                 }
 
@@ -505,11 +507,11 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         if (m.shouldCastShadow && m.shouldRender) {
                             Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                             depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                            mesh.render();
+                            pipeline.render(mesh);
                         }
                     }
                 }
-                mesh.endRender();
+                pipeline.endRender(mesh);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
@@ -544,7 +546,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                     currCull = mesh.cullmode;
                 }
 
-                mesh.initRender();
+                pipeline.initRender(mesh);
 
                 if(mesh instanceof InstancedMesh) {
                     depthShaderProgram.setUniform("isInstanced", 1);
@@ -584,7 +586,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                                     FloatBuffer temp = jointMat.getAsFloatBuffer();
 //                                TODO: Change this to persistent map
                                     glNamedBufferSubData(jointsInstancedBufferID,
-                                            ((modelCount * MAX_JOINTS) + j) * InstancedMesh.MATRIX_SIZE_BYTES, temp);
+                                            ((modelCount * MAX_JOINTS) + j) * MATRIX_SIZE_BYTES, temp);
                                     MemoryUtil.memFree(temp);
                                 }
                             }
@@ -601,7 +603,7 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
                         glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
-                        inst_mesh.render(chunk.size());
+                        pipeline.renderInstanced(inst_mesh, chunk.size());
                     }
                 }
                 else{
@@ -624,11 +626,11 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
                         if (m.shouldCastShadow) {
                             Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                             depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                            mesh.render();
+                            pipeline.render(mesh);
                         }
                     }
                 }
-                mesh.endRender();
+                pipeline.endRender(mesh);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
@@ -645,4 +647,65 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
             this.worldToSpotLights = worldToSpotLights;
         }
     }
+
+    public class LightDataPackage {
+        public PointLight pointLights[];
+        public SpotLight spotLights[];
+        public DirectionalLight directionalLights[];
+    }
+
+    public LightDataPackage processLights(List<PointLight> pointLights, List<SpotLight> spotLights, List<DirectionalLight> directionalLights, Matrix worldToCam) {
+        List<PointLight> pointLightsRes;
+        List<SpotLight> spotLightsRes;
+        List<DirectionalLight> directionalLightsRes;
+
+        pointLightsRes = pointLights.stream()
+                .map(l -> {
+                    PointLight currLight = new PointLight(l);
+                    currLight.pos = worldToCam.matMul(currLight.pos.append(1)).getColumn(0).removeDimensionFromVec(3);
+                    return currLight;
+                })
+                .collect(Collectors.toList());
+
+        directionalLightsRes = directionalLights.stream()
+                .map(l -> {
+                    DirectionalLight currDirectionalLight = new DirectionalLight(l);
+
+                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getOrientation().
+                            getRotationMatrix().getColumn(2).scalarMul(-1).append(0)).
+                            getColumn(0).removeDimensionFromVec(3);
+
+                    return currDirectionalLight;
+                })
+                .collect(Collectors.toList());
+
+        spotLightsRes = spotLights.stream()
+                .map(l -> {
+                    SpotLight currSpotLight = new SpotLight(l);
+
+                    //Vector dir = new Vector(currSpotLight.coneDirection).addDimensionToVec(0);
+                    currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getOrientation().getRotationMatrix().
+                            getColumn(2).scalarMul(-1).append(0)).getColumn(0).removeDimensionFromVec(3);
+
+                    Vector spotLightPos = currSpotLight.pointLight.pos;
+                    Vector auxSpot = new Vector(spotLightPos).append(1);
+                    currSpotLight.setPos(worldToCam.matMul(auxSpot).getColumn(0).removeDimensionFromVec(3));
+                    return currSpotLight;
+                })
+                .collect(Collectors.toList());
+
+        LightDataPackage res = new LightDataPackage();
+
+        res.pointLights = new PointLight[pointLightsRes.size()];
+        pointLightsRes.toArray(res.pointLights);
+
+        res.spotLights = new SpotLight[spotLightsRes.size()];
+        spotLightsRes.toArray(res.spotLights);
+
+        res.directionalLights = new DirectionalLight[directionalLightsRes.size()];
+        directionalLightsRes.toArray(res.directionalLights);
+
+        return res;
+    }
+
 }

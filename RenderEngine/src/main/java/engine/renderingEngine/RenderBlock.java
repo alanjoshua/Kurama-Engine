@@ -3,8 +3,10 @@ package engine.renderingEngine;
 public abstract class RenderBlock {
 
     public String blockID = null;
-    public RenderBlock(String id) {
+    public RenderPipeline renderPipeline;
+    public RenderBlock(String id, RenderPipeline pipeline) {
         this.blockID = id;
+        this.renderPipeline = pipeline;
     }
 
     public abstract void setup(RenderBlockInput input);

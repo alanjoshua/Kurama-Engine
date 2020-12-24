@@ -127,6 +127,8 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void initScene() {
+        scene.renderPipeline = new DefaultRenderPipeline(this);
+
         MeshBuilderHints hints = new MeshBuilderHints();
 
         scene.hud = new TestHUD(this);
@@ -137,14 +139,15 @@ public class GameLWJGL extends Game implements Runnable {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-        hints.initLWJGLAttribs = false;
+//        hints.initLWJGLAttribs = false;
         scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
                 sunMesh, null, directionalLightOrthoProjection, "Sun");
-        sunMesh.initOpenGLMeshData();
+        scene.renderPipeline.initializeMesh(sunMesh);
+//        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
         directionalLight.shouldCastShadow = false;
@@ -211,7 +214,7 @@ public class GameLWJGL extends Game implements Runnable {
         float yRange = 60;
 
         var skybox_mesh = scene.loadMesh("res/misc/skybox.obj", "skybox_mesh", hints);
-        skybox_mesh.initOpenGLMeshData();
+        scene.renderPipeline.initializeMesh(skybox_mesh);
         Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1f});
         skybox_mesh.materials.set(0, skyMat);
@@ -228,7 +231,7 @@ public class GameLWJGL extends Game implements Runnable {
         hints.isInstanced = true;
         hints.numInstances = 600;
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
-        cubeMesh.initOpenGLMeshData();
+        scene.renderPipeline.initializeMesh(cubeMesh);
         hints.isInstanced = false;
 
         Texture cubeTexture = new Texture("res/misc/grassblock.png");
@@ -256,7 +259,6 @@ public class GameLWJGL extends Game implements Runnable {
 //        plant.setPos(new Vector(15, 45, 10));
 //        plant.setScale(0.005f);
 
-        hints.initLWJGLAttribs = false;
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
         ter_mat.matName = "TERRAIN";
@@ -266,7 +268,7 @@ public class GameLWJGL extends Game implements Runnable {
         ter_mat.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
         ter_mat.reflectance = 1f;
         terrain_mesh.materials.set(0,ter_mat);
-        terrain_mesh.initOpenGLMeshData();
+        scene.renderPipeline.initializeMesh(terrain_mesh);
         var terrain = new Terrain(this, terrain_mesh, "Terrain", heightMap.length, heightMap[0].length, 2);
         terrain.setScale(boxCount,yRange,boxCount);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -276,7 +278,7 @@ public class GameLWJGL extends Game implements Runnable {
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f), hints);
         monsterMeshes.get(0).meshIdentifier = "monsterMesh1";
-        monsterMeshes.stream().forEach(Mesh::initOpenGLMeshData);
+        monsterMeshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
         hints.isInstanced = false;
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
@@ -297,7 +299,7 @@ public class GameLWJGL extends Game implements Runnable {
         var madara_meshes = MD5Utils.generateMeshes(madara, new Vector(1f, 1f, 1f, 1f), hints);
         madara_meshes.get(0).meshIdentifier = "madara1";
         hints.isInstanced = false;
-        madara_meshes.stream().forEach(Mesh::initOpenGLMeshData);
+        madara_meshes.stream().forEach(m -> scene.renderPipeline.initializeMesh(m));
 
         var madara_model = scene.createModel(madara_meshes, "madara", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         madara_model.setScale(5f);
@@ -306,9 +308,10 @@ public class GameLWJGL extends Game implements Runnable {
 //
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
+        partHints.shouldGenerateTangentBiTangent = false;
         partHints.numInstances = 100;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
-        partMesh.initOpenGLMeshData();
+        scene.renderPipeline.initializeMesh(partMesh);
         Texture partTex = new Texture("res/misc/particle_anim.png", 4,4);
         partMesh.materials.get(0).texture = partTex;
 
@@ -322,8 +325,6 @@ public class GameLWJGL extends Game implements Runnable {
         particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
-
-        scene.renderPipeline = new DefaultRenderPipeline(this);
 
     }
 

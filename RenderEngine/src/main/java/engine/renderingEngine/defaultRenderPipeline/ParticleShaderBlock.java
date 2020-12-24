@@ -5,6 +5,7 @@ import engine.Mesh.InstancedMesh;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlock;
 import engine.renderingEngine.RenderBlockInput;
+import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 
 import java.util.ArrayList;
@@ -19,8 +20,8 @@ public class ParticleShaderBlock extends RenderBlock {
     public static String particleShaderID = "particleShader";
     public ShaderProgram particleShader;
 
-    public ParticleShaderBlock(String id) {
-        super(id);
+    public ParticleShaderBlock(String id, RenderPipeline pipeline) {
+        super(id, pipeline);
     }
 
     @Override
@@ -85,7 +86,7 @@ public class ParticleShaderBlock extends RenderBlock {
 
                 var inst_mesh = (InstancedMesh)mesh;
 
-                if (inst_mesh.materials.get(i).texture != null) {
+                if (inst_mesh.materials.get(0).texture != null) {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, inst_mesh.materials.get(0).texture.getId());
                 }
@@ -93,7 +94,7 @@ public class ParticleShaderBlock extends RenderBlock {
                 particleShader.setUniform("numCols", inst_mesh.materials.get(0).texture.numCols);
                 particleShader.setUniform("numRows", inst_mesh.materials.get(0).texture.numRows);
 
-                mesh.initRender();
+                ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
 
                 var chunks = InstancedMesh.getRenderChunks(generator.particles, inst_mesh.instanceChunkSize);
                 for(var chunk: chunks) {
@@ -130,9 +131,9 @@ public class ParticleShaderBlock extends RenderBlock {
                     glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
                     glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
-                    inst_mesh.render(chunk.size());
+                    ((DefaultRenderPipeline)renderPipeline).renderInstanced(inst_mesh, chunk.size());
                 }
-                mesh.endRender();
+                ((DefaultRenderPipeline)renderPipeline).endRender(mesh);
             }
 
         }

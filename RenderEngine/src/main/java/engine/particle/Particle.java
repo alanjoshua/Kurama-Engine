@@ -31,8 +31,6 @@ public class Particle extends Model {
         this.timeToLive = timeToLive;
         this.updateTexture = updateTexture;
         this.animationFrames = mesh.materials.get(0).texture.numRows * mesh.materials.get(0).texture.numCols;
-//        this.materials = new ArrayList<>(1);
-//        this.materials.add(new Material(mesh.materials.get(0)));
     }
 
     public Particle(Particle p) {
@@ -44,9 +42,6 @@ public class Particle extends Model {
         this.timeToLive = p.timeToLive;
         this.updateTexture = p.updateTexture;
         this.animationFrames = p.animationFrames;
-//        this.materials = p.materials;
-//        this.materials = new ArrayList<>(1);
-//        this.materials.add(new Material(p.materials.get(0)));
     }
 
     public float updateTimeToLive(float elapsedTime) {

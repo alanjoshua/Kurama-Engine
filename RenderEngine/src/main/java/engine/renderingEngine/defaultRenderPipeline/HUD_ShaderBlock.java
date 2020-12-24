@@ -4,6 +4,7 @@ import engine.Mesh.Mesh;
 import engine.Math.Matrix;
 import engine.model.Model;
 import engine.renderingEngine.RenderBlockInput;
+import engine.renderingEngine.RenderPipeline;
 import engine.shader.ShaderProgram;
 
 public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
@@ -11,8 +12,8 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
     String hud_shader_id = "hud_shader";
     public ShaderProgram hud_shader;
 
-    public HUD_ShaderBlock(String id) {
-        super(id);
+    public HUD_ShaderBlock(String id, RenderPipeline pipeline) {
+        super(id, pipeline);
     }
 
     @Override
@@ -62,7 +63,7 @@ public class HUD_ShaderBlock extends engine.renderingEngine.RenderBlock {
                     hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
                     hudShaderProgram.setUniform("color", mesh.materials.get(0).ambientColor);
 
-                    mesh.initToEndFullRender(0);
+                    ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(mesh, 0);
                 }
             }
         }

@@ -4,7 +4,7 @@ import engine.Math.Vector;
 import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
 import engine.model.Model;
-import engine.renderingEngine.RenderingEngine;
+import engine.renderingEngine.RenderingEngineSR;
 
 import java.util.Random;
 
@@ -28,7 +28,7 @@ public class GameSR_ESL extends GameSR {
     @Override
     public void initModels() {
 
-        renderingEngine.setRenderPipeline(RenderingEngine.RenderMultiplicationMode_Deprecated.Quat);
+        renderingEngine.renderMultiplicationModeDeprecated = RenderingEngineSR.RenderMultiplicationMode_Deprecated.Quat;
 
         Random random = new Random();
         random.setSeed(seed);

@@ -116,11 +116,11 @@ public class MeshBuilder {
 				resMesh = new InstancedMesh(resMesh, hints.numInstances);
 			}
 
-			if(hints.initLWJGLAttribs) {
-				System.out.println("Initting LWJGL attribs...");
-				resMesh.initOpenGLMeshData();
-				System.out.println("Finishing initting LWJGL attribs");
-			}
+//			if(hints.initLWJGLAttribs) {
+//				System.out.println("Initting LWJGL attribs...");
+//				resMesh.initOpenGLMeshData();
+//				System.out.println("Finishing initting LWJGL attribs");
+//			}
 		}
 
 		resMesh.meshIdentifier = loc;
@@ -1230,7 +1230,7 @@ public class MeshBuilder {
 		Mesh ret = new Mesh(indices,faces,attribs,null, null, null);
 		ret.setAttribute(colors,Mesh.COLOR);
 		ret.drawMode = GL_LINES;
-		ret.initOpenGLMeshData();
+//		ret.initOpenGLMeshData();
 
 		return ret;
 	}
@@ -1438,8 +1438,8 @@ public class MeshBuilder {
 				resMesh = convertToLines(resMesh,hints);
 			}
 
-			if(hints.initLWJGLAttribs)
-				resMesh.initOpenGLMeshData();
+//			if(hints.initLWJGLAttribs)
+//				resMesh.initOpenGLMeshData();
 		}
 
 		resMesh.meshIdentifier = "grid-trigs";
@@ -1509,8 +1509,8 @@ public class MeshBuilder {
 				resMesh = addColor(resMesh,hints.addConstantColor);
 			}
 
-			if(hints.initLWJGLAttribs)
-				resMesh.initOpenGLMeshData();
+//			if(hints.initLWJGLAttribs)
+//				resMesh.initOpenGLMeshData();
 		}
 
 		resMesh.drawMode = GL_LINES;

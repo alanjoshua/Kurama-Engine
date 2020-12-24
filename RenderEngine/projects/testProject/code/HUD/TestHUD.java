@@ -25,6 +25,7 @@ public class TestHUD extends HUD {
 
         var res = Text.buildTextMesh("Kurama Engine -alpha 2.1", engineTextFont);
         var engineInfo_mesh = (Mesh)res.get(0);
+        game.scene.renderPipeline.initializeMesh(engineInfo_mesh);
         var width = (Float)res.get(1);
         engineInfo_mesh.meshIdentifier = "hud_text_mesh";
         engineInfo_mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
@@ -36,6 +37,7 @@ public class TestHUD extends HUD {
 
         res = Text.buildTextMesh("FPS: "+game.displayFPS, fpsTextFont);
         var fps_mesh = (Mesh)res.get(0);
+        game.scene.renderPipeline.initializeMesh(fps_mesh);
         width = (Float)res.get(1);
         fps_mesh.meshIdentifier = "fps_mesh";
         fps_mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
@@ -57,6 +59,7 @@ public class TestHUD extends HUD {
 
         var res = Text.buildTextMesh("FPS: "+game.displayFPS, fpsTextFont);
         var fps_mesh = (Mesh)res.get(0);
+        game.scene.renderPipeline.initializeMesh(fps_mesh);
         var width = (Float)res.get(1);
         fps_mesh.meshIdentifier = "fps_mesh";
         fps_mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});

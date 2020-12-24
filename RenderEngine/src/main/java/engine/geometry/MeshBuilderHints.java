@@ -7,7 +7,7 @@ public class MeshBuilderHints {
     public boolean shouldDumbBakeVertexAttributes = false;
     public boolean shouldTriangulate = true;
     public boolean forceEarClipping = false;
-    public boolean initLWJGLAttribs = true;
+//    public boolean initLWJGLAttribs = true;
     public boolean addRandomColor = false;
     public boolean shouldGenerateTangentBiTangent = true;
     public Vector addConstantColor;
@@ -23,7 +23,7 @@ public class MeshBuilderHints {
                 " shouldDumbBakeVertexAttributes:"+ shouldDumbBakeVertexAttributes +
                 " shouldTriangulate:"+ shouldTriangulate +
                 " forceEarClipping:"+ forceEarClipping +
-                " initLWJGLAttribs:"+ initLWJGLAttribs +
+//                " initLWJGLAttribs:"+ initLWJGLAttribs +
                 " addRandomColor:"+ addRandomColor +
                 " shouldGenerateTangentBiTangent:" + shouldGenerateTangentBiTangent +
                 " addConstantColor:" + addConstantColor +

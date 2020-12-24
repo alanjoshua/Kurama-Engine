@@ -934,7 +934,7 @@ public class Robot extends Movable {
         Mesh pathMesh = new Mesh(indices,faces,vertAttribs,null, null, null);
         pathMesh.drawMode = GL_LINES;
         MeshBuilder.addColor(pathMesh, new Vector(new float[]{0f, 1f, 0f, 1f}));
-        pathMesh.initOpenGLMeshData();
+//        pathMesh.initOpenGLMeshData();
         pathMesh.materials.set(0,game.pathMat);
         return pathMesh;
     }

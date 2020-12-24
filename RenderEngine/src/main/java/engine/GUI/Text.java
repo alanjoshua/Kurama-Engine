@@ -126,7 +126,6 @@ public class Text extends Model {
         textMat.texture = fontTexture.texture;
         textMat.matName = Utils.getUniqueID();
         res.materials.set(0, textMat);
-        res.initOpenGLMeshData();
 
         res.meshIdentifier = Utils.getUniqueID();
         List<Object> results = new ArrayList<>();

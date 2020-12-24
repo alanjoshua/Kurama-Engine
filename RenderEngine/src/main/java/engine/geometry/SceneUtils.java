@@ -881,7 +881,7 @@ public class SceneUtils {
 
                 ret = new Mesh(indices, newFaces, vertAttributes, materials, file, null);
                 ret.meshIdentifier = meshID;
-                ret.initOpenGLMeshData();
+//                ret.initOpenGLMeshData();
             }
 
         } catch (IOException e) {

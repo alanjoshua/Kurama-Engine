@@ -172,13 +172,11 @@ public class Model {
 		this.boundingBoxColor = color;
 		MeshBuilder.addColor(boundingbox,boundingBoxColor);
 		boundingbox.drawMode = GL_LINES;
-		boundingbox.initOpenGLMeshData();
 	}
 
 	public void setRandomColorToBoundingBox() {
 		MeshBuilder.addRandomColor(boundingbox);
 		boundingbox.drawMode = GL_LINES;
-		boundingbox.initOpenGLMeshData();
 	}
 
 	public Matrix getObjectToWorldMatrix() {

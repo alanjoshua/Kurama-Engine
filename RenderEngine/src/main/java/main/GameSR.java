@@ -11,10 +11,10 @@ import engine.geometry.MeshBuilder;
 import engine.geometry.MeshBuilderHints;
 import engine.inputs.Input;
 import engine.inputs.InputSR;
-import engine.model.*;
+import engine.model.Model;
+import engine.model.ModelBehaviourTickInput;
 import engine.renderingEngine.RenderingEngine;
 import engine.renderingEngine.RenderingEngine.ProjectionMode;
-import engine.renderingEngine.RenderingEngine.RenderMultiplicationMode_Deprecated;
 import engine.renderingEngine.RenderingEngineSR;
 
 import java.awt.*;
@@ -86,9 +86,7 @@ public class GameSR extends Game implements Runnable {
 				display.getWidth(), display.getHeight());
 
 		renderingEngine.resetBuffers();
-
-		renderingEngine.setProjectionMode(ProjectionMode.PERSPECTIVE);
-		renderingEngine.setRenderPipeline(RenderMultiplicationMode_Deprecated.Matrix);
+		renderingEngine.projectionMode = ProjectionMode.PERSPECTIVE;
 
 		cam.updateValues();
 
@@ -332,10 +330,10 @@ public class GameSR extends Game implements Runnable {
 			cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
 		}
 		
-		if (input.keyDownOnce(input.Q)) {
-			if(((RenderingEngineSR)renderingEngine).getRenderPipeline() == RenderMultiplicationMode_Deprecated.Quat) ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Matrix);
-			else ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Quat);
-		}
+//		if (input.keyDownOnce(input.Q)) {
+//			if(((RenderingEngineSR)renderingEngine).getRenderPipeline() == RenderMultiplicationMode_Deprecated.Quat) ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Matrix);
+//			else ((RenderingEngineSR)renderingEngine).setRenderPipeline(RenderMultiplicationMode_Deprecated.Quat);
+//		}
 		
 		if (((InputSR)input).getPosition().getNorm() != 0 && isGameRunning) {
 
@@ -404,7 +402,7 @@ public class GameSR extends Game implements Runnable {
 			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
 			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
 			g.setColor(Color.RED);
-			g.drawString("Rendering Pipeline : " + ((RenderingEngineSR)renderingEngine).getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
+//			g.drawString("Rendering Pipeline : " + ((RenderingEngineSR)renderingEngine).getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 
 			g.setColor(Color.GREEN);
 			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
