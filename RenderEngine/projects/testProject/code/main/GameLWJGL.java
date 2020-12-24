@@ -312,6 +312,7 @@ public class GameLWJGL extends Game implements Runnable {
         partHints.shouldGenerateTangentBiTangent = false;
         partHints.shouldTriangulate = true;
         partHints.numInstances = 1000;
+        partHints.shouldReverseWindingOrder = true;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         scene.renderPipeline.initializeMesh(partMesh);
         Texture partTex = new Texture("res/misc/explosion2.png", 4,5);

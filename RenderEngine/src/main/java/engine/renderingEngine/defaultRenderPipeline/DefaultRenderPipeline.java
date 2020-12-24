@@ -91,7 +91,10 @@ public class DefaultRenderPipeline extends engine.renderingEngine.RenderPipeline
         //        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
         sceneShaderBlock.render(new RenderBlockInput(scene, game));
         skyboxShaderBlock.render(new RenderBlockInput(scene, game));
+
+//        glDisable(GL_CULL_FACE);
         particleShaderBlock.render(new RenderBlockInput(scene, game));
+//        glEnable(GL_CULL_FACE);
 
         //Hud should be rendered at last, or else text would have background
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE);

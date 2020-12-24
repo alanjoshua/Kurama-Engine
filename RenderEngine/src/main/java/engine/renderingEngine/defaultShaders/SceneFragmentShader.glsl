@@ -134,8 +134,8 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
      projCoords = projCoords * 0.5 + 0.5;  //Transform from screen coordinates to texture coordinates
      float shadowFactor = 0;
 
-//    bias = max(0.05 * (1.0 - dot(normalize(normal), lightDir)), 0.005);
-    bias = 0.001;
+    bias = max(0.01 * (1.0 - dot(normalize(normal), lightDir)), 0.001);
+//    bias = 0.001;
 //        bias = 0.005;
     vec2 inc = 1.0 / textureSize(shadowMap, 0);
 
@@ -145,7 +145,7 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
             shadowFactor += (projCoords.z - bias) > textDepth ? 1.0 : 0.0;
         }
     }
-    shadowFactor /= 9.0;
+    shadowFactor /= 9f;
 
 //    shadowFactor = 0;
 //    float textDepth = texture(shadowMap, projCoords.xy).r;

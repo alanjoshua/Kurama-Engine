@@ -85,9 +85,15 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
         glCullFace(GL_BACK);
 
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         glViewport(0,0,input.game.getDisplay().getWidth(),input.game.getDisplay().getHeight());
         RenderingEngineGL.clear();
         renderScene(input.scene,shadowPackage);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
 
     @Override
@@ -193,9 +199,6 @@ public class SceneShaderBlock extends engine.renderingEngine.RenderBlock {
         DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
         boolean curShouldCull = true;
         int currCull = GL_BACK;
-
-        glEnable(GL_CULL_FACE);
-        glCullFace(currCull);
 
         ShaderProgram sceneShaderProgram = scene_shader;
         sceneShaderProgram.bind();

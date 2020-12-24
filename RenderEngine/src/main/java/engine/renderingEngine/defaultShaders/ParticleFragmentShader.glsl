@@ -9,5 +9,12 @@ uniform sampler2D texture_sampler;
 
 void main() {
     fragColor = texture(texture_sampler, outTexCoord);
-//    fragColor = fragColor*0.00001 + vec4(1,1,1,1);
+
+//    if(gl_FrontFacing) {
+//        fragColor = vec4(1,1,1,1);
+//    }
+//    else {
+//        fragColor = fragColor*0.00001 + vec4(1,0,0,1);
+//    }
+
 }

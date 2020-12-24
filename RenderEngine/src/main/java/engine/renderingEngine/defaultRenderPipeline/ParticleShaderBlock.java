@@ -81,7 +81,8 @@ public class ParticleShaderBlock extends RenderBlock {
         ((DefaultRenderPipeline)renderPipeline).renderInstanced(inst_mesh, chunk.size());
     }
 
-    public void renderGenerator(ParticleGenerator generator, Camera camera, Matrix worldToCam) {
+    public void renderGenerator(ParticleGenerator generator, Camera camera, Matrix worldToCam, boolean curShouldCull, int currCull) {
+
         var baseParticle = generator.baseParticle;
 
         SortedMap<Float, List> sorted = new TreeMap<>(Collections.reverseOrder());
@@ -110,6 +111,21 @@ public class ParticleShaderBlock extends RenderBlock {
 
         for(int i = 0;i < baseParticle.meshes.size();i++) {
             var mesh = baseParticle.meshes.get(i);
+
+            if (curShouldCull != mesh.shouldCull) {
+                if(mesh.shouldCull) {
+                    glEnable(GL_CULL_FACE);
+                }
+                else {
+                    glDisable(GL_CULL_FACE);
+                }
+                curShouldCull = mesh.shouldCull;
+            }
+
+            if(currCull != mesh.cullmode) {
+                glCullFace(mesh.cullmode);
+                currCull = mesh.cullmode;
+            }
 
             if(!(mesh instanceof InstancedMesh)) {
                 throw new IllegalArgumentException("A particle has to be instanced");
@@ -145,8 +161,12 @@ public class ParticleShaderBlock extends RenderBlock {
             return;
         }
 
-//        glDepthMask(false);
-//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
+        boolean curShouldCull = true;
+        int currCull = GL_BACK;
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         particleShader.bind();
         particleShader.setUniform("texture_sampler", 0);
 
@@ -156,12 +176,13 @@ public class ParticleShaderBlock extends RenderBlock {
 
         for(var generatorID: input.scene.shaderBlockID_particelGenID_map.get(blockID)) {
             var generator = input.scene.particleGenID_generator_map.get(generatorID);
-            renderGenerator(generator, input.scene.camera, worldToCam);
+            renderGenerator(generator, input.scene.camera, worldToCam, curShouldCull, currCull);
         }
 
         particleShader.unbind();
-//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//        glDepthMask(true);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
 
     @Override

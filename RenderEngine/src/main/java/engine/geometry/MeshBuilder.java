@@ -73,19 +73,6 @@ public class MeshBuilder {
 				System.out.println("Finished Generating tangets and bi tangents");
 			}
 
-			if(hints.shouldSmartBakeVertexAttributes) {
-				System.out.println("smart baking....");
-				resMesh = bakeMesh(resMesh,hints);
-				System.out.println("Finished smart bake");
-			}
-			else {
-				if(hints.shouldDumbBakeVertexAttributes) {
-					System.out.println("Dumb baking...");
-					resMesh = dumbBake(resMesh, hints);
-					System.out.println("Finished dumb bake");
-				}
-			}
-
 			if(hints.shouldReverseWindingOrder) {
 				Logger.log("Reversing winding order...");
 				resMesh = reverseWindingOrder(resMesh, null);
@@ -111,16 +98,23 @@ public class MeshBuilder {
 				System.out.println("Finished converting to lines");
 			}
 
+			if(hints.shouldSmartBakeVertexAttributes) {
+				System.out.println("smart baking....");
+				resMesh = bakeMesh(resMesh,hints);
+				System.out.println("Finished smart bake");
+			}
+			else {
+				if(hints.shouldDumbBakeVertexAttributes) {
+					System.out.println("Dumb baking...");
+					resMesh = dumbBake(resMesh, hints);
+					System.out.println("Finished dumb bake");
+				}
+			}
+
 			if(hints.isInstanced) {
 				Logger.log("Converting to instanced mesh...");
 				resMesh = new InstancedMesh(resMesh, hints.numInstances);
 			}
-
-//			if(hints.initLWJGLAttribs) {
-//				System.out.println("Initting LWJGL attribs...");
-//				resMesh.initOpenGLMeshData();
-//				System.out.println("Finishing initting LWJGL attribs");
-//			}
 		}
 
 		resMesh.meshIdentifier = loc;
