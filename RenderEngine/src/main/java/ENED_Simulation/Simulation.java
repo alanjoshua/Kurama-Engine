@@ -1,26 +1,26 @@
 package ENED_Simulation;
 
-import engine.Effects.Material;
-import engine.Effects.ShadowMap;
-import engine.Effects.Texture;
-import engine.GUI.Button;
-import engine.Math.Matrix;
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.Mesh.Mesh;
-import engine.camera.Camera;
-import engine.display.Display;
-import engine.display.DisplayLWJGL;
-import engine.game.Game;
-import engine.geometry.MeshBuilder;
-import engine.geometry.MeshBuilderHints;
-import engine.inputs.InputLWJGL;
-import engine.lighting.DirectionalLight;
-import engine.lighting.PointLight;
-import engine.model.Model;
-import engine.model.ModelBehaviourTickInput;
-import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
-import engine.scene.Scene;
+import Kurama.Effects.Material;
+import Kurama.Effects.ShadowMap;
+import Kurama.Effects.Texture;
+import Kurama.GUI.Button;
+import Kurama.Math.Matrix;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
+import Kurama.Mesh.Mesh;
+import Kurama.camera.Camera;
+import Kurama.display.Display;
+import Kurama.display.DisplayLWJGL;
+import Kurama.game.Game;
+import Kurama.geometry.MeshBuilder;
+import Kurama.geometry.MeshBuilderHints;
+import Kurama.inputs.InputLWJGL;
+import Kurama.lighting.DirectionalLight;
+import Kurama.lighting.PointLight;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviourTickInput;
+import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
+import Kurama.scene.Scene;
 
 import java.util.*;
 
@@ -536,7 +536,7 @@ public class Simulation extends Game {
         }
         else {
             calculate3DCamMovement();
-            scene.camera.tick();
+            scene.camera.tick(timeDelta);
         }
     }
 

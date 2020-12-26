@@ -1,10 +1,10 @@
 package ENED_Simulation;
 
-import engine.Mesh.Mesh;
-import engine.Math.Matrix;
-import engine.Math.Vector;
-import engine.game.Game;
-import engine.model.Model;
+import Kurama.Mesh.Mesh;
+import Kurama.Math.Matrix;
+import Kurama.Math.Vector;
+import Kurama.game.Game;
+import Kurama.model.Model;
 
 public class Box extends Model {
 

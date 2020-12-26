@@ -1,8 +1,8 @@
 package ENED_Simulation;
 
-import engine.GUI.Text;
-import engine.game.Game;
-import engine.model.HUD;
+import Kurama.GUI.Text;
+import Kurama.game.Game;
+import Kurama.model.HUD;
 
 import java.awt.*;
 

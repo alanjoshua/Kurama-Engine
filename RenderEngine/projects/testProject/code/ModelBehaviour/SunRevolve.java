@@ -1,12 +1,12 @@
 package ModelBehaviour;
 
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.lighting.DirectionalLight;
-import engine.model.Model;
-import engine.model.ModelBehaviour;
-import engine.model.ModelBehaviourTickInput;
-import engine.scene.Scene;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
+import Kurama.lighting.DirectionalLight;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviour;
+import Kurama.model.ModelBehaviourTickInput;
+import Kurama.scene.Scene;
 
 public class SunRevolve extends ModelBehaviour {
 

@@ -1,10 +1,10 @@
 package ModelBehaviour;
 
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.model.ModelBehaviour;
-import engine.model.Model;
-import engine.model.ModelBehaviourTickInput;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
+import Kurama.model.ModelBehaviour;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviourTickInput;
 
 public class rotate extends ModelBehaviour {
     @Override

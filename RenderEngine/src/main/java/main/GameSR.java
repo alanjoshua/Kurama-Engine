@@ -1,21 +1,21 @@
 package main;
 
-import engine.GUI.Button;
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.camera.Camera;
-import engine.display.Display;
-import engine.display.DisplaySR;
-import engine.game.Game;
-import engine.geometry.MeshBuilder;
-import engine.geometry.MeshBuilderHints;
-import engine.inputs.Input;
-import engine.inputs.InputSR;
-import engine.model.Model;
-import engine.model.ModelBehaviourTickInput;
-import engine.renderingEngine.RenderingEngine;
-import engine.renderingEngine.RenderingEngine.ProjectionMode;
-import engine.renderingEngine.RenderingEngineSR;
+import Kurama.GUI.Button;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
+import Kurama.camera.Camera;
+import Kurama.display.Display;
+import Kurama.display.DisplaySR;
+import Kurama.game.Game;
+import Kurama.geometry.MeshBuilder;
+import Kurama.geometry.MeshBuilderHints;
+import Kurama.inputs.Input;
+import Kurama.inputs.InputSR;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviourTickInput;
+import Kurama.renderingEngine.RenderingEngine;
+import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
+import Kurama.renderingEngine.RenderingEngineSR;
 
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -43,7 +43,7 @@ public class GameSR extends Game implements Runnable {
 	protected boolean isGameRunning = true;
 
 	protected List<Model> modelsOnlyOutline;
-	protected List<engine.GUI.Button> pauseButtons;
+	protected List<Kurama.GUI.Button> pauseButtons;
 
 	protected Button EXIT;
 	protected Button FULLSCREEN;
@@ -172,7 +172,7 @@ public class GameSR extends Game implements Runnable {
 		int height = 100;
 
 //		Making Exit button
-		EXIT = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+		EXIT = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
 		EXIT.text = "EXIT";
 
 		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
@@ -195,7 +195,7 @@ public class GameSR extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-		FULLSCREEN = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+		FULLSCREEN = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
 		FULLSCREEN.text = "FULLSCREEN";
 
 		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
@@ -218,7 +218,7 @@ public class GameSR extends Game implements Runnable {
 		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-		WINDOWED = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+		WINDOWED = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
 		WINDOWED.text = "WINDOWED MODE";
 
 		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
@@ -269,7 +269,7 @@ public class GameSR extends Game implements Runnable {
 		}
 		else {
 			inputTick();
-			cam.tick();
+			cam.tick(timeDelta);
 		}
 		
 	}
@@ -408,7 +408,7 @@ public class GameSR extends Game implements Runnable {
 			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
 
 			if(!this.isGameRunning) {
-				for(engine.GUI.Button b:pauseButtons) {
+				for(Kurama.GUI.Button b:pauseButtons) {
 					b.render(g);
 				}
 			}

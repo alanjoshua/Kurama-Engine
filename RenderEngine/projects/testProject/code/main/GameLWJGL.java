@@ -1,43 +1,46 @@
 package main;
 
 import HUD.TestHUD;
+import Kurama.audio.SoundBuffer;
+import Kurama.audio.SoundManager;
+import Kurama.audio.SoundSource;
 import ModelBehaviour.AttachToPlayer;
 import ModelBehaviour.SunRevolve;
-import engine.Effects.Fog;
-import engine.Effects.Material;
-import engine.Effects.ShadowMap;
-import engine.Effects.Texture;
-import engine.Math.Matrix;
-import engine.Math.Quaternion;
-import engine.Math.Vector;
-import engine.Mesh.Mesh;
-import engine.Terrain.Terrain;
-import engine.camera.Camera;
-import engine.display.Display;
-import engine.display.DisplayLWJGL;
-import engine.game.Game;
-import engine.geometry.MD5.MD5AnimModel;
-import engine.geometry.MD5.MD5Model;
-import engine.geometry.MD5.MD5Utils;
-import engine.geometry.MeshBuilder;
-import engine.geometry.MeshBuilderHints;
-import engine.geometry.TerrainUtils;
-import engine.inputs.Input;
-import engine.inputs.InputLWJGL;
-import engine.lighting.DirectionalLight;
-import engine.lighting.PointLight;
-import engine.lighting.SpotLight;
-import engine.model.AnimatedModel;
-import engine.model.Model;
-import engine.model.ModelBehaviourTickInput;
-import engine.particle.FlowParticleGenerator;
-import engine.particle.Particle;
-import engine.particle.ParticleGeneratorTickInput;
-import engine.renderingEngine.RenderingEngineGL;
-import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
-import engine.scene.Scene;
-import engine.utils.Logger;
-import engine.utils.Utils;
+import Kurama.Effects.Fog;
+import Kurama.Effects.Material;
+import Kurama.Effects.ShadowMap;
+import Kurama.Effects.Texture;
+import Kurama.Math.Matrix;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
+import Kurama.Mesh.Mesh;
+import Kurama.Terrain.Terrain;
+import Kurama.camera.Camera;
+import Kurama.display.Display;
+import Kurama.display.DisplayLWJGL;
+import Kurama.game.Game;
+import Kurama.geometry.MD5.MD5AnimModel;
+import Kurama.geometry.MD5.MD5Model;
+import Kurama.geometry.MD5.MD5Utils;
+import Kurama.geometry.MeshBuilder;
+import Kurama.geometry.MeshBuilderHints;
+import Kurama.geometry.TerrainUtils;
+import Kurama.inputs.Input;
+import Kurama.inputs.InputLWJGL;
+import Kurama.lighting.DirectionalLight;
+import Kurama.lighting.PointLight;
+import Kurama.lighting.SpotLight;
+import Kurama.model.AnimatedModel;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviourTickInput;
+import Kurama.particle.FlowParticleGenerator;
+import Kurama.particle.Particle;
+import Kurama.particle.ParticleGeneratorTickInput;
+import Kurama.renderingEngine.RenderingEngineGL;
+import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
+import Kurama.scene.Scene;
+import Kurama.utils.Logger;
+import Kurama.utils.Utils;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -62,10 +65,10 @@ public class GameLWJGL extends Game implements Runnable {
     protected int lookAtIndex = 1;
     protected boolean isGameRunning = true;
 
-    protected List<engine.GUI.Button> pauseButtons = new ArrayList<>();
-    protected engine.GUI.Button EXIT;
-    protected engine.GUI.Button FULLSCREEN;
-    protected engine.GUI.Button WINDOWED;
+    protected List<Kurama.GUI.Button> pauseButtons = new ArrayList<>();
+    protected Kurama.GUI.Button EXIT;
+    protected Kurama.GUI.Button FULLSCREEN;
+    protected Kurama.GUI.Button WINDOWED;
 
     protected Vector mouseDelta;
     protected Vector mousePos;
@@ -98,6 +101,23 @@ public class GameLWJGL extends Game implements Runnable {
         });
 
         input = new InputLWJGL(this);
+
+        try {
+            var soundManager = new SoundManager();
+            soundManager.init();
+            scene.soundManager = soundManager;
+
+            SoundBuffer test = new SoundBuffer("madaraBuffer", "res/sampleAudio/madaraFirestyle.ogg");
+            SoundSource madara = new SoundSource("madaraSound", true, false);
+            madara.setBuffer(test);
+            madara.setPosition(new Vector(0,0,0));
+            madara.setSpeed(new Vector(0,0,0));
+            madara.setGain(10);
+            soundManager.addSoundSource(madara);
+        }catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         initScene();
 //        scene = SceneUtils.loadScene(this, "projects/testProject");
@@ -229,7 +249,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         long seed = Utils.generateSeed("UchihaConan");
         System.out.println("seed: "+seed);
-        float[][] heightMap = engine.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
+        float[][] heightMap = Kurama.geometry.Utils.generateRandomHeightMap(boxCount,boxCount,5,0.5f, 0.01f,seed);
         hints.isInstanced = true;
         hints.numInstances = 600;
         Mesh cubeMesh = scene.loadMesh("res/misc/cube.obj", "cube_mesh", hints);
@@ -306,7 +326,10 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setScale(5f);
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-//
+
+        scene.soundManager.soundSourceMap.get("madaraSound").attachToModel(madara_model);
+        scene.soundManager.soundSourceMap.get("madaraSound").play();
+
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
         partHints.shouldGenerateTangentBiTangent = false;
@@ -337,10 +360,10 @@ public class GameLWJGL extends Game implements Runnable {
         int height = 100;
 
         //		Making Exit button
-        EXIT = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+        EXIT = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
         EXIT.text = "EXIT";
 
-        engine.GUI.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -362,10 +385,10 @@ public class GameLWJGL extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-        FULLSCREEN = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+        FULLSCREEN = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
         FULLSCREEN.text = "FULLSCREEN";
 
-        engine.GUI.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -385,10 +408,10 @@ public class GameLWJGL extends Game implements Runnable {
         FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-        WINDOWED = new engine.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+        WINDOWED = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
         WINDOWED.text = "WINDOWED MODE";
 
-        engine.GUI.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -445,6 +468,9 @@ public class GameLWJGL extends Game implements Runnable {
 
             ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
             scene.particleGenerators.forEach(gen -> gen.tick(param));
+
+            scene.soundManager.tick(scene.camera, timeDelta);
+
         }
 
         if(!isGameRunning) {
@@ -452,23 +478,23 @@ public class GameLWJGL extends Game implements Runnable {
         }
         else {
             calculate3DCamMovement();
-            scene.camera.tick();
+            scene.camera.tick(timeDelta);
         }
 
     }
 
     public void tickInput() {
 
-        Vector posDelta = new Vector(3,0);
+        Vector velocity = new Vector(3,0);
 
         if(input.keyDown(input.W)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
             Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            posDelta = posDelta.add((z.scalarMul(-cameraSpeed)));
+            velocity = velocity.add((z.scalarMul(-cameraSpeed)));
 //            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
@@ -483,7 +509,7 @@ public class GameLWJGL extends Game implements Runnable {
                 if(monster == null) {
                     break;
                 }
-                monster.cycleFrame(0.5f * (counter+1));
+                monster.cycleFrame(20f * (counter+1) * timeDelta);
                 monster.generateCurrentSkeleton(monster.currentFrame);
                 counter++;
             }
@@ -496,68 +522,59 @@ public class GameLWJGL extends Game implements Runnable {
                 if(monster == null) {
                     break;
                 }
-                monster.cycleFrame(-0.5f * (counter+1));
+                monster.cycleFrame(-20f * (counter+1) * timeDelta);
                 monster.generateCurrentSkeleton(monster.currentFrame);
                 counter++;
             }
         }
 
         if(input.keyDown(input.S)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
             Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            posDelta = posDelta.add(z.scalarMul(cameraSpeed));
+            velocity = velocity.add(z.scalarMul(cameraSpeed));
 //            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.A)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
             Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            posDelta = posDelta.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
 //            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.D)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
             Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            posDelta = posDelta.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
 //            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.SPACE)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            posDelta = posDelta.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
 //            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.LEFT_SHIFT)) {
-            float cameraSpeed = speed * timeDelta * speedMultiplier;
+            float cameraSpeed = speed * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            posDelta = posDelta.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
 //            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(input.ESCAPE)) {
             isGameRunning = !isGameRunning;
-        }
-
-        if(input.keyDown(input.UP_ARROW)) {
-            DirectionalLight light = scene.directionalLights.get(0);
-            scene.directionalLights.get(0).setPos(light.getPos().add(new Vector(0,timeDelta* 3,0)));
-        }
-        if(input.keyDown(input.DOWN_ARROW)) {
-            var light = scene.directionalLights.get(0);
-            scene.directionalLights.get(0).setPos(light.getPos().sub(new Vector(0,timeDelta* 3,0)));
         }
 
         if(isGameRunning) {
@@ -586,8 +603,10 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
-        Vector newPos = scene.camera.getPos().add(posDelta);
-        scene.camera.setPos(newPos);
+//        Vector newPos = scene.camera.getPos().add(posDelta);
+//        scene.camera.setPos(newPos);
+        scene.camera.velocity = velocity;
+
 //        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
 //        if(terrainCollisionData.isValid) {
 //            this.cam.setPos(terrainCollisionData.validPosition);

@@ -1,12 +1,12 @@
 package HUD;
 
-import engine.GUI.Text;
-import engine.Math.Vector;
-import engine.Mesh.Mesh;
-import engine.font.FontTexture;
-import engine.game.Game;
-import engine.model.HUD;
-import engine.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
+import Kurama.GUI.Text;
+import Kurama.Math.Vector;
+import Kurama.Mesh.Mesh;
+import Kurama.font.FontTexture;
+import Kurama.game.Game;
+import Kurama.model.HUD;
+import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 
 import java.awt.*;
 import java.util.Arrays;

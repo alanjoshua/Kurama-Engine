@@ -1,8 +1,8 @@
 package ModelBehaviour;
 
-import engine.model.Model;
-import engine.model.ModelBehaviour;
-import engine.model.ModelBehaviourTickInput;
+import Kurama.model.Model;
+import Kurama.model.ModelBehaviour;
+import Kurama.model.ModelBehaviourTickInput;
 
 public class AttachToPlayer extends ModelBehaviour {
 

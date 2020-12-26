@@ -1,10 +1,10 @@
 package main;
 
-import engine.Math.Vector;
-import engine.geometry.MeshBuilder;
-import engine.geometry.MeshBuilderHints;
-import engine.model.Model;
-import engine.renderingEngine.RenderingEngineSR;
+import Kurama.Math.Vector;
+import Kurama.geometry.MeshBuilder;
+import Kurama.geometry.MeshBuilderHints;
+import Kurama.model.Model;
+import Kurama.renderingEngine.RenderingEngineSR;
 
 import java.util.Random;
 

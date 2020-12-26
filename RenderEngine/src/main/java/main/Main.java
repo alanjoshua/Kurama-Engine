@@ -1,6 +1,6 @@
 package main;
 
-import engine.game.Game;
+import Kurama.game.Game;
 
 public class Main {
 	

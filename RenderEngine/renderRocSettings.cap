@@ -2,7 +2,7 @@
     "rdocCaptureSettings": 1,
     "settings": {
         "autoStart": false,
-        "commandLine": "-jar KuramaEngine.jar",
+        "commandLine": "-jar Kurama.jar",
         "environment": [
         ],
         "executable": "C:\\Program Files\\Java\\jdk-13.0.2\\bin\\javaw.exe",

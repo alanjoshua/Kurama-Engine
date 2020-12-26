@@ -1,7 +1,7 @@
 package ENED_Simulation;
 
-import engine.renderingEngine.RenderingEngineGL;
-import engine.game.Game;
+import Kurama.renderingEngine.RenderingEngineGL;
+import Kurama.game.Game;
 
 public class RenderingEngineSim extends RenderingEngineGL {
 
