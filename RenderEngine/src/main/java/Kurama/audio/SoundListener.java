@@ -27,7 +27,7 @@ public class SoundListener {
     public void setOrientation(Quaternion orientation) {
         var inverse = orientation.getInverse();
         Vector[] points = new Vector[2];
-        points[0] = new Vector(0,0,-1);
+        points[0] = new Vector(0,0,1);
         points[1] = new Vector(0, 1, 0);
         var res = inverse.rotatePoints(points);
         setOrientation(res[0], res[1]);
