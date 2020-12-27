@@ -30,6 +30,7 @@ public class Model {
 	public boolean shouldCastShadow = true;
 	public String identifier;
 	public boolean shouldRender = true;
+	public boolean isInsideFrustum = true;
 
 	public List<Mesh> meshes;
 	public Game game;

@@ -1,12 +1,14 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Effects.Material;
+import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Vertex;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
+import Kurama.model.Model;
 import Kurama.renderingEngine.RenderBlockInput;
 import Kurama.scene.Scene;
 import org.lwjgl.opengl.GL20;
@@ -15,7 +17,9 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11C.glBlendFunc;
@@ -46,6 +50,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static final int MATRIX_SIZE_FLOATS = 16;
     public static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES + (1*VECTOR4F_SIZE_BYTES);
     public static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS + (1*4);
+
+    public boolean performFrustumCulling = true;
+
+    public FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public DefaultRenderPipeline(Game game) {
         super(game);
@@ -87,6 +95,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     @Override
     public void render(Scene scene) {
+
+        if (performFrustumCulling) {
+            frustumIntersection.set(scene.camera.getPerspectiveProjectionMatrix().matMul(scene.camera.getWorldToCam()));
+            filter(scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), scene);
+        }
+
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         //        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
         sceneShaderBlock.render(new RenderBlockInput(scene, game));
@@ -100,6 +114,23 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         hudShaderBlock.render(new RenderBlockInput(scene, game));
 
+    }
+
+    public void filter(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {
+        for ( var meshID: mesh_model_map.keySet()) {
+            var mesh = scene.meshID_mesh_map.get(meshID);
+            var meshBoundingRadius = mesh.boundingRadius;
+
+            for (var modelID : mesh_model_map.get(meshID).keySet()) {
+                var model = scene.modelID_model_map.get(modelID);
+
+                if(model.shouldRender) {
+                    var radius = model.scale.getNorm() * meshBoundingRadius;
+                    model.isInsideFrustum = frustumIntersection.testSphere(model.pos, radius);
+                }
+
+            }
+        }
     }
 
     @Override

@@ -271,7 +271,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                 List<Model> models = new ArrayList<>();
                 for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                     Model model = scene.modelID_model_map.get(modelId);
-                    if(model.shouldRender) {
+                    if(model.shouldRender && model.isInsideFrustum) {
                         models.add(model);
                     }
                 }
@@ -439,7 +439,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                             var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow) {
+                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
                                 models.add(m);
                             }
                         }
@@ -558,7 +558,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
                             var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow) {
+                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
                                 models.add(m);
                             }
                         }

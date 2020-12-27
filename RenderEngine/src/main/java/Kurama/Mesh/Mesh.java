@@ -43,6 +43,7 @@ public class Mesh {
     public MeshBuilderHints hints;
     public boolean isModified = false;
     public boolean isAnimatedSkeleton = false;
+    public float boundingRadius = 1;
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes, List<Material> materials,
                 String meshLocation, MeshBuilderHints hints) {
