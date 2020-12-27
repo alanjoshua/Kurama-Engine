@@ -87,7 +87,7 @@ public class ParticleShaderBlock extends RenderBlock {
 
         SortedMap<Float, List> sorted = new TreeMap<>(Collections.reverseOrder());
         generator.particles.stream().forEach(p -> {
-            if(p.shouldRender) {
+            if(p.shouldRender && p.isInsideFrustum) {
 
                 var objectToCam = worldToCam.matMul(p.getObjectToWorldMatrix());
                 var trans = objectToCam.matMul(p.pos.append(1)).toVector();
@@ -107,7 +107,8 @@ public class ParticleShaderBlock extends RenderBlock {
             sortedPartices.add((Model)m.get(0));
             sorted_objectToCam.add((Matrix)m.get(1));
         });
-        generator.particles = new ArrayList<>(sortedPartices);
+
+        var sortedParticles_list = new ArrayList<>(sortedPartices);
 
         for(int i = 0;i < baseParticle.meshes.size();i++) {
             var mesh = baseParticle.meshes.get(i);
@@ -144,7 +145,7 @@ public class ParticleShaderBlock extends RenderBlock {
             ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
 
             int modelsProcessedSoFar = 0;
-            var chunks = InstancedMesh.getRenderChunks(generator.particles, inst_mesh.instanceChunkSize);
+            var chunks = InstancedMesh.getRenderChunks(sortedParticles_list, inst_mesh.instanceChunkSize);
             for(var chunk: chunks) {
                 renderChunk(chunk, inst_mesh, sorted_objectToCam, modelsProcessedSoFar);
                 modelsProcessedSoFar+=chunk.size();

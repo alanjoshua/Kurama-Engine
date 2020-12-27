@@ -9,6 +9,7 @@ import Kurama.Mesh.Vertex;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
 import Kurama.model.Model;
+import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.RenderBlockInput;
 import Kurama.scene.Scene;
 import org.lwjgl.opengl.GL20;
@@ -98,7 +99,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
         if (performFrustumCulling) {
             frustumIntersection.set(scene.camera.getPerspectiveProjectionMatrix().matMul(scene.camera.getWorldToCam()));
-            filter(scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), scene);
+            frustumCullModels(scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), scene);
+            frustumCullParticles(scene.particleGenerators);
         }
 
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -116,7 +118,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     }
 
-    public void filter(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {
+    public void frustumCullModels(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {
         for ( var meshID: mesh_model_map.keySet()) {
             var mesh = scene.meshID_mesh_map.get(meshID);
             var meshBoundingRadius = mesh.boundingRadius;
@@ -129,6 +131,14 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
                     model.isInsideFrustum = frustumIntersection.testSphere(model.pos, radius);
                 }
 
+            }
+        }
+    }
+
+    public void frustumCullParticles(List<ParticleGenerator> generators) {
+        for(var gen: generators) {
+            for(var part: gen.particles) {
+                part.isInsideFrustum = frustumIntersection.testPoint(part.pos);
             }
         }
     }

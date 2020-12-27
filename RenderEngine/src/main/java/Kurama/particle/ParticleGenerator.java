@@ -10,6 +10,7 @@ public abstract class ParticleGenerator {
     public List<Model> particles = new ArrayList<>();
     public Particle baseParticle = null;
     public String ID;
+    public boolean isInsideFrustum = true;
 
     public ParticleGenerator(String id) {
         this.ID = id;

@@ -87,6 +87,19 @@ public class FrustumIntersection {
                 pzX * x + pzY * y + pzZ * z + pzW >= -r;
     }
 
+    public boolean testPoint(Vector point) {
+        return testPoint(point.get(0), point.get(1), point.get(2));
+    }
+
+    public boolean testPoint(float x, float y, float z) {
+        return nxX * x + nxY * y + nxZ * z + nxW >= 0 &&
+                pxX * x + pxY * y + pxZ * z + pxW >= 0 &&
+                nyX * x + nyY * y + nyZ * z + nyW >= 0 &&
+                pyX * x + pyY * y + pyZ * z + pyW >= 0 &&
+                nzX * x + nzY * y + nzZ * z + nzW >= 0 &&
+                pzX * x + pzY * y + pzZ * z + pzW >= 0;
+    }
+
     public static float invsqrt(float r) {
         return 1.0f / (float) java.lang.Math.sqrt(r);
     }
