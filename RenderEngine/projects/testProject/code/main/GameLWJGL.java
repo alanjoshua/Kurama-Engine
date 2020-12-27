@@ -1,11 +1,6 @@
 package main;
 
 import HUD.TestHUD;
-import Kurama.audio.SoundBuffer;
-import Kurama.audio.SoundManager;
-import Kurama.audio.SoundSource;
-import ModelBehaviour.AttachToPlayer;
-import ModelBehaviour.SunRevolve;
 import Kurama.Effects.Fog;
 import Kurama.Effects.Material;
 import Kurama.Effects.ShadowMap;
@@ -15,6 +10,9 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Terrain.Terrain;
+import Kurama.audio.SoundBuffer;
+import Kurama.audio.SoundManager;
+import Kurama.audio.SoundSource;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -41,6 +39,8 @@ import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
+import ModelBehaviour.AttachToPlayer;
+import ModelBehaviour.SunRevolve;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -106,14 +106,8 @@ public class GameLWJGL extends Game implements Runnable {
             var soundManager = new SoundManager();
             soundManager.init();
             scene.soundManager = soundManager;
-
-            SoundBuffer test = new SoundBuffer("madaraBuffer", "res/sampleAudio/madaraFirestyle.ogg");
-            SoundSource madara = new SoundSource("madaraSound", true, false);
-            madara.setBuffer(test);
-            madara.setPosition(new Vector(0,0,0));
-            madara.setSpeed(new Vector(0,0,0));
-            madara.setGain(10);
-            soundManager.addSoundSource(madara);
+            SoundBuffer madaraSound = new SoundBuffer("madara", "res/sampleAudio/madaraFirestyle.ogg");
+            soundManager.addSoundBuffer(madaraSound);
         }catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -313,6 +307,14 @@ public class GameLWJGL extends Game implements Runnable {
             monster.setScale(0.1f);
             monster.setPos(new Vector(10 + (i*10), 30, 10));
             monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
+
+            SoundSource monsterSource = new SoundSource("monster_"+i, true, false);
+            monsterSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+            monsterSource.setGain(10);
+            monsterSource.attachToModel(monster);
+            monsterSource.play();
+            scene.soundManager.addSoundSource(monsterSource);
+
         }
         var madara = new MD5Model("res/madara/madara.md5mesh");
         hints.isInstanced = true;
@@ -327,8 +329,12 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
 
-        scene.soundManager.soundSourceMap.get("madaraSound").attachToModel(madara_model);
-        scene.soundManager.soundSourceMap.get("madaraSound").play();
+        SoundSource madaraSource = new SoundSource("madara", true, false);
+        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+        madaraSource.setGain(10);
+        madaraSource.attachToModel(madara_model);
+        madaraSource.play();
+        scene.soundManager.addSoundSource(madaraSource);
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;

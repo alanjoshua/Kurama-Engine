@@ -25,12 +25,12 @@ public class SoundListener {
     }
 
     public void setOrientation(Quaternion orientation) {
-        var inverse = orientation.getInverse();
-        Vector[] points = new Vector[2];
-        points[0] = new Vector(0,0,1);
-        points[1] = new Vector(0, 1, 0);
-        var res = inverse.rotatePoints(points);
-        setOrientation(res[0], res[1]);
+        var inverse = orientation.getInverse().getRotationMatrix();
+//        Vector[] points = new Vector[2];
+//        points[0] = new Vector(0,0,1);
+//        points[1] = new Vector(0, 1, 0);
+//        var res = inverse.rotatePoints(points);
+        setOrientation(inverse.getColumn(2), inverse.getColumn(1));
     }
 
     public void setOrientation(Vector at, Vector up) {

@@ -83,7 +83,6 @@ public class SoundManager {
 //    This assumes you are trying to add a unique buffer, so if the bufferID is already found in the buffer map,
 //    the new buffer would be given a unique ID and added as a unique entry into the map
     public void addSoundBuffer(SoundBuffer newBuffer) {
-
         if(newBuffer == null) {
             Logger.logError("null was attempted to be added as a sound buffer.");
             return;
@@ -103,6 +102,28 @@ public class SoundManager {
 
         SoundSourceTickInput sourceInput = new SoundSourceTickInput(tick, camera);
         soundSourceList.forEach(s -> s.tick(sourceInput));
+    }
+
+    public void cleanUp() {
+        for (SoundSource soundSource : soundSourceMap.values()) {
+            soundSource.cleanup();
+        }
+        soundSourceMap.clear();
+
+        for (SoundBuffer soundBuffer : soundBufferMap.values()) {
+            soundBuffer.cleanUp();
+        }
+        soundBufferMap.clear();
+
+        soundBufferList.clear();
+        soundSourceList.clear();
+
+        if (context != NULL) {
+            alcDestroyContext(context);
+        }
+        if (device != NULL) {
+            alcCloseDevice(device);
+        }
     }
 
 }

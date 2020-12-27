@@ -26,6 +26,7 @@ import java.util.*;
 
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
+import static org.lwjgl.openal.AL10.alDistanceModel;
 
 public class Scene {
 
@@ -309,10 +310,19 @@ public class Scene {
         this.skybox = skyblock;
     }
 
+    public void setAttenuationModel(int model) {
+        alDistanceModel(model);
+    }
+
     public void cleanUp() {
         for(Mesh m: meshID_mesh_map.values()) {
             m.cleanUp();
         }
+
+        if(soundManager != null) {
+            soundManager.cleanUp();
+        }
+
     }
 
     public Collection<Model> getModels() {
