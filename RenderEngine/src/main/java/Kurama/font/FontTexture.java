@@ -1,6 +1,6 @@
 package Kurama.font;
 
-import Kurama.Effects.Texture;
+import Kurama.Mesh.Texture;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

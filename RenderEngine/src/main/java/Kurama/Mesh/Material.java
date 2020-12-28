@@ -1,4 +1,4 @@
-package Kurama.Effects;
+package Kurama.Mesh;
 
 import Kurama.Math.Vector;
 import Kurama.utils.Utils;
@@ -9,7 +9,7 @@ public class Material {
 
     public static Vector DEFAULTAMBIENTCOLOR = new Vector(new float[]{1,1,1,1});
     public static Vector DEFAULTDIFFUSECOLOR = new Vector(new float[]{1f,1f,1f,1f});
-    public static Vector DEFAULTSPECULARCOLOR = new Vector(new float[]{1,1,1,1});
+    public static Vector DEFAULTSPECULARCOLOR = new Vector(new float[]{1f,1f,1f,1f});
     public static float DEFAULT_SPECULAR_POWER = 10f;
     public static float DEFAULT_REFLECTANCE = 1f;
     public static String DEFAULT_MATERIAL_NAME = "DEFAULT";

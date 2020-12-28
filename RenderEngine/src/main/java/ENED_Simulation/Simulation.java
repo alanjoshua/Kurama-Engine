@@ -1,8 +1,8 @@
 package ENED_Simulation;
 
-import Kurama.Effects.Material;
-import Kurama.Effects.ShadowMap;
-import Kurama.Effects.Texture;
+import Kurama.Mesh.Material;
+import Kurama.display.shadow.ShadowMap;
+import Kurama.Mesh.Texture;
 import Kurama.GUI.Button;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;

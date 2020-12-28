@@ -1,6 +1,5 @@
 package Kurama.Mesh;
 
-import Kurama.Effects.Material;
 import Kurama.Math.Vector;
 import Kurama.geometry.MeshBuilderHints;
 

@@ -1,4 +1,6 @@
-package Kurama.Effects;
+package Kurama.display.shadow;
+
+import Kurama.Mesh.Texture;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;

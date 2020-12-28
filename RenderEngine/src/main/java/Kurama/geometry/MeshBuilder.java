@@ -1,6 +1,6 @@
 package Kurama.geometry;
 
-import Kurama.Effects.Material;
+import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -11,7 +11,7 @@ import Kurama.Mesh.Vertex;
 import Kurama.misc_structures.LinkedList.CircularDoublyLinkedList;
 import Kurama.misc_structures.LinkedList.DoublyLinkedList;
 import Kurama.misc_structures.LinkedList.Node;
-import Kurama.Effects.Texture;
+import Kurama.Mesh.Texture;
 import Kurama.utils.Logger;
 
 import java.io.*;

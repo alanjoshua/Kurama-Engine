@@ -1,13 +1,14 @@
 package Kurama.scene;
 
 import Kurama.Effects.Fog;
-import Kurama.Effects.Material;
+import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.game.Game;
+import Kurama.geometry.Assimp;
 import Kurama.geometry.MD5.AnimationFrame;
 import Kurama.geometry.MeshBuilder;
 import Kurama.geometry.MeshBuilderHints;
@@ -123,35 +124,33 @@ public class Scene {
         log("Loading mesh "+meshID + " ...");
         Mesh newMesh = MeshBuilder.buildMesh(location, hints);
         log("Finished loading mesh");
-
-        log("Checking whether input meshID is unique...");
-        boolean idPresent = meshID_mesh_map.containsKey(meshID);
-        String id;
-
-        if (idPresent) {
-            log("ID not unique. Checking whether location already exists as an ID...");
-
-            String[] splits = location.split("/");
-            String fileName = splits[splits.length - 1].split(".")[0];
-            boolean locPresent = meshID_mesh_map.containsKey(fileName);
-
-            if (locPresent) {
-                log("Location already being used as ID. Asigning random ID...");
-                id = Utils.getUniqueID();
-            }
-            else {
-                id = fileName;
-            }
-        }
-        else {
-             id = meshID;
-        }
-
-        log("Assigned id: "+id);
-        newMesh.meshIdentifier = id;
-        meshID_mesh_map.put(id, newMesh);
-//        mesh_model_map.put(id, new HashMap<>());
+        addMesh(newMesh);
         return newMesh;
+    }
+
+    public List<Mesh> loadMeshesAssimp(String location, String textureDir, MeshBuilderHints hints) {
+        List<Mesh> meshes= null;
+        try {
+            meshes = Assimp.load(location, textureDir, Assimp.getFlags(hints));
+        }
+        catch (Exception e) {
+            Logger.logError("Unable to load meshes via assimp. Returning null...");
+            e.printStackTrace();
+            return null;
+        }
+        return meshes;
+    }
+
+    public List<Mesh> loadMeshesAssimp(String location, String textureDir) {
+        List<Mesh> meshes = null;
+        try {
+            meshes = Assimp.load(location, textureDir);
+        }
+        catch (Exception e) {
+            Logger.logError("Unable to load meshes via assimp. Returning null...");
+            return null;
+        }
+        return meshes;
     }
 
     public void removeModel(Model model) {

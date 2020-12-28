@@ -3,7 +3,7 @@ package Kurama.GUI;
 import Kurama.Mesh.Face;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Vertex;
-import Kurama.Effects.Material;
+import Kurama.Mesh.Material;
 import Kurama.Math.Vector;
 import Kurama.font.FontTexture;
 import Kurama.game.Game;

@@ -1,4 +1,4 @@
-package Kurama.Effects;
+package Kurama.Mesh;
 
 import org.lwjgl.system.MemoryStack;
 
@@ -128,9 +128,9 @@ public class Texture {
         return textureId;
     }
 
-    public void bind() {
-        glBindTexture(GL_TEXTURE_2D,id);
-    }
+//    public void bind() {
+//        glBindTexture(GL_TEXTURE_2D,id);
+//    }
 
     public void cleanUp() {
         glDeleteTextures(id);

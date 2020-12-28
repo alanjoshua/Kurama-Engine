@@ -1,9 +1,9 @@
 package Kurama.geometry;
 
 import Kurama.Effects.Fog;
-import Kurama.Effects.Material;
-import Kurama.Effects.ShadowMap;
-import Kurama.Effects.Texture;
+import Kurama.Mesh.Material;
+import Kurama.display.shadow.ShadowMap;
+import Kurama.Mesh.Texture;
 import Kurama.GUI.Text;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;

@@ -1,6 +1,6 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
-import Kurama.Effects.Material;
+import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;

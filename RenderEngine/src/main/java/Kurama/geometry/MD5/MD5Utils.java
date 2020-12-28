@@ -1,7 +1,7 @@
 package Kurama.geometry.MD5;
 
-import Kurama.Effects.Material;
-import Kurama.Effects.Texture;
+import Kurama.Mesh.Material;
+import Kurama.Mesh.Texture;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;

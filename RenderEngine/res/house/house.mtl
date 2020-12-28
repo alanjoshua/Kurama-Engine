@@ -1,0 +1,10 @@
+newmtl lambert13SG
+illum 4
+Kd 1 1 1
+Ka 1 1 1
+Tf 1.00 1.00 1.00
+map_Kd house_text.jpg
+bump house_text_bmap.jpg -bm 0.012
+Ni 1.00
+reflection 1.0
+ns 10.0

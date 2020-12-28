@@ -1,11 +1,10 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
-import Kurama.Effects.Material;
 import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;
+import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
-import Kurama.Mesh.Vertex;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
 import Kurama.model.Model;
@@ -266,12 +265,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             mesh.setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
             mesh.setAttribute(att, Mesh.JOINTINDICESPERVERT);
 
-            for(var f: mesh.faces) {
-                for(var vert: f.vertices) {
-                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
-                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
-                }
-            }
+//            for(var f: mesh.faces) {
+//                for(var vert: f.vertices) {
+//                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
+//                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
+//                }
+//            }
         }
 
         IntBuffer indicesBuffer = null;
@@ -413,12 +412,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             mesh.setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
             mesh.setAttribute(att, Mesh.JOINTINDICESPERVERT);
 
-            for(var f: mesh.faces) {
-                for(var vert: f.vertices) {
-                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
-                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
-                }
-            }
+//            for(var f: mesh.faces) {
+//                for(var vert: f.vertices) {
+//                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
+//                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
+//                }
+//            }
         }
 
         final int sizeOfFloat = Float.SIZE / Byte.SIZE;
