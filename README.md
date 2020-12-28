@@ -25,6 +25,7 @@
 * Modular rendering pipeline to allow users to stack and use multiple custom shaders with the engine. 
 * Skeletal animation support (MD5 format)
 * A simple particle system
+* Basic audio support using OpenAL
 
 <br>
 <br>
