@@ -359,11 +359,15 @@ public class GameLWJGL extends Game implements Runnable {
 
         Logger.log("loading assimp model");
         MeshBuilderHints houseHints = new MeshBuilderHints();
-        List<Mesh> houseMeshes = scene.loadMeshesAssimp("res/house/house.obj", "res/house", houseHints);
-        houseMeshes.forEach(m -> {
-            m.materials.get(0).normalMap = null;
-            scene.renderPipeline.initializeMesh(m);
-        });
+//        List<Mesh> houseMeshes = scene.loadMeshesAssimp("res/house/house.obj", "res/house", houseHints);
+//        houseMeshes.forEach(m -> {
+//            m.materials.get(0).normalMap = null;
+//            scene.renderPipeline.initializeMesh(m);
+//        });
+        var houseMeshes = scene.loadMesh("res/house/house.obj", "house", houseHints);
+//        houseMeshes.materials.get(0).normalMap = null;
+//        houseMeshes.materials.get(0).diffuseMap = null;
+        scene.renderPipeline.initializeMesh(houseMeshes);
         var house = scene.createModel(houseMeshes, "house", Arrays.asList(new String[] {DefaultRenderPipeline.sceneShaderBlockID}));
         house.setPos(new Vector(0, 45, 50));
     }

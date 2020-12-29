@@ -3,6 +3,7 @@ package Kurama.Mesh;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -70,6 +71,36 @@ public class Texture {
         }
        this.id = createTexture(buff);
        this.fileName = fileName;
+    }
+
+    public Texture(String fileName, float multiplier) {
+        ByteBuffer buff;
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            IntBuffer channels = stack.mallocInt(1);
+
+            buff = stbi_load
+                    (fileName,w,h,channels,4);
+
+            if(buff == null) {
+                throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+            }
+
+            FloatBuffer floatBuf = buff.asFloatBuffer();
+            floatBuf.rewind();
+            for(int i = 0;i < floatBuf.remaining(); i++) {
+                float curVal = floatBuf.get(i);
+                floatBuf.put(i, curVal*multiplier);
+            }
+//            floatBuf.rewind();
+
+            width = w.get();
+            height = h.get();
+        }
+        this.id = createTexture(buff);
+        this.fileName = fileName;
     }
 
     public Texture(ByteBuffer imageBuffer) {

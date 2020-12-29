@@ -448,8 +448,8 @@ public class MeshBuilder {
 		List<int[]> textureFaces = new ArrayList<>();
 		List<int[]> normalFaces = new ArrayList<>();
 		List<String[]> materialFaces = new ArrayList<>();
-		String currentMaterialName = Material.DEFAULT_MATERIAL_NAME;
-		matsList.put(currentMaterialName, Material.DEFAULT_MATERIAL);
+		String currentMaterialName = "DEFAULTKE_"+ Kurama.utils.Utils.getUniqueID();
+		matsList.put(currentMaterialName, new Material());
 		List<String> materialsBeingUsedNames = new ArrayList<>();
 		materialsBeingUsedNames.add(currentMaterialName);
 
@@ -477,17 +477,22 @@ public class MeshBuilder {
 							System.out.println("Searching for material file: "+location);
 							Map<String,Material> mats = parseMaterialLibrary(location,parentDir);
 							if(mats!=null) {
+
+								if(matsList.size() == 1 && currentMaterialName.split("_")[0].equalsIgnoreCase("defaultke")) {
+									matsList.remove(currentMaterialName);
+									materialsBeingUsedNames.remove(currentMaterialName);
+								}
+
 								for(String key:mats.keySet()) {
 									Material mat = mats.get(key);
 									matsList.put(key,mat);
-//									System.out.println(key);
-//									mat.ambientColor.display();
 								}
 							}
 						}
 					}
 
 					if(split[0].equalsIgnoreCase("usemtl")) {
+
 						Material temp = matsList.get(split[1]);
 						if(temp != null) {
 							currentMaterialName = split[1];
@@ -791,10 +796,6 @@ public class MeshBuilder {
 			while((tempLine = reader.readLine()) != null) {
 				String[] newSplit = tempLine.trim().split("\\s+");
 
-				if(currentMatName != null && currentMatName.equals("hud_text_mesh|fontText")) {
-					System.out.print("");
-				}
-
 //				First newMtl in library
 				if(newSplit[0].equalsIgnoreCase("newmtl") && currentMatName == null) {
 					currentMatName = newSplit[1];
@@ -842,6 +843,7 @@ public class MeshBuilder {
 					if(newSplit[0].equalsIgnoreCase("map_ka")) {
 						try {
 							currentMaterial.texture = new Texture(directoryOfResourceFiles + "" + newSplit[1]);
+							currentMaterial.diffuseMap = currentMaterial.texture;
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.texture = null;
@@ -873,7 +875,18 @@ public class MeshBuilder {
 
 					if(newSplit[0].equalsIgnoreCase("map_bump") || newSplit[0].equalsIgnoreCase("bump")) {
 						try {
-							currentMaterial.normalMap = new Texture(directoryOfResourceFiles+""+newSplit[1]);
+							float bm = 1;
+							if(newSplit.length > 3) {
+								if(newSplit[2].equalsIgnoreCase("-bm")) {
+									bm = Float.parseFloat(newSplit[3]);
+								}
+							}
+							if (bm == 1) {
+								currentMaterial.normalMap = new Texture(directoryOfResourceFiles + "" + newSplit[1]);
+							}else {
+								currentMaterial.normalMap = new Texture(directoryOfResourceFiles + "" + newSplit[1], bm);
+							}
+
 						}catch (Exception e) {
 							e.printStackTrace();
 							currentMaterial.normalMap = null;
