@@ -364,12 +364,25 @@ public class GameLWJGL extends Game implements Runnable {
 //            m.materials.get(0).normalMap = null;
 //            scene.renderPipeline.initializeMesh(m);
 //        });
-        var houseMeshes = scene.loadMesh("res/house/house.obj", "house", houseHints);
-//        houseMeshes.materials.get(0).normalMap = null;
-//        houseMeshes.materials.get(0).diffuseMap = null;
-        scene.renderPipeline.initializeMesh(houseMeshes);
-        var house = scene.createModel(houseMeshes, "house", Arrays.asList(new String[] {DefaultRenderPipeline.sceneShaderBlockID}));
-        house.setPos(new Vector(0, 45, 50));
+//        var houseMeshes = scene.loadMesh("res/house/house.obj", "house", houseHints);
+////        houseMeshes.materials.get(0).normalMap = null;
+////        houseMeshes.materials.get(0).diffuseMap = null;
+//        scene.renderPipeline.initializeMesh(houseMeshes);
+//        var house = scene.createModel(houseMeshes, "house", Arrays.asList(new String[] {DefaultRenderPipeline.sceneShaderBlockID}));
+//        house.setPos(new Vector(0, 45, 50));
+
+        try {
+            var anim = scene.createAnimatedModelAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
+                    "wolf", hints, new String[]{DefaultRenderPipeline.sceneShaderBlockID});
+            anim.meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
+            anim.pos = new Vector(30, 30, 30);
+            anim.scale = new Vector(20,20,20);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
     }
 
     public void initPauseScreen() {
@@ -528,9 +541,12 @@ public class GameLWJGL extends Game implements Runnable {
                     break;
                 }
                 monster.cycleFrame(20f * (counter+1) * timeDelta);
-                monster.generateCurrentSkeleton(monster.currentFrame);
+                monster.generateCurrentSkeleton(monster.currentAnimation.currentFrame);
                 counter++;
             }
+            var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
+            wolf.cycleFrame(20f * timeDelta);
+            wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
         }
 
         if(input.keyDown(input.DOWN_ARROW)) {
@@ -541,9 +557,12 @@ public class GameLWJGL extends Game implements Runnable {
                     break;
                 }
                 monster.cycleFrame(-20f * (counter+1) * timeDelta);
-                monster.generateCurrentSkeleton(monster.currentFrame);
+                monster.generateCurrentSkeleton(monster.currentAnimation.currentFrame);
                 counter++;
             }
+            var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
+            wolf.cycleFrame(-20f * timeDelta);
+            wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
         }
 
         if(input.keyDown(input.S)) {

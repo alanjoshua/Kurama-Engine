@@ -25,11 +25,53 @@ public class Quaternion {
 		}
 	}
 
+	// Algorithm from https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+	public Quaternion(Matrix rot) {
+		float tr = rot.get(0,0) + rot.get(1,1) + rot.get(2,2);
+		float qw, qx, qy, qz;
+
+		if(tr > 0) {
+			float S = (float) (Math.sqrt(tr + 1) * 2);
+			qw = 0.25f * S;
+			qx = (rot.get(2,1) - rot.get(1,2)) / S;
+			qy = (rot.get(0,2) - rot.get(2,0)) / S;
+			qz = (rot.get(1,0) - rot.get(0,1)) / S;
+		}
+		else if((rot.get(0,0) > rot.get(1,1)) && (rot.get(0,0) > rot.get(2,2))) {
+			float S = (float) (Math.sqrt(1 + rot.get(0,0) - rot.get(1,1) - rot.get(2,2)) * 2);
+			qw = rot.get(2,1) - rot.get(1,2);
+			qx = 0.25f * S;
+			qy = (rot.get(0,1) + rot.get(1,0)) / S;
+			qz = (rot.get(0,2) + rot.get(2,0)) / S;
+		}
+		else if(rot.get(1,1) > rot.get(2,2)) {
+			float S = (float) (Math.sqrt(1 + rot.get(1,1) - rot.get(0,0) - rot.get(2,2)) * 2);
+			qw = rot.get(0,2) - rot.get(2,0);
+			qx = (rot.get(0,1) + rot.get(1,0)) / S;
+			qy = 0.25f * S;
+			qz = (rot.get(1,2) + rot.get(2,1)) / S;
+		}
+		else {
+			float S = (float) (Math.sqrt(1 + rot.get(2,2) - rot.get(0,0) - rot.get(1,1)) * 2);
+			qw = rot.get(1,0) - rot.get(0,1);
+			qx = (rot.get(0,2) + rot.get(2,0)) / S;
+			qy = (rot.get(1,2) + rot.get(2,1)) / S;
+			qz = 0.25f * S;
+		}
+
+		this.coordinate = new Vector(qw, qx, qy, qz);
+
+	}
+
 	public Quaternion(Quaternion copy) {
 		coordinate = new Vector(copy.coordinate);
 	}
 
-	public void normalise() {
+    public Quaternion(float w, float x, float y, float z) {
+		this.coordinate = new Vector(w, x, y, z);
+    }
+
+    public void normalise() {
 		this.coordinate = this.coordinate.normalise();
 	}
 

@@ -296,7 +296,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                         if(mesh.isAnimatedSkeleton) {
                             var anim = (AnimatedModel) m;
-                            for (int i = 0; i < anim.numJoints; i++) {
+                            for (int i = 0; i < anim.currentAnimation.numJoints; i++) {
                                 Matrix jointMat;
                                 jointMat = anim.currentJointTransformations.get(i);
 //                                }
@@ -360,7 +360,13 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                         Vector matsGlobalLoc = new Vector(4, 0);
                         for(int i = 0;i < model.materials.get(meshId).size();i++) {
-                            matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
+                            try {
+                                matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                                System.exit(1);
+                            }
                         }
 
 //                        Vector matsAtlas = new Vector(4, 0);
@@ -462,7 +468,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                                 if (mesh.isAnimatedSkeleton) {
                                     var anim = (AnimatedModel) m;
-                                    for (int j = 0; j < anim.numJoints; j++) {
+                                    for (int j = 0; j < anim.currentAnimation.numJoints; j++) {
                                         Matrix jointMat;
                                         jointMat = anim.currentJointTransformations.get(j);
 //                                }
@@ -581,7 +587,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                                 if (mesh.isAnimatedSkeleton) {
                                     var anim = (AnimatedModel) m;
-                                    for (int j = 0; j < anim.numJoints; j++) {
+                                    for (int j = 0; j < anim.currentAnimation.numJoints; j++) {
                                         Matrix jointMat;
                                         jointMat = anim.currentJointTransformations.get(j);
 //                                }

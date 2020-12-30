@@ -1,9 +1,9 @@
 package Kurama.shader;
 
 import Kurama.Effects.Fog;
-import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
+import Kurama.Mesh.Material;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;

@@ -148,6 +148,29 @@ public class Matrix {
 		return new Matrix(res);
 	}
 
+	public Matrix getSubMatrix(int startRow, int startCol, int endRow, int endCol) {
+		try {
+
+			if (startRow < 0 || endRow > (rows - 1) || startCol < 0 || endCol > (cols - 1)) {
+				throw new Exception("Index positions not valid. Returning null");
+			}
+
+			var newData = new float[endRow-startRow + 1][endCol-startCol + 1];
+			for(int i = startRow; i <= endRow; i++) {
+				for(int j = startCol; j <= endCol; j++) {
+					newData[i-startRow][j-startCol] = data[i][j];
+				}
+			}
+
+			return new Matrix(newData);
+
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public static Matrix getDiagonalMatrix(Vector v) {
 		float[][] res = new float[v.getNumberOfDimensions()][v.getNumberOfDimensions()];
 		for (int i = 0; i < res.length; i++) {

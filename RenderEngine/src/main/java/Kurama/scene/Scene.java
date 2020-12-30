@@ -8,7 +8,8 @@ import Kurama.Mesh.Mesh;
 import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.game.Game;
-import Kurama.geometry.Assimp;
+import Kurama.geometry.assimp.AssimpAnimLoader;
+import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.geometry.MD5.AnimationFrame;
 import Kurama.geometry.MeshBuilder;
 import Kurama.geometry.MeshBuilderHints;
@@ -131,7 +132,7 @@ public class Scene {
     public List<Mesh> loadMeshesAssimp(String location, String textureDir, MeshBuilderHints hints) {
         List<Mesh> meshes= null;
         try {
-            meshes = Assimp.load(location, textureDir, Assimp.getFlags(hints));
+            meshes = AssimpStaticLoader.load(location, textureDir, AssimpStaticLoader.getFlags(hints));
         }
         catch (Exception e) {
             Logger.logError("Unable to load meshes via assimp. Returning null...");
@@ -141,10 +142,23 @@ public class Scene {
         return meshes;
     }
 
+    public AnimatedModel createAnimatedModelAssimp(String location, String textureDir, String ID, MeshBuilderHints hints, String[] shaderIds) {
+        try {
+            var model = AssimpAnimLoader.load(game, location, textureDir, AssimpAnimLoader.getFlags(hints));
+            model.identifier = ID;
+            addModel(model, Arrays.asList(shaderIds));
+            return model;
+        }catch (Exception e) {
+            Logger.logError("Unable to load animated model via assimp. Returning null...");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public List<Mesh> loadMeshesAssimp(String location, String textureDir) {
         List<Mesh> meshes = null;
         try {
-            meshes = Assimp.load(location, textureDir);
+            meshes = AssimpStaticLoader.load(location, textureDir);
         }
         catch (Exception e) {
             Logger.logError("Unable to load meshes via assimp. Returning null...");
