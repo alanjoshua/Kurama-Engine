@@ -2,7 +2,7 @@ package Kurama.model;
 
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
-import Kurama.Math.Vector;
+import Kurama.Math.Transformation;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.Animation;
@@ -75,8 +75,10 @@ public class AnimatedModel extends Model {
 
             var int_pos = joint1.pos.add(joint2.pos.sub(joint1.pos).scalarMul(inter));
             var int_orient = Quaternion.slerp(joint1.orient, joint2.orient, inter);
+            var int_scale = joint1.scale.add(joint2.scale.sub(joint1.scale).scalarMul(inter));
 
-            var localMat = int_orient.getRotationMatrix().addColumn(int_pos).addRow(new Vector(0,0,0,1));
+            var trans = new Transformation(int_orient, int_pos, int_scale);
+            var localMat = trans.getTransformationMatrix();
             results.add(localMat);
         }
         return results;
