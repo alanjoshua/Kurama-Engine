@@ -356,7 +356,6 @@ public class GameLWJGL extends Game implements Runnable {
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
         Logger.log("loading assimp model");
-        MeshBuilderHints houseHints = new MeshBuilderHints();
 //        List<Mesh> houseMeshes = scene.loadMeshesAssimp("res/house/house.obj", "res/house", houseHints);
 //        houseMeshes.forEach(m -> {
 //            m.materials.get(0).normalMap = null;
@@ -370,6 +369,9 @@ public class GameLWJGL extends Game implements Runnable {
 //        house.setPos(new Vector(0, 45, 50));
 
         try {
+            MeshBuilderHints houseHints = new MeshBuilderHints();
+            houseHints.isInstanced = false;
+            houseHints.numInstances = 1;
             var anim = scene.createAnimatedModelAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
                     "wolf", houseHints, new String[]{DefaultRenderPipeline.sceneShaderBlockID});
             anim.meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
