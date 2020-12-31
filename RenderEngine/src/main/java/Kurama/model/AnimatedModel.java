@@ -81,12 +81,18 @@ public class AnimatedModel extends Model {
             var localMat = int_orient.getRotationMatrix().addColumn(int_pos).addRow(new Vector(0,0,0,1));
             Matrix jointMat;
             if(jointUnbindMatrices != null) {
+//                jointMat = localMat;
+//                Logger.log("inverse mats found");
                 jointMat = localMat.matMul(jointUnbindMatrices.get(i));
             }
             else {
                 jointMat = localMat;
             }
             results.add(jointMat);
+//            if(i == numJoints-1) {
+//                Logger.log("here");
+//            }
+//            results.add(Matrix.getIdentityMatrix(4));
         }
         return results;
     }

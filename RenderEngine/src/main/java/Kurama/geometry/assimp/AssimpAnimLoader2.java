@@ -17,64 +17,12 @@ import Kurama.utils.Utils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static org.lwjgl.assimp.Assimp.*;
 
-//class Transformation {
-//
-//    public Quaternion orientation;
-//    public Vector pos;
-//    public Vector scale;
-//
-//    public Transformation(Quaternion orientation, Vector pos) {
-//        this(orientation, pos, new Vector(1,1,1));
-//    }
-//
-//    public Transformation(Quaternion orientation, Vector pos, Vector scale) {
-//        this.orientation = orientation;
-//        this.scale = scale;
-//        this.pos = pos;
-//    }
-//
-//    public Transformation(Matrix transformation) {
-//        this.pos = transformation.getColumn(3).removeDimensionFromVec(3);
-//
-//        var rotScaleMatrix = transformation.getSubMatrix(0,0,2,2);
-//
-//        List<Vector> rotCols = new ArrayList<>();
-//        var scale = new Vector(1,1,1);
-//        for(int i = 0;i < 3;i++) {
-//            var v = rotScaleMatrix.getColumn(i);
-//            scale.setDataElement(i, v.getNorm());
-//            v.normalise();
-//            rotCols.add(v);
-//        }
-//
-//        var rotMatrix = new Matrix(rotCols);
-//        this.orientation = new Quaternion(rotMatrix);
-//        this.orientation.normalise();
-//        this.scale = scale;
-//    }
-//
-//    public Matrix getTransformationMatrix() {
-//        Matrix rotationMatrix = this.orientation.getRotationMatrix();
-//        Matrix scalingMatrix = Matrix.getDiagonalMatrix(scale);
-//        Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-//
-//        Matrix transformationMatrix = rotScalMatrix.addColumn(this.pos);
-//        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
-//
-//        return transformationMatrix;
-//    }
-//
-//}
 
-public class AssimpAnimLoader {
+public class AssimpAnimLoader2 {
 
     public static AnimatedModel load(Game game, String resourcePath, String texturesDir) throws Exception {
         return load(game, resourcePath, texturesDir, aiProcess_JoinIdenticalVertices | aiProcess_Triangulate |
@@ -98,7 +46,8 @@ public class AssimpAnimLoader {
             materials.add(mat);
         }
 
-        List<Bone> boneList = new ArrayList<>();
+        Map<String, Bone> boneList = new HashMap<>();  //Map of bones with inverse bind transforms
+
         int numMeshes = aiScene.mNumMeshes();
         PointerBuffer aiMeshes = aiScene.mMeshes();
         List<Mesh> meshes = new ArrayList<>();
@@ -110,29 +59,10 @@ public class AssimpAnimLoader {
             meshes.add(mesh);
         }
 
-        List<Matrix> invmatrices = getInvJointMatrices(boneList);
+        Node root = buildNodeHierarchy(aiScene.mRootNode(), null);
+        List<Matrix> unbindMatrices = getUnbindMatrices(boneList);
+        Matrix rootGlobalInverse = toMatrix(aiScene.mRootNode().mTransformation()).getInverse();
 
-        Node rootNode = buildNodesTree(aiScene.mRootNode(), null);
-        var globalInverseTransformation = getTransformation(aiScene.mRootNode().mTransformation()).getTransformationMatrix().getInverse();
-        Map<String, Animation> animations = processAnimations(aiScene, boneList, rootNode, globalInverseTransformation, invmatrices);
-
-        String key1 = (String) animations.keySet().toArray()[0];
-
-        AnimatedModel model = new AnimatedModel(game, meshes, animations, animations.get(key1), Utils.getUniqueID());
-        return model;
-    }
-
-    public static List<Matrix> getInvJointMatrices(List<Bone> boneList) {
-        List<Matrix> results = new ArrayList<>(boneList.size());
-        for(var bone: boneList) {
-//            var mat = joint.orient.getRotationMatrix().addColumn(joint.pos).addRow(new Vector(0, 0, 0, 1));
-            results.add(bone.unbindMatrix);
-        }
-        return results;
-    }
-
-    public static Map<String, Animation> processAnimations(AIScene aiScene, List<Bone> boneList, Node root,
-                                                           Matrix globalInverseTransformation, List<Matrix> invMatrices) {
         Map<String, Animation> animations = new HashMap<>();
 
         int numAnimations = aiScene.mNumAnimations();
@@ -140,71 +70,85 @@ public class AssimpAnimLoader {
 
         for(int i = 0;i < numAnimations; i++) {
             AIAnimation aiAnimation = AIAnimation.create(aiAnimations.get(i));
-            int maxFrames = calcAnimationMaxFrames(aiAnimation);
-
-            List<AnimationFrame> frames = new ArrayList<>();
-            var animation = new Animation(aiAnimation.mName().dataString(), frames, boneList.size(),
-                    invMatrices, (float) (maxFrames/aiAnimation.mDuration()));
-            animations.put(animation.name, animation);
-
-            for(int j = 0;j < maxFrames; j++) {
-                AnimationFrame animatedFrame = new AnimationFrame(boneList.size());
-                buildFrameMatrices(aiAnimation, boneList, animatedFrame, j, root,
-                        new Transformation(root.orientation, root.pos).getTransformationMatrix(),
-                        globalInverseTransformation);
-                frames.add(animatedFrame);
-            }
+            Animation anim = createAnimation(aiAnimation, root, boneList, null, rootGlobalInverse);
+            animations.put(aiAnimation.mName().dataString(), anim);
         }
 
-        return animations;
+        String key1 = (String) animations.keySet().toArray()[0];
+        AnimatedModel model = new AnimatedModel(game, meshes, animations, animations.get(key1), Utils.getUniqueID());
+        return model;
     }
 
-    public static void buildFrameMatrices(AIAnimation aiAnimation, List<Bone> boneList, AnimationFrame animatedFrame,
-                                          int frame, Node node, Matrix parentTransform, Matrix globalInverseTransformation) {
+    public static List<Matrix> getUnbindMatrices(Map<String, Bone> boneMap) throws Exception {
+        List<Matrix> results = new ArrayList<>(boneMap.size());
 
-        String nodeName = node.name;
-        AINodeAnim aiNodeAnim = findAIAnimNode(aiAnimation, nodeName);
-        var nodeTransform = new Transformation(node.orientation, node.pos).getTransformationMatrix();
-        if(aiNodeAnim != null) {
-            nodeTransform = buildNodeTransformationMatrix(aiNodeAnim, frame).getTransformationMatrix();
-        }
-        var nodeGlobalTransform = parentTransform.matMul(nodeTransform);
+        for(int i = 0;i < boneMap.size();i++) {
+            Bone reqBone = null;
 
-        List<Bone> affectedBones = boneList.stream().filter( b-> b.boneName.equals(nodeName)).collect(Collectors.toList());
-        for(Bone bone: affectedBones) {
+            for(var bone: boneMap.values()) {
+                if(bone.boneId == i) {
+                    reqBone = bone;
+                    break;
+                }
+            }
+            if(reqBone == null) {
+                throw new Exception("could not find bone with id: "+i);
+            }
 
-//            var rotatedPoint = parentJoint.orient.rotatePoint(animatedPos);
-//            newJoint.pos = rotatedPoint.add(parentJoint.pos);
-//            newJoint.orient = parentJoint.orient.multiply(animated_orient);
-
-//            var boneTransform = globalInverseTransform.matMul(nodeGlobalTransform).
-//                    matMul(new Transformation(bone.orient, bone.pos).getTransformationMatrix());
-            var boneTransform = (nodeGlobalTransform);
-
-            var finalTrans = new Transformation(boneTransform);
-
-            animatedFrame.joints.add(new Joint(bone.boneName, bone.boneId, finalTrans.pos, finalTrans.orientation));
+            results.add(reqBone.unbindMatrix);
         }
 
-        for(Node childNode: node.children) {
-            buildFrameMatrices(aiAnimation, boneList, animatedFrame, frame, childNode, nodeGlobalTransform,
-                    globalInverseTransformation);
-        }
-
+        return results;
     }
 
-    private static AINodeAnim findAIAnimNode(AIAnimation aiAnimation, String nodeName) {
-        AINodeAnim result = null;
-        int numAnimNodes = aiAnimation.mNumChannels();
-        PointerBuffer aiChannels = aiAnimation.mChannels();
-        for (int i=0; i<numAnimNodes; i++) {
-            AINodeAnim aiNodeAnim = AINodeAnim.create(aiChannels.get(i));
-            if ( nodeName.equals(aiNodeAnim.mNodeName().dataString())) {
-                result = aiNodeAnim;
-                break;
-            }
+    public static Animation createAnimation(AIAnimation aiAnimation, Node root, Map<String, Bone> boneMap, List<Matrix> unbindMatrices, Matrix rootGlobalInverse) {
+        int numNodes = aiAnimation.mNumChannels();
+        var numFrames = AINodeAnim.create(aiAnimation.mChannels().get(0)).mNumPositionKeys();
+        Animation finalAnimation = new Animation(aiAnimation.mName().dataString(), new ArrayList<>(), boneMap.size(), unbindMatrices,
+                (float) (numFrames/aiAnimation.mDuration()));
+
+        for(int frameNum = 0; frameNum < numFrames; frameNum++) {
+            AnimationFrame frame = new AnimationFrame(numNodes);
+            Joint[] joints = new Joint[numNodes];
+            recursiveAnimProcess(aiAnimation, joints, boneMap, root, frameNum, Matrix.getIdentityMatrix(4), null, rootGlobalInverse);
+            frame.joints = Arrays.asList(joints);
+            finalAnimation.animationFrames.add(frame);
         }
-        return result;
+
+        return finalAnimation;
+    }
+
+    public static void recursiveAnimProcess(AIAnimation aiAnimation, Joint[] joints, Map<String, Bone> boneMap,
+                                            Node currentNode, int frameNum, Matrix parentTransform, Bone parentBone, Matrix rootGlobalInverse) {
+        Matrix nodeLocalTransform = currentNode.transformation;
+        Matrix accTransform = null;
+
+        if(boneMap.containsKey(currentNode.name)) {
+            var currentBone = boneMap.get(currentNode.name);
+            AINodeAnim animNode = findAIAnimNode(aiAnimation, currentNode.name);
+            nodeLocalTransform = buildNodeTransformationMatrix(animNode, frameNum).getTransformationMatrix();  // builds 4x4 matrix from vec3 pos, vec3 scale, quat orient
+            accTransform = parentTransform.matMul(nodeLocalTransform);
+            Transformation finalTrans = new Transformation(rootGlobalInverse.matMul(accTransform.matMul(currentBone.unbindMatrix)));
+//            finalTrans = new Transformation(Matrix.getIdentityMatrix(4));
+            int parentId = -1;
+            if(parentBone != null) {
+                currentBone.parentName = parentBone.boneName;
+                parentId = parentBone.boneId;
+            }
+            parentBone = currentBone;
+            var newJoint = new Joint(currentNode.name, parentId, finalTrans.pos, finalTrans.orientation, finalTrans.scale);
+            newJoint.currentID = parentBone.boneId;
+            joints[currentBone.boneId] = newJoint;
+//            frame.joints.add(newJoint);  //-1 simply because the parent ID would never be used later
+        }
+        else {
+            accTransform = parentTransform.matMul(nodeLocalTransform);
+        }
+
+        for(var childNode: currentNode.children) {
+            recursiveAnimProcess(aiAnimation, joints, boneMap, childNode, frameNum, accTransform, parentBone, rootGlobalInverse);
+        }
+
     }
 
     private static Transformation buildNodeTransformationMatrix(AINodeAnim aiNodeAnim, int frame) {
@@ -238,70 +182,44 @@ public class AssimpAnimLoader {
             vec = aiVecKey.mValue();
 
             scale = new Vector(vec.x(), vec.y(), vec.z());
-
+//            scale = new Vector(1,1,1);
         }
 
         return new Transformation(orient, pos, scale);
     }
 
-
-    public static int calcAnimationMaxFrames(AIAnimation aiAnimation) {
-        int maxFrames = 0;
-
-        int numNodeAnims = aiAnimation.mNumChannels();
+    private static AINodeAnim findAIAnimNode(AIAnimation aiAnimation, String nodeName) {
+        AINodeAnim result = null;
+        int numAnimNodes = aiAnimation.mNumChannels();
         PointerBuffer aiChannels = aiAnimation.mChannels();
-        for(int i = 0;i < numNodeAnims; i++) {
+        for (int i=0; i<numAnimNodes; i++) {
             AINodeAnim aiNodeAnim = AINodeAnim.create(aiChannels.get(i));
-            int numFrames = Math.max(Math.max(aiNodeAnim.mNumPositionKeys(), aiNodeAnim.mNumScalingKeys()), aiNodeAnim.mNumRotationKeys());
-            maxFrames = Math.max(numFrames, maxFrames);
+            if ( nodeName.equals(aiNodeAnim.mNodeName().dataString())) {
+                result = aiNodeAnim;
+                break;
+            }
         }
-
-        return maxFrames;
+        return result;
     }
 
-    public static Transformation getTransformation(AIMatrix4x4 input) {
-        float[][] mat = new float[4][4];
+    public static Node buildNodeHierarchy(AINode aiNode, Node parent) {
 
-        mat[0][0] = input.a1();
-        mat[0][1] = input.a2();
-        mat[0][2] = input.a3();
-        mat[0][3] = input.a4();
-
-        mat[1][0] = input.b1();
-        mat[1][1] = input.b2();
-        mat[1][2] = input.b3();
-        mat[1][3] = input.b4();
-
-        mat[2][0] = input.c1();
-        mat[2][1] = input.c2();
-        mat[2][2] = input.c3();
-        mat[2][3] = input.c4();
-
-        mat[3][0] = input.d1();
-        mat[3][1] = input.d2();
-        mat[3][2] = input.d3();
-        mat[3][3] = input.d4();
-
-        return new Transformation(new Matrix(mat));
-//        return new Transformation(Matrix.getIdentityMatrix(4));
-    }
-
-    public static Node buildNodesTree(AINode aiNode, Node parent) {
         String nodeName = aiNode.mName().dataString();
-        var trans = getTransformation(aiNode.mTransformation());
-        Node node = new Node(nodeName, parent, trans.pos, trans.orientation);
+        var trans = toMatrix(aiNode.mTransformation());
+        Node node = new Node(nodeName, parent, trans);
 
         int numChildren = aiNode.mNumChildren();
         PointerBuffer aiChildren = aiNode.mChildren();
         for(int i = 0;i < numChildren; i++) {
             AINode aiChildNode = AINode.create(aiChildren.get(i));
-            Node childNode = buildNodesTree(aiChildNode, node);
+            Node childNode = buildNodeHierarchy(aiChildNode, node);
             node.children.add(childNode);
         }
         return node;
+
     }
 
-    public static Mesh processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath, List<Bone> bonesList) {
+    public static Mesh processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath, Map<String, Bone> bonesList) {
         List<List<Vector>> vertAttribs = new ArrayList<>();
 
         List<Vector> verts = AssimpStaticLoader.processAttribute(aiMesh.mVertices());
@@ -336,7 +254,7 @@ public class AssimpAnimLoader {
         return newMesh;
     }
 
-    public static List processJoints(AIMesh aiMesh, List<Bone> bonesList) {
+    public static List processJoints(AIMesh aiMesh, Map<String, Bone> bonesList) {
 
         List<Vector> jointIndices = new ArrayList<>();
         List<Vector> weights = new ArrayList<>();
@@ -347,11 +265,18 @@ public class AssimpAnimLoader {
 
         for(int i = 0;i < numBones; i++) {
             AIBone aiBone = AIBone.create(aiBones.get(i));
-            int id = bonesList.size();
 
-//            Transformation trans = getTransformation(aiBone.mOffsetMatrix());
-            Bone bone = new Bone(id, aiBone.mName().dataString(), AssimpAnimLoader2.toMatrix(aiBone.mOffsetMatrix()));
-            bonesList.add(bone);
+            int id = bonesList.size();
+            var boneName = aiBone.mName().dataString();
+            Bone bone;
+            if(bonesList.containsKey(boneName)) {
+                bone = bonesList.get(boneName);
+            }
+            else {
+                bone = new Bone(id, boneName, toMatrix(aiBone.mOffsetMatrix()));
+                bonesList.put(boneName, bone);
+            }
+
             int numWeights = aiBone.mNumWeights();
             AIVertexWeight.Buffer aiWeights = aiBone.mWeights();
             for(int j = 0;j < numWeights; j++) {
@@ -385,6 +310,32 @@ public class AssimpAnimLoader {
         res.add(jointIndices);
         res.add(weights);
         return res;
+    }
+
+    public static Matrix toMatrix(AIMatrix4x4 input) {
+        float[][] mat = new float[4][4];
+
+        mat[0][0] = input.a1();
+        mat[0][1] = input.a2();
+        mat[0][2] = input.a3();
+        mat[0][3] = input.a4();
+
+        mat[1][0] = input.b1();
+        mat[1][1] = input.b2();
+        mat[1][2] = input.b3();
+        mat[1][3] = input.b4();
+
+        mat[2][0] = input.c1();
+        mat[2][1] = input.c2();
+        mat[2][2] = input.c3();
+        mat[2][3] = input.c4();
+
+        mat[3][0] = input.d1();
+        mat[3][1] = input.d2();
+        mat[3][2] = input.d3();
+        mat[3][3] = input.d4();
+
+        return new Matrix(mat);
     }
 
     public static int getFlags(MeshBuilderHints hints) {

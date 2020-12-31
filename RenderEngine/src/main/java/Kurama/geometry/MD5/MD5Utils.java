@@ -1,13 +1,10 @@
 package Kurama.geometry.MD5;
 
-import Kurama.Mesh.Material;
-import Kurama.Mesh.Texture;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
+import Kurama.Math.Transformation;
 import Kurama.Math.Vector;
-import Kurama.Mesh.Face;
-import Kurama.Mesh.InstancedMesh;
-import Kurama.Mesh.Mesh;
+import Kurama.Mesh.*;
 import Kurama.geometry.MeshBuilder;
 import Kurama.geometry.MeshBuilderHints;
 import Kurama.utils.Utils;
@@ -22,7 +19,9 @@ public class MD5Utils {
 
     public static List<List> generateAnimationFrames(MD5AnimModel anim, MD5Model bindModel) {
         List<AnimationFrame> animationFrames = new ArrayList<>(anim.numFrames);
-        List<Matrix> invmatrices = getInvJointMatrices(bindModel);
+        List temp = getInvJointMatrices(bindModel);
+        var invmatrices = (List<Matrix>)temp.get(0);
+        var invTransList = (List<Transformation>)temp.get(1);
 
         for(var frame: anim.frames) {
 
@@ -69,8 +68,36 @@ public class MD5Utils {
 //                    newJoint.orient = parentJoint.orient.getRotationMatrix().matMul(animated_orient.getRotationMatrix())
                     newJoint.orient.normalise();
                 }
+
+//                Transformation temp = new Transformation(newJoint.orient, newJoint.pos, newJoint.scale);
+//                var temp2 = new Transformation(temp.getTransformationMatrix().matMul(invmatrices.get(i)));
+//                newJoint.pos = temp2.pos;
+//                newJoint.orient = temp2.orientation;
+//                newJoint.scale = temp2.scale;
+
 //                newFrame.setMatrix(i, newJoint.pos, newJoint.orient, invmatrices.get(i));
             }
+
+//            var root = bindModel.joints.get(0);
+//            Matrix rootInverse = new Transformation(root.orient, root.pos, root.scale).getTransformationMatrix();
+//            rootInverse = Matrix.getIdentityMatrix(4);
+//            for (int i = 0; i < anim.numJoints; i++) {
+//
+//                var invTrans = new Transformation(invTransList.get(i).orientation, invTransList.get(i).pos, invTransList.get(i).scale);
+//                var currentJoint = newFrame.joints.get(i);
+//
+//                var rotatedPoint = currentJoint.orient.rotatePoint(invTrans.pos);
+//                invTrans.pos = rotatedPoint.add(currentJoint.pos);
+//                invTrans.orientation = currentJoint.orient.multiply(invTrans.orientation);
+//                invTrans.orientation.normalise();
+//
+////                Transformation temp = new Transformation(parentJoint.orient, parentJoint.pos, parentJoint.scale);
+////                var matRes = temp.getTransformationMatrix().matMul(invmatrices.get(i));
+////                var temp2 = new Transformation(matRes);
+//                currentJoint.pos = invTrans.pos;
+//                currentJoint.orient = invTrans.orientation;
+//                currentJoint.scale = invTrans.scale;
+//            }
 
         }
 
@@ -80,7 +107,9 @@ public class MD5Utils {
         return results;
     }
 
-    public static List<Matrix> getInvJointMatrices(MD5Model model) {
+    public static List getInvJointMatrices(MD5Model model) {
+        List finalResults = new ArrayList();
+        List<Transformation> transRes = new ArrayList<>(model.numJoints);
         List<Matrix> results = new ArrayList<>(model.numJoints);
         for(var joint: model.joints) {
 //            Matrix m_ = joint.orient.getInverse().getRotationMatrix();
@@ -90,8 +119,12 @@ public class MD5Utils {
 //            results.add(res);
             var mat = joint.orient.getRotationMatrix().addColumn(joint.pos).addRow(new Vector(0, 0, 0, 1));
             results.add(mat.getInverse());
+            var trans = new Transformation(results.get(results.size()-1));
+            transRes.add(trans);
         }
-        return results;
+        finalResults.add(results);
+        finalResults.add(transRes);
+        return finalResults;
     }
 
     public static List<Mesh> generateMeshes(MD5Model model, Vector defColor, MeshBuilderHints hints) {

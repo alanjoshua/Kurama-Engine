@@ -1,18 +1,19 @@
 package Kurama.scene;
 
 import Kurama.Effects.Fog;
-import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
+import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.game.Game;
-import Kurama.geometry.assimp.AssimpAnimLoader;
-import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.geometry.MD5.AnimationFrame;
 import Kurama.geometry.MeshBuilder;
 import Kurama.geometry.MeshBuilderHints;
+import Kurama.geometry.assimp.AssimpAnimLoader;
+import Kurama.geometry.assimp.AssimpAnimLoader2;
+import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
@@ -144,7 +145,7 @@ public class Scene {
 
     public AnimatedModel createAnimatedModelAssimp(String location, String textureDir, String ID, MeshBuilderHints hints, String[] shaderIds) {
         try {
-            var model = AssimpAnimLoader.load(game, location, textureDir, AssimpAnimLoader.getFlags(hints));
+            var model = AssimpAnimLoader2.load(game, location, textureDir, AssimpAnimLoader.getFlags(hints));
             model.identifier = ID;
             addModel(model, Arrays.asList(shaderIds));
             return model;

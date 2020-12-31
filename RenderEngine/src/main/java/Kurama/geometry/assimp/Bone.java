@@ -1,20 +1,18 @@
 package Kurama.geometry.assimp;
 
-import Kurama.Math.Quaternion;
-import Kurama.Math.Vector;
+import Kurama.Math.Matrix;
 
 public class Bone {
 
     public int boneId;
     public String boneName;
-    public Vector pos;
-    public Quaternion orient;
+    public Matrix unbindMatrix;
+    public String parentName = null;
 
-    public Bone(int boneId, String boneName, Vector pos, Quaternion orient) {
+    public Bone(int boneId, String boneName, Matrix unbindMatrix) {
         this.boneId = boneId;
         this.boneName = boneName;
-        this.pos = pos;
-        this.orient = orient;
+        this.unbindMatrix = unbindMatrix;
     }
 
 }

@@ -373,10 +373,14 @@ public class GameLWJGL extends Game implements Runnable {
 
         try {
             var anim = scene.createAnimatedModelAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
-                    "wolf", hints, new String[]{DefaultRenderPipeline.sceneShaderBlockID});
+                    "wolf", houseHints, new String[]{DefaultRenderPipeline.sceneShaderBlockID});
             anim.meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
             anim.pos = new Vector(30, 30, 30);
             anim.scale = new Vector(20,20,20);
+            anim.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
+            anim.meshes.forEach(m -> {
+                m.shouldCull = false;
+            });
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -546,6 +550,7 @@ public class GameLWJGL extends Game implements Runnable {
             }
             var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
             wolf.cycleFrame(20f * timeDelta);
+//            wolf.cycleFrame(1);
             wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
         }
 
@@ -562,6 +567,7 @@ public class GameLWJGL extends Game implements Runnable {
             }
             var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
             wolf.cycleFrame(-20f * timeDelta);
+//            wolf.cycleFrame(-1);
             wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
         }
 
