@@ -110,11 +110,11 @@ public class AssimpAnimLoader {
             meshes.add(mesh);
         }
 
-        List<Matrix> invmatrices = getInvJointMatrices(boneList);
+//        List<Matrix> invmatrices = getInvJointMatrices(boneList);
 
         Node rootNode = buildNodesTree(aiScene.mRootNode(), null);
         var globalInverseTransformation = getTransformation(aiScene.mRootNode().mTransformation()).getTransformationMatrix().getInverse();
-        Map<String, Animation> animations = processAnimations(aiScene, boneList, rootNode, globalInverseTransformation, invmatrices);
+        Map<String, Animation> animations = processAnimations(aiScene, boneList, rootNode, globalInverseTransformation);
 
         String key1 = (String) animations.keySet().toArray()[0];
 
@@ -132,7 +132,7 @@ public class AssimpAnimLoader {
     }
 
     public static Map<String, Animation> processAnimations(AIScene aiScene, List<Bone> boneList, Node root,
-                                                           Matrix globalInverseTransformation, List<Matrix> invMatrices) {
+                                                           Matrix globalInverseTransformation) {
         Map<String, Animation> animations = new HashMap<>();
 
         int numAnimations = aiScene.mNumAnimations();
@@ -144,7 +144,7 @@ public class AssimpAnimLoader {
 
             List<AnimationFrame> frames = new ArrayList<>();
             var animation = new Animation(aiAnimation.mName().dataString(), frames, boneList.size(),
-                    invMatrices, (float) (maxFrames/aiAnimation.mDuration()));
+                     (float) (maxFrames/aiAnimation.mDuration()));
             animations.put(animation.name, animation);
 
             for(int j = 0;j < maxFrames; j++) {

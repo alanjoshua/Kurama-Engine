@@ -1,5 +1,7 @@
 package Kurama.Math;
 
+import Kurama.geometry.MD5.Joint;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +19,12 @@ public class Transformation {
         this.orientation = orientation;
         this.scale = scale;
         this.pos = pos;
+    }
+
+    public Transformation(Transformation t) {
+        this.orientation = new Quaternion(t.orientation);
+        this.pos = new Vector(t.pos);
+        this.scale = new Vector(t.scale);
     }
 
     public Transformation(Matrix transformation) {
@@ -39,6 +47,12 @@ public class Transformation {
         this.scale = scale;
     }
 
+    public Transformation(Joint j) {
+        this.pos = new Vector(j.pos);
+        this.orientation = new Quaternion(j.orient);
+        this.scale = new Vector(j.scale);
+    }
+
     public Matrix getTransformationMatrix() {
         Matrix rotationMatrix = this.orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(scale);
@@ -48,6 +62,18 @@ public class Transformation {
         transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
         return transformationMatrix;
+    }
+
+    public Transformation matMul(Transformation t2) {
+        Vector pos;
+        Quaternion orient;
+
+        var rotatedPoint = orientation.rotatePoint(t2.pos);
+        pos = rotatedPoint.add(this.pos);
+        orient = orientation.multiply(t2.orientation);
+        orient.normalise();
+
+        return new Transformation(orient, pos);
     }
 
 }

@@ -1,7 +1,6 @@
 package Kurama.scene;
 
 import Kurama.Effects.Fog;
-import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
@@ -252,14 +251,14 @@ public class Scene {
         return newModel;
     }
 
-    public Model createAnimatedModel(Mesh mesh, List<AnimationFrame> frames, List<Matrix> invMatrices, float frameRate, String modelID, List<String> shaderID) {
-        Model newModel = new AnimatedModel(game, Arrays.asList(new Mesh[]{mesh}), frames, invMatrices, frameRate, modelID);
+    public Model createAnimatedModel(Mesh mesh, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, Arrays.asList(new Mesh[]{mesh}), frames, frameRate, modelID);
         addModel(newModel, shaderID);
         return newModel;
     }
 
-    public Model createAnimatedModel(List<Mesh> meshes, List<AnimationFrame> frames, List<Matrix> invMatrices, float frameRate, String modelID, List<String> shaderID) {
-        Model newModel = new AnimatedModel(game, meshes, frames, invMatrices, frameRate, modelID);
+    public Model createAnimatedModel(List<Mesh> meshes, List<AnimationFrame> frames, float frameRate, String modelID, List<String> shaderID) {
+        Model newModel = new AnimatedModel(game, meshes, frames, frameRate, modelID);
         addModel(newModel, shaderID);
         return newModel;
     }

@@ -17,11 +17,10 @@ public class AnimatedModel extends Model {
 
     public Map<String, Animation> animations;
     public Animation currentAnimation;
-//    public float currentFrame = 0;
 
     public List<Matrix> currentJointTransformations;
 
-    public AnimatedModel(Game game, List<Mesh> meshes, List<AnimationFrame> frames, List<Matrix> jointUnbindMatrices, float frameRate, String identifier) {
+    public AnimatedModel(Game game, List<Mesh> meshes, List<AnimationFrame> frames, float frameRate, String identifier) {
         super(game, meshes, identifier);
 
         for(var m: meshes) {
@@ -29,7 +28,7 @@ public class AnimatedModel extends Model {
         }
 
         animations = new HashMap<>();
-        animations.put("DEFAULT", new Animation("DEFAULT", frames, jointUnbindMatrices, frameRate));
+        animations.put("DEFAULT", new Animation("DEFAULT", frames, frameRate));
         currentAnimation = animations.get("DEFAULT");
 
         generateCurrentSkeleton(0);
@@ -51,7 +50,6 @@ public class AnimatedModel extends Model {
 
         var animationFrames = currentAnimation.animationFrames;
         var numJoints = currentAnimation.numJoints;
-        var jointUnbindMatrices = currentAnimation.jointUnbindMatrices;
 
         currentJointTransformations = new ArrayList<>(numJoints);
 
@@ -64,10 +62,10 @@ public class AnimatedModel extends Model {
             nextFrame = 0;
         }
        currentJointTransformations = slerpBetweenFrames(animationFrames.get(baseFrame), animationFrames.get(nextFrame),
-               jointUnbindMatrices, inter, numJoints);
+               inter, numJoints);
     }
 
-    public List<Matrix> slerpBetweenFrames(AnimationFrame frame1, AnimationFrame frame2, List<Matrix> jointUnbindMatrices,
+    public List<Matrix> slerpBetweenFrames(AnimationFrame frame1, AnimationFrame frame2,
                                            float inter, int numJoints) {
 
         List<Matrix> results = new ArrayList<>(numJoints);
@@ -79,20 +77,7 @@ public class AnimatedModel extends Model {
             var int_orient = Quaternion.slerp(joint1.orient, joint2.orient, inter);
 
             var localMat = int_orient.getRotationMatrix().addColumn(int_pos).addRow(new Vector(0,0,0,1));
-            Matrix jointMat;
-            if(jointUnbindMatrices != null) {
-//                jointMat = localMat;
-//                Logger.log("inverse mats found");
-                jointMat = localMat.matMul(jointUnbindMatrices.get(i));
-            }
-            else {
-                jointMat = localMat;
-            }
-            results.add(jointMat);
-//            if(i == numJoints-1) {
-//                Logger.log("here");
-//            }
-//            results.add(Matrix.getIdentityMatrix(4));
+            results.add(localMat);
         }
         return results;
     }

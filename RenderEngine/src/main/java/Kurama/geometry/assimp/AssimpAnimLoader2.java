@@ -60,7 +60,6 @@ public class AssimpAnimLoader2 {
         }
 
         Node root = buildNodeHierarchy(aiScene.mRootNode(), null);
-        List<Matrix> unbindMatrices = getUnbindMatrices(boneList);
         Matrix rootGlobalInverse = toMatrix(aiScene.mRootNode().mTransformation()).getInverse();
 
         Map<String, Animation> animations = new HashMap<>();
@@ -70,7 +69,7 @@ public class AssimpAnimLoader2 {
 
         for(int i = 0;i < numAnimations; i++) {
             AIAnimation aiAnimation = AIAnimation.create(aiAnimations.get(i));
-            Animation anim = createAnimation(aiAnimation, root, boneList, null, rootGlobalInverse);
+            Animation anim = createAnimation(aiAnimation, root, boneList, rootGlobalInverse);
             animations.put(aiAnimation.mName().dataString(), anim);
         }
 
@@ -101,10 +100,10 @@ public class AssimpAnimLoader2 {
         return results;
     }
 
-    public static Animation createAnimation(AIAnimation aiAnimation, Node root, Map<String, Bone> boneMap, List<Matrix> unbindMatrices, Matrix rootGlobalInverse) {
+    public static Animation createAnimation(AIAnimation aiAnimation, Node root, Map<String, Bone> boneMap, Matrix rootGlobalInverse) {
         int numNodes = aiAnimation.mNumChannels();
         var numFrames = AINodeAnim.create(aiAnimation.mChannels().get(0)).mNumPositionKeys();
-        Animation finalAnimation = new Animation(aiAnimation.mName().dataString(), new ArrayList<>(), boneMap.size(), unbindMatrices,
+        Animation finalAnimation = new Animation(aiAnimation.mName().dataString(), new ArrayList<>(), boneMap.size(),
                 (float) (numFrames/aiAnimation.mDuration()));
 
         for(int frameNum = 0; frameNum < numFrames; frameNum++) {
@@ -182,7 +181,6 @@ public class AssimpAnimLoader2 {
             vec = aiVecKey.mValue();
 
             scale = new Vector(vec.x(), vec.y(), vec.z());
-//            scale = new Vector(1,1,1);
         }
 
         return new Transformation(orient, pos, scale);

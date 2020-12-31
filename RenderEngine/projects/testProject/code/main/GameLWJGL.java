@@ -296,12 +296,10 @@ public class GameLWJGL extends Game implements Runnable {
         hints.isInstanced = false;
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");
-        var frames_inv = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
-        var frames = frames_inv.get(0);
-        var invMats = frames_inv.get(1);
+        var frames = MD5Utils.generateAnimationFrames(monsterAnim, monster_md5);
 
         for(int i = 0; i < 5;i++) {
-            Model monster = scene.createAnimatedModel(monsterMeshes, frames, invMats, monsterAnim.frameRate, "monster"+i,
+            Model monster = scene.createAnimatedModel(monsterMeshes, frames, monsterAnim.frameRate, "monster"+i,
                     Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             monster.setScale(0.1f);
             monster.setPos(new Vector(10 + (i*10), 30, 10));
