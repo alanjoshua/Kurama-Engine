@@ -1526,4 +1526,36 @@ public class MeshBuilder {
 
 	}
 
+	public static Mesh buildFullscreenQuad() {
+		List<Vector> pos = new ArrayList<>();
+		List<Vector> tex = new ArrayList<>();
+
+		pos.add(new Vector(-1,-1,0));
+		pos.add(new Vector(1,-1,0));
+		pos.add(new Vector(-1,1,0));
+		pos.add(new Vector(1,1,0));
+
+		tex.add(new Vector(new float[]{0,0}));
+		tex.add(new Vector(new float[]{1,0}));
+		tex.add(new Vector(new float[]{0,1}));
+		tex.add(new Vector(new float[]{1,1}));
+
+		List<Integer> indices = new ArrayList<>();
+		indices.add(0);
+		indices.add(1);
+		indices.add(2);
+
+		indices.add(2);
+		indices.add(1);
+		indices.add(3);
+
+		List<List<Vector>> attribs = new ArrayList<>();
+		attribs.add(pos);
+		attribs.add(tex);
+
+		Mesh res = new Mesh(indices, null, attribs, null, null, null);
+		res.meshIdentifier = Kurama.utils.Utils.getUniqueID();
+		return res;
+	}
+
 }

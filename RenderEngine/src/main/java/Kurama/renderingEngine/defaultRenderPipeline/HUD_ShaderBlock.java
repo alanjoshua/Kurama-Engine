@@ -23,8 +23,8 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
             hud_shader = new ShaderProgram(hud_shader_id);
 
-            hud_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultShaders/HUDVertexShader.glsl");
-            hud_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultShaders/HUDFragmentShader.glsl");
+            hud_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/HUDVertexShader.glsl");
+            hud_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/HUDFragmentShader.glsl");
             hud_shader.link();
 
             // Create uniforms for Orthographic-model projection matrix and base colour
@@ -45,7 +45,7 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
             return;
         }
 
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().getWidth(), input.game.getDisplay().getHeight(), 0);
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().renderResolution.get(0), input.game.getDisplay().renderResolution.get(1), 0);
 
         ShaderProgram hudShaderProgram = hud_shader;
         hudShaderProgram.bind();

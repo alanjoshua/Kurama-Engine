@@ -127,15 +127,13 @@ public class Simulation extends Game {
         renderingEngine.init(scene);
 
         scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
-                display.getWidth(), display.getHeight());
+                (int)display.windowResolution.get(0), (int)display.windowResolution.get(1));
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
             if(getCamera() != null) {
-                display.setWIDTH(width);
-                display.setHEIGHT(height);
-                getCamera().setImageWidth(width);
-                getCamera().setImageHeight(height);
+                display.windowResolution = new Vector(new float[]{width, height});
+                display.renderResolution = new Vector(new float[]{width, height});
                 getCamera().setShouldUpdateValues(true);
             }
         });

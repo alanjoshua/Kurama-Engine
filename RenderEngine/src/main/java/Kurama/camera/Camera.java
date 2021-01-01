@@ -114,7 +114,9 @@ public class Camera {
 
 	public void updateValues() {
 		 if (cameraMode == gameModeCamera) {
-			
+
+		 	imageWidth = (int)game.getDisplay().renderResolution.get(0);
+		 	imageHeight = (int)game.getDisplay().renderResolution.get(1);
 			 imageAspectRatio = imageWidth / (float) imageHeight;
 
 			if (game.getRenderingEngine().projectionMode == ProjectionMode.PERSPECTIVE) {

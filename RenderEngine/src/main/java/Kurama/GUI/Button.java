@@ -59,11 +59,11 @@ public class Button {
     }
 
     public int getX() {
-        return (int)(position.get(0) * game.getDisplay().getWidth());
+        return (int)(position.get(0) * game.getDisplay().windowResolution.get(0));
     }
 
     public int getY() {
-        return (int)(position.get(1) * game.getDisplay().getHeight());
+        return (int)(position.get(1) * game.getDisplay().windowResolution.get(1));
     }
 
     private int getWidthInPixels() {

@@ -1,16 +1,17 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
-import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;
+import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
-import Kurama.renderingEngine.*;
+import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
 import Kurama.utils.Logger;
@@ -52,10 +53,11 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
     public static int MAX_INSTANCED_SKELETAL_MESHES = 50;
     public int jointsInstancedBufferID;
-
+    private DefaultRenderPipeline pipeline;
 
     public SceneShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
+        this.pipeline = (DefaultRenderPipeline)pipeline;
     }
 
     @Override
@@ -81,6 +83,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
     @Override
     public void render(RenderBlockInput input) {
+        RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
+
         glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
         glCullFace(GL_BACK);
@@ -88,8 +92,11 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-        glViewport(0,0,input.game.getDisplay().getWidth(),input.game.getDisplay().getHeight());
-        RenderingEngineGL.clear();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, inp.renderBuffer.fboId);
+        glViewport(0,0,(int)input.game.getDisplay().renderResolution.get(0),(int)input.game.getDisplay().renderResolution.get(1));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         renderScene(input.scene,shadowPackage);
 
         glEnable(GL_CULL_FACE);
@@ -108,8 +115,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
         try {
 
-            scene_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultShaders/SceneVertexShader.glsl");
-            scene_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultShaders/SceneFragmentShader.glsl");
+            scene_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SceneVertexShader.glsl");
+            scene_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SceneFragmentShader.glsl");
             scene_shader.link();
 
             scene_shader.createUniform("projectionMatrix");
@@ -150,8 +157,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
     public void setupShadowShader() {
         shadow_shader = new ShaderProgram(shadow_ShaderID);
         try {
-            shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultShaders/depthDirectionalLightVertexShader.glsl");
-            shadow_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultShaders/depthDirectionalLightFragmentShader.glsl");
+            shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightVertexShader.glsl");
+            shadow_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightFragmentShader.glsl");
             shadow_shader.link();
 
             shadow_shader.createUniform("projectionMatrix");
@@ -369,16 +376,10 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                             }
                         }
 
-//                        Vector matsAtlas = new Vector(4, 0);
-//                        for(int i = 0;i < model.matAtlasOffset.get(meshId).size();i++) {
-//                            matsAtlas.setDataElement(i, model.matAtlasOffset.get(meshId).get(i));
-//                        }
-
                         scene_shader.setUniform("materialsGlobalLoc", matsGlobalLoc);
-//                        scene_shader.setUniform("materialsAtlas", matsAtlas);
                         Matrix objectToWorld = model.getObjectToWorldMatrix();
                         scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
-//
+
                         pipeline.render(mesh);
                     }
                 }

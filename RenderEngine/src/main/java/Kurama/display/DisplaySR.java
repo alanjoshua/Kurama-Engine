@@ -39,15 +39,15 @@ public class DisplaySR extends Display {
 
     }
 
-    @Override
-    public int getWidth() {
-        return canvas.getWidth();
-    }
-
-    @Override
-    public int getHeight() {
-        return canvas.getHeight();
-    }
+//    @Override
+//    public int getWindowWidth() {
+//        return canvas.getWidth();
+//    }
+//
+//    @Override
+//    public int getWindowHeight() {
+//        return canvas.getHeight();
+//    }
 
     public void initFrame(boolean shouldBorder, boolean shouldResizable) {
         frame = new JFrame();

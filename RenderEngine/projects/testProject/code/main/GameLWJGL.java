@@ -90,11 +90,10 @@ public class GameLWJGL extends Game implements Runnable {
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
+            display.windowResolution = new Vector(new float[]{width, height});
+            display.renderResolution = new Vector(new float[]{width, height});
+            scene.renderPipeline.renderResolutionChanged(display.renderResolution);
                 if(getCamera() != null) {
-                    display.setWIDTH(width);
-                    display.setHEIGHT(height);
-                    getCamera().setImageWidth(width);
-                    getCamera().setImageHeight(height);
                     getCamera().setShouldUpdateValues(true);
                 }
         });
@@ -146,7 +145,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.hud = new TestHUD(this);
 
         scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                display.getWidth(), display.getHeight());
+                (int)display.renderResolution.get(0), (int)display.renderResolution.get(1));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -292,7 +291,10 @@ public class GameLWJGL extends Game implements Runnable {
         hints.numInstances = 5;
         MD5Model monster_md5 = new MD5Model("res/monster/monster.md5mesh");
         List<Mesh> monsterMeshes = MD5Utils.generateMeshes(monster_md5, new Vector(1f, 1f, 1f, 1f), hints);
-        monsterMeshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
+        monsterMeshes.forEach(m -> {
+            m.boundingRadius = 3;
+            scene.renderPipeline.initializeMesh(m);
+        });
         hints.isInstanced = false;
 
         var monsterAnim = new MD5AnimModel("res/monster/monster.md5anim");

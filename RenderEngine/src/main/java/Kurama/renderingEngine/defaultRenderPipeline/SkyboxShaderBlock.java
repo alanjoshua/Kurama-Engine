@@ -20,8 +20,8 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
         try {
             skyboxShader = new ShaderProgram(skyboxShaderID);
 
-            skyboxShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultShaders/SkyBoxVertexShader.glsl");
-            skyboxShader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultShaders/SkyBoxFragmentShader.glsl");
+            skyboxShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SkyBoxVertexShader.glsl");
+            skyboxShader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SkyBoxFragmentShader.glsl");
             skyboxShader.link();
 
             skyboxShader.createUniform("projectionMatrix");

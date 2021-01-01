@@ -1,5 +1,6 @@
 package Kurama.display;
 
+import Kurama.Math.Vector;
 import Kurama.inputs.Input;
 import Kurama.game.Game;
 
@@ -11,6 +12,10 @@ public abstract class Display {
     protected Input input;
     protected int defaultWindowedWidth = 1280;
     protected int defaultWindowedHeight = 720;
+    public int resolutionScale = 1;
+
+    public Vector windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+    public Vector renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
 
     public static String OS = System.getProperty("os.name").toLowerCase();
     public static final double winDPI = 96;
@@ -25,8 +30,8 @@ public abstract class Display {
     public abstract void init();
     public abstract void startScreen();
     public abstract void toggleWindowModes();
-    public abstract int getWidth();
-    public abstract int getHeight();
+//    public abstract int getWindowWidth();
+//    public abstract int getWindowHeight();
     public abstract void setFullScreen();
     public abstract void setWindowedMode();
     public abstract void setWindowedMode(int width, int height);

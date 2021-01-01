@@ -30,7 +30,7 @@ public class TestHUD extends HUD {
         engineInfo_mesh.meshIdentifier = "hud_text_mesh";
         engineInfo_mesh.materials.get(0).ambientColor = new Vector(new float[]{1,1,1,0.5f});
         engineInfo = new Text(game, "Kurama Engine -alpha 2.1", engineInfo_mesh,engineTextFont, width, "engineInfo");
-        engineInfo.setPos(new Vector(new float[]{game.getDisplay().getWidth() - 400,game.getDisplay().getHeight() - 50,0}));
+        engineInfo.setPos(new Vector(new float[]{game.getDisplay().renderResolution.get(0) - 400,game.getDisplay().renderResolution.get(1) - 50,0}));
         hudElements.add(engineInfo);
         game.scene.addModel(engineInfo, Arrays.asList(new String[]{DefaultRenderPipeline.hudShaderBlockID}));
 
@@ -51,7 +51,7 @@ public class TestHUD extends HUD {
 
     public void tick() {
 
-        engineInfo.setPos(new Vector(new float[]{game.getDisplay().getWidth() - 400,game.getDisplay().getHeight() - 50,0}));
+        engineInfo.setPos(new Vector(new float[]{game.getDisplay().renderResolution.get(0) - 400,game.getDisplay().renderResolution.get(1) - 50,0}));
 
         game.scene.removeModel(FPS);
         hudElements.remove(1);

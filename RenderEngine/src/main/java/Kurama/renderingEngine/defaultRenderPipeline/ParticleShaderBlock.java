@@ -28,8 +28,8 @@ public class ParticleShaderBlock extends RenderBlock {
         particleShader = new ShaderProgram(particleShaderID);
 
         try {
-            particleShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultShaders/ParticleVertexShader.glsl");
-            particleShader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultShaders/ParticleFragmentShader.glsl");
+            particleShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/ParticleVertexShader.glsl");
+            particleShader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/ParticleFragmentShader.glsl");
             particleShader.link();
 
             particleShader.createUniform("projectionMatrix");

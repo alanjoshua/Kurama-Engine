@@ -66,8 +66,6 @@ public class GameSR extends Game implements Runnable {
 				new ComponentAdapter() {
 					public void componentResized(ComponentEvent e) {
 						try {
-							getCamera().setImageWidth(display.getWidth());
-							getCamera().setImageHeight(display.getHeight());
 							getCamera().setShouldUpdateValues(true);
 							renderingEngine.resetBuffers();
 						} catch (Exception ex) {
@@ -83,7 +81,7 @@ public class GameSR extends Game implements Runnable {
 		modelsOnlyOutline = new ArrayList<>();
 
 		cam = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
-				display.getWidth(), display.getHeight());
+				(int)display.windowResolution.get(0), (int)display.windowResolution.get(0));
 
 		renderingEngine.resetBuffers();
 		renderingEngine.projectionMode = ProjectionMode.PERSPECTIVE;
@@ -388,7 +386,7 @@ public class GameSR extends Game implements Runnable {
 //			Color bg = new Color(100,100,100);
 			Color bg = new Color(10,10,10);
 			g.setColor(bg);
-			g.fillRect(0, 0,display.getWidth(), display.getHeight());
+			g.fillRect(0, 0,(int)display.windowResolution.get(0), (int)display.windowResolution.get(1));
 			g.setBackground(bg);
 
 			g.setColor(Color.LIGHT_GRAY);
@@ -399,13 +397,13 @@ public class GameSR extends Game implements Runnable {
 			((RenderingEngineSR)renderingEngine).render(modelsOnlyOutline, g,cam);
 
 			g.setColor(Color.white);
-			g.drawString(cam.getPos().toString(), 10, (int) (display.getHeight() * 0.9));
-			g.drawString("FPS : " + this.displayFPS, 10, (int) (display.getHeight() * 0.1));
+			g.drawString(cam.getPos().toString(), 10, (int) ((int)display.windowResolution.get(1) * 0.9));
+			g.drawString("FPS : " + this.displayFPS, 10, (int) ((int)display.windowResolution.get(1) * 0.1));
 			g.setColor(Color.RED);
 //			g.drawString("Rendering Pipeline : " + ((RenderingEngineSR)renderingEngine).getRenderPipeline(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.1));
 
 			g.setColor(Color.GREEN);
-			g.drawString( "Render res: "+ display.getWidth() + " x " + display.getHeight(), (int) (display.getWidth() * 0.8), (int) (display.getHeight() * 0.9));
+			g.drawString( "Render res: "+ (int)display.windowResolution.get(0) + " x " + (int)display.windowResolution.get(1), (int) ((int)display.windowResolution.get(0) * 0.8), (int) ((int)display.windowResolution.get(1) * 0.9));
 
 			if(!this.isGameRunning) {
 				for(Kurama.GUI.Button b:pauseButtons) {

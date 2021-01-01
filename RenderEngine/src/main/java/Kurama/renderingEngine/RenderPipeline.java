@@ -1,5 +1,6 @@
 package Kurama.renderingEngine;
 
+import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.scene.Scene;
@@ -19,9 +20,5 @@ public abstract class RenderPipeline {
     public abstract void render(Scene scene);
     public abstract void cleanUp();
     public abstract void initializeMesh(Mesh mesh);
-//    public abstract void initToEndFullRender(Mesh mesh, int offset);
-//    public abstract void render(Mesh mesh);
-//    public abstract int initRender(Mesh mesh, int offset);
-//    public abstract void initRender(Mesh mesh);
-//    public abstract void endRender(Mesh mesh);
+    public abstract void renderResolutionChanged(Vector renderResolution);
 }

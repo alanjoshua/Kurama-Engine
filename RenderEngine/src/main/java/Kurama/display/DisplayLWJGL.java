@@ -1,5 +1,6 @@
 package Kurama.display;
 
+import Kurama.Math.Vector;
 import Kurama.game.Game;
 import Kurama.utils.Logger;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -19,8 +20,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class DisplayLWJGL extends Display {
 
     private long window;
-    private int WIDTH = defaultWindowedWidth;
-    private int HEIGHT = defaultWindowedHeight;
+//    private int WIDTH = defaultWindowedWidth;
+//    private int HEIGHT = defaultWindowedHeight;
     private GLCapabilities capabilities;
 
     public DisplayLWJGL(int defaultWindowedWidth, int defaultWindowedHeight, Game game) {
@@ -55,13 +56,13 @@ public class DisplayLWJGL extends Display {
         }
     }
 
-    public int getWidth() {
-        return WIDTH;
-    }
-
-    public int getHeight() {
-        return HEIGHT;
-    }
+//    public int getWindowWidth() {
+//        return ;
+//    }
+//
+//    public int getWindowHeight() {
+//        return HEIGHT;
+//    }
 
     public void cleanUp() {
         removeWindow();
@@ -134,10 +135,11 @@ public class DisplayLWJGL extends Display {
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(),0,0,vid.width(),vid.height(),vid.refreshRate());
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
-        WIDTH = vid.width();
-        HEIGHT = vid.height();
-        glViewport(0,0,WIDTH,HEIGHT);
+//        WIDTH = vid.width();
+//        HEIGHT = vid.height();
 
+        windowResolution = new Vector(new float[]{vid.width(), vid.height()});
+//        renderResolution = new Vector(new float[]{vid.width(), vid.height()});
     }
 
     public void setWindowedMode() {
@@ -152,8 +154,11 @@ public class DisplayLWJGL extends Display {
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
 
-        WIDTH = defaultWindowedWidth;
-        HEIGHT = defaultWindowedHeight;
+//        WIDTH = defaultWindowedWidth;
+//        HEIGHT = defaultWindowedHeight;
+
+        windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+//        renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
     }
 
     public void setWindowedMode(int width, int height) {
@@ -169,8 +174,8 @@ public class DisplayLWJGL extends Display {
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
 
-        WIDTH = defaultWindowedWidth;
-        HEIGHT = defaultWindowedHeight;
+        windowResolution = new Vector(new float[]{width, height});
+//        renderResolution = new Vector(new float[]{width, height});
     }
 
     protected void removeWindow() {
@@ -179,8 +184,9 @@ public class DisplayLWJGL extends Display {
             glfwDestroyWindow(window);
         }
 
-        WIDTH = defaultWindowedWidth;
-        HEIGHT = defaultWindowedHeight;
+        windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+//        renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+
     }
 
     protected void startGLFW() {
@@ -201,13 +207,13 @@ public class DisplayLWJGL extends Display {
         glfwSetErrorCallback(null).free();
     }
 
-    public void setWIDTH(int w) {
-        WIDTH = w;
-    }
-
-    public void setHEIGHT(int h) {
-        HEIGHT = h;
-    }
+//    public void setWindowWidth(int w) {
+//        WIDTH = w;
+//    }
+//
+//    public void setWindowHeight(int h) {
+//        HEIGHT = h;
+//    }
 
     public long getWindow() {
         return window;
