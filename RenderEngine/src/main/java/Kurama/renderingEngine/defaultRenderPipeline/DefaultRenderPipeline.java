@@ -127,14 +127,18 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         particleShaderBlock.render(new RenderBlockInput(scene, game));
 //        glEnable(GL_CULL_FACE);
 
-        //Hud should be rendered at last, or else text would have background
-        hudShaderBlock.render(new RenderBlockInput(scene, game));
 
+        glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
         RenderingEngineGL.clear();
 
         fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, renderBuffer));
+
+        //Hud should be rendered at last, or else text would have background
+        hudShaderBlock.render(new RenderBlockInput(scene, game));
+
+        glEnable(GL_DEPTH_TEST);
 
     }
 
