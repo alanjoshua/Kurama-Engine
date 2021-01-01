@@ -45,7 +45,7 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
             return;
         }
 
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().renderResolution.get(0), input.game.getDisplay().renderResolution.get(1), 0);
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
 
         ShaderProgram hudShaderProgram = hud_shader;
         hudShaderProgram.bind();
