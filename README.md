@@ -6,8 +6,11 @@
 ## Features
 * OpenGL support
 * Custom functional-style linear algebra library
-* software rendering mode (Pure Java mode) if the user does not want to use openGL
-* Reading .OBJ files and rendering the models as a mesh
+* Loading of models using assimp
+* Modular rendering pipeline to allow users to stack and use multiple custom shaders with the engine. 
+* Skeletal animation support
+* A simple particle system
+* Audio support using OpenAL
 * Write scene to file and load it back up using a single command. 
 * Support for directional, point and spot lights, with Phong Shading
 * Directional and spotlight shadow mapping
@@ -21,11 +24,6 @@
 * Supports a HUD overlay
 * Support for text and create 3D meshes for text with any font in the system.
 * Input handling
-* Built-in simple benchmarking tool
-* Modular rendering pipeline to allow users to stack and use multiple custom shaders with the engine. 
-* Skeletal animation support (MD5 format)
-* A simple particle system
-* Basic audio support using OpenAL
 
 <br>
 <br>
