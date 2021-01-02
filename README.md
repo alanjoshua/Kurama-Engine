@@ -32,6 +32,14 @@
 
 ![Image of a scene rendering by Kurama Engine](https://github.com/alanjoshua/Kurama-Engine/blob/master/images/KuramaEngine-screenshot2.png)
 
+<br>
+<br>
+
+### Project Board: https://github.com/users/alanjoshua/projects/1#card-50161872
+
+<br>
+<br>
+
 ## Test Program
 * Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases  (Very outdated)
 
