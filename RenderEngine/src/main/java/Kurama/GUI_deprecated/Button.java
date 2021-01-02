@@ -1,4 +1,4 @@
-package Kurama.GUI;
+package Kurama.GUI_deprecated;
 
 import Kurama.Math.Vector;
 import Kurama.game.Game;

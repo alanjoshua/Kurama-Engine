@@ -1,4 +1,4 @@
-package Kurama.display.shadow;
+package Kurama.shadow;
 
 import Kurama.Mesh.Texture;
 

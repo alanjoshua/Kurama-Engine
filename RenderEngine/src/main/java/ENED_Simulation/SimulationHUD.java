@@ -1,6 +1,6 @@
 package ENED_Simulation;
 
-import Kurama.GUI.Text;
+import Kurama.Text.Text;
 import Kurama.game.Game;
 import Kurama.model.HUD;
 

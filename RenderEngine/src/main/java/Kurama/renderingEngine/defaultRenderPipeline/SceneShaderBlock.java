@@ -35,11 +35,11 @@ import static org.lwjgl.opengl.GL45C.glCreateBuffers;
 
 public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
-    String shadow_ShaderID = "shadow_shader";
-    String scene_shader_id = "scene_shader";
+    private String shadow_ShaderID = "shadow_shader";
+    private String scene_shader_id = "scene_shader";
 
-    public ShaderProgram shadow_shader;
-    public ShaderProgram scene_shader;
+    private ShaderProgram shadow_shader;
+    private ShaderProgram scene_shader;
 
     public static int MAX_DIRECTIONAL_LIGHTS = 5;
     public static int MAX_SPOTLIGHTS = 10;

@@ -1,6 +1,6 @@
 package main;
 
-import Kurama.GUI.Button;
+import Kurama.GUI_deprecated.Button;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.camera.Camera;
@@ -43,7 +43,7 @@ public class GameSR extends Game implements Runnable {
 	protected boolean isGameRunning = true;
 
 	protected List<Model> modelsOnlyOutline;
-	protected List<Kurama.GUI.Button> pauseButtons;
+	protected List<Kurama.GUI_deprecated.Button> pauseButtons;
 
 	protected Button EXIT;
 	protected Button FULLSCREEN;
@@ -170,7 +170,7 @@ public class GameSR extends Game implements Runnable {
 		int height = 100;
 
 //		Making Exit button
-		EXIT = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+		EXIT = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
 		EXIT.text = "EXIT";
 
 		Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
@@ -193,7 +193,7 @@ public class GameSR extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-		FULLSCREEN = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+		FULLSCREEN = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
 		FULLSCREEN.text = "FULLSCREEN";
 
 		Button.Behaviour fullscreenBehaviour = (b,mp,isPressed) -> {
@@ -216,7 +216,7 @@ public class GameSR extends Game implements Runnable {
 		FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-		WINDOWED = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+		WINDOWED = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
 		WINDOWED.text = "WINDOWED MODE";
 
 		Button.Behaviour windowedBehaviour = (b,mp,isPressed) -> {
@@ -406,7 +406,7 @@ public class GameSR extends Game implements Runnable {
 			g.drawString( "Render res: "+ (int)display.windowResolution.get(0) + " x " + (int)display.windowResolution.get(1), (int) ((int)display.windowResolution.get(0) * 0.8), (int) ((int)display.windowResolution.get(1) * 0.9));
 
 			if(!this.isGameRunning) {
-				for(Kurama.GUI.Button b:pauseButtons) {
+				for(Kurama.GUI_deprecated.Button b:pauseButtons) {
 					b.render(g);
 				}
 			}

@@ -1,4 +1,4 @@
-package Kurama.GUI;
+package Kurama.Text;
 
 import Kurama.Mesh.Face;
 import Kurama.Mesh.Mesh;

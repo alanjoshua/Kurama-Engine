@@ -11,6 +11,7 @@ import Kurama.geometry.MD5.MD5Utils;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderPipelineInput;
 import Kurama.renderingEngine.RenderingEngineGL;
 import Kurama.scene.Scene;
 import org.lwjgl.opengl.GL20;
@@ -61,13 +62,13 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     public DefaultRenderPipeline(Game game) {
         super(game);
-
     }
 
     @Override
-    public void setup(Scene scene) {
+    public void setup(RenderPipelineInput input) {
 
         renderBuffer = new RenderBuffer(game.getDisplay().renderResolution);
+        var scene = input.scene;
 
         sceneShaderBlock.setup(new RenderBlockInput(scene, game));
         skyboxShaderBlock.setup(new RenderBlockInput(scene, game));
@@ -108,7 +109,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     }
 
     @Override
-    public void render(Scene scene) {
+    public void render(RenderPipelineInput input) {
+        var scene = input.scene;
 //        glViewport(0,0,(int)game.getDisplay().renderResolution.get(0),(int)game.getDisplay().renderResolution.get(1));
 
         if (performFrustumCulling) {

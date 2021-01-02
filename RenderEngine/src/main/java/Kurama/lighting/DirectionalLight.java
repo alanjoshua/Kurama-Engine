@@ -1,7 +1,7 @@
 package Kurama.lighting;
 
 import Kurama.Mesh.Mesh;
-import Kurama.display.shadow.ShadowMap;
+import Kurama.shadow.ShadowMap;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;

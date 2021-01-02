@@ -16,8 +16,8 @@ import static org.lwjgl.opengl.GL15.*;
 
 public class ParticleShaderBlock extends RenderBlock {
 
-    public static String particleShaderID = "particleShader";
-    public ShaderProgram particleShader;
+    private static String particleShaderID = "particleShader";
+    private ShaderProgram particleShader;
 
     public ParticleShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);

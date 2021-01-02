@@ -1,6 +1,6 @@
 package HUD;
 
-import Kurama.GUI.Text;
+import Kurama.Text.Text;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.font.FontTexture;

@@ -14,7 +14,8 @@ import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
-import Kurama.display.shadow.ShadowMap;
+import Kurama.renderingEngine.ginchan.Gintoki;
+import Kurama.shadow.ShadowMap;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5AnimModel;
 import Kurama.geometry.MD5.MD5Model;
@@ -64,10 +65,10 @@ public class GameLWJGL extends Game implements Runnable {
     protected int lookAtIndex = 1;
     protected boolean isGameRunning = true;
 
-    protected List<Kurama.GUI.Button> pauseButtons = new ArrayList<>();
-    protected Kurama.GUI.Button EXIT;
-    protected Kurama.GUI.Button FULLSCREEN;
-    protected Kurama.GUI.Button WINDOWED;
+    protected List<Kurama.GUI_deprecated.Button> pauseButtons = new ArrayList<>();
+    protected Kurama.GUI_deprecated.Button EXIT;
+    protected Kurama.GUI_deprecated.Button FULLSCREEN;
+    protected Kurama.GUI_deprecated.Button WINDOWED;
 
     protected Vector mouseDelta;
     protected Vector mousePos;
@@ -116,7 +117,8 @@ public class GameLWJGL extends Game implements Runnable {
 
         initPauseScreen();
 
-        renderingEngine.renderPipeline = scene.renderPipeline;
+        renderingEngine.sceneRenderPipeline = scene.renderPipeline;
+        renderingEngine.guiRenderPipeline = new Gintoki(this);
         renderingEngine.init(scene);
 
         display.setClearColor(0,0,0,1);
@@ -397,10 +399,10 @@ public class GameLWJGL extends Game implements Runnable {
         int height = 100;
 
         //		Making Exit button
-        EXIT = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
+        EXIT = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
         EXIT.text = "EXIT";
 
-        Kurama.GUI.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI_deprecated.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -422,10 +424,10 @@ public class GameLWJGL extends Game implements Runnable {
 
 
 //		Making FullScreen Toggle
-        FULLSCREEN = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
+        FULLSCREEN = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
         FULLSCREEN.text = "FULLSCREEN";
 
-        Kurama.GUI.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI_deprecated.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;
@@ -445,10 +447,10 @@ public class GameLWJGL extends Game implements Runnable {
         FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
 
 //		Making WindowedMode Toggle
-        WINDOWED = new Kurama.GUI.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
+        WINDOWED = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
         WINDOWED.text = "WINDOWED MODE";
 
-        Kurama.GUI.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
+        Kurama.GUI_deprecated.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
 
             if(b.isMouseInside(mp)) {
                 b.textColor = Color.RED;

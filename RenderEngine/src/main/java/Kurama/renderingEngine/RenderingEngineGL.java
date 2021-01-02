@@ -7,10 +7,12 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class RenderingEngineGL extends RenderingEngine {
 
-    public RenderPipeline renderPipeline;
+    public RenderPipeline sceneRenderPipeline;
+    public RenderPipeline guiRenderPipeline;
 
     public void init(Scene scene) {
-        renderPipeline.setup(scene);
+        sceneRenderPipeline.setup(new RenderPipelineInput(scene));
+        guiRenderPipeline.setup(new RenderPipelineInput(scene));
     }
 
     public RenderingEngineGL(Game game) {
@@ -22,11 +24,13 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void render(Scene scene) {
-        renderPipeline.render(scene);
+        sceneRenderPipeline.render(new RenderPipelineInput(scene));
+        guiRenderPipeline.render(new RenderPipelineInput(scene));
     }
 
     public void cleanUp() {
-        renderPipeline.cleanUp();
+        sceneRenderPipeline.cleanUp();
+        guiRenderPipeline.cleanUp();
     }
 
 }

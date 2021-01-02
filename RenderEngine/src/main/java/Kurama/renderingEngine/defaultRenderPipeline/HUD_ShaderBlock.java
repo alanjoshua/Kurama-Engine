@@ -9,8 +9,8 @@ import Kurama.shader.ShaderProgram;
 
 public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
-    String hud_shader_id = "hud_shader";
-    public ShaderProgram hud_shader;
+    private String hud_shader_id = "hud_shader";
+    private ShaderProgram hud_shader;
 
     public HUD_ShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
@@ -32,6 +32,8 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
             hud_shader.createUniform("projModelMatrix");
             hud_shader.createUniform("color");
 
+            hud_shader.setUniform("texture_sampler", 0);
+
         }catch(Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -49,7 +51,6 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
         ShaderProgram hudShaderProgram = hud_shader;
         hudShaderProgram.bind();
-        hudShaderProgram.setUniform("texture_sampler", 0);
 
         for(String meshId :input.scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
             Mesh mesh = input.scene.meshID_mesh_map.get(meshId);

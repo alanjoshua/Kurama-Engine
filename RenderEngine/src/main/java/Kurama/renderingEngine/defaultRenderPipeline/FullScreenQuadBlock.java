@@ -14,9 +14,9 @@ import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class FullScreenQuadBlock extends RenderBlock {
 
-    public static String quadShaderID = "particleShader";
-    public ShaderProgram quadShader;
-    public Mesh quad;
+    private static String quadShaderID = "particleShader";
+    private ShaderProgram quadShader;
+    private Mesh quad;
 
     public FullScreenQuadBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);

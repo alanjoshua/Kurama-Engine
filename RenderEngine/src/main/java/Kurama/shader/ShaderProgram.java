@@ -17,20 +17,22 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.NVMeshShader.GL_MESH_SHADER_NV;
 
-// This class was blatantly copied from lwjglgamedev gitbook
+// This base of this class was taken from lwjglgamedev gitbook
 
 public class ShaderProgram {
 
     private final int programID;
     private int vertexShaderID;
     private int fragmentShaderID;
+    private int meshShaderID;
     private final Map<String,Integer> uniforms;
 
     public String shaderIdentifier;
 
-    public String vertexShaderLocation = null;
-    public String fragmentShaderLocation = null;
+//    public String vertexShaderLocation = null;
+//    public String fragmentShaderLocation = null;
 
     public ShaderProgram(String shaderIdentifier) {
         this.shaderIdentifier = shaderIdentifier;
@@ -309,6 +311,10 @@ public class ShaderProgram {
         fragmentShaderID = createShader(shaderLocation,GL_FRAGMENT_SHADER);
     }
 
+    public void createMeshShader(String shaderLocation) throws IOException {
+        meshShaderID = createShader(shaderLocation, GL_MESH_SHADER_NV);
+    }
+
     public int createShader(String shaderLocation, int shaderType) throws IOException {
         int shaderID = glCreateShader(shaderType);
         if(shaderID == 0) {
@@ -317,13 +323,6 @@ public class ShaderProgram {
 
         glShaderSource(shaderID, Utils.loadResourceAsString(shaderLocation));
         glCompileShader(shaderID);
-
-        if (shaderType == GL_FRAGMENT_SHADER) {
-            fragmentShaderLocation = shaderLocation;
-        }
-        else {
-            vertexShaderLocation = shaderLocation;
-        }
 
         if(glGetShaderi(shaderID,GL_COMPILE_STATUS) == 0) {
             throw new RuntimeException("Error compiling shader code: "+glGetShaderInfoLog(shaderID,1024));
@@ -343,12 +342,17 @@ public class ShaderProgram {
 
         if(vertexShaderID != 0) {
             glDetachShader(programID,vertexShaderID);
-            glDeleteShader(vertexShaderID);   //If program not working properly, delete this line
+            glDeleteShader(vertexShaderID);
         }
 
         if(fragmentShaderID != 0) {
             glDetachShader(programID,fragmentShaderID);
-            glDeleteShader(fragmentShaderID);    //If program not working properly, delete this line
+            glDeleteShader(fragmentShaderID);
+        }
+
+        if(meshShaderID != 0) {
+            glDetachShader(programID,meshShaderID);
+            glDeleteShader(meshShaderID);
         }
 
         glValidateProgram(programID);

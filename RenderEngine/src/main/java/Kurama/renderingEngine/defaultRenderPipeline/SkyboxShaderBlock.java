@@ -8,8 +8,8 @@ import Kurama.shader.ShaderProgram;
 
 public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
-    public static String skyboxShaderID = "skyboxshader";
-    public ShaderProgram skyboxShader;
+    private static String skyboxShaderID = "skyboxshader";
+    private ShaderProgram skyboxShader;
 
     public SkyboxShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
