@@ -296,9 +296,12 @@ public class ShaderProgram {
         else if(value.getNumberOfDimensions() == 4) {
             glUniform4fv(uniforms.get(uniformName),value.getData());
         }
+        else if(value.getNumberOfDimensions() == 2) {
+            glUniform2fv(uniforms.get(uniformName), value.getData());
+        }
         //Should probably throw an error
         else {
-            System.err.println("Cannot set vector uniform. Can only set vectors of size 3 or 4");
+            System.err.println("Cannot set vector uniform. Can only set vectors of size 2, 3 or 4");
         }
     }
 

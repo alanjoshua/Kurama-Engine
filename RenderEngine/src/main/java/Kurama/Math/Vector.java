@@ -296,7 +296,7 @@ public class Vector {
 			if (getNumberOfDimensions() == v.getNumberOfDimensions()) {
 				res = new float[getNumberOfDimensions()];
 				for (int i = 0; i < v.getNumberOfDimensions(); i++) {
-					res[i] = this.getData()[i] + v.getData()[i];
+					res[i] = this.getData()[i] / v.getData()[i];
 				}
 			} else {
 				throw new Exception("The vectors dont match in size");
@@ -380,6 +380,10 @@ public class Vector {
 
 	public float get(int index) {
 		return data[index];
+	}
+
+	public int geti(int index) {
+		return (int)data[index];
 	}
 
 	public void setDataElement(int index, float val) {
