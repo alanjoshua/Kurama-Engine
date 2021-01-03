@@ -15,7 +15,8 @@ layout(triangles, max_vertices=4, max_primitives=2) out;
 
 layout (binding = 0) uniform Rectangle {
     mat4 projectionViewMatrix;
-    vec4 corners;
+    vec4 radius;
+    vec2 dimensions;
     float hasTexture;
 } rectangle;
 

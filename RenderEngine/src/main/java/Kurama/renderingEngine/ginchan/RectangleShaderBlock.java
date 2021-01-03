@@ -47,7 +47,7 @@ public class RectangleShaderBlock extends RenderBlock {
             rectangleUniformBuffer = glGenBuffers();
             glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
-            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(21);
+            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(23);
             glBufferData(GL_UNIFORM_BUFFER, jointsDataInstancedBuffer, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, rectangleUniformBuffer);
 
@@ -67,19 +67,19 @@ public class RectangleShaderBlock extends RenderBlock {
         test = new Rectangle(null, "test");
         test.width = 100;
         test.height = 100;
+        test.radii = new Vector(30,40,50,60);
         test.orientation = Quaternion.getAxisAsQuat(0,0, 1,0);
     }
 
-    public void setupRectangleUniform(Matrix projectionViewMatrix, Vector corners, boolean hasTexture) {
+    public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture) {
 
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
-        FloatBuffer temp = MemoryUtil.memAllocFloat(21);
 
+        FloatBuffer temp = MemoryUtil.memAllocFloat(23);
         projectionViewMatrix.setValuesToBuffer(temp);
-        temp.put(corners.get(0));
-        temp.put(corners.get(1));
-        temp.put(corners.get(2));
-        temp.put(corners.get(3));
+        radius.setValuesToBuffer(temp);
+        temp.put(width);
+        temp.put(height);
         temp.put(hasTexture?1f:0f);
         temp.flip();
         glBufferSubData(GL_UNIFORM_BUFFER, 0, temp);
@@ -106,7 +106,7 @@ public class RectangleShaderBlock extends RenderBlock {
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inp.renderBuffer.textureId);
-        setupRectangleUniform(mat, new Vector(0,0,0,0), true);
+        setupRectangleUniform(mat, test.radii, test.width, test.height, true);
 
         glDrawMeshTasksNV(0,1);
         shader.unbind();

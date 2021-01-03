@@ -1,5 +1,6 @@
 package Kurama.Math;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -356,6 +357,12 @@ public class Vector {
 		}
 		return new Vector(res);
 
+	}
+
+	public void setValuesToBuffer(FloatBuffer buffer) {
+		for(var v: data) {
+			buffer.put(v);
+		}
 	}
 
 	public static Vector scalarMul(Vector v, float x) {
