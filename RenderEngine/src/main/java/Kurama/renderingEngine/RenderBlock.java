@@ -10,6 +10,6 @@ public abstract class RenderBlock {
     }
 
     public abstract void setup(RenderBlockInput input);
-    public abstract void render(RenderBlockInput input);
+    public abstract RenderBlockOutput render(RenderBlockInput input);
     public abstract void cleanUp();
 }

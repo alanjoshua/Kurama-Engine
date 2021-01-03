@@ -11,6 +11,8 @@ import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderBlockOutput;
+import Kurama.renderingEngine.RenderBufferRenderBlockInput;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
@@ -82,7 +84,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
     }
 
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
         RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
 
         glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
@@ -101,6 +103,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+        return null;
     }
 
     @Override

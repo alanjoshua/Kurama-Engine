@@ -3,6 +3,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 import Kurama.Math.Matrix;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderBlockOutput;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.shader.ShaderProgram;
 
@@ -37,10 +38,10 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
     }
 
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
 
         if(input.scene.skybox == null) {
-            return;
+            return null;
         }
 
         ShaderProgram skyBoxShaderProgram = skyboxShader;
@@ -62,7 +63,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
             ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
         }
         skyBoxShaderProgram.unbind();
-
+        return null;
     }
 
     @Override

@@ -16,7 +16,7 @@ public abstract class RenderPipeline {
         this.game = game;
     }
     public abstract void setup(RenderPipelineInput input);
-    public abstract void render(RenderPipelineInput input);
+    public abstract RenderPipelineOutput render(RenderPipelineInput input);
     public abstract void cleanUp();
     public abstract void initializeMesh(Mesh mesh);
     public abstract void renderResolutionChanged(Vector renderResolution);

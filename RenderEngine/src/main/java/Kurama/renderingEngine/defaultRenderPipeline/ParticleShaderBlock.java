@@ -7,6 +7,7 @@ import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.RenderBlock;
 import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderBlockOutput;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.shader.ShaderProgram;
 
@@ -156,10 +157,10 @@ public class ParticleShaderBlock extends RenderBlock {
     }
 
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
 
         if(input.scene.shaderBlockID_particelGenID_map.get(blockID) == null) {
-            return;
+            return null;
         }
 
         boolean curShouldCull = true;
@@ -184,6 +185,8 @@ public class ParticleShaderBlock extends RenderBlock {
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+        return null;
     }
 
     @Override

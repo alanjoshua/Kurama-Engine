@@ -4,18 +4,32 @@ import Kurama.GUI.Rectangle;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
-import Kurama.renderingEngine.RenderBlock;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 import Kurama.utils.Utils;
+import org.lwjgl.system.MemoryUtil;
 
+import java.nio.FloatBuffer;
+
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11C.glBindTexture;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL15C.*;
+import static org.lwjgl.opengl.GL30C.glBindBufferBase;
+import static org.lwjgl.opengl.GL31C.GL_UNIFORM_BUFFER;
 import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 
 public class RectangleShaderBlock extends RenderBlock {
 
     private ShaderProgram shader;
     Rectangle test;
+    int rectangleUniformBuffer;
+
+    public static final int FLOAT_SIZE_BYTES = 4;
+    public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
+    public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
+    public static final int BUFFER_SIZE_BYTES = MATRIX_SIZE_BYTES + VECTOR4F_SIZE_BYTES + FLOAT_SIZE_BYTES;
 
     public RectangleShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
@@ -30,7 +44,20 @@ public class RectangleShaderBlock extends RenderBlock {
             shader.createFragmentShader("src/main/java/Kurama/renderingEngine/ginchan/shaders/RectangleFragmentShader.glsl");
             shader.link();
 
-            shader.createUniform("projectionViewMatrix");
+            rectangleUniformBuffer = glGenBuffers();
+            glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
+
+            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(21);
+            glBufferData(GL_UNIFORM_BUFFER, jointsDataInstancedBuffer, GL_DYNAMIC_DRAW);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, rectangleUniformBuffer);
+
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            MemoryUtil.memFree(jointsDataInstancedBuffer);
+
+//            shader.createUniform("projectionViewMatrix");
+//            shader.createUniform("rectangle");
+            shader.createUniform("texture_sampler");
+            shader.setUniform("texture_sampler", 0);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -43,20 +70,48 @@ public class RectangleShaderBlock extends RenderBlock {
         test.orientation = Quaternion.getAxisAsQuat(0,0, 1,0);
     }
 
+    public void setupRectangleUniform(Matrix projectionViewMatrix, Vector corners, boolean hasTexture) {
+
+        glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
+        FloatBuffer temp = MemoryUtil.memAllocFloat(21);
+
+        projectionViewMatrix.setValuesToBuffer(temp);
+        temp.put(corners.get(0));
+        temp.put(corners.get(1));
+        temp.put(corners.get(2));
+        temp.put(corners.get(3));
+        temp.put(hasTexture?1f:0f);
+        temp.flip();
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, temp);
+        MemoryUtil.memFree(temp);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
+        RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
+
         shader.bind();
 
-        test.pos = new Vector(new float[]{input.game.getDisplay().windowResolution.get(0)/2, input.game.getDisplay().windowResolution.get(1)/2, 0});
+        test.pos = new Vector(new float[]{input.game.getDisplay().renderResolution.get(0)/4, input.game.getDisplay().renderResolution.get(1)/4, 0});
+        test.width = (int)input.game.getDisplay().renderResolution.get(0)/2;
+        test.height = (int)input.game.getDisplay().renderResolution.get(1)/2;
+
         Quaternion rot = Quaternion.getAxisAsQuat(0,0,1,1);
         test.orientation = rot.multiply(test.orientation);
 
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
         var mat = ortho.matMul(test.getObjectToWorldMatrix());
-        shader.setUniform("projectionViewMatrix", mat);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, inp.renderBuffer.textureId);
+        setupRectangleUniform(mat, new Vector(0,0,0,0), true);
 
         glDrawMeshTasksNV(0,1);
         shader.unbind();
+
+        return null;
     }
 
     @Override

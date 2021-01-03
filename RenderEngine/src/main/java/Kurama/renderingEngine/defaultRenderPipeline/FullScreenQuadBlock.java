@@ -2,9 +2,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Mesh.Mesh;
 import Kurama.geometry.MeshBuilder;
-import Kurama.renderingEngine.RenderBlock;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 
 import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
@@ -43,7 +41,7 @@ public class FullScreenQuadBlock extends RenderBlock {
     }
 
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
         RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
 
         quadShader.bind();
@@ -55,6 +53,8 @@ public class FullScreenQuadBlock extends RenderBlock {
 
         glBindTexture(GL_TEXTURE_2D, 0);
         quadShader.unbind();
+
+        return null;
     }
 
     @Override

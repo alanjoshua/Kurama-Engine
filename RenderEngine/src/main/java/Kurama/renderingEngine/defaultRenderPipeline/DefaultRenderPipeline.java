@@ -10,9 +10,7 @@ import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderPipelineInput;
-import Kurama.renderingEngine.RenderingEngineGL;
+import Kurama.renderingEngine.*;
 import Kurama.scene.Scene;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
@@ -70,11 +68,11 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         renderBuffer = new RenderBuffer(game.getDisplay().renderResolution);
         var scene = input.scene;
 
-        sceneShaderBlock.setup(new RenderBlockInput(scene, game));
-        skyboxShaderBlock.setup(new RenderBlockInput(scene, game));
-        hudShaderBlock.setup(new RenderBlockInput(scene, game));
-        particleShaderBlock.setup(new RenderBlockInput(scene, game));
-        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game));
+        sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        skyboxShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        particleShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
 
         renderBlockID_renderBlock_map.put(sceneShaderBlockID, sceneShaderBlock);
         renderBlockID_renderBlock_map.put(skyboxShaderBlockID, skyboxShaderBlock);
@@ -109,7 +107,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     }
 
     @Override
-    public void render(RenderPipelineInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
         var scene = input.scene;
 //        glViewport(0,0,(int)game.getDisplay().renderResolution.get(0),(int)game.getDisplay().renderResolution.get(1));
 
@@ -122,11 +120,11 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         //        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
 //        RenderingEngineGL.clear();
-        sceneShaderBlock.render(new RenderBufferRenderBlockInput(scene, game, renderBuffer));
-        skyboxShaderBlock.render(new RenderBlockInput(scene, game));
+        sceneShaderBlock.render(new RenderBufferRenderBlockInput(scene, game, null, renderBuffer));
+        skyboxShaderBlock.render(new RenderBlockInput(scene, game, null));
 
 //        glDisable(GL_CULL_FACE);
-        particleShaderBlock.render(new RenderBlockInput(scene, game));
+        particleShaderBlock.render(new RenderBlockInput(scene, game, null));
 //        glEnable(GL_CULL_FACE);
 
 
@@ -135,13 +133,14 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
         RenderingEngineGL.clear();
 
-        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, renderBuffer));
+        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, null, renderBuffer));
 
         //Hud should be rendered at last, or else text would have background
-        hudShaderBlock.render(new RenderBlockInput(scene, game));
+        hudShaderBlock.render(new RenderBlockInput(scene, game, null));
 
         glEnable(GL_DEPTH_TEST);
 
+        return new RenderBufferRenderPipelineOutput(renderBuffer);
     }
 
     public void frustumCullModels(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {

@@ -4,6 +4,7 @@ import Kurama.Math.Matrix;
 import Kurama.Mesh.Mesh;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderBlockInput;
+import Kurama.renderingEngine.RenderBlockOutput;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.shader.ShaderProgram;
 
@@ -42,9 +43,9 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
     }
 
     @Override
-    public void render(RenderBlockInput input) {
+    public RenderBlockOutput render(RenderBlockInput input) {
         if(input.scene.hud == null) {
-            return;
+            return null;
         }
 
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
@@ -70,6 +71,7 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
         }
 
         hudShaderProgram.unbind();
+        return null;
     }
 
     @Override
