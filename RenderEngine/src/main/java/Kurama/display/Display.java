@@ -12,10 +12,8 @@ public abstract class Display {
     protected Input input;
     public static int defaultWindowedWidth = 1280;
     public static int defaultWindowedHeight = 720;
-    public int resolutionScale = 1;
 
     public Vector windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
-//    public Vector renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
 
     public static String OS = System.getProperty("os.name").toLowerCase();
     public static final double winDPI = 96;
@@ -30,8 +28,6 @@ public abstract class Display {
     public abstract void init();
     public abstract void startScreen();
     public abstract void toggleWindowModes();
-//    public abstract int getWindowWidth();
-//    public abstract int getWindowHeight();
     public abstract void setFullScreen();
     public abstract void setWindowedMode();
     public abstract void setWindowedMode(int width, int height);

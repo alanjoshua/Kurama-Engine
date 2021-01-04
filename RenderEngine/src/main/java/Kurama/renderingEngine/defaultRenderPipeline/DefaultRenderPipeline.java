@@ -80,7 +80,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
         var scene = input.scene;
 
-        setupSKeletonSSBO();
+        setupSkeletonSSBO();
 
         sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
         shadowBlock.setup(new RenderBlockInput(scene, game, null));
@@ -104,7 +104,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         setCullFace(GL_BACK);
     }
 
-    public void setupSKeletonSSBO() {
+    public void setupSkeletonSSBO() {
 
         jointsInstancedBufferID = glCreateBuffers();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, jointsInstancedBufferID);

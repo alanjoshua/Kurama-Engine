@@ -3,6 +3,7 @@ package Kurama.GUI;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
+import Kurama.Mesh.Texture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,9 @@ public abstract class Component {
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
+
+    public Vector color = new Vector(1,1,1,1);
+    public Texture texture = null;
 
     public String identifier;
     public boolean isHidden = false;
@@ -35,6 +39,17 @@ public abstract class Component {
         transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
         return transformationMatrix;
+    }
+
+    public void resolveChildrenConstraints() {
+
+        for(var child: children) {
+
+            // Code to Resolve constraints//
+
+            child.resolveChildrenConstraints();
+        }
+
     }
 
     public Matrix getWorldToObject() {

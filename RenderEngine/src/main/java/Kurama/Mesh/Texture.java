@@ -51,6 +51,12 @@ public class Texture {
         this.numCols = numCols;
     }
 
+    public Texture(int textureId) {
+        this.id = textureId;
+        width = 0;
+        height = 0;
+    }
+
     public Texture(String fileName) {
         ByteBuffer buff;
 

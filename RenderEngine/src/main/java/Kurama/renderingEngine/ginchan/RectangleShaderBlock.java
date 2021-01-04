@@ -64,7 +64,7 @@ public class RectangleShaderBlock extends RenderBlock {
             System.exit(1);
         }
 
-        test = new Rectangle(null, "test");
+        test = new Rectangle(null, null,"test");
         test.width = 100;
         test.height = 100;
         test.radii = new Vector(30,40,50,60);

@@ -6,8 +6,9 @@ public class Rectangle extends Component {
 
     public Vector radii = new Vector(0,0,0,0);
 
-    public Rectangle(Component parent, String identifier) {
+    public Rectangle(Component parent, Vector radii, String identifier) {
         super(parent, identifier);
+        this.radii = radii;
     }
 
 }

@@ -56,14 +56,6 @@ public class DisplayLWJGL extends Display {
         }
     }
 
-//    public int getWindowWidth() {
-//        return ;
-//    }
-//
-//    public int getWindowHeight() {
-//        return HEIGHT;
-//    }
-
     public void cleanUp() {
         removeWindow();
         removeGLFW();
