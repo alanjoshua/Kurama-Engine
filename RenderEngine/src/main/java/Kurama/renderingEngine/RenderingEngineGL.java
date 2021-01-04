@@ -3,7 +3,7 @@ package Kurama.renderingEngine;
 import Kurama.game.Game;
 import Kurama.scene.Scene;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11C.*;
 
 public class RenderingEngineGL extends RenderingEngine {
 

@@ -30,32 +30,46 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.glDrawArraysInstanced;
 import static org.lwjgl.opengl.GL31.glDrawElementsInstanced;
 import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
+import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
+import static org.lwjgl.opengl.GL44C.GL_DYNAMIC_STORAGE_BIT;
+import static org.lwjgl.opengl.GL45C.glCreateBuffers;
+import static org.lwjgl.opengl.GL45C.glNamedBufferStorage;
 
 public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline {
 
     public static String sceneShaderBlockID = "sceneShaderBlock";
+    public static String shadowBlockID = "shadowBlock";
     public static String hudShaderBlockID = "hudShaderBlock";
     public static String skyboxShaderBlockID = "skyboxShaderBlock";
     public static String particleShaderBlockID = "particleShaderBlock";
     public static String fullscreenQuadShaderBlockID = "fullscreenQuadShaderBlock";
 
     SceneShaderBlock sceneShaderBlock = new SceneShaderBlock(sceneShaderBlockID, this);
+    ShadowBlock shadowBlock = new ShadowBlock(shadowBlockID, this);
     HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID, this);
     SkyboxShaderBlock skyboxShaderBlock = new SkyboxShaderBlock(skyboxShaderBlockID, this);
     ParticleShaderBlock particleShaderBlock = new ParticleShaderBlock(particleShaderBlockID, this);
     FullScreenQuadBlock fullScreenQuadBlock = new FullScreenQuadBlock(fullscreenQuadShaderBlockID, this);
 
+    public static int MAX_DIRECTIONAL_LIGHTS = 5;
+    public static int MAX_SPOTLIGHTS = 10;
+    public static int MAX_POINTLIGHTS = 10;
+    public static int MAX_JOINTS = 150;
+
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
     public static final int MATRIX_SIZE_FLOATS = 16;
+
+    public static int MAX_INSTANCED_SKELETAL_MESHES = 50;
+
     public static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES + (1*VECTOR4F_SIZE_BYTES);
     public static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS + (1*4);
 
 //    public boolean performFrustumCulling = true;
 //
     public FrustumIntersection frustumIntersection = new FrustumIntersection();
-//    public RenderBuffer renderBuffer;
+    public int jointsInstancedBufferID;
 
     public DefaultRenderPipeline(Game game) {
         super(game);
@@ -64,16 +78,19 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     @Override
     public void setup(RenderPipelineInput input) {
 
-//        renderBuffer = new RenderBuffer(game.getDisplay().renderResolution);
         var scene = input.scene;
 
+        setupSKeletonSSBO();
+
         sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        shadowBlock.setup(new RenderBlockInput(scene, game, null));
         skyboxShaderBlock.setup(new RenderBlockInput(scene, game, null));
         hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
         particleShaderBlock.setup(new RenderBlockInput(scene, game, null));
         fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
 
         renderBlockID_renderBlock_map.put(sceneShaderBlockID, sceneShaderBlock);
+        renderBlockID_renderBlock_map.put(shadowBlockID, shadowBlock);
         renderBlockID_renderBlock_map.put(skyboxShaderBlockID, skyboxShaderBlock);
         renderBlockID_renderBlock_map.put(hudShaderBlockID, hudShaderBlock);
         renderBlockID_renderBlock_map.put(particleShaderBlockID, particleShaderBlock);
@@ -83,17 +100,26 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
-//        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
         enable(GL_CULL_FACE);
         setCullFace(GL_BACK);
     }
 
+    public void setupSKeletonSSBO() {
 
-//    public void renderResolutionChanged(Vector renderResolution) {
-//        renderBuffer.resizeTexture(renderResolution);
-//    }
+        jointsInstancedBufferID = glCreateBuffers();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, jointsInstancedBufferID);
+
+        var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(
+                DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES *
+                        DefaultRenderPipeline.MAX_JOINTS *
+                        DefaultRenderPipeline.MATRIX_SIZE_BYTES);
+
+        glNamedBufferStorage(jointsInstancedBufferID, jointsDataInstancedBuffer, GL_DYNAMIC_STORAGE_BIT);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, jointsInstancedBufferID);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        MemoryUtil.memFree(jointsDataInstancedBuffer);
+    }
 
     public void enable(int param) {
         glEnable(param);
@@ -108,18 +134,37 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     @Override
     public RenderPipelineOutput render(RenderPipelineInput input) {
         var scene = input.scene;
-//        glViewport(0,0,(int)game.getDisplay().renderResolution.get(0),(int)game.getDisplay().renderResolution.get(1));
 
-//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
-//        RenderingEngineGL.clear();
-        sceneShaderBlock.render(new RenderBlockInput(scene, game, null));
-        skyboxShaderBlock.render(new RenderBlockInput(scene, game, null));
+        glCullFace(GL_FRONT);
+        var shadowOut = shadowBlock.render(new RenderBlockInput(scene, game, null));
+        glCullFace(GL_BACK);
 
-//        glDisable(GL_CULL_FACE);
-        particleShaderBlock.render(new RenderBlockInput(scene, game, null));
-//        glEnable(GL_CULL_FACE);
+        for(var camera: input.scene.cameras) {
 
+            if(camera.isActive) {
+
+                if(camera.shouldPerformFrustumCulling) {
+                    frustumIntersection.set(camera.getPerspectiveProjectionMatrix().matMul(camera.getWorldToCam()));
+                    frustumCullModels(input.scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), input.scene);
+                    frustumCullParticles(input.scene.particleGenerators);
+                }
+
+                var shaderInput = new CurrentCameraBlockInput(scene, game, camera, shadowOut);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, camera.renderBuffer.fboId);
+                glViewport(0, 0, camera.renderResolution.geti(0), camera.renderResolution.geti(1));
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                sceneShaderBlock.render(shaderInput);
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+
+                skyboxShaderBlock.render(shaderInput);
+                particleShaderBlock.render(shaderInput);
+            }
+        }
 
         glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -163,12 +208,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     @Override
     public void cleanUp() {
+        shadowBlock.cleanUp();
         sceneShaderBlock.cleanUp();
         skyboxShaderBlock.cleanUp();
         hudShaderBlock.cleanUp();
         particleShaderBlock.cleanUp();
         fullScreenQuadBlock.cleanUp();
-//        renderBuffer.cleanUp();
     }
 
     @Override

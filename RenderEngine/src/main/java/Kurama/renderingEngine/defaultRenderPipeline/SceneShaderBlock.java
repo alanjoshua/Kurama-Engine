@@ -11,9 +11,7 @@ import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderBlockOutput;
-import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.*;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
 import Kurama.utils.Logger;
@@ -26,35 +24,14 @@ import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
-import static org.lwjgl.opengl.GL44C.GL_DYNAMIC_STORAGE_BIT;
-import static org.lwjgl.opengl.GL45.glNamedBufferStorage;
 import static org.lwjgl.opengl.GL45.glNamedBufferSubData;
-import static org.lwjgl.opengl.GL45C.glCreateBuffers;
 
 //import static org.lwjgl.opengl.GL30C.*;
 
 public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
-    private String shadow_ShaderID = "shadow_shader";
     private String scene_shader_id = "scene_shader";
-
-    private ShaderProgram shadow_shader;
     private ShaderProgram scene_shader;
-
-    public static int MAX_DIRECTIONAL_LIGHTS = 5;
-    public static int MAX_SPOTLIGHTS = 10;
-    public static int MAX_POINTLIGHTS = 10;
-    public static int MAX_JOINTS = 150;
-
-    public static final int FLOAT_SIZE_BYTES = 4;
-    public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
-    public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
-    public static final int MATRIX_SIZE_FLOATS = 16;
-
-    public static int MAX_INSTANCED_SKELETAL_MESHES = 50;
-    public int jointsInstancedBufferID;
     private DefaultRenderPipeline pipeline;
 
     public SceneShaderBlock(String id, RenderPipeline pipeline) {
@@ -65,58 +42,24 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
     @Override
     public void setup(RenderBlockInput input) {
         setupSceneShader();
-        setupShadowShader();
-        setupSKeletonSSBO();
-    }
-
-    //    Sets up SSBO to store instanced joint transformation matrices.
-    public void setupSKeletonSSBO() {
-
-        jointsInstancedBufferID = glCreateBuffers();
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, jointsInstancedBufferID);
-
-        var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCED_SKELETAL_MESHES * SceneShaderBlock.MAX_JOINTS * MATRIX_SIZE_BYTES);
-        glNamedBufferStorage(jointsInstancedBufferID, jointsDataInstancedBuffer, GL_DYNAMIC_STORAGE_BIT);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, jointsInstancedBufferID);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        MemoryUtil.memFree(jointsDataInstancedBuffer);
     }
 
     @Override
     public RenderBlockOutput render(RenderBlockInput input) {
 
-        glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
-        ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
-        glCullFace(GL_BACK);
+        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
+        ShadowPackageRenderBlockOutput out = (ShadowPackageRenderBlockOutput) input.previousOutput;
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        var camera = inp.camera;
+        var shadowPackage = out.shadowPackage;
 
-        for(var camera: input.scene.cameras) {
-            glBindFramebuffer(GL_FRAMEBUFFER, camera.renderBuffer.fboId);
-            glViewport(0, 0, camera.renderResolution.geti(0), camera.renderResolution.geti(1));
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            if (camera.shouldPerformFrustumCulling) {
-                pipeline.frustumIntersection.set(camera.getPerspectiveProjectionMatrix().matMul(camera.getWorldToCam()));
-                pipeline.frustumCullModels(input.scene.shaderblock_mesh_model_map.get(blockID), input.scene);
-                pipeline.frustumCullParticles(input.scene.particleGenerators);
-            }
-
-            renderScene(input.scene, camera, shadowPackage);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        renderScene(input.scene, camera, shadowPackage);
 
         return null;
     }
 
     @Override
     public void cleanUp() {
-        shadow_shader.cleanUp();
         scene_shader.cleanUp();
     }
 
@@ -134,8 +77,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
 //            scene_shader.createUniformArray("modelLightViewMatrix",MAX_DIRECTIONAL_LIGHTS);
 //            scene_shader.createUniformArray("modelSpotLightViewMatrix",MAX_SPOTLIGHTS);
-            scene_shader.createUniformArray("directionalShadowMaps",MAX_DIRECTIONAL_LIGHTS);
-            scene_shader.createUniformArray("spotLightShadowMaps",MAX_SPOTLIGHTS);
+            scene_shader.createUniformArray("directionalShadowMaps", DefaultRenderPipeline.MAX_DIRECTIONAL_LIGHTS);
+            scene_shader.createUniformArray("spotLightShadowMaps", DefaultRenderPipeline.MAX_SPOTLIGHTS);
             scene_shader.createUniform("numDirectionalLights");
             scene_shader.createUniform("numberOfSpotLights");
             scene_shader.createUniform("isAnimated");
@@ -143,40 +86,21 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
             scene_shader.createUniform("isInstanced");
             scene_shader.createUniform("ambientLight");
 
-            scene_shader.createPointLightListUniform("pointLights",MAX_POINTLIGHTS);
-            scene_shader.createDirectionalLightListUniform("directionalLights",MAX_DIRECTIONAL_LIGHTS);
-            scene_shader.createSpotLightListUniform("spotLights",MAX_SPOTLIGHTS);
+            scene_shader.createPointLightListUniform("pointLights",DefaultRenderPipeline.MAX_POINTLIGHTS);
+            scene_shader.createDirectionalLightListUniform("directionalLights",DefaultRenderPipeline.MAX_DIRECTIONAL_LIGHTS);
+            scene_shader.createSpotLightListUniform("spotLights",DefaultRenderPipeline.MAX_SPOTLIGHTS);
 
             scene_shader.createFogUniform("fog");
             scene_shader.createUniform("allDirectionalLightStatic");
 
-            scene_shader.createUniformArray("worldToDirectionalLightMatrix", MAX_DIRECTIONAL_LIGHTS);
-            scene_shader.createUniformArray("worldToSpotlightMatrix", MAX_SPOTLIGHTS);
-            scene_shader.createUniformArray("jointMatrices", MAX_JOINTS);
+            scene_shader.createUniformArray("worldToDirectionalLightMatrix", DefaultRenderPipeline.MAX_DIRECTIONAL_LIGHTS);
+            scene_shader.createUniformArray("worldToSpotlightMatrix", DefaultRenderPipeline.MAX_SPOTLIGHTS);
+            scene_shader.createUniformArray("jointMatrices", DefaultRenderPipeline.MAX_JOINTS);
             scene_shader.createUniform("modelToWorldMatrix");
             scene_shader.createUniform("worldToCam");
 
             scene_shader.createUniform("materialsGlobalLoc");
 //            scene_shader.createUniform("materialsAtlas");
-
-        }catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-    }
-
-    public void setupShadowShader() {
-        shadow_shader = new ShaderProgram(shadow_ShaderID);
-        try {
-            shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightVertexShader.glsl");
-            shadow_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightFragmentShader.glsl");
-            shadow_shader.link();
-
-            shadow_shader.createUniform("projectionMatrix");
-            shadow_shader.createUniform("modelLightViewMatrix");
-            shadow_shader.createUniformArray("jointMatrices", MAX_JOINTS);
-            shadow_shader.createUniform("isAnimated");
-            shadow_shader.createUniform("isInstanced");
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -298,8 +222,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                 List<List<Model>> chunks;
                 if(mesh.isAnimatedSkeleton) {
                     chunks = InstancedMesh.getRenderChunks(models,
-                            inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
-                                    inst_mesh.instanceChunkSize: MAX_INSTANCED_SKELETAL_MESHES);
+                            inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
+                                    inst_mesh.instanceChunkSize: DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
                     scene_shader.setUniform("isAnimated", 1);
                 }
                 else {
@@ -320,8 +244,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 //                                }
                                 FloatBuffer temp = jointMat.getAsFloatBuffer();
 //                                TODO: Change this to persistent map
-                                glNamedBufferSubData(jointsInstancedBufferID,
-                                        ((modelCount * MAX_JOINTS) + i) * MATRIX_SIZE_BYTES, temp);
+                                glNamedBufferSubData(pipeline.jointsInstancedBufferID,
+                                        ((modelCount * DefaultRenderPipeline.MAX_JOINTS) + i) * DefaultRenderPipeline.MATRIX_SIZE_BYTES, temp);
                                 MemoryUtil.memFree(temp);
                             }
                         }
@@ -400,272 +324,6 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         }
 
         sceneShaderProgram.unbind();
-    }
-
-    public ShadowDepthRenderPackage renderDepthMap(Scene scene) {
-
-        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
-
-        boolean curShouldCull = true;
-        int currCull = GL_BACK;
-
-        glEnable(GL_CULL_FACE);
-        glCullFace(currCull);
-
-        ShaderProgram depthShaderProgram = shadow_shader;
-        depthShaderProgram.bind();
-        List<Matrix> worldToDirectionalLights = new ArrayList<>();
-        List<Matrix> worldToSpotLights = new ArrayList<>();
-
-        for(int i =0;i < scene.directionalLights.size();i++) {
-            DirectionalLight light = scene.directionalLights.get(i);
-            Matrix worldToLight = light.getWorldToObject();
-            worldToDirectionalLights.add(worldToLight);
-
-            if(light.doesProduceShadow) {
-
-                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
-                glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
-                glClear(GL_DEPTH_BUFFER_BIT);
-
-                depthShaderProgram.setUniform("projectionMatrix", light.shadowProjectionMatrix);
-
-                for (String meshId : scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
-
-                    Mesh mesh = scene.meshID_mesh_map.get(meshId);
-
-                    if (curShouldCull != mesh.shouldCull) {
-                        if (mesh.shouldCull) {
-                            glEnable(GL_CULL_FACE);
-                        } else {
-                            glDisable(GL_CULL_FACE);
-                        }
-                        curShouldCull = mesh.shouldCull;
-                    }
-
-                    if (currCull != mesh.cullmode) {
-                        glCullFace(mesh.cullmode);
-                        currCull = mesh.cullmode;
-                    }
-
-                    pipeline.initRender(mesh);
-
-                    if (mesh instanceof InstancedMesh) {
-                        depthShaderProgram.setUniform("isInstanced", 1);
-                        var inst_mesh = (InstancedMesh) mesh;
-                        var models = new ArrayList<Model>();
-
-                        for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                            var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
-                                models.add(m);
-                            }
-                        }
-                        List<List<Model>> chunks;
-                        if (mesh.isAnimatedSkeleton) {
-                            chunks = InstancedMesh.getRenderChunks(models,
-                                    inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
-                                            inst_mesh.instanceChunkSize : MAX_INSTANCED_SKELETAL_MESHES);
-                            depthShaderProgram.setUniform("isAnimated", 1);
-                        } else {
-                            chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
-                            depthShaderProgram.setUniform("isAnimated", 0);
-                        }
-
-                        for (var chunk : chunks) {
-                            inst_mesh.instanceDataBuffer.clear();
-
-                            int modelCount = 0;
-                            for (Model m : chunk) {
-
-                                if (mesh.isAnimatedSkeleton) {
-                                    var anim = (AnimatedModel) m;
-                                    for (int j = 0; j < anim.currentAnimation.numJoints; j++) {
-                                        Matrix jointMat;
-                                        jointMat = anim.currentJointTransformations.get(j);
-//                                }
-                                        FloatBuffer temp = jointMat.getAsFloatBuffer();
-//                                TODO: Change this to persistent map
-                                        glNamedBufferSubData(jointsInstancedBufferID,
-                                                ((modelCount * MAX_JOINTS) + j) * MATRIX_SIZE_BYTES, temp);
-                                        MemoryUtil.memFree(temp);
-                                    }
-                                }
-
-                                Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                objectToLight.setValuesToBuffer(inst_mesh.instanceDataBuffer);
-                                for (int counter = 0; counter < 4; counter++) {
-                                    inst_mesh.instanceDataBuffer.put(0f);
-                                }
-                                modelCount++;
-                            }
-                            inst_mesh.instanceDataBuffer.flip();
-
-                            glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
-                            glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
-
-                            pipeline.renderInstanced(inst_mesh, chunk.size());
-                        }
-                    } else {
-                        depthShaderProgram.setUniform("isInstanced", 0);
-                        for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                            Model m = scene.modelID_model_map.get(modelId);
-
-                            if (m instanceof AnimatedModel) {
-                                depthShaderProgram.setUniform("isAnimated", 1);
-//                        Logger.log("detecting animated model");
-                                AnimatedModel anim = (AnimatedModel) m;
-                                for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
-                                    var matrix = anim.currentJointTransformations.get(j);
-                                    depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
-                                }
-                            } else {
-                                depthShaderProgram.setUniform("isAnimated", 0);
-                            }
-
-                            if (m.shouldCastShadow && m.shouldRender) {
-                                Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                                pipeline.render(mesh);
-                            }
-                        }
-                    }
-                    pipeline.endRender(mesh);
-                }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            }
-        }
-
-        for(int i =0;i < scene.spotLights.size();i++) {
-
-            SpotLight light = scene.spotLights.get(i);
-            Matrix worldToLight = light.getWorldToObject();
-            worldToSpotLights.add(worldToLight);
-
-            if(light.doesProduceShadow) {
-
-                Matrix projMatrix = light.shadowProjectionMatrix;
-                depthShaderProgram.setUniform("projectionMatrix", projMatrix);
-                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
-                glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
-                glClear(GL_DEPTH_BUFFER_BIT);
-
-                for (String meshId : scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
-                    Mesh mesh = scene.meshID_mesh_map.get(meshId);
-
-                    if (curShouldCull != mesh.shouldCull) {
-                        if (mesh.shouldCull) {
-                            glEnable(GL_CULL_FACE);
-                        } else {
-                            glDisable(GL_CULL_FACE);
-                        }
-                        curShouldCull = mesh.shouldCull;
-                    }
-
-                    if (currCull != mesh.cullmode) {
-                        glCullFace(mesh.cullmode);
-                        currCull = mesh.cullmode;
-                    }
-
-                    pipeline.initRender(mesh);
-
-                    if (mesh instanceof InstancedMesh) {
-                        depthShaderProgram.setUniform("isInstanced", 1);
-                        var inst_mesh = (InstancedMesh) mesh;
-                        var models = new ArrayList<Model>();
-
-                        for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                            var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
-                                models.add(m);
-                            }
-                        }
-                        List<List<Model>> chunks;
-                        if (mesh.isAnimatedSkeleton) {
-                            chunks = InstancedMesh.getRenderChunks(models,
-                                    inst_mesh.instanceChunkSize < MAX_INSTANCED_SKELETAL_MESHES ?
-                                            inst_mesh.instanceChunkSize : MAX_INSTANCED_SKELETAL_MESHES);
-                            depthShaderProgram.setUniform("isAnimated", 1);
-                        } else {
-                            chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
-                            depthShaderProgram.setUniform("isAnimated", 0);
-                        }
-
-                        for (var chunk : chunks) {
-                            inst_mesh.instanceDataBuffer.clear();
-
-                            int modelCount = 0;
-                            for (Model m : chunk) {
-
-                                if (mesh.isAnimatedSkeleton) {
-                                    var anim = (AnimatedModel) m;
-                                    for (int j = 0; j < anim.currentAnimation.numJoints; j++) {
-                                        Matrix jointMat;
-                                        jointMat = anim.currentJointTransformations.get(j);
-//                                }
-                                        FloatBuffer temp = jointMat.getAsFloatBuffer();
-//                                TODO: Change this to persistent map
-                                        glNamedBufferSubData(jointsInstancedBufferID,
-                                                ((modelCount * MAX_JOINTS) + j) * MATRIX_SIZE_BYTES, temp);
-                                        MemoryUtil.memFree(temp);
-                                    }
-                                }
-
-                                Matrix objectToLight = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                objectToLight.setValuesToBuffer(inst_mesh.instanceDataBuffer);
-                                for (int counter = 0; counter < 4; counter++) {
-                                    inst_mesh.instanceDataBuffer.put(0f);
-                                }
-                                modelCount++;
-                            }
-                            inst_mesh.instanceDataBuffer.flip();
-
-                            glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
-                            glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
-
-                            pipeline.renderInstanced(inst_mesh, chunk.size());
-                        }
-                    } else {
-                        depthShaderProgram.setUniform("isInstanced", 0);
-                        for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
-                            Model m = scene.modelID_model_map.get(modelId);
-
-                            if (m instanceof AnimatedModel) {
-                                depthShaderProgram.setUniform("isAnimated", 1);
-//                        Logger.log("detecting animated model");
-                                AnimatedModel anim = (AnimatedModel) m;
-                                for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
-                                    var matrix = anim.currentJointTransformations.get(j);
-                                    depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
-                                }
-                            } else {
-                                depthShaderProgram.setUniform("isAnimated", 0);
-                            }
-
-                            if (m.shouldCastShadow) {
-                                Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
-                                pipeline.render(mesh);
-                            }
-                        }
-                    }
-                    pipeline.endRender(mesh);
-                }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            }
-        }
-
-        depthShaderProgram.unbind();
-        return new ShadowDepthRenderPackage(worldToDirectionalLights,worldToSpotLights);
-    }
-
-    public class ShadowDepthRenderPackage {
-        public List<Matrix> worldToDirectionalLights;
-        public List<Matrix> worldToSpotLights;
-        public ShadowDepthRenderPackage(List<Matrix> worldToDirectionalLights,List<Matrix> worldToSpotLights) {
-            this.worldToDirectionalLights = worldToDirectionalLights;
-            this.worldToSpotLights = worldToSpotLights;
-        }
     }
 
     public class LightDataPackage {

@@ -5,17 +5,12 @@ import Kurama.Mesh.InstancedMesh;
 import Kurama.camera.Camera;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
-import Kurama.renderingEngine.RenderBlock;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderBlockOutput;
-import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 
 import java.util.*;
 
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
-import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 
 public class ParticleShaderBlock extends RenderBlock {
 
@@ -40,6 +35,8 @@ public class ParticleShaderBlock extends RenderBlock {
 
             particleShader.createUniform("numRows");
             particleShader.createUniform("numCols");
+
+            particleShader.setUniform("texture_sampler", 0);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -165,6 +162,9 @@ public class ParticleShaderBlock extends RenderBlock {
             return null;
         }
 
+        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
+        var camera = inp.camera;
+
         boolean curShouldCull = true;
         int currCull = GL_BACK;
 
@@ -172,20 +172,14 @@ public class ParticleShaderBlock extends RenderBlock {
         glCullFace(GL_BACK);
 
         particleShader.bind();
-        particleShader.setUniform("texture_sampler", 0);
 
-        for(var camera: input.scene.cameras) {
-            glBindFramebuffer(GL_FRAMEBUFFER, camera.renderBuffer.fboId);
-            glViewport(0, 0, camera.renderResolution.geti(0), camera.renderResolution.geti(1));
+        Matrix worldToCam = camera.getWorldToCam();
+        Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
+        particleShader.setUniform("projectionMatrix", projectionMatrix);
 
-            Matrix worldToCam = camera.getWorldToCam();
-            Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
-            particleShader.setUniform("projectionMatrix", projectionMatrix);
-
-            for (var generatorID : input.scene.shaderBlockID_particelGenID_map.get(blockID)) {
-                var generator = input.scene.particleGenID_generator_map.get(generatorID);
-                renderGenerator(generator, camera, worldToCam, curShouldCull, currCull);
-            }
+        for (var generatorID : input.scene.shaderBlockID_particelGenID_map.get(blockID)) {
+            var generator = input.scene.particleGenID_generator_map.get(generatorID);
+            renderGenerator(generator, camera, worldToCam, curShouldCull, currCull);
         }
 
         particleShader.unbind();
@@ -198,6 +192,6 @@ public class ParticleShaderBlock extends RenderBlock {
 
     @Override
     public void cleanUp() {
-
+        particleShader.cleanUp();
     }
 }

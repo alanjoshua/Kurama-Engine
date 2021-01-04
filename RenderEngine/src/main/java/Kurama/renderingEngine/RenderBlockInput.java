@@ -6,7 +6,7 @@ import Kurama.scene.Scene;
 public class RenderBlockInput {
     public Scene scene;
     public Game game;
-    RenderBlockOutput previousOutput;
+    public RenderBlockOutput previousOutput;
 
     public RenderBlockInput(Scene scene, Game game, RenderBlockOutput previousOutput) {
         this.game = game;

@@ -2,6 +2,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
 import Kurama.model.Model;
+import Kurama.renderingEngine.CurrentCameraBlockInput;
 import Kurama.renderingEngine.RenderBlockInput;
 import Kurama.renderingEngine.RenderBlockOutput;
 import Kurama.renderingEngine.RenderPipeline;
@@ -29,6 +30,8 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
             skyboxShader.createUniform("modelViewMatrix");
             skyboxShader.createUniform("texture_sampler");
             skyboxShader.createUniform("ambientLight");
+
+            skyboxShader.setUniform("texture_sampler", 0);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -44,19 +47,21 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
             return null;
         }
 
+        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
+        var camera = inp.camera;
+
         ShaderProgram skyBoxShaderProgram = skyboxShader;
         skyBoxShaderProgram.bind();
 
         if (input.scene.skybox.shouldRender) {
-            skyBoxShaderProgram.setUniform("texture_sampler", 0);
 
             // Update projection Matrix
-            Matrix projectionMatrix = input.scene.currentMainCamera.getPerspectiveProjectionMatrix();
+            Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
             skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
 
             Model skyBox = input.scene.skybox;
-            skyBox.setPos(input.scene.currentMainCamera.getPos());
-            Matrix modelViewMatrix = input.scene.currentMainCamera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
+            skyBox.setPos(camera.getPos());
+            Matrix modelViewMatrix = camera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 
