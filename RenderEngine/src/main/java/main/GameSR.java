@@ -12,7 +12,7 @@ import Kurama.geometry.MeshBuilderHints;
 import Kurama.inputs.Input;
 import Kurama.inputs.InputSR;
 import Kurama.model.Model;
-import Kurama.model.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 import Kurama.renderingEngine.RenderingEngine;
 import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
 import Kurama.renderingEngine.RenderingEngineSR;

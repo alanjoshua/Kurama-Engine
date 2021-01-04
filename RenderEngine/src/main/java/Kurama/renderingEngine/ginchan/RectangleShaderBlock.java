@@ -90,13 +90,13 @@ public class RectangleShaderBlock extends RenderBlock {
 
     @Override
     public RenderBlockOutput render(RenderBlockInput input) {
-        RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
-
         shader.bind();
 
-        test.pos = new Vector(new float[]{input.game.getDisplay().renderResolution.get(0)/4, input.game.getDisplay().renderResolution.get(1)/4, 0});
-        test.width = (int)input.game.getDisplay().renderResolution.get(0)/2;
-        test.height = (int)input.game.getDisplay().renderResolution.get(1)/2;
+        var cam = input.scene.cameras.get(1);
+
+        test.pos = new Vector(new float[]{cam.renderResolution.get(0)/4, cam.renderResolution.get(1)/4, 0});
+        test.width = (int)cam.renderResolution.get(0)/2;
+        test.height = (int)cam.renderResolution.get(1)/2;
 
         Quaternion rot = Quaternion.getAxisAsQuat(0,0,1,1);
         test.orientation = rot.multiply(test.orientation);
@@ -105,7 +105,7 @@ public class RectangleShaderBlock extends RenderBlock {
         var mat = ortho.matMul(test.getObjectToWorldMatrix());
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inp.renderBuffer.textureId);
+        glBindTexture(GL_TEXTURE_2D, cam.renderBuffer.textureId);
         setupRectangleUniform(mat, test.radii, test.width, test.height, true);
 
         glDrawMeshTasksNV(0,1);

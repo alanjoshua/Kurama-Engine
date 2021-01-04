@@ -1,4 +1,4 @@
-package Kurama.model;
+package Kurama.model.modelBehaviour;
 
 import Kurama.scene.Scene;
 

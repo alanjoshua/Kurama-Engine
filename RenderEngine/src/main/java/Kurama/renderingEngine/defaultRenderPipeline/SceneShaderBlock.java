@@ -5,6 +5,7 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
+import Kurama.camera.Camera;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
@@ -12,7 +13,6 @@ import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderBlockInput;
 import Kurama.renderingEngine.RenderBlockOutput;
-import Kurama.renderingEngine.RenderBufferRenderBlockInput;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
@@ -85,7 +85,6 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
     @Override
     public RenderBlockOutput render(RenderBlockInput input) {
-        RenderBufferRenderBlockInput inp = (RenderBufferRenderBlockInput)input;
 
         glCullFace(GL_FRONT);  //this means meshes with no back face will not cast shadows.
         ShadowDepthRenderPackage shadowPackage =  renderDepthMap(input.scene);
@@ -94,12 +93,20 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
+        for(var camera: input.scene.cameras) {
+            glBindFramebuffer(GL_FRAMEBUFFER, camera.renderBuffer.fboId);
+            glViewport(0, 0, camera.renderResolution.geti(0), camera.renderResolution.geti(1));
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, inp.renderBuffer.fboId);
-        glViewport(0,0,(int)input.game.getDisplay().renderResolution.get(0),(int)input.game.getDisplay().renderResolution.get(1));
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            if (camera.shouldPerformFrustumCulling) {
+                pipeline.frustumIntersection.set(camera.getPerspectiveProjectionMatrix().matMul(camera.getWorldToCam()));
+                pipeline.frustumCullModels(input.scene.shaderblock_mesh_model_map.get(blockID), input.scene);
+                pipeline.frustumCullParticles(input.scene.particleGenerators);
+            }
 
-        renderScene(input.scene,shadowPackage);
+            renderScene(input.scene, camera, shadowPackage);
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -205,7 +212,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         return offset;
     }
 
-    public void renderScene(Scene scene, ShadowDepthRenderPackage shadowPackage) {
+    public void renderScene(Scene scene, Camera camera, ShadowDepthRenderPackage shadowPackage) {
 
         DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
         boolean curShouldCull = true;
@@ -214,8 +221,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         ShaderProgram sceneShaderProgram = scene_shader;
         sceneShaderProgram.bind();
 
-        Matrix worldToCam = scene.camera.getWorldToCam();
-        Matrix projectionMatrix = scene.camera.getPerspectiveProjectionMatrix();
+        Matrix worldToCam = camera.getWorldToCam();
+        Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
 
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
         sceneShaderProgram.setUniform("worldToCam", worldToCam);

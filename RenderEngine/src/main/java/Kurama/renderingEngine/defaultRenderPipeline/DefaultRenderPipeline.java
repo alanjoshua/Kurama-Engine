@@ -5,7 +5,6 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.InstancedMesh;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
-import Kurama.buffers.RenderBuffer;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
 import Kurama.model.Model;
@@ -53,10 +52,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES + (1*VECTOR4F_SIZE_BYTES);
     public static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS + (1*4);
 
-    public boolean performFrustumCulling = true;
-
+//    public boolean performFrustumCulling = true;
+//
     public FrustumIntersection frustumIntersection = new FrustumIntersection();
-    public RenderBuffer renderBuffer;
+//    public RenderBuffer renderBuffer;
 
     public DefaultRenderPipeline(Game game) {
         super(game);
@@ -65,7 +64,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     @Override
     public void setup(RenderPipelineInput input) {
 
-        renderBuffer = new RenderBuffer(game.getDisplay().renderResolution);
+//        renderBuffer = new RenderBuffer(game.getDisplay().renderResolution);
         var scene = input.scene;
 
         sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
@@ -91,10 +90,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         setCullFace(GL_BACK);
     }
 
-    @Override
-    public void renderResolutionChanged(Vector renderResolution) {
-        renderBuffer.resizeTexture(renderResolution);
-    }
+
+//    public void renderResolutionChanged(Vector renderResolution) {
+//        renderBuffer.resizeTexture(renderResolution);
+//    }
 
     public void enable(int param) {
         glEnable(param);
@@ -111,16 +110,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         var scene = input.scene;
 //        glViewport(0,0,(int)game.getDisplay().renderResolution.get(0),(int)game.getDisplay().renderResolution.get(1));
 
-        if (performFrustumCulling) {
-            frustumIntersection.set(scene.camera.getPerspectiveProjectionMatrix().matMul(scene.camera.getWorldToCam()));
-            frustumCullModels(scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), scene);
-            frustumCullParticles(scene.particleGenerators);
-        }
-
 //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        //        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
+//        glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
 //        RenderingEngineGL.clear();
-        sceneShaderBlock.render(new RenderBufferRenderBlockInput(scene, game, null, renderBuffer));
+        sceneShaderBlock.render(new RenderBlockInput(scene, game, null));
         skyboxShaderBlock.render(new RenderBlockInput(scene, game, null));
 
 //        glDisable(GL_CULL_FACE);
@@ -133,14 +126,14 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
         RenderingEngineGL.clear();
 
-        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, null, renderBuffer));
+        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, null, scene.cameras.get(0).renderBuffer));
 
         //Hud should be rendered at last, or else text would have background
         hudShaderBlock.render(new RenderBlockInput(scene, game, null));
 
         glEnable(GL_DEPTH_TEST);
 
-        return new RenderBufferRenderPipelineOutput(renderBuffer);
+        return null;
     }
 
     public void frustumCullModels(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {
@@ -175,7 +168,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         hudShaderBlock.cleanUp();
         particleShaderBlock.cleanUp();
         fullScreenQuadBlock.cleanUp();
-        renderBuffer.cleanUp();
+//        renderBuffer.cleanUp();
     }
 
     @Override

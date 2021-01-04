@@ -52,7 +52,8 @@ public class Scene {
     public Fog fog = Fog.NOFOG;
 
     public HUD hud;
-    public Camera camera;
+    public List<Camera> cameras = new ArrayList<>();
+    public Camera currentMainCamera;
     public RenderPipeline renderPipeline;
     public List<Material> materialLibrary = new ArrayList<>();
     public HashMap<String, Material> materialInd_mat = new HashMap<>();
@@ -328,14 +329,15 @@ public class Scene {
     }
 
     public void cleanUp() {
-        for(Mesh m: meshID_mesh_map.values()) {
+        for (Mesh m : meshID_mesh_map.values()) {
             m.cleanUp();
         }
 
-        if(soundManager != null) {
+        if (soundManager != null) {
             soundManager.cleanUp();
         }
 
+        cameras.forEach(Camera::cleanUp);
     }
 
     public Collection<Model> getModels() {

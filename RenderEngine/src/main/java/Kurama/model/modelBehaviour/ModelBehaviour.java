@@ -1,4 +1,6 @@
-package Kurama.model;
+package Kurama.model.modelBehaviour;
+
+import Kurama.model.Model;
 
 public abstract class ModelBehaviour {
 

@@ -30,7 +30,7 @@ import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
-import Kurama.model.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 import Kurama.particle.FlowParticleGenerator;
 import Kurama.particle.Particle;
 import Kurama.particle.ParticleGeneratorTickInput;
@@ -39,7 +39,7 @@ import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
-import ModelBehaviour.AttachToPlayer;
+import Kurama.model.modelBehaviour.AttachToPlayer;
 import ModelBehaviour.SunRevolve;
 
 import java.awt.*;
@@ -76,6 +76,7 @@ public class GameLWJGL extends Game implements Runnable {
     protected boolean prevGameState = false;
 
     private boolean shouldDayNight = false;
+    public Camera playerCamera;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -89,15 +90,23 @@ public class GameLWJGL extends Game implements Runnable {
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
+        playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
+                Display.defaultWindowedWidth, Display.defaultWindowedHeight);
+
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
             display.windowResolution = new Vector(new float[]{width, height});
-            display.renderResolution = new Vector(new float[]{width, height});
-            scene.renderPipeline.renderResolutionChanged(display.renderResolution);
+            playerCamera.renderResolution = new Vector(new float[]{width, height});
                 if(getCamera() != null) {
                     getCamera().setShouldUpdateValues(true);
                 }
         });
+        scene.cameras.add(playerCamera);
+        scene.currentMainCamera = playerCamera;
+
+        var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
+                Display.defaultWindowedWidth, Display.defaultWindowedHeight);
+        scene.cameras.add(secondCam);
 
         input = new InputLWJGL(this);
 
@@ -113,7 +122,6 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         initScene();
-//        scene = SceneUtils.loadScene(this, "projects/testProject");
 
         initPauseScreen();
 
@@ -122,7 +130,7 @@ public class GameLWJGL extends Game implements Runnable {
         renderingEngine.init(scene);
 
         display.setClearColor(0,0,0,1);
-        scene.camera.updateValues();
+        scene.cameras.forEach(Camera::updateValues);
         targetFPS = display.getRefreshRate();
 
         Logger.log("");
@@ -145,10 +153,6 @@ public class GameLWJGL extends Game implements Runnable {
         MeshBuilderHints hints = new MeshBuilderHints();
 
         scene.hud = new TestHUD(this);
-
-        scene.camera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                (int)display.renderResolution.get(0), (int)display.renderResolution.get(1));
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
@@ -196,7 +200,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
 
         spotLight.shouldCastShadow = false;
-        spotLight.setBehaviour(new AttachToPlayer());
+        spotLight.setBehaviour(new AttachToPlayer(playerCamera));
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 //     -------------------------------------------------------------------------------------------------------------------
@@ -508,7 +512,7 @@ public class GameLWJGL extends Game implements Runnable {
             ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
             scene.particleGenerators.forEach(gen -> gen.tick(param));
 
-            scene.soundManager.tick(scene.camera, timeDelta);
+            scene.soundManager.tick(scene.currentMainCamera, timeDelta);
 
         }
 
@@ -517,7 +521,7 @@ public class GameLWJGL extends Game implements Runnable {
         }
         else {
             calculate3DCamMovement();
-            scene.camera.tick(timeDelta);
+            scene.cameras.forEach(c -> c.tick(timeDelta));
         }
 
     }
@@ -528,7 +532,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.W)) {
             float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -577,7 +581,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.S)) {
             float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -588,7 +592,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.A)) {
             float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(-cameraSpeed));
@@ -597,7 +601,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(input.keyDown(input.D)) {
             float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = scene.camera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(cameraSpeed));
@@ -652,7 +656,7 @@ public class GameLWJGL extends Game implements Runnable {
 
 //        Vector newPos = scene.camera.getPos().add(posDelta);
 //        scene.camera.setPos(newPos);
-        scene.camera.velocity = velocity;
+        playerCamera.velocity = velocity;
 
 //        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
 //        if(terrainCollisionData.isValid) {
@@ -667,7 +671,7 @@ public class GameLWJGL extends Game implements Runnable {
             float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
             float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
 
-            Vector currentAngle = scene.camera.getOrientation().getPitchYawRoll();
+            Vector currentAngle = playerCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
 
             if(currentPitch >= 0 && currentPitch > 60) {
@@ -680,11 +684,11 @@ public class GameLWJGL extends Game implements Runnable {
             Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
             Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 
-            Quaternion q = scene.camera.getOrientation();
+            Quaternion q = playerCamera.getOrientation();
 
             q = q.multiply(pitch);
             q = yaw.multiply(q);
-            scene.camera.setOrientation(q);
+            playerCamera.setOrientation(q);
         }
 
     }
@@ -706,7 +710,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public Camera getCamera() {
-        return scene.camera;
+        return playerCamera;
     }
 
     public Input getInput() {

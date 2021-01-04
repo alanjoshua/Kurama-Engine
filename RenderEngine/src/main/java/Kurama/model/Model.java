@@ -7,6 +7,8 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.geometry.MeshBuilder;
+import Kurama.model.modelBehaviour.ModelBehaviour;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 
 import java.util.ArrayList;
 import java.util.Arrays;

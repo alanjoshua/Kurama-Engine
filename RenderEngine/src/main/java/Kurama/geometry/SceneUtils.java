@@ -18,7 +18,7 @@ import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.HUD;
 import Kurama.model.Model;
-import Kurama.model.ModelBehaviour;
+import Kurama.model.modelBehaviour.ModelBehaviour;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
@@ -300,7 +300,7 @@ public class SceneUtils {
                                 break;
                         }
                     }
-                    scene.camera = new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight);
+                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight));
                 }
 
                 if(isLoadingPointLights) {
@@ -1718,13 +1718,13 @@ public class SceneUtils {
 //                                          Write camera and Fog
 
             writer.write("CAMERA INFO\n");
-            writer.write("pos:"+scene.camera.getPos().toString()+"\n");
-            writer.write("orientation:"+scene.camera.getOrientation().toString()+"\n");
-            writer.write("fovX:"+scene.camera.getFovX()+"\n");
-            writer.write("near:"+scene.camera.getNearClippingPlane()+"\n");
-            writer.write("far:"+scene.camera.getFarClippingPlane()+"\n");
-            writer.write("imageWidth:"+scene.camera.getImageWidth()+"\n");
-            writer.write("imageHeight:"+scene.camera.getImageHeight()+"\n");
+            writer.write("pos:"+scene.currentMainCamera.getPos().toString()+"\n");
+            writer.write("orientation:"+scene.currentMainCamera.getOrientation().toString()+"\n");
+            writer.write("fovX:"+scene.currentMainCamera.getFovX()+"\n");
+            writer.write("near:"+scene.currentMainCamera.getNearClippingPlane()+"\n");
+            writer.write("far:"+scene.currentMainCamera.getFarClippingPlane()+"\n");
+            writer.write("imageWidth:"+scene.currentMainCamera.renderResolution.geti(0)+"\n");
+            writer.write("imageHeight:"+scene.currentMainCamera.renderResolution.geti(1)+"\n");
             writer.newLine();
 
             writer.write("FOG INFO\n");

@@ -4,8 +4,8 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.lighting.DirectionalLight;
 import Kurama.model.Model;
-import Kurama.model.ModelBehaviour;
-import Kurama.model.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.ModelBehaviour;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 import Kurama.scene.Scene;
 
 public class SunRevolve extends ModelBehaviour {

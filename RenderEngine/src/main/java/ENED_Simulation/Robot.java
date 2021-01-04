@@ -11,7 +11,7 @@ import Kurama.geometry.MeshBuilder;
 import Kurama.inputs.Input;
 import Kurama.misc_structures.GridNode;
 import Kurama.model.Model;
-import Kurama.model.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 
 import java.util.*;
 

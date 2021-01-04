@@ -10,12 +10,12 @@ public abstract class Display {
 
     protected Game game;
     protected Input input;
-    protected int defaultWindowedWidth = 1280;
-    protected int defaultWindowedHeight = 720;
+    public static int defaultWindowedWidth = 1280;
+    public static int defaultWindowedHeight = 720;
     public int resolutionScale = 1;
 
     public Vector windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
-    public Vector renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+//    public Vector renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
 
     public static String OS = System.getProperty("os.name").toLowerCase();
     public static final double winDPI = 96;

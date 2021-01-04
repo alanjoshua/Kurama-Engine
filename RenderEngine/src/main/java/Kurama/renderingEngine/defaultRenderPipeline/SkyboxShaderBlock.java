@@ -51,12 +51,12 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
             skyBoxShaderProgram.setUniform("texture_sampler", 0);
 
             // Update projection Matrix
-            Matrix projectionMatrix = input.scene.camera.getPerspectiveProjectionMatrix();
+            Matrix projectionMatrix = input.scene.currentMainCamera.getPerspectiveProjectionMatrix();
             skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
 
             Model skyBox = input.scene.skybox;
-            skyBox.setPos(input.scene.camera.getPos());
-            Matrix modelViewMatrix = input.scene.camera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
+            skyBox.setPos(input.scene.currentMainCamera.getPos());
+            Matrix modelViewMatrix = input.scene.currentMainCamera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 

@@ -5,6 +5,7 @@ import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
+import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 
 public class Movable extends Model {
 

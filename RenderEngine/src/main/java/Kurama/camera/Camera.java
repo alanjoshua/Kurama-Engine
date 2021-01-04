@@ -3,6 +3,8 @@ package Kurama.camera;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
+import Kurama.buffers.RenderBuffer;
+import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.geometry.Utils;
 import Kurama.model.Model;
@@ -19,8 +21,8 @@ public class Camera {
 	private float focalLength;
 	private float nearClippingPlane;
 	private float farClippingPlane;
-	private int imageWidth = 0;
-	private int imageHeight = 0;
+//	private int imageWidth = 0;
+//	private int imageHeight = 0;
 
 	private float fovX;
 	private float fovY;
@@ -50,8 +52,13 @@ public class Camera {
 	private final float inchToMm = 25.4f;
 	
 	private boolean shouldUpdateValues = false;
-	
 	private Quaternion orientation;
+
+	public RenderBuffer renderBuffer;
+	public boolean isActive = true;
+	public boolean shouldPerformFrustumCulling = true;
+
+	public Vector renderResolution = new Vector(new float[]{Display.defaultWindowedWidth, Display.defaultWindowedHeight});
 
 //	public Camera(Game game, float[][] data, float focalLength, float filmApertureWidth, float filmApertureHeight,
 //			float nearClippingPlane, float farClippingPlane, int imageWidht, int imageHeight, int cameraMode) {
@@ -74,20 +81,22 @@ public class Camera {
 //	}
 
 	public Camera(Game game, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
-				  int imageWidht, int imageHeight) {
+				  int imageWidth, int imageHeight) {
 		this.game = game;
 		this.filmApertureWidth = 0;
 		this.filmApertureHeight = 0;
 		this.focalLength = 0;
 		this.nearClippingPlane = nearClippingPlane;
 		this.farClippingPlane = farClippingPlane;
-		this.imageWidth = imageWidht;
-		this.imageHeight = imageHeight;
+//		this.imageWidth = imageWidth;
+//		this.imageHeight = imageHeight;
 		this.fovX = fovX;
 		this.pos = pos;
 		canvasWidth = 0;
 		canvasHeight = 0;
 		this.orientation = quaternion;
+		this.renderResolution = new Vector(new float[]{imageWidth, imageHeight});
+		renderBuffer = new RenderBuffer(renderResolution);
 		
 		if(quaternion == null) {
 			this.setOrientation(new Quaternion(new Vector(new float[] {1,0, 0, 0})));
@@ -115,9 +124,11 @@ public class Camera {
 	public void updateValues() {
 		 if (cameraMode == gameModeCamera) {
 
-		 	imageWidth = (int)game.getDisplay().renderResolution.get(0);
-		 	imageHeight = (int)game.getDisplay().renderResolution.get(1);
+		 	int imageWidth = renderResolution.geti(0);
+		 	int imageHeight = renderResolution.geti(1);
 			 imageAspectRatio = imageWidth / (float) imageHeight;
+
+			 renderBuffer.resizeTexture(renderResolution);
 
 			if (game.getRenderingEngine().projectionMode == ProjectionMode.PERSPECTIVE) {
 				
@@ -271,6 +282,10 @@ public class Camera {
 		return res;
 	}
 
+	public void cleanUp() {
+		renderBuffer.cleanUp();
+	}
+
 	public Matrix getPerspectiveProjectionMatrix() {
 		return perspectiveProjectionMatrix;
 	}
@@ -320,19 +335,11 @@ public class Camera {
 	}
 
 	public int getImageWidth() {
-		return imageWidth;
-	}
-
-	public void setImageWidth(int imageWidth) {
-		this.imageWidth = imageWidth;
+		return renderResolution.geti(0);
 	}
 
 	public int getImageHeight() {
-		return imageHeight;
-	}
-
-	public void setImageHeight(int imageHeight) {
-		this.imageHeight = imageHeight;
+		return renderResolution.geti(1);
 	}
 
 	public boolean isShouldUpdateValues() {

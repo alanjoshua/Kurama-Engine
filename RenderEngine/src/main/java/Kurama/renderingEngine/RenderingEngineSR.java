@@ -47,8 +47,8 @@ public class RenderingEngineSR extends RenderingEngine {
     }
 
     public void resetBuffers() {
-        depthBuffer = new float[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
-        frameBuffer = new Color[game.getCamera().getImageHeight()][game.getCamera().getImageWidth()];
+        depthBuffer = new float[game.getCamera().renderResolution.geti(0)][game.getCamera().renderResolution.geti(1)];
+        frameBuffer = new Color[game.getCamera().renderResolution.geti(0)][game.getCamera().renderResolution.geti(1)];
     }
 
 //    Renders only the outlines of polygons
@@ -129,8 +129,8 @@ public class RenderingEngineSR extends RenderingEngine {
                 float[] temp = new float[]{x / w, y / w, z / w};
 //				Vector temp = new Vector(new float[] { x / w, y / w, z / w});
 
-                projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * cam.getImageWidth()),
-                        (int) ((1 - (temp[1] + 1) * 0.5) * cam.getImageHeight()), temp[2]}));
+                projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * cam.renderResolution.geti(0)),
+                        (int) ((1 - (temp[1] + 1) * 0.5) * cam.renderResolution.geti(1)), temp[2]}));
 
                 if ((-viewingTolerance <= temp[0] && temp[0] <= viewingTolerance)
                         && (-viewingTolerance <= temp[1] && temp[1] <= viewingTolerance)
@@ -376,8 +376,8 @@ public class RenderingEngineSR extends RenderingEngine {
             float w = v.get(3);
             float[] temp = new float[]{x / w, y / w, z / w};
 
-            projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * game.getCamera().getImageWidth()),
-                    (int) ((1 - (temp[1] + 1) * 0.5) * game.getCamera().getImageHeight()), -camSpace.getColumn(i).get(2)}));
+            projectedVectors.set(i, new Vector(new float[]{(int) ((temp[0] + 1) * 0.5 * game.getCamera().renderResolution.geti(0)),
+                    (int) ((1 - (temp[1] + 1) * 0.5) * game.getCamera().renderResolution.geti(1)), -camSpace.getColumn(i).get(2)}));
         }
 
         return projectedVectors;
