@@ -819,7 +819,7 @@ public class Simulation extends Game {
             robot.pathModel.shouldRender = true;
            hasAddedPath = true;
         }
-        renderingEngine.render(scene);
+        renderingEngine.render(scene, null);
         if(hasAddedPath) {
 //            scene.mesh_model_map.remove(robot.pathModel.mesh);
 //            scene.models.remove(scene.models.size()-1);

@@ -2,6 +2,7 @@ package main;
 
 import HUD.TestHUD;
 import Kurama.Effects.Fog;
+import Kurama.GUI.MasterWindow;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -77,6 +78,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     private boolean shouldDayNight = false;
     public Camera playerCamera;
+    public MasterWindow masterComponent;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -89,6 +91,8 @@ public class GameLWJGL extends Game implements Runnable {
         display = new DisplayLWJGL(this);
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
+
+        masterComponent = new MasterWindow(display, "masterWindow");
 
         playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
@@ -103,6 +107,8 @@ public class GameLWJGL extends Game implements Runnable {
         });
         scene.cameras.add(playerCamera);
         scene.currentMainCamera = playerCamera;
+
+        masterComponent.texture = new Texture(playerCamera.renderBuffer);
 
         var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
@@ -485,6 +491,10 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void tick() {
+
+        masterComponent.width = playerCamera.getImageWidth();  // This is temporary
+        masterComponent.height = playerCamera.getImageHeight();
+
         tickInput();
         if(scene.hud != null) {
             scene.hud.tick();
@@ -694,7 +704,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void render() {
-        renderingEngine.render(scene);
+        renderingEngine.render(scene, masterComponent);
         glfwSwapBuffers(display.getWindow());
         glfwPollEvents();
         input.poll();

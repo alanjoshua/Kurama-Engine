@@ -1,5 +1,6 @@
 package Kurama.renderingEngine;
 
+import Kurama.GUI.Component;
 import Kurama.game.Game;
 import Kurama.scene.Scene;
 
@@ -23,9 +24,9 @@ public class RenderingEngineGL extends RenderingEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void render(Scene scene) {
+    public void render(Scene scene, Component masterWindow) {
         var output = sceneRenderPipeline.render(new RenderPipelineInput(scene, null));
-        guiRenderPipeline.render(new RenderPipelineInput(scene, output));
+        guiRenderPipeline.render(new GUIComponentRenderPipelineInput(scene, masterWindow, output));
     }
 
     public void cleanUp() {

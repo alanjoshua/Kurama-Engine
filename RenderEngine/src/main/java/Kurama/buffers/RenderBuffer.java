@@ -16,9 +16,11 @@ public class RenderBuffer {
 //    public final Texture texture;
     public final int textureId;
     public final int depthId;
+    public Vector renderResolution;
 
     public RenderBuffer(Vector renderResolution) {
 
+        this.renderResolution = renderResolution;
         fboId = glGenFramebuffers();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
@@ -54,7 +56,8 @@ public class RenderBuffer {
     }
 
     public void resizeTexture(Vector renderResolution) {
-        Logger.log("here resize called");
+
+        this.renderResolution = renderResolution;
 
         glBindTexture(GL_TEXTURE_2D, textureId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, (int)renderResolution.get(0), (int)renderResolution.get(1),

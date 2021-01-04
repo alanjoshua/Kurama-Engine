@@ -1,5 +1,6 @@
 package Kurama.Mesh;
 
+import Kurama.buffers.RenderBuffer;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -55,6 +56,12 @@ public class Texture {
         this.id = textureId;
         width = 0;
         height = 0;
+    }
+
+    public Texture(RenderBuffer buffer) {
+        this.id = buffer.textureId;
+        width = buffer.renderResolution.geti(0);
+        height = buffer.renderResolution.geti(1);
     }
 
     public Texture(String fileName) {

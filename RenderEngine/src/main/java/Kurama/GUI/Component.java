@@ -15,7 +15,7 @@ public abstract class Component {
     public int width;
     public int height;
 
-    public Vector color = new Vector(1,1,1,1);
+    public Vector color = new Vector(0,0,0,1);
     public Texture texture = null;
 
     public String identifier;

@@ -29,7 +29,6 @@ public class RectangleShaderBlock extends RenderBlock {
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
-    public static final int BUFFER_SIZE_BYTES = MATRIX_SIZE_BYTES + VECTOR4F_SIZE_BYTES + FLOAT_SIZE_BYTES;
 
     public RectangleShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
@@ -47,7 +46,7 @@ public class RectangleShaderBlock extends RenderBlock {
             rectangleUniformBuffer = glGenBuffers();
             glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
-            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(23);
+            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(27);
             glBufferData(GL_UNIFORM_BUFFER, jointsDataInstancedBuffer, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, rectangleUniformBuffer);
 
@@ -71,13 +70,27 @@ public class RectangleShaderBlock extends RenderBlock {
         test.orientation = Quaternion.getAxisAsQuat(0,0, 1,0);
     }
 
-    public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture) {
+    public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
+                                      Vector color) {
 
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
-        FloatBuffer temp = MemoryUtil.memAllocFloat(23);
+        FloatBuffer temp = MemoryUtil.memAllocFloat(27);
         projectionViewMatrix.setValuesToBuffer(temp);
-        radius.setValuesToBuffer(temp);
+
+        if(radius != null) {
+            radius.setValuesToBuffer(temp);
+        }
+        else {
+            temp.put(new float[]{0,0,0,0});
+        }
+
+        if (color != null) {
+            color.setValuesToBuffer(temp);
+        }
+        else {
+            temp.put(new float[]{0,0,0,0});
+        }
         temp.put(width);
         temp.put(height);
         temp.put(hasTexture?1f:0f);
@@ -90,25 +103,25 @@ public class RectangleShaderBlock extends RenderBlock {
 
     @Override
     public RenderBlockOutput render(RenderBlockInput input) {
+
+        GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
+        Rectangle masterComponent = (Rectangle)inp.component;
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
+
         shader.bind();
 
-        var cam = input.scene.cameras.get(1);
+        var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
 
-        test.pos = new Vector(new float[]{cam.renderResolution.get(0)/4, cam.renderResolution.get(1)/4, 0});
-        test.width = (int)cam.renderResolution.get(0)/2;
-        test.height = (int)cam.renderResolution.get(1)/2;
+        if(masterComponent.texture != null) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
+        }
 
-        Quaternion rot = Quaternion.getAxisAsQuat(0,0,1,1);
-        test.orientation = rot.multiply(test.orientation);
-
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
-        var mat = ortho.matMul(test.getObjectToWorldMatrix());
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cam.renderBuffer.textureId);
-        setupRectangleUniform(mat, test.radii, test.width, test.height, true);
+        setupRectangleUniform(mat, masterComponent.radii, masterComponent.width, masterComponent.height,
+                masterComponent.texture== null?false:true, masterComponent.color);
 
         glDrawMeshTasksNV(0,1);
+
         shader.unbind();
 
         return null;

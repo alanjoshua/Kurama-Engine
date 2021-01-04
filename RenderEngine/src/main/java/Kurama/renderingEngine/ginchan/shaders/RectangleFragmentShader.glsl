@@ -3,13 +3,13 @@
 layout(location = 0) out vec4 outColor;
 
 in PerVertexData {
-    vec4 color;
     vec2 tex;
 } fragIn;
 
 layout (location = 0) uniform Rectangle{
     mat4 projectionViewMatrix;
     vec4 radius;
+    vec4 color;
     vec2 dimensions;
     float hasTexture;
 }rectangle;
@@ -61,7 +61,7 @@ void main() {
 
     vec4 finalColor;
     if (rectangle.hasTexture == 0) {
-        outColor = fragIn.color;
+        outColor = rectangle.color;
     }
     else {
         outColor = texture(texture_sampler, fragIn.tex);

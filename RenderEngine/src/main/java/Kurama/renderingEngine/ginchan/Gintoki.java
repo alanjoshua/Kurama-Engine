@@ -23,9 +23,12 @@ public class Gintoki extends RenderPipeline {
 
     @Override
     public RenderPipelineOutput render(RenderPipelineInput input) {
+
+        GUIComponentRenderPipelineInput inp = (GUIComponentRenderPipelineInput) input;
+
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-        rectangleShaderBlock.render(new RenderBlockInput(input.scene, game, null));
+        rectangleShaderBlock.render(new GUIComponentRenderInput(input.scene, game, inp.component, null));
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
