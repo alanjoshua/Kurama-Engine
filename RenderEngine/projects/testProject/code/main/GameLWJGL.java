@@ -39,7 +39,7 @@ import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
-import Kurama.model.modelBehaviour.AttachToPlayer;
+import Kurama.model.modelBehaviour.AttachToCamera;
 import ModelBehaviour.SunRevolve;
 
 import java.awt.*;
@@ -200,7 +200,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
 
         spotLight.shouldCastShadow = false;
-        spotLight.setBehaviour(new AttachToPlayer(playerCamera));
+        spotLight.setBehaviour(new AttachToCamera(playerCamera));
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 //     -------------------------------------------------------------------------------------------------------------------

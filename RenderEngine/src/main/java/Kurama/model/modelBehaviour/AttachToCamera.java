@@ -3,11 +3,11 @@ package Kurama.model.modelBehaviour;
 import Kurama.camera.Camera;
 import Kurama.model.Model;
 
-public class AttachToPlayer extends ModelBehaviour {
+public class AttachToCamera extends ModelBehaviour {
 
     public Camera attachedCamera;
 
-    public AttachToPlayer(Camera camera) {
+    public AttachToCamera(Camera camera) {
         attachedCamera = camera;
     }
 
