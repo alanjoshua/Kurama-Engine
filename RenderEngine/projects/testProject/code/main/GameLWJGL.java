@@ -2,8 +2,10 @@ package main;
 
 import HUD.TestHUD;
 import Kurama.Effects.Fog;
+import Kurama.GUI.AttachToRenderBuffer;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
+import Kurama.GUI.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -109,16 +111,13 @@ public class GameLWJGL extends Game implements Runnable {
         scene.cameras.add(playerCamera);
         scene.currentMainCamera = playerCamera;
 
-        masterComponent.texture = new Texture(playerCamera.renderBuffer);
-
         var testSquare = new Rectangle(masterComponent, new Vector(10,10,10,10), "test");
         testSquare.pos = new Vector(10,10,0);
         testSquare.color = new Vector(0.7f, 0.2f, 0.9f, 0.5f);
-        testSquare.width = 200;
-        testSquare.height = 500;
+        testSquare.constraints.add(new WidthHeightPercent(0.2f, 0.95f));
         masterComponent.children.add(testSquare);
-        masterComponent.isContainerVisible = true;
-        masterComponent.shouldRenderGroup = false;
+
+        masterComponent.constraints.add(new AttachToRenderBuffer(playerCamera.renderBuffer));
 
         var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
@@ -481,8 +480,8 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
 
-        masterComponent.width = playerCamera.getImageWidth();  // This is temporary
-        masterComponent.height = playerCamera.getImageHeight();
+        masterComponent.resolveConstraints();
+        scene.cameras.forEach(c -> c.tick(timeDelta));
 
         tickInput();
         if(scene.hud != null) {
@@ -520,7 +519,6 @@ public class GameLWJGL extends Game implements Runnable {
         }
         else {
             calculate3DCamMovement();
-            scene.cameras.forEach(c -> c.tick(timeDelta));
         }
 
     }

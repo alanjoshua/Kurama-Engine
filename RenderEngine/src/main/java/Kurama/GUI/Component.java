@@ -24,6 +24,7 @@ public abstract class Component {
 
     public Component parent = null;
     public List<Component> children = new ArrayList<>();
+    public List<Constraint> constraints = new ArrayList<>();
 
     public Component(Component parent, String identifier) {
         this.identifier = identifier;
@@ -42,13 +43,13 @@ public abstract class Component {
         return transformationMatrix;
     }
 
-    public void resolveChildrenConstraints() {
+    public void resolveConstraints() {
+        for(var constraint: constraints) {
+            constraint.solveConstraint(parent, this);
+        }
 
         for(var child: children) {
-
-            // Code to Resolve constraints//
-
-            child.resolveChildrenConstraints();
+            child.resolveConstraints();
         }
 
     }

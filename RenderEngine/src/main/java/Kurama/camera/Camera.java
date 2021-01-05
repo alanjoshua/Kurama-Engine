@@ -9,6 +9,7 @@ import Kurama.game.Game;
 import Kurama.geometry.Utils;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 
@@ -110,7 +111,6 @@ public class Camera {
 	}
 
 	public void tick(float timeDelta) {
-
 		velocity = velocity.add(acceleration.scalarMul(timeDelta));
 		var detlaV = velocity.scalarMul(timeDelta);
 		pos = pos.add(detlaV);
@@ -122,6 +122,9 @@ public class Camera {
 	}
 
 	public void updateValues() {
+
+		Logger.log("updating camera");
+
 		 if (cameraMode == gameModeCamera) {
 
 		 	int imageWidth = renderResolution.geti(0);
@@ -131,34 +134,18 @@ public class Camera {
 			 renderBuffer.resizeTexture(renderResolution);
 
 			if (game.getRenderingEngine().projectionMode == ProjectionMode.PERSPECTIVE) {
-				
-//				right = (float) Math.tan(Math.toRadians(fovX / 2f)) * this.nearClippingPlane;
-//
-//				if (imageAspectRatio >= 1) {
-//					top = right;
-//					right = top * imageAspectRatio;
-//				} else {
-//					top = right * (1 / imageAspectRatio);
-//				}
-//
-//				left = -right;
-//				bottom = -top;
-//				fovY = (float) (2 * Math.atan(((top - bottom) * 0.5) / this.nearClippingPlane));
-//				canvasWidth = right * 2;
-//				canvasHeight = top * 2;
 				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveMatrix(fovX, imageAspectRatio, nearClippingPlane, farClippingPlane, 1, 1);
-//				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 			}
 			else if(game.getRenderingEngine().projectionMode == ProjectionMode.ORTHO) {
 				
 				Vector[] bounds = Utils.getWorldBoundingBox(new ArrayList<>(game.scene.getModels()));
 				Vector minCam = (getWorldToCam().matMul(bounds[0].append(1))).toVector();
 				Vector maxCam = (getWorldToCam().matMul(bounds[1].append(1))).toVector();
-//				maxCam.display();
+
 				float maxX = Math.max(Math.abs(minCam.get(0)), Math.abs(maxCam.get(0)));
 				float maxY = Math.max(Math.abs(minCam.get(1)), Math.abs(maxCam.get(1)));
 				float max = Math.max(maxX, maxY);
-//				System.out.println(max);
+
 				right = max * imageAspectRatio;
 				top = max; 
 			    left = -right;

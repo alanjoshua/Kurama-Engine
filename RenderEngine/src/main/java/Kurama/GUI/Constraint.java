@@ -1,4 +1,5 @@
 package Kurama.GUI;
 
-public class Constraint {
+public abstract class Constraint {
+    public abstract void solveConstraint(Component parent, Component current);
 }
