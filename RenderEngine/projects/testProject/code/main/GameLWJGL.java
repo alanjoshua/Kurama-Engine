@@ -15,8 +15,6 @@ import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
-import Kurama.renderingEngine.ginchan.Gintoki;
-import Kurama.shadow.ShadowMap;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5AnimModel;
 import Kurama.geometry.MD5.MD5Model;
@@ -31,16 +29,18 @@ import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
+import Kurama.model.modelBehaviour.AttachToCamera;
 import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
 import Kurama.particle.FlowParticleGenerator;
 import Kurama.particle.Particle;
 import Kurama.particle.ParticleGeneratorTickInput;
 import Kurama.renderingEngine.RenderingEngineGL;
 import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
+import Kurama.renderingEngine.ginchan.Gintoki;
 import Kurama.scene.Scene;
+import Kurama.shadow.ShadowMap;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
-import Kurama.model.modelBehaviour.AttachToCamera;
 import ModelBehaviour.SunRevolve;
 
 import java.awt.*;
@@ -210,29 +210,6 @@ public class GameLWJGL extends Game implements Runnable {
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 //     -------------------------------------------------------------------------------------------------------------------
-//                                                   Second Spot Light
-
-//        lightPos = new Vector(new float[]{0,0,10});
-//        PointLight s2_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
-//        s2_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0.01f);
-//        Quaternion coneOrientation_2 = Quaternion.getQuaternionFromEuler(-65,0,0);
-//        SpotLight spotLight_2 = new SpotLight(this,s2_pointLight, coneOrientation_2, 25,
-//                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH * 4, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT * 4),
-//                null, null, null,"spotlight 1");
-//
-//        spotLight_2.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
-//
-//        scene.spotLights.add(spotLight_2);
-//
-//        spotLight_2.setPos(new Vector(new float[]{72,-44.7f,78.5f}));
-//        spotLight_2.isOpaque = false;
-// ------------------------------------------------------------------------------------------------------------------------
-
-//        MiniBehaviour tempRot = ((m, params) -> {
-//            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}), 50* timeDelta);
-//            Quaternion newQ = rot.multiply(m.getOrientation());
-//            m.setOrientation(newQ);
-//        });
 
         float skyBoxScale = 1000;
         float boxScale = 1f;
@@ -278,12 +255,6 @@ public class GameLWJGL extends Game implements Runnable {
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
         }
-
-//        var plantMesh = scene.loadMesh("res/plant/01Alocasia_obj.obj", "plantMesh", hints);
-//        plantMesh.initOpenGLMeshData();
-//        Model plant = scene.createModel(plantMesh, "plant", Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
-//        plant.setPos(new Vector(15, 45, 10));
-//        plant.setScale(0.005f);
 
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
