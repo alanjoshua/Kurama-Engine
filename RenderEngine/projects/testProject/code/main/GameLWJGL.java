@@ -3,6 +3,7 @@ package main;
 import HUD.TestHUD;
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
+import Kurama.GUI.Rectangle;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -109,6 +110,15 @@ public class GameLWJGL extends Game implements Runnable {
         scene.currentMainCamera = playerCamera;
 
         masterComponent.texture = new Texture(playerCamera.renderBuffer);
+
+        var testSquare = new Rectangle(masterComponent, new Vector(10,10,10,10), "test");
+        testSquare.pos = new Vector(10,10,0);
+        testSquare.color = new Vector(0.7f, 0.2f, 0.9f, 0.5f);
+        testSquare.width = 200;
+        testSquare.height = 500;
+        masterComponent.children.add(testSquare);
+        masterComponent.isContainerVisible = true;
+        masterComponent.shouldRenderGroup = false;
 
         var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);

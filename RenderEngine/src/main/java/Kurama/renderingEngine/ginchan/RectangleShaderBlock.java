@@ -1,8 +1,8 @@
 package Kurama.renderingEngine.ginchan;
 
+import Kurama.GUI.Component;
 import Kurama.GUI.Rectangle;
 import Kurama.Math.Matrix;
-import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
@@ -11,8 +11,6 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11C.glBindTexture;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL15C.*;
@@ -23,7 +21,6 @@ import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 public class RectangleShaderBlock extends RenderBlock {
 
     private ShaderProgram shader;
-    Rectangle test;
     int rectangleUniformBuffer;
 
     public static final int FLOAT_SIZE_BYTES = 4;
@@ -63,11 +60,6 @@ public class RectangleShaderBlock extends RenderBlock {
             System.exit(1);
         }
 
-        test = new Rectangle(null, null,"test");
-        test.width = 100;
-        test.height = 100;
-        test.radii = new Vector(30,40,50,60);
-        test.orientation = Quaternion.getAxisAsQuat(0,0, 1,0);
     }
 
     public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
@@ -105,26 +97,40 @@ public class RectangleShaderBlock extends RenderBlock {
     public RenderBlockOutput render(RenderBlockInput input) {
 
         GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
-        Rectangle masterComponent = (Rectangle)inp.component;
+        var masterComponent = inp.component;
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
 
         shader.bind();
 
-        var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
-
-        if(masterComponent.texture != null) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
-        }
-
-        setupRectangleUniform(mat, masterComponent.radii, masterComponent.width, masterComponent.height,
-                masterComponent.texture== null?false:true, masterComponent.color);
-
-        glDrawMeshTasksNV(0,1);
+        recursiveRender(masterComponent, ortho);
 
         shader.unbind();
-
         return null;
+    }
+
+    // This only render rectangle components
+    public void recursiveRender(Component masterComponent, Matrix ortho) {
+
+        if(!masterComponent.shouldRenderGroup) {
+            return;
+        }
+
+        if(masterComponent.isContainerVisible && masterComponent instanceof Rectangle) {
+            var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
+            if (masterComponent.texture != null) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
+            }
+            setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
+                    masterComponent.texture == null ? false : true, masterComponent.color);
+
+            glDrawMeshTasksNV(0, 1);
+        }
+
+        for(var child: masterComponent.children) {
+            recursiveRender(child, ortho);
+        }
+
     }
 
     @Override

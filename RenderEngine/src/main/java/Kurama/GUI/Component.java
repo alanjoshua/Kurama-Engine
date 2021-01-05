@@ -19,7 +19,8 @@ public abstract class Component {
     public Texture texture = null;
 
     public String identifier;
-    public boolean isHidden = false;
+    public boolean isContainerVisible = true;
+    public boolean shouldRenderGroup = true;
 
     public Component parent = null;
     public List<Component> children = new ArrayList<>();
