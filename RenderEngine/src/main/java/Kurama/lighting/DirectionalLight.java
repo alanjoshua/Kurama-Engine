@@ -48,6 +48,6 @@ public class DirectionalLight extends Model {
         this(light.game,new Vector(light.color), new Quaternion(light.orientation), light.intensity, light.shadowMap,
                 light.meshes, light.boundingbox,  light.shadowProjectionMatrix, light.identifier);
         this.doesProduceShadow = light.doesProduceShadow;
-        this.shouldCastShadow = light.shouldCastShadow;
+        this.shouldSelfCastShadow = light.shouldSelfCastShadow;
     }
 }

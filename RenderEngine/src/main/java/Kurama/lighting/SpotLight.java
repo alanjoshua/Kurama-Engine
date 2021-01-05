@@ -50,7 +50,7 @@ public class SpotLight extends Model {
                 spotLight.identifier);
         cutOff = spotLight.cutOff;
         this.doesProduceShadow = spotLight.doesProduceShadow;
-        this.shouldCastShadow = spotLight.shouldCastShadow;
+        this.shouldSelfCastShadow = spotLight.shouldSelfCastShadow;
     }
 
     public void setPos(Vector newPos) {

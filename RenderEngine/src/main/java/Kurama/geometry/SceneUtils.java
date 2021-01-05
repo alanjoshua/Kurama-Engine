@@ -565,7 +565,7 @@ public class SceneUtils {
                             s.setPos(pos);
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
-                            s.shouldCastShadow = shouldCastShadow;
+                            s.shouldSelfCastShadow = shouldCastShadow;
                             s.setBehaviour(behaviour);
                             scene.addSplotLight(s, shaderIds);
                         }
@@ -605,7 +605,7 @@ public class SceneUtils {
                             m.setPos(pos);
                             m.setScale(scale);
                             m.shouldRender = shouldRender;
-                            m.shouldCastShadow = shouldCastShadow;
+                            m.shouldSelfCastShadow = shouldCastShadow;
                             m.setBehaviour(behaviour);
                             scene.addModel(m, shaderIds);
                         }
@@ -1654,7 +1654,7 @@ public class SceneUtils {
                 writer.write("scale:"+model.getScale().toString()+"\n");
                 writer.write("pos:"+model.getPos().toString()+"\n");
                 writer.write("orientation:"+model.getOrientation().toString()+"\n");
-                writer.write("shouldCastShadow:"+model.shouldCastShadow+"\n");
+                writer.write("shouldCastShadow:"+model.shouldSelfCastShadow +"\n");
                 writer.write("shouldRender:"+model.shouldRender+"\n");
 
                 if(model.getBehaviour() == null) {

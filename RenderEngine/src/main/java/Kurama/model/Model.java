@@ -29,7 +29,7 @@ public class Model {
 	protected Matrix cacheViewMatrix;
 	public boolean isChanged = true;
 
-	public boolean shouldCastShadow = true;
+	public boolean shouldSelfCastShadow = true;
 	public String identifier;
 	public boolean shouldRender = true;
 	public boolean isInsideFrustum = true;

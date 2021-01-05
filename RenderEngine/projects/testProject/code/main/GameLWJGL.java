@@ -182,7 +182,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.lightPosScale = 500;
-        directionalLight.shouldCastShadow = false;
+        directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
         directionalLight.setScale(100);
         directionalLight.setBehaviour(new SunRevolve());
@@ -214,7 +214,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        spotLight.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1, 0, 0}), -30).
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
 
-        spotLight.shouldCastShadow = false;
+        spotLight.shouldSelfCastShadow = false;
         spotLight.setBehaviour(new AttachToCamera(playerCamera));
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 

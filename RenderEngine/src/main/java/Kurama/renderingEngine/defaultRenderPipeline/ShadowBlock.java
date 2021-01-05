@@ -111,7 +111,7 @@ public class ShadowBlock extends RenderBlock {
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
                             var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
+                            if (m.shouldRender && m.shouldSelfCastShadow && m.isInsideFrustum) {
                                 models.add(m);
                             }
                         }
@@ -178,7 +178,7 @@ public class ShadowBlock extends RenderBlock {
                                 depthShaderProgram.setUniform("isAnimated", 0);
                             }
 
-                            if (m.shouldCastShadow && m.shouldRender) {
+                            if (m.shouldSelfCastShadow && m.shouldRender) {
                                 Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                                 depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                                 pipeline.render(mesh);
@@ -231,7 +231,7 @@ public class ShadowBlock extends RenderBlock {
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
                             var m = scene.modelID_model_map.get(modelId);
-                            if (m.shouldRender && m.shouldCastShadow && m.isInsideFrustum) {
+                            if (m.shouldRender && m.shouldSelfCastShadow && m.isInsideFrustum) {
                                 models.add(m);
                             }
                         }
@@ -298,7 +298,7 @@ public class ShadowBlock extends RenderBlock {
                                 depthShaderProgram.setUniform("isAnimated", 0);
                             }
 
-                            if (m.shouldCastShadow) {
+                            if (m.shouldSelfCastShadow) {
                                 Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
                                 depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                                 pipeline.render(mesh);
