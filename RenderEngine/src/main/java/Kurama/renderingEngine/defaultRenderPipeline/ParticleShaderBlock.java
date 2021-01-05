@@ -1,7 +1,8 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
-import Kurama.Mesh.InstancedMesh;
+import Kurama.Mesh.InstancedUtils;
+import Kurama.Mesh.Mesh;
 import Kurama.camera.Camera;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
@@ -44,7 +45,7 @@ public class ParticleShaderBlock extends RenderBlock {
         }
     }
 
-    public void renderChunk(List<Model> chunk, InstancedMesh inst_mesh, List<Matrix> objectToCam, int offset) {
+    public void renderChunk(List<Model> chunk, Mesh inst_mesh, List<Matrix> objectToCam, int offset) {
         inst_mesh.instanceDataBuffer.clear();
 
         int particleCount = 0;
@@ -128,11 +129,11 @@ public class ParticleShaderBlock extends RenderBlock {
                 currCull = mesh.cullmode;
             }
 
-            if(!(mesh instanceof InstancedMesh)) {
+            if(!(mesh.isInstanced)) {
                 throw new IllegalArgumentException("A particle has to be instanced");
             }
 
-            var inst_mesh = (InstancedMesh)mesh;
+            var inst_mesh = mesh;
 
             if (inst_mesh.materials.get(0).texture != null) {
                 glActiveTexture(GL_TEXTURE0);
@@ -145,7 +146,7 @@ public class ParticleShaderBlock extends RenderBlock {
             ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
 
             int modelsProcessedSoFar = 0;
-            var chunks = InstancedMesh.getRenderChunks(sortedParticles_list, inst_mesh.instanceChunkSize);
+            var chunks = InstancedUtils.getRenderChunks(sortedParticles_list, inst_mesh.instanceChunkSize);
             for(var chunk: chunks) {
                 renderChunk(chunk, inst_mesh, sorted_objectToCam, modelsProcessedSoFar);
                 modelsProcessedSoFar+=chunk.size();

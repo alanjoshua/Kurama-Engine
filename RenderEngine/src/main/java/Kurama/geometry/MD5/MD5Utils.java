@@ -200,8 +200,11 @@ public class MD5Utils {
             m.setAttribute(jointIndicesPerVert, Mesh.JOINTINDICESPERVERT);
             m.setAttribute(matList, Mesh.MATERIAL);
             m = MeshBuilder.bakeMesh(m, null);
+
             if(hints != null && hints.isInstanced) {
-                m = new InstancedMesh(m, hints.numInstances);
+//                m = new InstancedMesh(m, hints.numInstances);
+                m.isInstanced = true;
+                m.instanceChunkSize = hints.numInstances;
             }
 
             m.meshIdentifier = Utils.getUniqueID();

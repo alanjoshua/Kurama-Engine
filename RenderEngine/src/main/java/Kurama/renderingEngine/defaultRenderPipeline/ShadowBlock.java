@@ -1,7 +1,7 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
-import Kurama.Mesh.InstancedMesh;
+import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.SpotLight;
@@ -104,9 +104,9 @@ public class ShadowBlock extends RenderBlock {
 
                     pipeline.initRender(mesh);
 
-                    if (mesh instanceof InstancedMesh) {
+                    if (mesh.isInstanced) {
                         depthShaderProgram.setUniform("isInstanced", 1);
-                        var inst_mesh = (InstancedMesh) mesh;
+                        var inst_mesh = mesh;
                         var models = new ArrayList<Model>();
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
@@ -117,12 +117,12 @@ public class ShadowBlock extends RenderBlock {
                         }
                         List<List<Model>> chunks;
                         if (mesh.isAnimatedSkeleton) {
-                            chunks = InstancedMesh.getRenderChunks(models,
+                            chunks = InstancedUtils.getRenderChunks(models,
                                     inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
                                             inst_mesh.instanceChunkSize : DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
                             depthShaderProgram.setUniform("isAnimated", 1);
                         } else {
-                            chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                            chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
                             depthShaderProgram.setUniform("isAnimated", 0);
                         }
 
@@ -224,9 +224,9 @@ public class ShadowBlock extends RenderBlock {
 
                     pipeline.initRender(mesh);
 
-                    if (mesh instanceof InstancedMesh) {
+                    if (mesh.isInstanced) {
                         depthShaderProgram.setUniform("isInstanced", 1);
-                        var inst_mesh = (InstancedMesh) mesh;
+                        var inst_mesh = mesh;
                         var models = new ArrayList<Model>();
 
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
@@ -237,12 +237,12 @@ public class ShadowBlock extends RenderBlock {
                         }
                         List<List<Model>> chunks;
                         if (mesh.isAnimatedSkeleton) {
-                            chunks = InstancedMesh.getRenderChunks(models,
+                            chunks = InstancedUtils.getRenderChunks(models,
                                     inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
                                             inst_mesh.instanceChunkSize : DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
                             depthShaderProgram.setUniform("isAnimated", 1);
                         } else {
-                            chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                            chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
                             depthShaderProgram.setUniform("isAnimated", 0);
                         }
 

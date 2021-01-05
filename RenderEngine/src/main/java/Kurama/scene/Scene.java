@@ -134,6 +134,12 @@ public class Scene {
         List<Mesh> meshes= null;
         try {
             meshes = AssimpStaticLoader.load(location, textureDir, AssimpStaticLoader.getFlags(hints));
+            if(hints != null && hints.isInstanced) {
+                meshes.forEach(m -> {
+                    m.isInstanced = true;
+                    m.instanceChunkSize = hints.numInstances;
+                });
+            }
         }
         catch (Exception e) {
             Logger.logError("Unable to load meshes via assimp. Returning null...");
@@ -146,6 +152,12 @@ public class Scene {
     public AnimatedModel createAnimatedModelAssimp(String location, String textureDir, String ID, MeshBuilderHints hints, String[] shaderIds) {
         try {
             var model = AssimpAnimLoader2.load(game, location, textureDir, AssimpAnimLoader.getFlags(hints));
+            if(hints != null && hints.isInstanced) {
+                model.meshes.forEach(m -> {
+                    m.isInstanced = true;
+                    m.instanceChunkSize = hints.numInstances;
+                });
+            }
             model.identifier = ID;
             addModel(model, Arrays.asList(shaderIds));
             return model;

@@ -328,7 +328,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         }
         var madara = new MD5Model("res/madara/madara.md5mesh");
-        hints.isInstanced = true;
+        hints.isInstanced = false;
         hints.numInstances = 1;
         var madara_meshes = MD5Utils.generateMeshes(madara, new Vector(1f, 1f, 1f, 1f), hints);
         madara_meshes.get(0).meshIdentifier = "madara1";
@@ -370,17 +370,25 @@ public class GameLWJGL extends Game implements Runnable {
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
         Logger.log("loading assimp model");
-//        List<Mesh> houseMeshes = scene.loadMeshesAssimp("res/house/house.obj", "res/house", houseHints);
-//        houseMeshes.forEach(m -> {
-//            m.materials.get(0).normalMap = null;
-//            scene.renderPipeline.initializeMesh(m);
-//        });
-//        var houseMeshes = scene.loadMesh("res/house/house.obj", "house", houseHints);
-////        houseMeshes.materials.get(0).normalMap = null;
-////        houseMeshes.materials.get(0).diffuseMap = null;
-//        scene.renderPipeline.initializeMesh(houseMeshes);
-//        var house = scene.createModel(houseMeshes, "house", Arrays.asList(new String[] {DefaultRenderPipeline.sceneShaderBlockID}));
-//        house.setPos(new Vector(0, 45, 50));
+        try {
+            MeshBuilderHints houseHints = new MeshBuilderHints();
+            houseHints.isInstanced = false;
+            houseHints.numInstances = 1;
+            var meshes = scene.loadMeshesAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
+                    houseHints);
+            meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
+            var model = new Model(this, meshes, "woflf_static");
+            model.pos = new Vector(30, 30, 50);
+            model.scale = new Vector(20,20,20);
+            model.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
+            model.meshes.forEach(m -> {
+                m.shouldCull = false;
+            });
+            scene.addModel(model, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
 
         try {
             MeshBuilderHints houseHints = new MeshBuilderHints();

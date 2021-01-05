@@ -2,7 +2,6 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Vector;
-import Kurama.Mesh.InstancedMesh;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
@@ -55,6 +54,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static int MAX_SPOTLIGHTS = 10;
     public static int MAX_POINTLIGHTS = 10;
     public static int MAX_JOINTS = 150;
+    public static int MAX_MATERIALS = 50;
 
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
@@ -112,7 +112,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(
                 DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES *
                         DefaultRenderPipeline.MAX_JOINTS *
-                        DefaultRenderPipeline.MATRIX_SIZE_BYTES);
+                        DefaultRenderPipeline.MATRIX_SIZE_FLOATS);
 
         glNamedBufferStorage(jointsInstancedBufferID, jointsDataInstancedBuffer, GL_DYNAMIC_STORAGE_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, jointsInstancedBufferID);
@@ -218,8 +218,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     @Override
     public void initializeMesh(Mesh mesh) {
-        if(mesh instanceof InstancedMesh) {
-            initializeInstancedMesh((InstancedMesh) mesh);
+        if(mesh.isInstanced) {
+            initializeInstancedMesh(mesh);
         }
         else {
             initializeRegularMesh(mesh);
@@ -263,7 +263,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         }
     }
 
-    public void renderInstanced(InstancedMesh mesh, int numModels) {
+    public void renderInstanced(Mesh mesh, int numModels) {
         if(mesh.indices != null) {
             glDrawElementsInstanced(mesh.drawMode, mesh.indices.size(), GL_UNSIGNED_INT, 0, numModels);
         }
@@ -314,30 +314,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(2,0));
         defaultVals.add(new Vector(0,0,0));
-        defaultVals.add(new Vector(0,0,0, 0));
+        defaultVals.add(new Vector(0,0,0, 1));
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(new float[]{0}));
         defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
         defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
-
-        if(!mesh.isAttributePresent(Mesh.WEIGHTBIASESPERVERT)) {
-            Vector negs = new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1);
-            List<Vector> att = new ArrayList<>(mesh.vertAttributes.get(Mesh.POSITION).size());
-            att.add(negs);
-            for(int i = 0;i < mesh.indices.size(); i++) {
-                att.add(negs);
-            }
-            mesh.setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
-            mesh.setAttribute(att, Mesh.JOINTINDICESPERVERT);
-
-//            for(var f: mesh.faces) {
-//                for(var vert: f.vertices) {
-//                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
-//                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
-//                }
-//            }
-        }
 
         IntBuffer indicesBuffer = null;
         List<Integer> offsets = new ArrayList<>(mesh.vertAttributes.size());
@@ -348,79 +330,54 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         try {
 //        Calculate stride and offset
             offsets.add(0);
-            for(int i = 0;i < mesh.vertAttributes.size();i++) {
-                Vector curr = null;
-                int numberOfElements = 0;
 
-                if(curr == null) {
-//                break;
-                    if(mesh.vertAttributes.get(i)!= null) {
-                        for (int j = 0; j < mesh.vertAttributes.get(i).size(); j++) {
-                            curr = mesh.vertAttributes.get(i).get(j);
-                            if (curr != null) {
-                                if(curr.getNumberOfDimensions() != defaultVals.get(i).getNumberOfDimensions()) {
-                                    throw new Exception("Dimensions do not match");
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if(curr == null) {
-                    numberOfElements = defaultVals.get(i).getNumberOfDimensions();  //Assume a default of 4 if all positions are empty
-                }
-                else {
-                    numberOfElements = curr.getNumberOfDimensions();
-                }
-
+            for(int i = 0;i < defaultVals.size();i++) {
+                Vector curr = mesh.isAttributePresent(i) ?
+                        (mesh.vertAttributes.get(i).get(0) == null?
+                                defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
+                int numberOfElements = curr.getNumberOfDimensions();
                 int size = numberOfElements * sizeOfFloat;
                 stride += size;
-                sizePerAttrib.add(size);
+                sizePerAttrib.add(size/sizeOfFloat);
                 offsets.add(stride);
             }
             offsets.remove(offsets.size() - 1);
 
-            FloatBuffer colorBuffer = null;
-
             int vboId;
-
             mesh.vaoId = glGenVertexArrays();
             glBindVertexArray(mesh.vaoId);
 
             for(int i = 0;i < sizePerAttrib.size();i++) {
-                if(mesh.vertAttributes.get(i)!=null) {
 
-                    FloatBuffer tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
+                FloatBuffer tempBuffer = null;
+
+                if(mesh.isAttributePresent(i) && mesh.vertAttributes.get(i)!=null) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
                     for (Vector v : mesh.vertAttributes.get(i)) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
-//                            v.display();
                         } else {    //Hack to handle nulls
-//                            float[] t = new float[sizePerAttrib.get(i) / sizeOfFloat];
-                            float[] t = defaultVals.get(i).getData();
-//                            for (int j = 0; j < t.length; j++) {
-//                                tempBuffer.put(0);
-//                                System.out.println(0);
-//                                t[j] = 0f;
-//                            }
                             tempBuffer.put(defaultVals.get(i).getData());
-//                            new Vector(t).display();
                         }
                     }
 
-                    tempBuffer.flip();
-
-                    vboId = glGenBuffers();
-                    mesh.vboIdList.add(vboId);
-                    glBindBuffer(GL_ARRAY_BUFFER, vboId);
-                    glBufferData(GL_ARRAY_BUFFER, tempBuffer, GL_STATIC_DRAW);
-                    glEnableVertexAttribArray(i);
-                    glVertexAttribPointer(i, sizePerAttrib.get(i) / sizeOfFloat, GL_FLOAT, false, 0, 0);
-
-                    MemoryUtil.memFree(tempBuffer);   //Free buffer
-
                 }
+                else {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.POSITION).size());
+                    for(var temp: mesh.vertAttributes.get(Mesh.POSITION)) {
+                        defaultVals.get(i).setValuesToBuffer(tempBuffer);
+                    }
+                }
+
+                tempBuffer.flip();
+                vboId = glGenBuffers();
+                mesh.vboIdList.add(vboId);
+                glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ARRAY_BUFFER, tempBuffer, GL_STATIC_DRAW);
+                glEnableVertexAttribArray(i);
+                glVertexAttribPointer(i, sizePerAttrib.get(i), GL_FLOAT, false, 0, 0);
+
+                MemoryUtil.memFree(tempBuffer);   //Free buffer
             }
 
 //            INDEX BUFFER
@@ -451,118 +408,85 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     }
 
-    public void initializeInstancedMesh(InstancedMesh mesh) {
+    public void initializeInstancedMesh(Mesh mesh) {
         List<Vector> defaultVals = new ArrayList<>();
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(2,0));
         defaultVals.add(new Vector(0,0,0));
-        defaultVals.add(new Vector(0,0,0, 0));
+        defaultVals.add(new Vector(0,0,0, 1));
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(new float[]{0}));
         defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
         defaultVals.add(new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, -1));
 
-        IntBuffer indicesBuffer;
+        IntBuffer indicesBuffer = null;
         List<Integer> offsets = new ArrayList<>(mesh.vertAttributes.size());
         List<Integer> sizePerAttrib = new ArrayList<>(mesh.vertAttributes.size());
         int stride = 0;
 
-        if(!mesh.isAttributePresent(Mesh.WEIGHTBIASESPERVERT)) {
-            Vector negs = new Vector(MD5Utils.MAXWEIGHTSPERVERTEX, 0);
-            List<Vector> att = new ArrayList<>(mesh.vertAttributes.get(Mesh.POSITION).size());
-            for(var ind: mesh.indices) {
-                att.add(null);
-            }
-
-            mesh.setAttribute(att, Mesh.WEIGHTBIASESPERVERT);
-            mesh.setAttribute(att, Mesh.JOINTINDICESPERVERT);
-
-//            for(var f: mesh.faces) {
-//                for(var vert: f.vertices) {
-//                    vert.setAttribute(0, Vertex.WEIGHTBIASESPERVERT);
-//                    vert.setAttribute(0, Vertex.JOINTINDICESPERVERT);
-//                }
-//            }
-        }
-
         final int sizeOfFloat = Float.SIZE / Byte.SIZE;
-
-//        Calculate stride and offset
-        offsets.add(0);
         try {
-            for(int i = 0;i < mesh.vertAttributes.size();i++) {
-                Vector curr = null;
-                int numberOfElements = 0;
-
-                if(curr == null) {
-//                break;
-                    if(mesh.vertAttributes.get(i)!= null) {
-                        for (int j = 0; j < mesh.vertAttributes.get(i).size(); j++) {
-                            curr = mesh.vertAttributes.get(i).get(j);
-                            if (curr != null) {
-                                if(curr.getNumberOfDimensions() != defaultVals.get(i).getNumberOfDimensions()) {
-                                    throw new Exception("Dimensions do not match");
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if(curr == null) {
-                    numberOfElements = defaultVals.get(i).getNumberOfDimensions();  //Assume a default of 4 if all positions are empty
-                }
-                else {
-                    numberOfElements = curr.getNumberOfDimensions();
-                }
-
+//        Calculate stride and offset
+            offsets.add(0);
+            for(int i = 0;i < defaultVals.size();i++) {
+                Vector curr = mesh.isAttributePresent(i) ?
+                        (mesh.vertAttributes.get(i).get(0) == null?
+                                defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
+                int numberOfElements = curr.getNumberOfDimensions();
                 int size = numberOfElements * sizeOfFloat;
                 stride += size;
-                sizePerAttrib.add(size);
+                sizePerAttrib.add(size/sizeOfFloat);
                 offsets.add(stride);
             }
             offsets.remove(offsets.size() - 1);
 
-            FloatBuffer colorBuffer = null;
-
             int vboId;
 
-            int attribIndex = 0;  //Keeps track of vertex attribute index
+            int attribIndex = 0;
             mesh.vaoId = glGenVertexArrays();
             glBindVertexArray(mesh.vaoId);
 
             for(int i = 0;i < sizePerAttrib.size();i++) {
-                if(mesh.vertAttributes.get(i)!=null) {
 
-                    FloatBuffer tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
+                FloatBuffer tempBuffer = null;
+
+                if(mesh.isAttributePresent(i) && mesh.vertAttributes.get(i)!=null) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
                     for (Vector v : mesh.vertAttributes.get(i)) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
                         } else {    //Hack to handle nulls
-                            float[] t = defaultVals.get(i).getData();
                             tempBuffer.put(defaultVals.get(i).getData());
                         }
                     }
 
-                    tempBuffer.flip();
-
-                    vboId = glGenBuffers();
-                    mesh.vboIdList.add(vboId);
-                    glBindBuffer(GL_ARRAY_BUFFER, vboId);
-                    glBufferData(GL_ARRAY_BUFFER, tempBuffer, GL_STATIC_DRAW);
-                    glEnableVertexAttribArray(attribIndex);
-                    GL20.glVertexAttribPointer(attribIndex, sizePerAttrib.get(i) / sizeOfFloat, GL_FLOAT, false, 0, 0);
-
-                    MemoryUtil.memFree(tempBuffer);   //Free buffer
-
-                    attribIndex++;
                 }
+                else {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.POSITION).size());
+                    for(var temp: mesh.vertAttributes.get(Mesh.POSITION)) {
+                        defaultVals.get(i).setValuesToBuffer(tempBuffer);
+                    }
+                }
+
+                tempBuffer.flip();
+                vboId = glGenBuffers();
+                mesh.vboIdList.add(vboId);
+                glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ARRAY_BUFFER, tempBuffer, GL_STATIC_DRAW);
+                glEnableVertexAttribArray(i);
+                glVertexAttribPointer(i, sizePerAttrib.get(i), GL_FLOAT, false, 0, 0);
+
+                MemoryUtil.memFree(tempBuffer);   //Free buffer
+                attribIndex++;
+
             }
 
+//            INDEX BUFFER
             if(mesh.indices != null) {
+//                int vboId;
                 indicesBuffer = MemoryUtil.memAllocInt(mesh.indices.size());
-                for(int i:mesh.indices) {
+                for (int i : mesh.indices) {
                     indicesBuffer.put(i);
                 }
                 indicesBuffer.flip();
@@ -571,8 +495,12 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
                 mesh.vboIdList.add(vboId);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
-                MemoryUtil.memFree(indicesBuffer);  //Free buffer
+
+//                glBindBuffer(GL_ARRAY_BUFFER, 0);
+//                glBindVertexArray(0);
+                MemoryUtil.memFree(indicesBuffer);
             }
+
 
 //            Set up per instance vertex attributes such as transformation matrices
 
@@ -604,7 +532,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
         }
         catch(Exception e) {
-            System.out.println("caught exception here");
+            e.printStackTrace();
             System.exit(1);
         }finally{
 

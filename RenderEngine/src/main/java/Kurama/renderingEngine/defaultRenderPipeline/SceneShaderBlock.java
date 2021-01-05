@@ -2,7 +2,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
-import Kurama.Mesh.InstancedMesh;
+import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.camera.Camera;
@@ -82,7 +82,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
             scene_shader.createUniform("numDirectionalLights");
             scene_shader.createUniform("numberOfSpotLights");
             scene_shader.createUniform("isAnimated");
-            scene_shader.createMaterialListUniform("materials","mat_textures","mat_normalMaps","mat_diffuseMaps","mat_specularMaps",26);
+            scene_shader.createMaterialListUniform("materials","mat_textures",
+                    "mat_normalMaps","mat_diffuseMaps","mat_specularMaps",DefaultRenderPipeline.MAX_MATERIALS);
             scene_shader.createUniform("isInstanced");
             scene_shader.createUniform("ambientLight");
 
@@ -206,7 +207,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
             pipeline.initRender(mesh);
 
-            if(mesh instanceof InstancedMesh) {
+            if(mesh.isInstanced) {
 
                 sceneShaderProgram.setUniform("isInstanced", 1);
 
@@ -218,16 +219,16 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                     }
                 }
 
-                var inst_mesh = (InstancedMesh) mesh;
+                var inst_mesh = mesh;
                 List<List<Model>> chunks;
                 if(mesh.isAnimatedSkeleton) {
-                    chunks = InstancedMesh.getRenderChunks(models,
+                    chunks = InstancedUtils.getRenderChunks(models,
                             inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
                                     inst_mesh.instanceChunkSize: DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
                     scene_shader.setUniform("isAnimated", 1);
                 }
                 else {
-                    chunks = InstancedMesh.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                    chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
                     scene_shader.setUniform("isAnimated", 0);
                 }
                 for (var chunk: chunks) {

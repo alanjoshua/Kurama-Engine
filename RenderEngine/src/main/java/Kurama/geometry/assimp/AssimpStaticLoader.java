@@ -6,6 +6,7 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Mesh.TextureCache;
 import Kurama.geometry.MeshBuilderHints;
+import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -67,6 +68,7 @@ public class AssimpStaticLoader {
         List<Vector> tangents = processAttribute(aiMesh.mTangents());
         List<Vector> biTangents = processAttribute(aiMesh.mBitangents());
         List<Integer> indices = processIndices(aiMesh);
+        List<Vector> matInds = new ArrayList<>();
 
         vertAttribs.add(verts);
 
@@ -78,11 +80,16 @@ public class AssimpStaticLoader {
         }
         meshMaterials.add(newMat);
 
+        for(var ind: verts) {
+            matInds.add(new Vector(new float[]{matInd}));
+        }
+
         var newMesh = new Mesh(indices, null, vertAttribs, meshMaterials, resourcePath, null);
         newMesh.setAttribute(textures, Mesh.TEXTURE);
         newMesh.setAttribute(normals, Mesh.NORMAL);
         newMesh.setAttribute(tangents, Mesh.TANGENT);
         newMesh.setAttribute(biTangents, Mesh.BITANGENT);
+        newMesh.setAttribute(matInds, Mesh.MATERIAL);
 
         return newMesh;
     }
@@ -233,6 +240,11 @@ public class AssimpStaticLoader {
         material.ambientColor = ambient;
         material.diffuseColor = diffuse;
         material.specularColor = specular;
+
+        if(Material.DEFAULTAMBIENTCOLOR == null) {
+            Logger.logError("defaul color null");
+        }
+
         if(reflection != null) {
             material.reflectance = reflection;
         }

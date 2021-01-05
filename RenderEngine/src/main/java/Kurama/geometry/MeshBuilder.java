@@ -1,17 +1,12 @@
 package Kurama.geometry;
 
-import Kurama.Mesh.Material;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
-import Kurama.Mesh.Face;
-import Kurama.Mesh.InstancedMesh;
-import Kurama.Mesh.Mesh;
-import Kurama.Mesh.Vertex;
+import Kurama.Mesh.*;
 import Kurama.misc_structures.LinkedList.CircularDoublyLinkedList;
 import Kurama.misc_structures.LinkedList.DoublyLinkedList;
 import Kurama.misc_structures.LinkedList.Node;
-import Kurama.Mesh.Texture;
 import Kurama.utils.Logger;
 
 import java.io.*;
@@ -113,7 +108,9 @@ public class MeshBuilder {
 
 			if(hints.isInstanced) {
 				Logger.log("Converting to instanced mesh...");
-				resMesh = new InstancedMesh(resMesh, hints.numInstances);
+				resMesh.isInstanced = true;
+				resMesh.instanceChunkSize = hints.numInstances;
+//				resMesh = new InstancedMesh(resMesh, hints.numInstances);
 			}
 		}
 

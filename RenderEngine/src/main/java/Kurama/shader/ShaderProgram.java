@@ -7,6 +7,7 @@ import Kurama.Mesh.Material;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
+import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import org.lwjgl.system.MemoryStack;
 
@@ -243,6 +244,11 @@ public class ShaderProgram {
     }
 
     public int setUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName, Material material,int offset) {
+
+        if(material.ambientColor == null) {
+            Logger.logError("mat amb null");
+        }
+
         setUniform(uniformName + ".ambient", material.ambientColor);
         setUniform(uniformName + ".diffuse", material.diffuseColor);
         setUniform(uniformName + ".specular", material.specularColor);
@@ -294,7 +300,14 @@ public class ShaderProgram {
                     value.get(0),value.get(1),value.get(2));
         }
         else if(value.getNumberOfDimensions() == 4) {
-            glUniform4fv(uniforms.get(uniformName),value.getData());
+            var key = uniforms.get(uniformName);
+            var data = value.getData();
+
+            if(key == null) {
+                Logger.log("key is null");
+            }
+
+            glUniform4fv(key, data);
         }
         else if(value.getNumberOfDimensions() == 2) {
             glUniform2fv(uniforms.get(uniformName), value.getData());

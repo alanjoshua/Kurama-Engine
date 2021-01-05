@@ -43,7 +43,7 @@ layout (column_major, std430, binding=0) buffer joindsDataBlock {
     mat4 jointsDataInstanced[];
 };
 
-const int MAX_MATERIALS = 26;
+const int MAX_MATERIALS = 50;
 uniform Material materials[MAX_MATERIALS];
 uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 worldToSpotlightMatrix[MAX_SPOT_LIGHTS];

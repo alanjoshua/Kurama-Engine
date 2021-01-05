@@ -226,6 +226,7 @@ public class AssimpAnimLoader2 {
         List<Vector> tangents = AssimpStaticLoader.processAttribute(aiMesh.mTangents());
         List<Vector> biTangents = AssimpStaticLoader.processAttribute(aiMesh.mBitangents());
         List<Integer> indices = AssimpStaticLoader.processIndices(aiMesh);
+        List<Vector> matInds = new ArrayList<>();
 
         List results = processJoints(aiMesh, bonesList);
         List<Vector> jointIndices = (List<Vector>) results.get(0);
@@ -241,11 +242,16 @@ public class AssimpAnimLoader2 {
         }
         meshMaterials.add(newMat);
 
+        for(var ind: verts) {
+            matInds.add(new Vector(new float[]{matInd}));
+        }
+
         var newMesh = new Mesh(indices, null, vertAttribs, meshMaterials, resourcePath, null);
         newMesh.setAttribute(textures, Mesh.TEXTURE);
         newMesh.setAttribute(normals, Mesh.NORMAL);
         newMesh.setAttribute(tangents, Mesh.TANGENT);
         newMesh.setAttribute(biTangents, Mesh.BITANGENT);
+        newMesh.setAttribute(matInds, Mesh.MATERIAL);
         newMesh.setAttribute(jointIndices, Mesh.JOINTINDICESPERVERT);
         newMesh.setAttribute(weight, Mesh.WEIGHTBIASESPERVERT);
 

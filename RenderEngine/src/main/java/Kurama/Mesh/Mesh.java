@@ -3,6 +3,7 @@ package Kurama.Mesh;
 import Kurama.Math.Vector;
 import Kurama.geometry.MeshBuilderHints;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +43,12 @@ public class Mesh {
     public MeshBuilderHints hints;
     public boolean isModified = false;
     public boolean isAnimatedSkeleton = false;
+    public boolean isInstanced = false;
     public float boundingRadius = 1;
+
+    public int instanceChunkSize;
+    public int instanceDataVBO;
+    public FloatBuffer instanceDataBuffer;
 
     public Mesh(List<Integer> indices, List<Face> faces, List<List<Vector>> vertAttributes, List<Material> materials,
                 String meshLocation, MeshBuilderHints hints) {

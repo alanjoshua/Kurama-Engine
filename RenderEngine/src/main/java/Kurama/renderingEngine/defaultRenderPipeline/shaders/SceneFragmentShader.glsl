@@ -41,7 +41,6 @@ struct Material {
     int hasSpecularMap;
     int numRows;
     int numCols;
-//    int texPos;
 };
 
 struct Fog {
@@ -55,7 +54,7 @@ const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 
-const int MAX_MATERIALS = 26;
+const int MAX_MATERIALS = 50;
 uniform Material materials[MAX_MATERIALS];
 uniform sampler2D mat_textures[MAX_MATERIALS];
 uniform sampler2D mat_normalMaps[MAX_MATERIALS];
