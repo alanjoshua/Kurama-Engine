@@ -1,5 +1,6 @@
 package Kurama.GUI;
 
+import Kurama.GUI.constraints.DisplayAttach;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 
@@ -9,21 +10,7 @@ public class MasterWindow extends Rectangle {
     public MasterWindow(Display display, String identifier) {
         super(null, new Vector(0,0,0,0), identifier);
         this.display = display;
-    }
-
-    @Override
-    public void resolveConstraints() {
-
-        for(var constraint: constraints) {
-            constraint.solveConstraint(parent, this);
-        }
-
-        this.width = display.windowResolution.geti(0);
-        this.height = display.windowResolution.geti(1);
-
-        for(var child: children) {
-            child.resolveConstraints();
-        }
+        this.constraints.add(new DisplayAttach(display));
     }
 
     public void cleanUp() {

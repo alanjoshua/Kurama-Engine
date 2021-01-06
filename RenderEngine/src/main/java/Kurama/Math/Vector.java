@@ -185,12 +185,12 @@ public class Vector {
 		return (float) Math.sqrt(sum);
 	}
 
-	public static double getLength(Vector v) {
-		double sum = 0;
-		for (float f : v.getData()) {
+	public float sumSquared() {
+		float sum = 0;
+		for (float f : data) {
 			sum += (f * f);
 		}
-		return Math.sqrt(sum);
+		return (float) sum;
 	}
 
 	public Vector normalise() {

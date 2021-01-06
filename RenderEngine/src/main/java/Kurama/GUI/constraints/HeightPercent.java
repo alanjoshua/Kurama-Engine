@@ -1,4 +1,6 @@
-package Kurama.GUI;
+package Kurama.GUI.constraints;
+
+import Kurama.GUI.Component;
 
 public class HeightPercent extends Constraint {
 

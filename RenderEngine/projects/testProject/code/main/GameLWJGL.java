@@ -2,9 +2,11 @@ package main;
 
 import HUD.TestHUD;
 import Kurama.Effects.Fog;
-import Kurama.GUI.AttachToRenderBuffer;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
+import Kurama.GUI.automations.ResizeCameraRenderResolution;
+import Kurama.GUI.constraints.PosXYAttachPercent;
+import Kurama.GUI.constraints.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -100,22 +102,29 @@ public class GameLWJGL extends Game implements Runnable {
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
             display.windowResolution = new Vector(new float[]{width, height});
-            playerCamera.renderResolution = new Vector(new float[]{width, height});
-                if(getCamera() != null) {
-                    getCamera().setShouldUpdateValues(true);
-                }
         });
         scene.cameras.add(playerCamera);
 
-        masterComponent = new MasterWindow(display, "masterWindow");
-        masterComponent.isContainerVisible = false;
-        var sceneRender = new Rectangle(masterComponent, new Vector(10,10,10,10), "scene");
-        sceneRender.constraints.add(new AttachToRenderBuffer(playerCamera.renderBuffer));
-        masterComponent.children.add(sceneRender);
-
-        var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
+        var secondCam = new Camera(this,null, new Vector(20, 45, 35),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
         scene.cameras.add(secondCam);
+
+
+        masterComponent = new MasterWindow(display, "masterWindow");
+        masterComponent.isContainerVisible = false;
+
+        var leftDivide = new Rectangle(masterComponent, "leftHalf");
+        leftDivide.texture = new Texture(playerCamera.renderBuffer.textureId);
+        leftDivide.constraints.add(new WidthHeightPercent(0.5f, 1f));
+        leftDivide.automations.add(new ResizeCameraRenderResolution(playerCamera));
+        masterComponent.children.add(leftDivide);
+
+        var rightDivide = new Rectangle(masterComponent, "rightHalf");
+        rightDivide.texture = new Texture(secondCam.renderBuffer.textureId);
+        rightDivide.constraints.add(new WidthHeightPercent(0.5f, 1f));
+        rightDivide.constraints.add(new PosXYAttachPercent(0.5f,0));
+        rightDivide.automations.add(new ResizeCameraRenderResolution(secondCam));
+        masterComponent.children.add(rightDivide);
 
         input = new InputLWJGL(this);
 
@@ -641,7 +650,7 @@ public class GameLWJGL extends Game implements Runnable {
             }
 
             if(input.keyDownOnce(input.V)) {
-                display.toggleWindowModes();
+                masterComponent.toggleWindowModes();
             }
         }
 

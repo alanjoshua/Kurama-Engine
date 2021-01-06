@@ -1,5 +1,6 @@
-package Kurama.GUI;
+package Kurama.GUI.constraints;
 
+import Kurama.GUI.Component;
 import Kurama.Mesh.Texture;
 import Kurama.buffers.RenderBuffer;
 

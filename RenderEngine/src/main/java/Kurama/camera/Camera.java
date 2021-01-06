@@ -9,7 +9,6 @@ import Kurama.game.Game;
 import Kurama.geometry.Utils;
 import Kurama.model.Model;
 import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
-import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 
@@ -122,8 +121,6 @@ public class Camera {
 	}
 
 	public void updateValues() {
-
-		Logger.log("updating camera");
 
 		 if (cameraMode == gameModeCamera) {
 

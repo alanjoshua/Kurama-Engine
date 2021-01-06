@@ -1,5 +1,7 @@
 package Kurama.GUI;
 
+import Kurama.GUI.automations.Automation;
+import Kurama.GUI.constraints.Constraint;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -25,6 +27,7 @@ public abstract class Component {
     public Component parent = null;
     public List<Component> children = new ArrayList<>();
     public List<Constraint> constraints = new ArrayList<>();
+    public List<Automation> automations = new ArrayList<>();
 
     public Component(Component parent, String identifier) {
         this.identifier = identifier;
@@ -44,6 +47,11 @@ public abstract class Component {
     }
 
     public void resolveConstraints() {
+
+        for(var automation: automations) {
+            automation.runAutomation(this);
+        }
+
         for(var constraint: constraints) {
             constraint.solveConstraint(parent, this);
         }

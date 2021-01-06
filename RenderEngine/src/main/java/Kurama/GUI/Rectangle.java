@@ -11,4 +11,9 @@ public class Rectangle extends Component {
         this.radii = radii;
     }
 
+    public Rectangle(Component parent, String identifier) {
+        super(parent, identifier);
+        this.radii = new Vector(0,0,0,0);
+    }
+
 }
