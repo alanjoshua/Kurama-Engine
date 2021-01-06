@@ -7,8 +7,9 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.geometry.MeshBuilder;
-import Kurama.model.modelBehaviour.ModelBehaviour;
-import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.Behaviour;
+import Kurama.model.modelBehaviour.BehaviourTickInput;
+import Kurama.model.modelBehaviour.UpdatePosVelAcc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,14 +20,15 @@ import static org.lwjgl.opengl.GL11C.GL_LINES;
 
 public class Model {
 
+	public static Behaviour updatePosVelAcc = new UpdatePosVelAcc();
+
 	public Vector scale;
 	public  Vector pos;
 	public Vector velocity = new Vector(0,0,0);
 	public Vector acceleration = new Vector(0,0,0);
-	public ModelBehaviour behaviour;
+	public List<Behaviour> behaviours;
 	public Quaternion orientation;
 	protected Matrix transformedVertices;
-	protected Matrix cacheViewMatrix;
 	public boolean isChanged = true;
 
 	public boolean shouldSelfCastShadow = true;
@@ -41,7 +43,6 @@ public class Model {
 	public boolean isCollidable = true;
 	public boolean shouldShowCollisionBox = false;
 	public boolean shouldShowPath = false;
-	public boolean shouldShowAxes = false;
 	public Mesh boundingbox;
 	public Vector boundingBoxColor;
 	public Model pathModel;
@@ -70,7 +71,7 @@ public class Model {
 		this.game = game;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
-		behaviour = null;
+		behaviours = new ArrayList<>();
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
@@ -123,21 +124,18 @@ public class Model {
 		this.game = game;
 		scale = new Vector(new float[] { 1, 1, 1 });
 		pos = new Vector(3, 0);
-		behaviour = null;
+		behaviours = new ArrayList<>();
 		orientation = new Quaternion(new Vector(new float[] { 1, 0, 0, 0 }));
 		this.identifier = identifier;
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 	}
 
-	public void tick(ModelBehaviourTickInput params) {
-		if (behaviour != null) {
-			behaviour.tick(this,params);
+	public void tick(BehaviourTickInput params) {
+		for(var behaviour: behaviours) {
+			behaviour.tick(this, params);
 		}
 
-		var timeDelta = params.timeDelta;
-		velocity = velocity.add(acceleration.scalarMul(timeDelta));
-		var detlaV = velocity.scalarMul(timeDelta);
-		pos = pos.add(detlaV);
+		updatePosVelAcc.tick(this, params);
 	}
 
 	public Vector getDirectionToFrontFromCentre(Model search) {
@@ -209,14 +207,6 @@ public class Model {
 		Matrix res = m_.addColumn(pos_);
 		res = res.addRow(new Vector(new float[]{0,0,0,1}));
 		return res;
-	}
-
-	public ModelBehaviour getBehaviour() {
-		return behaviour;
-	}
-
-	public void setBehaviour(ModelBehaviour behaviour) {
-		this.behaviour = behaviour;
 	}
 
 	public Vector getPos() {

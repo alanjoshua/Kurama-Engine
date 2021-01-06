@@ -4,14 +4,14 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.lighting.DirectionalLight;
 import Kurama.model.Model;
-import Kurama.model.modelBehaviour.ModelBehaviour;
-import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.Behaviour;
+import Kurama.model.modelBehaviour.BehaviourTickInput;
 import Kurama.scene.Scene;
 
-public class SunRevolve extends ModelBehaviour {
+public class SunRevolve extends Behaviour {
 
     @Override
-    public void tick(Model m, ModelBehaviourTickInput params) {
+    public void tick(Model m, BehaviourTickInput params) {
 
         Scene scene = params.scene;
         float timeDelta = params.timeDelta;

@@ -18,7 +18,7 @@ import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.HUD;
 import Kurama.model.Model;
-import Kurama.model.modelBehaviour.ModelBehaviour;
+import Kurama.model.modelBehaviour.Behaviour;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
@@ -57,12 +57,12 @@ public class SceneUtils {
         return null;
     }
 
-    public static ModelBehaviour getMiniBehaviour(String behaviour_classname) {
+    public static Behaviour getMiniBehaviour(String behaviour_classname) {
         Logger.log("Retrieving model behaviour...");
         try {
             Class behaviour_class = Class.forName(behaviour_classname);
             Constructor  constructor = behaviour_class.getConstructor();
-            return (ModelBehaviour) constructor.newInstance();
+            return (Behaviour) constructor.newInstance();
 
         }  catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
@@ -387,7 +387,7 @@ public class SceneUtils {
 
                         String text=null;
 
-                        ModelBehaviour behaviour = null;
+                        Behaviour behaviour = null;
 
                         while(!(line2 = reader.readLine()).equals("")) {
                             String[] tokens2 = line2.split(":");
@@ -552,7 +552,7 @@ public class SceneUtils {
                             l.shouldRender = shouldRender;
                             l.doesProduceShadow = shouldCastShadow;
                             l.lightPosScale = lightPosScale;
-                            l.setBehaviour(behaviour);
+                            l.behaviours.add(behaviour);
                             scene.addDirectionalLight(l, shaderIds);
                         }
 
@@ -566,7 +566,7 @@ public class SceneUtils {
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
                             s.shouldSelfCastShadow = shouldCastShadow;
-                            s.setBehaviour(behaviour);
+                            s.behaviours.add(behaviour);
                             scene.addSplotLight(s, shaderIds);
                         }
 
@@ -606,7 +606,7 @@ public class SceneUtils {
                             m.setScale(scale);
                             m.shouldRender = shouldRender;
                             m.shouldSelfCastShadow = shouldCastShadow;
-                            m.setBehaviour(behaviour);
+                            m.behaviours.add(behaviour);
                             scene.addModel(m, shaderIds);
                         }
 
@@ -1657,11 +1657,11 @@ public class SceneUtils {
                 writer.write("shouldCastShadow:"+model.shouldSelfCastShadow +"\n");
                 writer.write("shouldRender:"+model.shouldRender+"\n");
 
-                if(model.getBehaviour() == null) {
+                if(model.behaviours == null) {
                     writer.write("modelBehaviour:null\n");
                 }
                 else{
-                    writer.write("modelBehaviour:"+model.getBehaviour().getClass().getCanonicalName()+"\n");
+                    writer.write("modelBehaviour:"+model.behaviours.get(0).getClass().getCanonicalName()+"\n");
                 }
 
                 if(type.equals("Text")) {

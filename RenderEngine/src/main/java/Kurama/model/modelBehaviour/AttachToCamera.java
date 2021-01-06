@@ -3,7 +3,7 @@ package Kurama.model.modelBehaviour;
 import Kurama.camera.Camera;
 import Kurama.model.Model;
 
-public class AttachToCamera extends ModelBehaviour {
+public class AttachToCamera extends Behaviour {
 
     public Camera attachedCamera;
 
@@ -12,7 +12,7 @@ public class AttachToCamera extends ModelBehaviour {
     }
 
     @Override
-    public void tick(Model m, ModelBehaviourTickInput params) {
+    public void tick(Model m, BehaviourTickInput params) {
 
         m.setPos(attachedCamera.getPos().sub(attachedCamera.getOrientation().
                 getRotationMatrix().getColumn(2).removeDimensionFromVec(3)));

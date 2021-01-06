@@ -18,7 +18,7 @@ import Kurama.inputs.InputLWJGL;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.model.Model;
-import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.BehaviourTickInput;
 import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.scene.Scene;
 
@@ -521,7 +521,7 @@ public class Simulation extends Game {
         }
 
         if(isGameRunning) {
-            ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
+            BehaviourTickInput params = new BehaviourTickInput(timeDelta, scene);
 
             scene.getModels()
                     .stream()

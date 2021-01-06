@@ -12,7 +12,7 @@ import Kurama.geometry.MeshBuilderHints;
 import Kurama.inputs.Input;
 import Kurama.inputs.InputSR;
 import Kurama.model.Model;
-import Kurama.model.modelBehaviour.ModelBehaviourTickInput;
+import Kurama.model.modelBehaviour.BehaviourTickInput;
 import Kurama.renderingEngine.RenderingEngine;
 import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
 import Kurama.renderingEngine.RenderingEngineSR;
@@ -257,7 +257,7 @@ public class GameSR extends Game implements Runnable {
 		else
 			display.enableCursor();
 
-		ModelBehaviourTickInput params = new ModelBehaviourTickInput(timeDelta, scene);
+		BehaviourTickInput params = new BehaviourTickInput(timeDelta, scene);
 
 		models.forEach(m -> m.tick(params));
 		modelsOnlyOutline.forEach(m -> m.tick(params));

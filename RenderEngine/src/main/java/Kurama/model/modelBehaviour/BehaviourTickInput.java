@@ -2,12 +2,12 @@ package Kurama.model.modelBehaviour;
 
 import Kurama.scene.Scene;
 
-public class ModelBehaviourTickInput {
+public class BehaviourTickInput {
 
     public float timeDelta;
     public Scene scene;
 
-    public ModelBehaviourTickInput(float timeDelta, Scene scene) {
+    public BehaviourTickInput(float timeDelta, Scene scene) {
         this.timeDelta = timeDelta;
         this.scene = scene;
     }
