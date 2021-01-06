@@ -1,8 +1,8 @@
 package Kurama.display;
 
 import Kurama.Math.Vector;
-import Kurama.inputs.Input;
 import Kurama.game.Game;
+import Kurama.inputs.Input;
 
 import java.awt.*;
 
@@ -35,6 +35,7 @@ public abstract class Display {
     public abstract void disableCursor();
     public abstract void enableCursor();
     public abstract void cleanUp();
+    public abstract int getRefreshRate();
 
     public Display(Game game) {
         this.game = game;

@@ -53,7 +53,6 @@ public class Scene {
 
     public HUD hud;
     public List<Camera> cameras = new ArrayList<>();
-    public Camera currentMainCamera;
     public RenderPipeline renderPipeline;
     public List<Material> materialLibrary = new ArrayList<>();
     public HashMap<String, Material> materialInd_mat = new HashMap<>();

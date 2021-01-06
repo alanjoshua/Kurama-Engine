@@ -5,7 +5,6 @@ import Kurama.Effects.Fog;
 import Kurama.GUI.AttachToRenderBuffer;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
-import Kurama.GUI.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -95,8 +94,6 @@ public class GameLWJGL extends Game implements Runnable {
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
-        masterComponent = new MasterWindow(display, "masterWindow");
-
         playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
 
@@ -109,15 +106,12 @@ public class GameLWJGL extends Game implements Runnable {
                 }
         });
         scene.cameras.add(playerCamera);
-        scene.currentMainCamera = playerCamera;
 
-        var testSquare = new Rectangle(masterComponent, new Vector(10,10,10,10), "test");
-        testSquare.pos = new Vector(10,10,0);
-        testSquare.color = new Vector(0.7f, 0.2f, 0.9f, 0.5f);
-        testSquare.constraints.add(new WidthHeightPercent(0.2f, 0.95f));
-        masterComponent.children.add(testSquare);
-
-        masterComponent.constraints.add(new AttachToRenderBuffer(playerCamera.renderBuffer));
+        masterComponent = new MasterWindow(display, "masterWindow");
+        masterComponent.isContainerVisible = false;
+        var sceneRender = new Rectangle(masterComponent, new Vector(10,10,10,10), "scene");
+        sceneRender.constraints.add(new AttachToRenderBuffer(playerCamera.renderBuffer));
+        masterComponent.children.add(sceneRender);
 
         var secondCam = new Camera(this,null, new Vector(10, 30, 30),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
@@ -497,9 +491,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(isGameRunning != prevGameState) {
             if (isGameRunning)
-                display.disableCursor();
+                masterComponent.disableCursor();
             else
-                display.enableCursor();
+                masterComponent.enableCursor();
             prevGameState = isGameRunning;
         }
 
@@ -510,7 +504,7 @@ public class GameLWJGL extends Game implements Runnable {
             ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
             scene.particleGenerators.forEach(gen -> gen.tick(param));
 
-            scene.soundManager.tick(scene.currentMainCamera, timeDelta);
+            scene.soundManager.tick(playerCamera, timeDelta);
 
         }
 
@@ -637,11 +631,11 @@ public class GameLWJGL extends Game implements Runnable {
             }
 
             if(input.keyDownOnce(input.F)) {
-                if(targetFPS == display.getRefreshRate()) {
+                if(targetFPS == masterComponent.getRefreshRate()) {
                     targetFPS = 10000;
                 }
                 else {
-                    targetFPS = display.getRefreshRate();
+                    targetFPS = masterComponent.getRefreshRate();
                 }
                 System.out.println("Changed target resolution"+targetFPS);
             }

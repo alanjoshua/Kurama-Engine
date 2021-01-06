@@ -153,6 +153,11 @@ public class DisplaySR extends Display {
         removeWindow();
     }
 
+    @Override
+    public int getRefreshRate() {
+        return -1;  // Should implement this
+    }
+
     public Canvas getCanvas() {
         return canvas;
     }

@@ -11,6 +11,21 @@ public class MasterWindow extends Rectangle {
         this.display = display;
     }
 
+    @Override
+    public void resolveConstraints() {
+
+        for(var constraint: constraints) {
+            constraint.solveConstraint(parent, this);
+        }
+
+        this.width = display.windowResolution.geti(0);
+        this.height = display.windowResolution.geti(1);
+
+        for(var child: children) {
+            child.resolveConstraints();
+        }
+    }
+
     public void cleanUp() {
         display.cleanUp();
     }
@@ -24,4 +39,5 @@ public class MasterWindow extends Rectangle {
     public void setWindowedMode(int width, int height) {display.setWindowedMode(width, height);}
     public void disableCursor() {display.disableCursor();}
     public void enableCursor() {display.enableCursor();}
+    public float getRefreshRate() {return display.getRefreshRate();}
 }

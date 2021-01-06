@@ -1718,13 +1718,13 @@ public class SceneUtils {
 //                                          Write camera and Fog
 
             writer.write("CAMERA INFO\n");
-            writer.write("pos:"+scene.currentMainCamera.getPos().toString()+"\n");
-            writer.write("orientation:"+scene.currentMainCamera.getOrientation().toString()+"\n");
-            writer.write("fovX:"+scene.currentMainCamera.getFovX()+"\n");
-            writer.write("near:"+scene.currentMainCamera.getNearClippingPlane()+"\n");
-            writer.write("far:"+scene.currentMainCamera.getFarClippingPlane()+"\n");
-            writer.write("imageWidth:"+scene.currentMainCamera.renderResolution.geti(0)+"\n");
-            writer.write("imageHeight:"+scene.currentMainCamera.renderResolution.geti(1)+"\n");
+            writer.write("pos:"+scene.cameras.get(0).getPos().toString()+"\n");
+            writer.write("orientation:"+scene.cameras.get(0).getOrientation().toString()+"\n");
+            writer.write("fovX:"+scene.cameras.get(0).getFovX()+"\n");
+            writer.write("near:"+scene.cameras.get(0).getNearClippingPlane()+"\n");
+            writer.write("far:"+scene.cameras.get(0).getFarClippingPlane()+"\n");
+            writer.write("imageWidth:"+scene.cameras.get(0).renderResolution.geti(0)+"\n");
+            writer.write("imageHeight:"+scene.cameras.get(0).renderResolution.geti(1)+"\n");
             writer.newLine();
 
             writer.write("FOG INFO\n");

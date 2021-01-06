@@ -84,6 +84,8 @@ public class Simulation extends Game {
     public  Material boxRequiredMat;
     public Material nullMat;
 
+    public Camera playerCamera;
+
     public Simulation(String threadName) {
         super(threadName);
     }
@@ -126,14 +128,14 @@ public class Simulation extends Game {
         renderingEngine = new RenderingEngineSim(this);
         renderingEngine.init(scene);
 
-        scene.currentMainCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
+        playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 1000,
                 (int)display.windowResolution.get(0), (int)display.windowResolution.get(1));
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
             if(getCamera() != null) {
                 display.windowResolution = new Vector(new float[]{width, height});
-                scene.currentMainCamera.renderResolution = new Vector(new float[]{width, height});
+                playerCamera.renderResolution = new Vector(new float[]{width, height});
                 getCamera().setShouldUpdateValues(true);
             }
         });
@@ -150,8 +152,8 @@ public class Simulation extends Game {
         initModels();
         initPauseScreen();
 
-        scene.currentMainCamera.updateValues();
-        scene.currentMainCamera.lookAtModel(flag);
+        playerCamera.updateValues();
+        playerCamera.lookAtModel(flag);
 
         targetFPS = display.getRefreshRate();
         scene.hud = new SimulationHUD(this);
@@ -534,7 +536,7 @@ public class Simulation extends Game {
         }
         else {
             calculate3DCamMovement();
-            scene.currentMainCamera.tick(timeDelta);
+            playerCamera.tick(timeDelta);
         }
     }
 
@@ -693,52 +695,52 @@ public class Simulation extends Game {
 
         if(input.keyDown(GLFW_KEY_W)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = scene.currentMainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().sub(z.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().sub(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_S)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = scene.currentMainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().add(z.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_A)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = scene.currentMainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().sub(v.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_D)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
-            Vector[] rotationMatrix = scene.currentMainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().add(v.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_SPACE)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().add(v.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(GLFW_KEY_LEFT_SHIFT)) {
             float cameraSpeed = speed * timeDelta * speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            scene.currentMainCamera.setPos(scene.currentMainCamera.getPos().sub(v.scalarMul(cameraSpeed)));
+            playerCamera.setPos(playerCamera.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(GLFW_KEY_ESCAPE)) {
@@ -751,7 +753,7 @@ public class Simulation extends Game {
 
         if(isGameRunning) {
             if(input.keyDownOnce(GLFW_KEY_R)) {
-                scene.currentMainCamera.lookAtModel(lookAtModel);
+                playerCamera.lookAtModel(lookAtModel);
             }
 
             if(input.keyDownOnce(GLFW_KEY_LEFT_CONTROL)) {
@@ -785,7 +787,7 @@ public class Simulation extends Game {
             float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
             float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
 
-            Vector currentAngle = scene.currentMainCamera.getOrientation().getPitchYawRoll();
+            Vector currentAngle = playerCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
 
             if(currentPitch >= 0 && currentPitch > 60) {
@@ -798,11 +800,11 @@ public class Simulation extends Game {
             Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
             Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 
-            Quaternion q = scene.currentMainCamera.getOrientation();
+            Quaternion q = playerCamera.getOrientation();
 
             q = q.multiply(pitch);
             q = yaw.multiply(q);
-            scene.currentMainCamera.setOrientation(q);
+            playerCamera.setOrientation(q);
         }
 
     }
@@ -843,7 +845,7 @@ public class Simulation extends Game {
 
     @Override
     public Camera getCamera() {
-        return scene.currentMainCamera;
+        return playerCamera;
     }
 
     @Override
