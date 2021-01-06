@@ -115,15 +115,16 @@ public class GameLWJGL extends Game implements Runnable {
 
         var leftDivide = new Rectangle(masterComponent, "leftHalf");
         leftDivide.texture = new Texture(playerCamera.renderBuffer.textureId);
-        leftDivide.constraints.add(new WidthHeightPercent(0.5f, 1f));
-        leftDivide.automations.add(new ResizeCameraRenderResolution(playerCamera));
+        leftDivide.addConstraint(new WidthHeightPercent(0.5f, 1f));
+        leftDivide.addAutomation(new ResizeCameraRenderResolution(playerCamera));
         masterComponent.children.add(leftDivide);
 
         var rightDivide = new Rectangle(masterComponent, "rightHalf");
         rightDivide.texture = new Texture(secondCam.renderBuffer.textureId);
-        rightDivide.constraints.add(new WidthHeightPercent(0.5f, 1f));
-        rightDivide.constraints.add(new PosXYTopLeftAttachPercent(0.5f,0));
-        rightDivide.automations.add(new ResizeCameraRenderResolution(secondCam));
+        rightDivide
+                .addConstraint(new WidthHeightPercent(0.5f, 1f))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.5f,0));
+        rightDivide.addAutomation(new ResizeCameraRenderResolution(secondCam));
         masterComponent.children.add(rightDivide);
 
         input = new InputLWJGL(this);
@@ -188,7 +189,7 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
         directionalLight.setScale(100);
-        directionalLight.behaviours.add(new SunRevolve());
+        directionalLight.addBehavior(new SunRevolve());
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,7 +219,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
 
         spotLight.shouldSelfCastShadow = false;
-        spotLight.behaviours.add(new AttachToCamera(playerCamera));
+        spotLight.addBehavior(new AttachToCamera(playerCamera));
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 //     -------------------------------------------------------------------------------------------------------------------

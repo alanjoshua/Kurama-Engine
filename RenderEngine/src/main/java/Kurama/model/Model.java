@@ -77,6 +77,11 @@ public class Model {
 		boundingBoxColor = new Vector(new float[]{1f,1f,1f,1f});
 	}
 
+	public Model addBehavior(Behaviour behaviour) {
+		this.behaviours.add(behaviour);
+		return this;
+	}
+
 	public void replaceMaterial(String meshID, Material currentMat, Material newMat) {
 		for(int i = 0; i < materials.get(meshID).size(); i++) {
 			var mat = materials.get(meshID).get(i);

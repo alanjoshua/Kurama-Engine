@@ -34,6 +34,16 @@ public abstract class Component {
         this.parent = parent;
     }
 
+    public Component addConstraint(Constraint constraint) {
+        this.constraints.add(constraint);
+        return this;
+    }
+
+    public Component addAutomation(Automation automation) {
+        this.automations.add(automation);
+        return this;
+    }
+
     public Matrix getObjectToWorldMatrix() {
 
         Matrix rotationMatrix = this.orientation.getRotationMatrix();
