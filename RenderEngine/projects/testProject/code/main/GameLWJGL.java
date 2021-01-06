@@ -5,7 +5,6 @@ import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
 import Kurama.GUI.automations.ResizeCameraRenderResolution;
-import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
 import Kurama.GUI.constraints.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -105,27 +104,36 @@ public class GameLWJGL extends Game implements Runnable {
         });
         scene.cameras.add(playerCamera);
 
-        var secondCam = new Camera(this,null, new Vector(20, 45, 35),90, 0.001f, 5000,
-                Display.defaultWindowedWidth, Display.defaultWindowedHeight);
-        scene.cameras.add(secondCam);
-
-
         masterComponent = new MasterWindow(display, "masterWindow");
         masterComponent.isContainerVisible = false;
 
         var leftDivide = new Rectangle(masterComponent, "leftHalf");
         leftDivide.texture = new Texture(playerCamera.renderBuffer.textureId);
-        leftDivide.addConstraint(new WidthHeightPercent(0.5f, 1f));
-        leftDivide.addAutomation(new ResizeCameraRenderResolution(playerCamera));
+        leftDivide
+                .addConstraint(new WidthHeightPercent(1f, 1f))
+                .addAutomation(new ResizeCameraRenderResolution(playerCamera));
         masterComponent.children.add(leftDivide);
 
-        var rightDivide = new Rectangle(masterComponent, "rightHalf");
-        rightDivide.texture = new Texture(secondCam.renderBuffer.textureId);
-        rightDivide
-                .addConstraint(new WidthHeightPercent(0.5f, 1f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.5f,0));
-        rightDivide.addAutomation(new ResizeCameraRenderResolution(secondCam));
-        masterComponent.children.add(rightDivide);
+//        var rightDivide = new Rectangle(masterComponent, "rightHalf");
+//        rightDivide.color = new Vector(0.5f, 0.4f, 0.9f, 1f);
+//        rightDivide
+//                .addConstraint(new WidthHeightPercent(0.5f, 1f))
+//                .addConstraint(new PosXYTopLeftAttachPercent(0.5f,0));
+//        masterComponent.children.add(rightDivide);
+//
+//        var square1 = new Rectangle(rightDivide, "s1");
+//        square1.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
+//        square1.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+//                .addConstraint(new MaxHeight(100))
+//                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f));
+//        rightDivide.children.add(square1);
+//
+//        var square2 = new Rectangle(rightDivide, "s2");
+//        square2.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
+//        square2.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+//                .addConstraint(new MaxHeight(100))
+//                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f));
+//        rightDivide.children.add(square2);
 
         input = new InputLWJGL(this);
 

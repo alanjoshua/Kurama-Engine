@@ -27,6 +27,7 @@ public abstract class Component {
     public Component parent = null;
     public List<Component> children = new ArrayList<>();
     public List<Constraint> constraints = new ArrayList<>();
+    public List<Constraint> globalChildrenConstraints = new ArrayList<>();
     public List<Automation> automations = new ArrayList<>();
 
     public Component(Component parent, String identifier) {
@@ -56,6 +57,27 @@ public abstract class Component {
         return transformationMatrix;
     }
 
+    public void resolveConstraints(List<Constraint> parentGlobalConstraints) {
+
+        for(var automation: automations) {
+            automation.runAutomation(this);
+        }
+
+        for(var constraint: constraints) {
+            constraint.solveConstraint(parent, this);
+        }
+
+        for(var globalConstraints: parentGlobalConstraints) {
+            globalConstraints.solveConstraint(parent, this);
+        }
+
+        for(var child: children) {
+            child.resolveConstraints(globalChildrenConstraints);
+        }
+
+    }
+
+    // This is usually called when the current container is the master constainer
     public void resolveConstraints() {
 
         for(var automation: automations) {
@@ -67,7 +89,7 @@ public abstract class Component {
         }
 
         for(var child: children) {
-            child.resolveConstraints();
+            child.resolveConstraints(globalChildrenConstraints);
         }
 
     }

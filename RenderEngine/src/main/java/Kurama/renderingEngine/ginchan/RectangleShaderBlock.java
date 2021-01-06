@@ -98,7 +98,8 @@ public class RectangleShaderBlock extends RenderBlock {
 
         GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
         var masterComponent = inp.component;
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0),
+                input.game.getDisplay().windowResolution.get(1), 0);
 
         shader.bind();
 
@@ -116,6 +117,7 @@ public class RectangleShaderBlock extends RenderBlock {
         }
 
         if(masterComponent.isContainerVisible && masterComponent instanceof Rectangle) {
+
             var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
             if (masterComponent.texture != null) {
                 glActiveTexture(GL_TEXTURE0);
@@ -125,6 +127,7 @@ public class RectangleShaderBlock extends RenderBlock {
                     masterComponent.texture == null ? false : true, masterComponent.color);
 
             glDrawMeshTasksNV(0, 1);
+
         }
 
         for(var child: masterComponent.children) {
