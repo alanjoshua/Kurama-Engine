@@ -11,7 +11,7 @@
 * Skeletal animation support
 * A simple particle system
 * Audio support using OpenAL
-* Write scene to file and load it back up using a single command. 
+* Write scene to file and load it back. 
 * Support for directional, point and spot lights, with Phong Shading
 * Directional and spotlight shadow mapping
 * Random terrain generation
