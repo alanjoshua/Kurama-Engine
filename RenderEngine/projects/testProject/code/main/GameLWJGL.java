@@ -98,6 +98,8 @@ public class GameLWJGL extends Game implements Runnable {
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
+        input = new InputLWJGL(this);
+
         scene.renderPipeline = new DefaultRenderPipeline(this);
         renderingEngine.sceneRenderPipeline = scene.renderPipeline;
         renderingEngine.guiRenderPipeline = new Gintoki(this);
@@ -113,7 +115,7 @@ public class GameLWJGL extends Game implements Runnable {
         });
         scene.cameras.add(playerCamera);
 
-        masterComponent = new MasterWindow(display, "masterWindow");
+        masterComponent = new MasterWindow(display, input,"masterWindow");
         masterComponent.color = new Vector(1,0,0,0.5f);
         masterComponent.isContainerVisible = false;
 //        masterComponent.texture = new Texture(playerCamera.renderBuffer.textureId);
@@ -146,8 +148,6 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f));
         rightDivide.children.add(square2);
-
-        input = new InputLWJGL(this);
 
         try {
             var soundManager = new SoundManager();
@@ -498,7 +498,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
 
-        masterComponent.resolveConstraints();
+        masterComponent.tick(null);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
         tickInput();

@@ -3,13 +3,17 @@ package Kurama.GUI;
 import Kurama.GUI.constraints.DisplayAttach;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
+import Kurama.inputs.Input;
 
 public class MasterWindow extends Rectangle {
 
     public Display display;
-    public MasterWindow(Display display, String identifier) {
+    public Input input;
+
+    public MasterWindow(Display display, Input input, String identifier) {
         super(null, new Vector(0,0,0,0), identifier);
         this.display = display;
+        this.input = input;
         this.constraints.add(new DisplayAttach(display));
     }
 

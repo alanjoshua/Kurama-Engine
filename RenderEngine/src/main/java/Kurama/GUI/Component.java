@@ -57,7 +57,7 @@ public abstract class Component {
         return transformationMatrix;
     }
 
-    public void resolveConstraints(List<Constraint> parentGlobalConstraints, float layerNum) {
+    public void tick(List<Constraint> parentGlobalConstraints) {
 
         for(var automation: automations) {
             automation.runAutomation(this);
@@ -67,34 +67,14 @@ public abstract class Component {
             constraint.solveConstraint(parent, this);
         }
 
-        for(var globalConstraints: parentGlobalConstraints) {
-            globalConstraints.solveConstraint(parent, this);
+        if(parentGlobalConstraints != null) {
+            for (var globalConstraints : parentGlobalConstraints) {
+                globalConstraints.solveConstraint(parent, this);
+            }
         }
-
-        pos.setDataElement(2, layerNum);
 
         for(var child: children) {
-            child.resolveConstraints(globalChildrenConstraints, layerNum+0.5f);
-        }
-
-    }
-
-    // This is usually called when the current container is the master container
-    public void resolveConstraints() {
-
-        for(var automation: automations) {
-            automation.runAutomation(this);
-        }
-
-        for(var constraint: constraints) {
-            constraint.solveConstraint(parent, this);
-        }
-
-        float startLayer = -1;
-        pos.setDataElement(2, startLayer);
-
-        for(var child: children) {
-            child.resolveConstraints(globalChildrenConstraints, startLayer+0.5f);
+            child.tick(globalChildrenConstraints);
         }
 
     }
