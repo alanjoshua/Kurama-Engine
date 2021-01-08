@@ -114,7 +114,9 @@ public class GameLWJGL extends Game implements Runnable {
                 new Rectangle(masterComponent, "leftHalf")
                 .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
-                .addAutomation(new ResizeCameraRenderResolution(playerCamera));
+                .addAutomation(new ResizeCameraRenderResolution(playerCamera))
+                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
+                .addOnMouseLeftAction(new RemoveOverlayColor());
         masterComponent.children.add(leftDivide);
 
         var rightDivide =

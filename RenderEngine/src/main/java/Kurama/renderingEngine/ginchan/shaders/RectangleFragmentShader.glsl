@@ -62,10 +62,10 @@ void main() {
 
     vec4 finalColor;
     if (rectangle.hasTexture == 0) {
-        outColor = rectangle.color*(1-rectangle.overlayColor.w) + rectangle.overlayColor;
+        outColor = rectangle.color*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
     }
     else {
-        outColor = texture(texture_sampler, fragIn.tex)*(1-rectangle.overlayColor.w) + rectangle.overlayColor;
+        outColor = texture(texture_sampler, fragIn.tex)*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
     }
 
 }
