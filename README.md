@@ -19,8 +19,7 @@
 * Sky box
 * Multiple materials for a single mesh (one draw call)
 * Capable of triangulating n-gons (polygons with number of sides greater than 3) and other 3D modelling features
-* Switching between Matrix and Quaternion rotation mode (Only in Pure Java Rendering Mode)
-* Ability to create basic GUI (Buttons not yet implemented in openGL mode)
+* Ability to create basic GUI
 * Supports a HUD overlay
 * Support for text and create 3D meshes for text with any font in the system.
 * Input handling
