@@ -6,54 +6,17 @@ import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
 
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
-
 import java.util.ArrayList;
+
+import static org.lwjgl.glfw.GLFW.*;
 
 public class InputLWJGL extends Input {
 
     private long window;
 
-//    public final int Q = GLFW_KEY_Q;
-//    public final int W = GLFW_KEY_W;
-//    public final int E = GLFW_KEY_E;
-//    public final int R = GLFW_KEY_R;
-//    public final int T = GLFW_KEY_T;
-//    public final int Y = GLFW_KEY_Y;
-//    public final int U = GLFW_KEY_U;
-//    public final int I = GLFW_KEY_I;
-//    public final int O = GLFW_KEY_O;
-//    public final int P = GLFW_KEY_P;
-//    public final int A = GLFW_KEY_A;
-//    public final int S = GLFW_KEY_S;
-//    public final int D = GLFW_KEY_D;
-//    public final int F = GLFW_KEY_F;
-//    public final int G = GLFW_KEY_G;
-//    public final int H = GLFW_KEY_H;
-//    public final int J = GLFW_KEY_J;
-//    public final int K = GLFW_KEY_K;
-//    public final int L = GLFW_KEY_L;
-//    public final int Z = GLFW_KEY_Z;
-//    public final int X = GLFW_KEY_X;
-//    public final int C = GLFW_KEY_C;
-//    public final int V = GLFW_KEY_V;
-//    public final int B = GLFW_KEY_B;
-//    public final int N = GLFW_KEY_N;
-//    public final int M = GLFW_KEY_M;
-//
-//    public final int SPACE = GLFW_KEY_SPACE;
-//    public final int LEFT_CONTROL = GLFW_KEY_LEFT_CONTROL;
-//    public final int LEFT_SHIFT = GLFW_KEY_LEFT_SHIFT;
-//    public final int LEFT_ALT = GLFW_KEY_LEFT_ALT;
-//    public final int TAB = GLFW_KEY_TAB;
-//    public final int RIGHT_CONTROL = GLFW_KEY_RIGHT_CONTROL;
-//    public final int RIGHT_SHIFT = GLFW_KEY_RIGHT_SHIFT;
-//    public final int RIGHT_ALT = GLFW_KEY_RIGHT_ALT;
-
-    public InputLWJGL(Game game) {
+    public InputLWJGL(Game game, DisplayLWJGL display) {
         super(game);
-        this.window = ((DisplayLWJGL)game.getDisplay()).getWindow();
+        this.window = display.getWindow();
         init();
     }
 
@@ -162,7 +125,6 @@ public class InputLWJGL extends Input {
                 }
             }
         }
-
     }
 
     public void initMouseCallBacks() {
@@ -199,7 +161,6 @@ public class InputLWJGL extends Input {
 
                 mouseX = (float)xpos;
                 mouseY = (float)ypos;
-
             }
         };
 

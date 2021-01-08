@@ -1,8 +1,9 @@
 package Kurama.inputs;
 
-import java.util.List;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
+
+import java.util.List;
 
 public abstract class Input {
 
@@ -74,6 +75,8 @@ public abstract class Input {
 
     protected int KEY_COUNT;
 
+    public boolean isCursorEnabled = true;
+
     Game game;
 
     public Input(Game game) {
@@ -101,9 +104,22 @@ public abstract class Input {
 
     public Vector getDelta() {
         Vector ret = new Vector(new float[]{mouseDx,mouseDy});
+        return ret;
+    }
+
+    public void reset() {
         mouseDx = 0;
         mouseDy = 0;
-        return ret;
+    }
+
+    public void enableCursor() {
+        isCursorEnabled = true;
+        game.getMasterWindow().enableCursor();
+    }
+
+    public void disableCursor() {
+        isCursorEnabled = false;
+        game.getMasterWindow().disableCursor();
     }
 
     public abstract void poll();

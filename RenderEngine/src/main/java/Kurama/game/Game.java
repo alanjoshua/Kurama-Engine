@@ -1,12 +1,12 @@
 package Kurama.game;
 
-import Kurama.misc_structures.GridNode;
-import Kurama.scene.Scene;
+import Kurama.GUI.MasterWindow;
 import Kurama.Math.Vector;
-import Kurama.display.Display;
-import Kurama.inputs.Input;
 import Kurama.camera.Camera;
+import Kurama.inputs.Input;
+import Kurama.misc_structures.GridNode;
 import Kurama.renderingEngine.RenderingEngine;
+import Kurama.scene.Scene;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -31,6 +31,7 @@ public abstract class Game implements Runnable {
     protected BufferedWriter bw;
 
     public Scene scene;
+    public MasterWindow masterComponent;
 
     public Game(String threadName) {
         gameLoopThread = new Thread(this,threadName);
@@ -182,7 +183,9 @@ public abstract class Game implements Runnable {
 
     public abstract RenderingEngine getRenderingEngine();
 
-    public abstract Display getDisplay();
+    public MasterWindow getMasterWindow() {
+        return masterComponent;
+    }
 
     public abstract Camera getCamera();
 

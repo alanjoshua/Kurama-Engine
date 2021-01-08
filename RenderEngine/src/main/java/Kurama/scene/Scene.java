@@ -17,7 +17,6 @@ import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
-import Kurama.model.HUD;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.RenderPipeline;
@@ -51,7 +50,6 @@ public class Scene {
     public Model skybox = null;
     public Fog fog = Fog.NOFOG;
 
-    public HUD hud;
     public List<Camera> cameras = new ArrayList<>();
     public RenderPipeline renderPipeline;
     public List<Material> materialLibrary = new ArrayList<>();

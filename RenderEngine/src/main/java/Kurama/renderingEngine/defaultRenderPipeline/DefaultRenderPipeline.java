@@ -38,17 +38,17 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     public static String sceneShaderBlockID = "sceneShaderBlock";
     public static String shadowBlockID = "shadowBlock";
-    public static String hudShaderBlockID = "hudShaderBlock";
+//    public static String hudShaderBlockID = "hudShaderBlock";
     public static String skyboxShaderBlockID = "skyboxShaderBlock";
     public static String particleShaderBlockID = "particleShaderBlock";
-    public static String fullscreenQuadShaderBlockID = "fullscreenQuadShaderBlock";
+//    public static String fullscreenQuadShaderBlockID = "fullscreenQuadShaderBlock";
 
     SceneShaderBlock sceneShaderBlock = new SceneShaderBlock(sceneShaderBlockID, this);
     ShadowBlock shadowBlock = new ShadowBlock(shadowBlockID, this);
-    HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID, this);
+//    HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID, this);
     SkyboxShaderBlock skyboxShaderBlock = new SkyboxShaderBlock(skyboxShaderBlockID, this);
     ParticleShaderBlock particleShaderBlock = new ParticleShaderBlock(particleShaderBlockID, this);
-    FullScreenQuadBlock fullScreenQuadBlock = new FullScreenQuadBlock(fullscreenQuadShaderBlockID, this);
+//    FullScreenQuadBlock fullScreenQuadBlock = new FullScreenQuadBlock(fullscreenQuadShaderBlockID, this);
 
     public static int MAX_DIRECTIONAL_LIGHTS = 5;
     public static int MAX_SPOTLIGHTS = 10;
@@ -85,16 +85,16 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
         shadowBlock.setup(new RenderBlockInput(scene, game, null));
         skyboxShaderBlock.setup(new RenderBlockInput(scene, game, null));
-        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
+//        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
         particleShaderBlock.setup(new RenderBlockInput(scene, game, null));
-        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
+//        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
 
         renderBlockID_renderBlock_map.put(sceneShaderBlockID, sceneShaderBlock);
         renderBlockID_renderBlock_map.put(shadowBlockID, shadowBlock);
         renderBlockID_renderBlock_map.put(skyboxShaderBlockID, skyboxShaderBlock);
-        renderBlockID_renderBlock_map.put(hudShaderBlockID, hudShaderBlock);
+//        renderBlockID_renderBlock_map.put(hudShaderBlockID, hudShaderBlock);
         renderBlockID_renderBlock_map.put(particleShaderBlockID, particleShaderBlock);
-        renderBlockID_renderBlock_map.put(fullscreenQuadShaderBlockID, fullScreenQuadBlock);
+//        renderBlockID_renderBlock_map.put(fullscreenQuadShaderBlockID, fullScreenQuadBlock);
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
@@ -212,9 +212,9 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         shadowBlock.cleanUp();
         sceneShaderBlock.cleanUp();
         skyboxShaderBlock.cleanUp();
-        hudShaderBlock.cleanUp();
+//        hudShaderBlock.cleanUp();
         particleShaderBlock.cleanUp();
-        fullScreenQuadBlock.cleanUp();
+//        fullScreenQuadBlock.cleanUp();
     }
 
     @Override

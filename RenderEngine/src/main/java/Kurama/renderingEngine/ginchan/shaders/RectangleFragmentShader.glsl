@@ -10,6 +10,7 @@ layout (std140, location = 0) uniform Rectangle{
     mat4 projectionViewMatrix;
     vec4 radius;
     vec4 color;
+    vec4 overlayColor;
     vec2 dimensions;
     float hasTexture;
 }rectangle;
@@ -61,10 +62,10 @@ void main() {
 
     vec4 finalColor;
     if (rectangle.hasTexture == 0) {
-        outColor = rectangle.color;
+        outColor = rectangle.color*(1-rectangle.overlayColor.w) + rectangle.overlayColor;
     }
     else {
-        outColor = texture(texture_sampler, fragIn.tex);
+        outColor = texture(texture_sampler, fragIn.tex)*(1-rectangle.overlayColor.w) + rectangle.overlayColor;
     }
 
 }

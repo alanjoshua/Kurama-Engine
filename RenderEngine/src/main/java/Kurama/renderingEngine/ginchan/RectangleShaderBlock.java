@@ -43,7 +43,7 @@ public class RectangleShaderBlock extends RenderBlock {
             rectangleUniformBuffer = glGenBuffers();
             glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
-            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(27);
+            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(31);
             glBufferData(GL_UNIFORM_BUFFER, jointsDataInstancedBuffer, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, rectangleUniformBuffer);
 
@@ -61,9 +61,9 @@ public class RectangleShaderBlock extends RenderBlock {
     }
 
     public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
-                                      Vector color) {
+                                      Vector color, Vector overlayColor) {
 
-        FloatBuffer temp = MemoryUtil.memAllocFloat(27);
+        FloatBuffer temp = MemoryUtil.memAllocFloat(31);
         projectionViewMatrix.setValuesToBuffer(temp);
 
         if(radius != null) {
@@ -79,6 +79,14 @@ public class RectangleShaderBlock extends RenderBlock {
         else {
             temp.put(new float[]{0,0,0,0});
         }
+
+        if(overlayColor != null) {
+            overlayColor.setValuesToBuffer(temp);
+        }
+        else {
+            temp.put(new float[]{0,0,0,0});
+        }
+
         temp.put(width);
         temp.put(height);
         temp.put(hasTexture?1f:0f);
@@ -93,15 +101,8 @@ public class RectangleShaderBlock extends RenderBlock {
         GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
         var masterComponent = inp.component;
 
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0),
-                input.game.getDisplay().windowResolution.get(1), 0);
-
-//        Matrix ortho2 = Matrix.buildOrthographicProjectionMatrix(-1, 1, 0 ,
-//                input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
-
-//        var t = new Vector(0,0,10, 1);
-//        ortho2.matMul(t).display();
-//        System.out.println();
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().width,
+                input.game.getMasterWindow().height, 0);
 
         shader.bind();
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
@@ -128,7 +129,7 @@ public class RectangleShaderBlock extends RenderBlock {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
             setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
-                    masterComponent.texture == null ? false : true, masterComponent.color);
+                    masterComponent.texture == null ? false : true, masterComponent.color, masterComponent.overlayColor);
 
             glDrawMeshTasksNV(0, 1);
         }

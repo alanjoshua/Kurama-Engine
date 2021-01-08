@@ -16,7 +16,6 @@ import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
-import Kurama.model.HUD;
 import Kurama.model.Model;
 import Kurama.model.modelBehaviour.Behaviour;
 import Kurama.renderingEngine.RenderPipeline;
@@ -44,18 +43,18 @@ public class SceneUtils {
         return null;
     }
 
-    public static HUD getHUD(String  HUD_class_name, Game game) {
-        Logger.log("Retrieving HUD...");
-        try {
-            Class hud_class = Class.forName(HUD_class_name);
-            Constructor  constructor = hud_class.getConstructor(Game.class);
-            return (HUD) constructor.newInstance(new Object[]{game});
-
-        }  catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+//    public static HUD getHUD(String  HUD_class_name, Game game) {
+//        Logger.log("Retrieving HUD...");
+//        try {
+//            Class hud_class = Class.forName(HUD_class_name);
+//            Constructor  constructor = hud_class.getConstructor(Game.class);
+//            return (HUD) constructor.newInstance(new Object[]{game});
+//
+//        }  catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
 
     public static Behaviour getMiniBehaviour(String behaviour_classname) {
         Logger.log("Retrieving model behaviour...");
@@ -120,10 +119,10 @@ public class SceneUtils {
                 }
 
                 if(tokens[0].equalsIgnoreCase("HUD_class")) {
-                    scene.hud = getHUD(tokens[1], game);
-                    if(scene.hud == null)  {
-                        Logger.logError("Was not able to load HUD class. Setting as null...");
-                    }
+//                    scene.hud = getHUD(tokens[1], game);
+//                    if(scene.hud == null)  {
+//                        Logger.logError("Was not able to load HUD class. Setting as null...");
+//                    }
                     Logger.log("Successfully loaded HUD");
                 }
 
@@ -1580,12 +1579,12 @@ public class SceneUtils {
 
             writer.write("renderPipeline_class:"+scene.renderPipeline.getClass().getName()+"\n\n");
 
-            if(scene.hud != null) {
-                writer.write("HUD_class:" + scene.hud.getClass().getName() + "\n\n");
-            }
-            else {
-                writer.write("HUD_class:" + null + "\n\n");
-            }
+//            if(scene.hud != null) {
+//                writer.write("HUD_class:" + scene.hud.getClass().getName() + "\n\n");
+//            }
+//            else {
+//                writer.write("HUD_class:" + null + "\n\n");
+//            }
 
             if(scene.skybox != null) {
                 writer.write("skybox_id:" + scene.skybox.identifier + "\n\n");

@@ -9,6 +9,7 @@ layout (std140, binding = 0) uniform Rectangle {
     mat4 projectionViewMatrix;
     vec4 radius;
     vec4 color;
+    vec4 overlayColor;
     vec2 dimensions;
     float hasTexture;
 } rectangle;

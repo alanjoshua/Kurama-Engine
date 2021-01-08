@@ -37,7 +37,7 @@ public class Gintoki extends RenderPipeline {
     public RenderPipelineOutput render(RenderPipelineInput input) {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
+        glViewport(0,0, game.getMasterWindow().width, game.getMasterWindow().height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         GUIComponentRenderPipelineInput inp = (GUIComponentRenderPipelineInput) input;

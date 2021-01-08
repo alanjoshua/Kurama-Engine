@@ -1,12 +1,14 @@
 package main;
 
-import HUD.TestHUD;
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
+import Kurama.GUI.Rectangle;
 import Kurama.GUI.automations.ResizeCameraRenderResolution;
 import Kurama.GUI.constraints.MaxHeight;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
 import Kurama.GUI.constraints.WidthHeightPercent;
+import Kurama.GUI.inputHandling.RemoveOverlayColor;
+import Kurama.GUI.inputHandling.SetOverlayColor;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -46,10 +48,7 @@ import Kurama.shadow.ShadowMap;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import ModelBehaviour.SunRevolve;
-import Kurama.GUI.Rectangle;
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -70,20 +69,11 @@ public class GameLWJGL extends Game implements Runnable {
 
     protected int lookAtIndex = 1;
     protected boolean isGameRunning = true;
-
-    protected List<Kurama.GUI_deprecated.Button> pauseButtons = new ArrayList<>();
-    protected Kurama.GUI_deprecated.Button EXIT;
-    protected Kurama.GUI_deprecated.Button FULLSCREEN;
-    protected Kurama.GUI_deprecated.Button WINDOWED;
-
-    protected Vector mouseDelta;
-    protected Vector mousePos;
-
     protected boolean prevGameState = false;
+//    protected Vector mouseDelta;
+//    protected Vector mousePos;
 
-    private boolean shouldDayNight = false;
     public Camera playerCamera;
-    public MasterWindow masterComponent;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -98,7 +88,7 @@ public class GameLWJGL extends Game implements Runnable {
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
-        input = new InputLWJGL(this);
+        input = new InputLWJGL(this, display);
 
         scene.renderPipeline = new DefaultRenderPipeline(this);
         renderingEngine.sceneRenderPipeline = scene.renderPipeline;
@@ -116,37 +106,43 @@ public class GameLWJGL extends Game implements Runnable {
         scene.cameras.add(playerCamera);
 
         masterComponent = new MasterWindow(display, input,"masterWindow");
-        masterComponent.color = new Vector(1,0,0,0.5f);
-        masterComponent.isContainerVisible = false;
-//        masterComponent.texture = new Texture(playerCamera.renderBuffer.textureId);
-//        masterComponent.addAutomation(new ResizeCameraRenderResolution(playerCamera));
+        masterComponent
+                .setColor(new Vector(1,0,0,0.5f))
+                .setContainerVisibility(false);
 
-        var leftDivide = new Rectangle(masterComponent, "leftHalf");
-        leftDivide.texture = new Texture(playerCamera.renderBuffer.textureId);
-        leftDivide
+        var leftDivide =
+                new Rectangle(masterComponent, "leftHalf")
+                .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
                 .addAutomation(new ResizeCameraRenderResolution(playerCamera));
         masterComponent.children.add(leftDivide);
 
-        var rightDivide = new Rectangle(masterComponent, "rightHalf");
-        rightDivide.color = new Vector(0.5f, 0.4f, 0.9f, 1f);
-        rightDivide
+        var rightDivide =
+                new Rectangle(masterComponent, "rightHalf")
+                .setColor(new Vector(0.5f, 0.4f, 0.9f, 1f))
                 .addConstraint(new WidthHeightPercent(0.25f, 1f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.75f,0));
         masterComponent.children.add(rightDivide);
 
-        var square1 = new Rectangle(rightDivide, "s1");
-        square1.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
-        square1.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+        var square1 =
+                new Rectangle(rightDivide, "s1")
+                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f));
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
+                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,1)))
+                .addOnMouseLeftAction(new RemoveOverlayColor());
         rightDivide.children.add(square1);
 
-        var square2 = new Rectangle(rightDivide, "s2");
-        square2.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
-        square2.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+        var square2 =
+                new Rectangle(rightDivide, "s2")
+                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f));
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f))
+                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
+                .addOnMouseLeftAction(new RemoveOverlayColor());
+
         rightDivide.children.add(square2);
 
         try {
@@ -161,8 +157,6 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         initScene();
-
-        initPauseScreen();
 
         display.setClearColor(0,0,0,1);
         scene.cameras.forEach(Camera::updateValues);
@@ -184,9 +178,6 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void initScene() {
         MeshBuilderHints hints = new MeshBuilderHints();
-
-        scene.hud = new TestHUD(this);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
 //        hints.initLWJGLAttribs = false;
@@ -409,115 +400,30 @@ public class GameLWJGL extends Game implements Runnable {
 
     }
 
-    public void initPauseScreen() {
-
-        int width = 200;
-        int height = 100;
-
-        //		Making Exit button
-        EXIT = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.1f}),width,height);
-        EXIT.text = "EXIT";
-
-        Kurama.GUI_deprecated.Button.Behaviour exitButtonBehaviour = (b, mp, isPressed) -> {
-
-            if(b.isMouseInside(mp)) {
-                b.textColor = Color.RED;
-                if(isPressed) {
-                    System.out.println("Exit pressed");
-                    programRunning = false;
-                }
-            }
-            else {
-                b.textColor = Color.LIGHT_GRAY;
-            }
-        };
-
-        EXIT.bgColor = Color.DARK_GRAY;
-        EXIT.behaviour = exitButtonBehaviour;
-
-//		Font f = Font.getFont("Arial").deriveFont(Font.BOLD,24);
-        EXIT.textFont = new Font("Sans-Serif",Font.BOLD,20);
-
-
-//		Making FullScreen Toggle
-        FULLSCREEN = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.25f}),width,height);
-        FULLSCREEN.text = "FULLSCREEN";
-
-        Kurama.GUI_deprecated.Button.Behaviour fullscreenBehaviour = (b, mp, isPressed) -> {
-
-            if(b.isMouseInside(mp)) {
-                b.textColor = Color.RED;
-                if(isPressed && getDisplay().displayMode != Display.DisplayMode.FULLSCREEN) {
-                    getDisplay().displayMode = Display.DisplayMode.FULLSCREEN;
-                    getDisplay().startScreen();
-                }
-            }
-            else {
-                b.textColor = Color.LIGHT_GRAY;
-            }
-
-        };
-
-        FULLSCREEN.setBehaviour(fullscreenBehaviour);
-        FULLSCREEN.bgColor = Color.DARK_GRAY;
-        FULLSCREEN.textFont = new Font("Consolas", Font.BOLD,20);
-
-//		Making WindowedMode Toggle
-        WINDOWED = new Kurama.GUI_deprecated.Button(this,new Vector(new float[]{0.05f,0.4f}),width,height);
-        WINDOWED.text = "WINDOWED MODE";
-
-        Kurama.GUI_deprecated.Button.Behaviour windowedBehaviour = (b, mp, isPressed) -> {
-
-            if(b.isMouseInside(mp)) {
-                b.textColor = Color.RED;
-                if(isPressed && getDisplay().displayMode != DisplayLWJGL.DisplayMode.WINDOWED) {
-                    getDisplay().displayMode = DisplayLWJGL.DisplayMode.WINDOWED;
-                    getDisplay().startScreen();
-                }
-            }
-            else {
-                b.textColor = Color.LIGHT_GRAY;
-            }
-
-        };
-
-        WINDOWED.setBehaviour(windowedBehaviour);
-        WINDOWED.bgColor = Color.DARK_GRAY;
-        WINDOWED.textFont = new Font("Consolas", Font.BOLD,20);
-
-        pauseButtons.add(EXIT);
-        pauseButtons.add(FULLSCREEN);
-        pauseButtons.add(WINDOWED);
-    }
-
     public void cleanUp() {
-        display.cleanUp();
+        masterComponent.cleanUp();
         renderingEngine.cleanUp();
         scene.cleanUp();
     }
 
     public void tick() {
 
-        masterComponent.tick(null);
+        masterComponent.tick(null, null);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
         tickInput();
-        if(scene.hud != null) {
-            scene.hud.tick();
-        }
 
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
         }
 
-        mouseDelta = input.getDelta();
-        mousePos = input.getPos();
-
         if(isGameRunning != prevGameState) {
             if (isGameRunning)
-                masterComponent.disableCursor();
+                masterComponent.input.disableCursor();
+//                masterComponent.disableCursor();
             else
-                masterComponent.enableCursor();
+                masterComponent.input.enableCursor();
+//                masterComponent.enableCursor();
             prevGameState = isGameRunning;
         }
 
@@ -532,12 +438,11 @@ public class GameLWJGL extends Game implements Runnable {
 
         }
 
-        if(!isGameRunning) {
-            pauseButtons.forEach((b) -> b.tick(mousePos,input.isLeftMouseButtonPressed));
-        }
-        else {
+        if(isGameRunning) {
             calculate3DCamMovement();
         }
+
+        input.reset();
 
     }
 
@@ -644,11 +549,6 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-//            if(input.keyDownOnce(input.R)) {
-//                cam.lookAtModel( scene.models.get(lookAtIndex));
-//                posDelta = new Vector(3,0);
-//            }
-
             if(input.keyDownOnce(input.LEFT_CONTROL)) {
                 if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
                 else speedMultiplier = 1;
@@ -681,10 +581,10 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void calculate3DCamMovement() {
-        if (mouseDelta.getNorm() != 0 && isGameRunning) {
+        if (input.getDelta().getNorm() != 0 && isGameRunning) {
 
-            float yawIncrease   = mouseXSensitivity * timeDelta * -mouseDelta.get(0);
-            float pitchIncrease = mouseYSensitivity * timeDelta * -mouseDelta.get(1);
+            float yawIncrease   = mouseXSensitivity * timeDelta * -input.getDelta().get(0);
+            float pitchIncrease = mouseYSensitivity * timeDelta * -input.getDelta().get(1);
 
             Vector currentAngle = playerCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
@@ -720,9 +620,9 @@ public class GameLWJGL extends Game implements Runnable {
         return renderingEngine;
     }
 
-    public DisplayLWJGL getDisplay() {
-        return display;
-    }
+//    public DisplayLWJGL getDisplay() {
+//        return display;
+//    }
 
     public Camera getCamera() {
         return playerCamera;
