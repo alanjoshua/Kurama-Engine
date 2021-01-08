@@ -3,8 +3,9 @@ package main;
 import HUD.TestHUD;
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
-import Kurama.GUI.Rectangle;
 import Kurama.GUI.automations.ResizeCameraRenderResolution;
+import Kurama.GUI.constraints.MaxHeight;
+import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
 import Kurama.GUI.constraints.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -45,6 +46,7 @@ import Kurama.shadow.ShadowMap;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import ModelBehaviour.SunRevolve;
+import Kurama.GUI.Rectangle;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -91,12 +93,19 @@ public class GameLWJGL extends Game implements Runnable {
         scene = new Scene(this);
 
         renderingEngine = new RenderingEngineGL(this);
+
         display = new DisplayLWJGL(this);
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
 
+        scene.renderPipeline = new DefaultRenderPipeline(this);
+        renderingEngine.sceneRenderPipeline = scene.renderPipeline;
+        renderingEngine.guiRenderPipeline = new Gintoki(this);
+        renderingEngine.init(scene);
+
         playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
                 Display.defaultWindowedWidth, Display.defaultWindowedHeight);
+        playerCamera.shouldPerformFrustumCulling = true;
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
@@ -105,35 +114,38 @@ public class GameLWJGL extends Game implements Runnable {
         scene.cameras.add(playerCamera);
 
         masterComponent = new MasterWindow(display, "masterWindow");
+        masterComponent.color = new Vector(1,0,0,0.5f);
         masterComponent.isContainerVisible = false;
+//        masterComponent.texture = new Texture(playerCamera.renderBuffer.textureId);
+//        masterComponent.addAutomation(new ResizeCameraRenderResolution(playerCamera));
 
         var leftDivide = new Rectangle(masterComponent, "leftHalf");
         leftDivide.texture = new Texture(playerCamera.renderBuffer.textureId);
         leftDivide
-                .addConstraint(new WidthHeightPercent(1f, 1f))
+                .addConstraint(new WidthHeightPercent(0.75f, 1f))
                 .addAutomation(new ResizeCameraRenderResolution(playerCamera));
         masterComponent.children.add(leftDivide);
 
-//        var rightDivide = new Rectangle(masterComponent, "rightHalf");
-//        rightDivide.color = new Vector(0.5f, 0.4f, 0.9f, 1f);
-//        rightDivide
-//                .addConstraint(new WidthHeightPercent(0.5f, 1f))
-//                .addConstraint(new PosXYTopLeftAttachPercent(0.5f,0));
-//        masterComponent.children.add(rightDivide);
-//
-//        var square1 = new Rectangle(rightDivide, "s1");
-//        square1.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
-//        square1.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
-//                .addConstraint(new MaxHeight(100))
-//                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f));
-//        rightDivide.children.add(square1);
-//
-//        var square2 = new Rectangle(rightDivide, "s2");
-//        square2.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
-//        square2.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
-//                .addConstraint(new MaxHeight(100))
-//                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f));
-//        rightDivide.children.add(square2);
+        var rightDivide = new Rectangle(masterComponent, "rightHalf");
+        rightDivide.color = new Vector(0.5f, 0.4f, 0.9f, 1f);
+        rightDivide
+                .addConstraint(new WidthHeightPercent(0.25f, 1f))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.75f,0));
+        masterComponent.children.add(rightDivide);
+
+        var square1 = new Rectangle(rightDivide, "s1");
+        square1.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
+        square1.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+                .addConstraint(new MaxHeight(100))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f));
+        rightDivide.children.add(square1);
+
+        var square2 = new Rectangle(rightDivide, "s2");
+        square2.color = new Vector(0.9f, 0.5f, 0.4f, 0.5f);
+        square2.addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+                .addConstraint(new MaxHeight(100))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f));
+        rightDivide.children.add(square2);
 
         input = new InputLWJGL(this);
 
@@ -151,10 +163,6 @@ public class GameLWJGL extends Game implements Runnable {
         initScene();
 
         initPauseScreen();
-
-        renderingEngine.sceneRenderPipeline = scene.renderPipeline;
-        renderingEngine.guiRenderPipeline = new Gintoki(this);
-        renderingEngine.init(scene);
 
         display.setClearColor(0,0,0,1);
         scene.cameras.forEach(Camera::updateValues);
@@ -175,8 +183,6 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void initScene() {
-        scene.renderPipeline = new DefaultRenderPipeline(this);
-
         MeshBuilderHints hints = new MeshBuilderHints();
 
         scene.hud = new TestHUD(this);

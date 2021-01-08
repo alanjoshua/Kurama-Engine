@@ -3,7 +3,7 @@ package Kurama.GUI.constraints;
 import Kurama.GUI.Component;
 import Kurama.display.Display;
 
-public class DisplayAttach extends Constraint {
+public class DisplayAttach implements Constraint {
 
     public Display display;
 

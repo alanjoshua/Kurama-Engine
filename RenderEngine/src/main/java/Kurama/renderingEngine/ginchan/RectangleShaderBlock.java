@@ -50,8 +50,6 @@ public class RectangleShaderBlock extends RenderBlock {
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
             MemoryUtil.memFree(jointsDataInstancedBuffer);
 
-//            shader.createUniform("projectionViewMatrix");
-//            shader.createUniform("rectangle");
             shader.createUniform("texture_sampler");
             shader.setUniform("texture_sampler", 0);
         }
@@ -64,8 +62,6 @@ public class RectangleShaderBlock extends RenderBlock {
 
     public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
                                       Vector color) {
-
-        glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
         FloatBuffer temp = MemoryUtil.memAllocFloat(27);
         projectionViewMatrix.setValuesToBuffer(temp);
@@ -89,8 +85,6 @@ public class RectangleShaderBlock extends RenderBlock {
         temp.flip();
         glBufferSubData(GL_UNIFORM_BUFFER, 0, temp);
         MemoryUtil.memFree(temp);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
     @Override
@@ -98,13 +92,24 @@ public class RectangleShaderBlock extends RenderBlock {
 
         GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
         var masterComponent = inp.component;
+
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getDisplay().windowResolution.get(0),
                 input.game.getDisplay().windowResolution.get(1), 0);
 
+//        Matrix ortho2 = Matrix.buildOrthographicProjectionMatrix(-1, 1, 0 ,
+//                input.game.getDisplay().windowResolution.get(0), input.game.getDisplay().windowResolution.get(1), 0);
+
+//        var t = new Vector(0,0,10, 1);
+//        ortho2.matMul(t).display();
+//        System.out.println();
+
         shader.bind();
+        glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
+        glActiveTexture(GL_TEXTURE0);
 
         recursiveRender(masterComponent, ortho);
 
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader.unbind();
         return null;
     }
@@ -120,14 +125,12 @@ public class RectangleShaderBlock extends RenderBlock {
 
             var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
             if (masterComponent.texture != null) {
-                glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
             setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
                     masterComponent.texture == null ? false : true, masterComponent.color);
 
             glDrawMeshTasksNV(0, 1);
-
         }
 
         for(var child: masterComponent.children) {

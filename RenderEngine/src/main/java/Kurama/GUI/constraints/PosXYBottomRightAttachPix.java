@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class PosXYBottomRightAttachPix extends Constraint {
+public class PosXYBottomRightAttachPix implements Constraint {
 
     public int posXOff;
     public int posYOff;

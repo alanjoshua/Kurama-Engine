@@ -5,7 +5,7 @@ layout(local_size_x=1) in;
 layout(triangles, max_vertices=4, max_primitives=2) out;
 
 
-layout (binding = 0) uniform Rectangle {
+layout (std140, binding = 0) uniform Rectangle {
     mat4 projectionViewMatrix;
     vec4 radius;
     vec4 color;
@@ -21,10 +21,10 @@ layout (location = 0) out PerVertexData{
 out uint gl_PrimitiveCountNV;
 out uint gl_PrimitiveIndicesNV[];
 
-const vec4 v1 = vec4(-0.5,-0.5,0,1);
-const vec4 v2 = vec4(0.5,-0.5,0,1);
-const vec4 v3 = vec4(-0.5,0.5,0,1);
-const vec4 v4 = vec4(0.5,0.5,0,1);
+const vec4 v1 = vec4(-0.5,-0.5,0f,1f);
+const vec4 v2 = vec4(0.5,-0.5,0f,1f);
+const vec4 v3 = vec4(-0.5,0.5,0f,1f);
+const vec4 v4 = vec4(0.5,0.5,0f,1f);
 
 const vec2 t1 = vec2(0,1);
 const vec2 t2 = vec2(1,1);
@@ -50,6 +50,6 @@ void main() {
     gl_PrimitiveIndicesNV[4] = 1;
     gl_PrimitiveIndicesNV[5] = 3;
 
-    gl_PrimitiveCountNV += 2;
+    gl_PrimitiveCountNV = 2;
 }
 

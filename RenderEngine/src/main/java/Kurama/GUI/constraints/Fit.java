@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class Fit extends Constraint {
+public class Fit implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {

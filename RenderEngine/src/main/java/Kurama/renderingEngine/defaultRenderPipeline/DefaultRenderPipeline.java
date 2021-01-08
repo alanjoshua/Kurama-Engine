@@ -166,17 +166,17 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             }
         }
 
-        glDisable(GL_DEPTH_TEST);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
-        RenderingEngineGL.clear();
-
+//        glDisable(GL_DEPTH_TEST);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//        glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
+//        RenderingEngineGL.clear();
+//
 //        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, null, scene.cameras.get(0).renderBuffer));
-
-        //Hud should be rendered at last, or else text would have background
+//
+////        Hud should be rendered at last, or else text would have background
 //        hudShaderBlock.render(new RenderBlockInput(scene, game, null));
-
-        glEnable(GL_DEPTH_TEST);
+//
+//        glEnable(GL_DEPTH_TEST);
 
         return null;
     }
@@ -227,7 +227,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         }
     }
 
-    public void initToEndFullRender(Mesh mesh, int offset) {
+    public static void initToEndFullRender(Mesh mesh, int offset) {
         for(Material material:mesh.materials) {
             if (material.texture != null) {
                 glActiveTexture(offset+GL_TEXTURE0);
@@ -255,7 +255,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         endRender(mesh);
     }
 
-    public void render(Mesh mesh) {
+    public static void render(Mesh mesh) {
         if(mesh.indices != null) {
             glDrawElements(mesh.drawMode, mesh.indices.size(), GL_UNSIGNED_INT, 0);
         }
@@ -264,7 +264,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         }
     }
 
-    public void renderInstanced(Mesh mesh, int numModels) {
+    public static void renderInstanced(Mesh mesh, int numModels) {
         if(mesh.indices != null) {
             glDrawElementsInstanced(mesh.drawMode, mesh.indices.size(), GL_UNSIGNED_INT, 0, numModels);
         }
@@ -273,7 +273,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         }
     }
 
-    public int initRender(Mesh mesh, int offset) {
+    public static int initRender(Mesh mesh, int offset) {
 
         for(Material material:mesh.materials) {
             if (material.texture != null) {
@@ -301,15 +301,15 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         return offset;
     }
 
-    public void initRender(Mesh mesh) {
+    public static void initRender(Mesh mesh) {
         glBindVertexArray(mesh.vaoId);
     }
 
-    public void endRender(Mesh mesh) {
+    public static void endRender(Mesh mesh) {
         glBindVertexArray(0);
     }
 
-    public void initializeRegularMesh(Mesh mesh) {
+    public static void initializeRegularMesh(Mesh mesh) {
 
         List<Vector> defaultVals = new ArrayList<>();
         defaultVals.add(new Vector(0,0,0));
@@ -409,7 +409,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     }
 
-    public void initializeInstancedMesh(Mesh mesh) {
+    public static void initializeInstancedMesh(Mesh mesh) {
         List<Vector> defaultVals = new ArrayList<>();
         defaultVals.add(new Vector(0,0,0));
         defaultVals.add(new Vector(2,0));

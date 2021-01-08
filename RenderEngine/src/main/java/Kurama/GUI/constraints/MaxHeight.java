@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class MaxHeight extends Constraint {
+public class MaxHeight implements Constraint {
 
     public int maxHeight;
 

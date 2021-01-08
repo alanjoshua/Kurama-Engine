@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class HeightPix extends Constraint {
+public class HeightPix implements Constraint {
 
     public int height;
 

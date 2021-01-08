@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class PosXYBottomRightAttachPercent extends Constraint {
+public class PosXYBottomRightAttachPercent implements Constraint {
 
     float posXPercent;
     float posYPercent;

@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class MinWidth extends Constraint {
+public class MinWidth implements Constraint {
 
     public int minWidth;
 

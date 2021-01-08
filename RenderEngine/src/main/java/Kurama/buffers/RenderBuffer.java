@@ -27,7 +27,7 @@ public class RenderBuffer {
         textureId = glGenTextures();
 
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, (int)renderResolution.get(0), (int)renderResolution.get(1),
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, renderResolution.geti(0), renderResolution.geti(1),
                 0, GL_RGB, GL_FLOAT, (ByteBuffer) null);
 
         // For sampling
@@ -36,7 +36,7 @@ public class RenderBuffer {
 
         depthId = glGenRenderbuffers();
         glBindRenderbuffer(GL_RENDERBUFFER, depthId);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, (int)renderResolution.get(0), (int)renderResolution.get(1));
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, renderResolution.geti(0), renderResolution.geti(1));
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthId);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureId, 0);
@@ -60,12 +60,12 @@ public class RenderBuffer {
         this.renderResolution = renderResolution;
 
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, (int)renderResolution.get(0), (int)renderResolution.get(1),
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, renderResolution.geti(0), renderResolution.geti(1),
                 0, GL_RGB, GL_FLOAT, (ByteBuffer) null);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glBindRenderbuffer(GL_RENDERBUFFER, depthId);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, (int)renderResolution.get(0), (int)renderResolution.get(1));
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, renderResolution.geti(0), renderResolution.geti(1));
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 

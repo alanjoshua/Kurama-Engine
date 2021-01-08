@@ -4,7 +4,7 @@ import Kurama.GUI.Component;
 import Kurama.Mesh.Texture;
 import Kurama.buffers.RenderBuffer;
 
-public class AttachToRenderBuffer extends Constraint {
+public class AttachToRenderBuffer implements Constraint {
 
     public RenderBuffer renderBuffer;
 

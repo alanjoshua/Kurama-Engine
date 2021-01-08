@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class MinPosY extends Constraint {
+public class MinPosY implements Constraint {
 
     int minPos;
 

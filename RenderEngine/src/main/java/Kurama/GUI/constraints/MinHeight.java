@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class MinHeight extends Constraint {
+public class MinHeight implements Constraint {
 
     public int minHeight;
 

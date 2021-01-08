@@ -12,9 +12,8 @@ import java.awt.*;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL43C.glDebugMessageControl;
-import static org.lwjgl.opengles.GLES32.GL_DEBUG_TYPE_PERFORMANCE;
+import static org.lwjgl.opengl.GL30.GL_TRUE;
+import static org.lwjgl.opengl.GL30.glClearColor;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class DisplayLWJGL extends Display {
@@ -97,7 +96,8 @@ public class DisplayLWJGL extends Display {
         capabilities = GL.createCapabilities();
 
 //        GLUtil.setupDebugMessageCallback();
-        glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, true);
+//        glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, true);
+
         // Enable v-sync
 //        glfwSwapInterval(1);
     }

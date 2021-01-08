@@ -6,7 +6,7 @@ in PerVertexData {
     vec2 tex;
 } fragIn;
 
-layout (location = 0) uniform Rectangle{
+layout (std140, location = 0) uniform Rectangle{
     mat4 projectionViewMatrix;
     vec4 radius;
     vec4 color;
@@ -18,7 +18,7 @@ uniform sampler2D texture_sampler;
 
 void main() {
 
-//    corner method from ThinMatrix' devlop https://www.youtube.com/watch?v=d5ttbNtpgi4&t=12s
+//    rectangle corner rounding method from ThinMatrix' devlop https://www.youtube.com/watch?v=d5ttbNtpgi4&t=12s
     float r1 = rectangle.radius.x;
     float r2 = rectangle.radius.y;
     float r3 = rectangle.radius.z;

@@ -78,8 +78,8 @@ public class ShadowBlock extends RenderBlock {
 
             if(light.doesProduceShadow) {
 
-                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
+                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 depthShaderProgram.setUniform("projectionMatrix", light.shadowProjectionMatrix);
@@ -203,8 +203,9 @@ public class ShadowBlock extends RenderBlock {
 
                 Matrix projMatrix = light.shadowProjectionMatrix;
                 depthShaderProgram.setUniform("projectionMatrix", projMatrix);
-                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
+
                 glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
+                glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 for (String meshId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).keySet()) {

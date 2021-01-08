@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class WidthPix extends Constraint {
+public class WidthPix implements Constraint {
 
     public int width;
 

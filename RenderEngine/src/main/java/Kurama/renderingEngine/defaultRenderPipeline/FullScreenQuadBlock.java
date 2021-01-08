@@ -49,7 +49,7 @@ public class FullScreenQuadBlock extends RenderBlock {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inp.renderBuffer.textureId);
 
-        ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(quad, 0);
+        DefaultRenderPipeline.initToEndFullRender(quad, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
         quadShader.unbind();

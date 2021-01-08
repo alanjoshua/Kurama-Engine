@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class PosYTopAttachPercent extends Constraint {
+public class PosYTopAttachPercent implements Constraint {
 
     float posYPercent;
 

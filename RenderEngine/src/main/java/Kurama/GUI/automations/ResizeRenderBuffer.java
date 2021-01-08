@@ -2,25 +2,24 @@ package Kurama.GUI.automations;
 
 import Kurama.GUI.Component;
 import Kurama.Math.Vector;
-import Kurama.camera.Camera;
+import Kurama.buffers.RenderBuffer;
 
-public class ResizeCameraRenderResolution implements Automation {
+public class ResizeRenderBuffer implements Automation {
 
-    Camera cam;
+    RenderBuffer buffer;
 
-    public ResizeCameraRenderResolution(Camera cam) {
-        this.cam = cam;
+    public ResizeRenderBuffer(RenderBuffer buffer) {
+        this.buffer = buffer;
     }
 
     @Override
     public void runAutomation(Component current) {
-        var curCamRes = cam.renderResolution;
+        var curCamRes = buffer.renderResolution;
         var newRes = new Vector(new float[]{current.width, current.height});
 
         // Update camera projection matrices only if resolution has changed
         if(newRes.sub(curCamRes).sumSquared() != 0) {
-            cam.renderResolution = newRes;
-            cam.setShouldUpdateValues(true);
+            buffer.resizeTexture(newRes);
         }
     }
 }

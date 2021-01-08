@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class MaxPosX extends Constraint {
+public class MaxPosX implements Constraint {
 
     int maxPos;
 

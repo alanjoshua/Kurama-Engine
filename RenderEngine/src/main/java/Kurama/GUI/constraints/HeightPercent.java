@@ -2,7 +2,7 @@ package Kurama.GUI.constraints;
 
 import Kurama.GUI.Component;
 
-public class HeightPercent extends Constraint {
+public class HeightPercent implements Constraint {
 
     public float heightPercent;
 
