@@ -3,12 +3,10 @@ package main;
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
-import Kurama.GUI.automations.ResizeCameraRenderResolution;
+import Kurama.GUI.automations.*;
 import Kurama.GUI.constraints.MaxHeight;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
 import Kurama.GUI.constraints.WidthHeightPercent;
-import Kurama.GUI.inputHandling.RemoveOverlayColor;
-import Kurama.GUI.inputHandling.SetOverlayColor;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -133,8 +131,18 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,1)))
-                .addOnMouseLeftAction(new RemoveOverlayColor());
+                .addOnMouseLeftAction(new RemoveOverlayColor())
+                .addOnClickAction(new Log("Clicked button 1"));
         rightDivide.children.add(square1);
+
+        var squareIn =
+                new Rectangle(square1, "ss1")
+                .setColor(new Vector(0.1f, 0.3f, 0.7f, 0.5f))
+                .addConstraint(new WidthHeightPercent(0.5f, 0.5f))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
+                .addOnClickAction(new Log("Clicked button2"))
+                .addAutomation(new OnlyChildClicked());
+        square1.children.add(squareIn);
 
         var square2 =
                 new Rectangle(rightDivide, "s2")

@@ -2,7 +2,6 @@ package Kurama.GUI;
 
 import Kurama.GUI.automations.Automation;
 import Kurama.GUI.constraints.Constraint;
-import Kurama.GUI.inputHandling.InputAction;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -20,39 +19,49 @@ public abstract class Component {
     public int height;
 
     public Vector color = new Vector(0,0,0,1);
-    public boolean isMouseOver = false;
     public Vector overlayColor = null;
     public Texture texture = null;
 
     public String identifier;
     public boolean isContainerVisible = true;
     public boolean shouldRenderGroup = true;
+    public boolean shouldTriggerOnClick = false;
+    public boolean shouldTriggerOnMouseOver = false;
+    public boolean shouldTriggerOnMouseLeave = false;
+
+    public boolean isClicked = false;
+    public boolean currentIsMouseOver = false;
+    public boolean isMouseLeft = false;
+    protected boolean previousIsMouseOver = false;
 
     public Component parent;
     public List<Component> children = new ArrayList<>();
     public List<Constraint> constraints = new ArrayList<>();
     public List<Constraint> globalChildrenConstraints = new ArrayList<>();
     public List<Automation> automations = new ArrayList<>();
-    public List<InputAction> onClickActions = new ArrayList<>();
-    public List<InputAction> onMouseOverActions = new ArrayList<>();
-    public List<InputAction> onMouseLeaveActions = new ArrayList<>();
+    public List<Automation> onClickActions = new ArrayList<>();
+    public List<Automation> onMouseOverActions = new ArrayList<>();
+    public List<Automation> onMouseLeaveActions = new ArrayList<>();
 
     public Component(Component parent, String identifier) {
         this.identifier = identifier;
         this.parent = parent;
     }
 
-    public Component addOnClickAction(InputAction action) {
+    public Component addOnClickAction(Automation action) {
         onClickActions.add(action);
+        shouldTriggerOnClick = true;
         return this;
     }
 
-    public Component addOnMouseOvertAction(InputAction action) {
+    public Component addOnMouseOvertAction(Automation action) {
+        this.shouldTriggerOnMouseOver = true;
         onMouseOverActions.add(action);
         return this;
     }
 
-    public Component addOnMouseLeftAction(InputAction action) {
+    public Component addOnMouseLeftAction(Automation action) {
+        this.shouldTriggerOnMouseLeave = true;
         onMouseLeaveActions.add(action);
         return this;
     }
@@ -74,6 +83,21 @@ public abstract class Component {
 
     public Component setTexture(Texture tex) {
         this.texture = tex;
+        return this;
+    }
+
+    public Component setShouldTriggerOnClick(boolean isClickable) {
+        this.shouldTriggerOnClick = isClickable;
+        return this;
+    }
+
+    public Component setShouldTriggerOnMouseOver(boolean shouldTriggerOnMouseOver) {
+        this.shouldTriggerOnMouseOver = shouldTriggerOnMouseOver;
+        return this;
+    }
+
+    public Component setShouldTriggerOnMouseLeave(boolean shouldTriggerOnMouseLeave) {
+        this.shouldTriggerOnMouseLeave = shouldTriggerOnMouseLeave;
         return this;
     }
 
@@ -106,14 +130,12 @@ public abstract class Component {
     }
 
     public void onMouseOver(Input input) {
-        isMouseOver = true;
         for(var actions: onMouseOverActions) {
             actions.run(this, input);
         }
     }
 
     public void onMouseLeave(Input input) {
-        isMouseOver = false;
         for(var actions: onMouseLeaveActions) {
             actions.run(this, input);
         }
@@ -134,15 +156,15 @@ public abstract class Component {
         }
     }
 
-    public boolean isClicked(Input input) {
-        if(input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
-            return isMouseOverComponent(input);
+    public boolean isClicked(Input input, boolean isMouseOver) {
+        if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
+            return isMouseOver;
         }
         return false;
     }
 
     public boolean isMouseLeft(Input input) {
-        if(isMouseOver && input.isCursorEnabled && !isMouseOverComponent(input)) {
+        if(previousIsMouseOver && input.isCursorEnabled && !isMouseOverComponent(input)) {
             return true;
         }
         else if(!input.isCursorEnabled) {
@@ -155,12 +177,20 @@ public abstract class Component {
 
     public void tick(List<Constraint> parentGlobalConstraints, Input input) {
 
+        isClicked = false; // Reset before processing inputs for current frame
+        currentIsMouseOver = false;
+        isMouseLeft = false;
+
         if(this instanceof MasterWindow) {
             input = ((MasterWindow) this).input;
         }
 
+        currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
+        isClicked = isClicked(input, currentIsMouseOver);
+        isMouseLeft = isMouseLeft(input);
+
         for(var automation: automations) {
-            automation.runAutomation(this);
+            automation.run(this, input);
         }
 
         for(var constraint: constraints) {
@@ -173,20 +203,22 @@ public abstract class Component {
             }
         }
 
-        if(isClicked(input)) {
+        for(var child: children) {
+            child.tick(globalChildrenConstraints, input);
+        }
+
+        if(isClicked) {
             onClick(input);
         }
 
-        if(isMouseOverComponent(input)) {
+        if(currentIsMouseOver) {
             onMouseOver(input);
+            previousIsMouseOver = true;
         }
 
-        if(isMouseLeft(input)) {
+        if(isMouseLeft) {
             onMouseLeave(input);
-        }
-
-        for(var child: children) {
-            child.tick(globalChildrenConstraints, input);
+            previousIsMouseOver = false;
         }
 
     }

@@ -3,6 +3,7 @@ package Kurama.GUI.automations;
 import Kurama.GUI.Component;
 import Kurama.Math.Vector;
 import Kurama.buffers.RenderBuffer;
+import Kurama.inputs.Input;
 
 public class ResizeRenderBuffer implements Automation {
 
@@ -13,7 +14,7 @@ public class ResizeRenderBuffer implements Automation {
     }
 
     @Override
-    public void runAutomation(Component current) {
+    public void run(Component current, Input input) {
         var curCamRes = buffer.renderResolution;
         var newRes = new Vector(new float[]{current.width, current.height});
 

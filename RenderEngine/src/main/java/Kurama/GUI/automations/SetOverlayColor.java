@@ -1,9 +1,9 @@
-package Kurama.GUI.inputHandling;
+package Kurama.GUI.automations;
 
 import Kurama.Math.Vector;
 import Kurama.inputs.Input;
 
-public class SetOverlayColor implements InputAction {
+public class SetOverlayColor implements Automation {
 
     public Vector overlayColor;
     public SetOverlayColor(Vector overlayColor) {
