@@ -52,12 +52,12 @@ public class Text extends Component {
             }
         }
 
-        if(parent != null) {
-            globalOrientation = parent.globalOrientation.multiply(orientation);
-        }
-
         if(shouldUpdate) {
             updateText();
+        }
+
+        if(parent != null) {
+            globalOrientation = parent.globalOrientation.multiply(orientation);
         }
 
         for(var child: children) {

@@ -114,10 +114,15 @@ public abstract class Component {
 
     public Matrix getObjectToWorldMatrix() {
 
-        Matrix rotationMatrix = this.globalOrientation.getRotationMatrix();
+        Matrix rotationMatrix = this.orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
+
+//        Vector tempPos = parent.globalOrientation.rotatePoint(pos.sub(parent.pos)).add(parent.parent.globalOrientation.rotatePoint(parent.pos))
+//                .add(new Vector(width/2, height/2, 0));
+//
+//        Matrix transformationMatrix = rotScalMatrix.addColumn(tempPos);
         Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width/2, height/2, 0)));
         transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
