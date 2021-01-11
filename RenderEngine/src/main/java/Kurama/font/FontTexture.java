@@ -40,6 +40,7 @@ public class FontTexture {
     private static final int CHAR_PADDING = 2;
     public int width;
     public int height;
+    public static String defaultCharSet = "ISO-8859-1";
 
     public FontTexture(Font font, String charSetName) {
         this.font = font;
@@ -70,10 +71,10 @@ public class FontTexture {
 
         //Set texture coordinates
         for(var charInfo: charMap.values()) {
-            charInfo.texUL = new Vector(new float[]{(float)charInfo.startX / (float)width,0});
-            charInfo.texBL = new Vector(new float[]{(float)charInfo.startX / (float)width,1});
-            charInfo.texUR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,0});
-            charInfo.texBR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,1});
+            charInfo.texBL = new Vector(new float[]{(float)charInfo.startX / (float)width,0});
+            charInfo.texUL = new Vector(new float[]{(float)charInfo.startX / (float)width,1});
+            charInfo.texBR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,0});
+            charInfo.texUR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,1});
         }
 
         g2D.dispose();

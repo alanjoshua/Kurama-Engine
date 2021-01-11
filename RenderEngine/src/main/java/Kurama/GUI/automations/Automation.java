@@ -5,6 +5,6 @@ import Kurama.inputs.Input;
 
 public interface Automation {
 
-    public abstract void run(Component current, Input input);
+    public abstract void run(Component current, Input input, float timeDelta);
 
 }

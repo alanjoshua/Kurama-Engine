@@ -14,7 +14,7 @@ public class ResizeCameraRenderResolution implements Automation {
     }
 
     @Override
-    public void run(Component current, Input input) {
+    public void run(Component current, Input input, float timeDelta) {
         var curCamRes = cam.renderResolution;
         var newRes = new Vector(new float[]{current.width, current.height});
 

@@ -3,6 +3,7 @@ package main;
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
 import Kurama.GUI.Rectangle;
+import Kurama.GUI.Text;
 import Kurama.GUI.automations.*;
 import Kurama.GUI.constraints.MaxHeight;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
@@ -19,6 +20,7 @@ import Kurama.audio.SoundManager;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
+import Kurama.font.FontTexture;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5AnimModel;
 import Kurama.geometry.MD5.MD5Model;
@@ -47,6 +49,7 @@ import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import ModelBehaviour.SunRevolve;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -152,8 +155,14 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
                 .addOnMouseLeftAction(new RemoveOverlayColor());
-
         rightDivide.children.add(square2);
+
+        var text =
+                new Text(square2, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "text")
+                .setText("Alan")
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
+                .setContainerVisibility(false);
+        square2.children.add(text);
 
         try {
             var soundManager = new SoundManager();
@@ -418,7 +427,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
 
-        masterComponent.tick(null, masterComponent.input);
+        masterComponent.tick(null, masterComponent.input, timeDelta);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
         tickInput();

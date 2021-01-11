@@ -11,7 +11,7 @@ public class SetOverlayColor implements Automation {
     }
 
     @Override
-    public void run(Kurama.GUI.Component current, Input input) {
+    public void run(Kurama.GUI.Component current, Input input, float timeDelta) {
         current.overlayColor = overlayColor;
     }
 }

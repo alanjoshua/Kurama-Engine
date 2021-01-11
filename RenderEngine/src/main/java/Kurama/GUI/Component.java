@@ -15,6 +15,7 @@ public abstract class Component {
 
     public Vector pos = new Vector(new float[]{0,0,0});
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
+    public Quaternion globalOrientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
 
@@ -113,7 +114,7 @@ public abstract class Component {
 
     public Matrix getObjectToWorldMatrix() {
 
-        Matrix rotationMatrix = this.orientation.getRotationMatrix();
+        Matrix rotationMatrix = this.globalOrientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
@@ -123,21 +124,21 @@ public abstract class Component {
         return transformationMatrix;
     }
 
-    public void onClick(Input input) {
+    public void onClick(Input input, float timeDelta) {
         for(var actions: onClickActions) {
-            actions.run(this, input);
+            actions.run(this, input, timeDelta);
         }
     }
 
-    public void onMouseOver(Input input) {
+    public void onMouseOver(Input input, float timeDelta) {
         for(var actions: onMouseOverActions) {
-            actions.run(this, input);
+            actions.run(this, input, timeDelta);
         }
     }
 
-    public void onMouseLeave(Input input) {
+    public void onMouseLeave(Input input, float timeDelta) {
         for(var actions: onMouseLeaveActions) {
-            actions.run(this, input);
+            actions.run(this, input, timeDelta);
         }
     }
 
@@ -175,7 +176,7 @@ public abstract class Component {
         }
     }
 
-    public void tick(List<Constraint> parentGlobalConstraints, Input input) {
+    public void tick(List<Constraint> parentGlobalConstraints, Input input, float timeDelta) {
 
         isClicked = false; // Reset before processing inputs for current frame
         currentIsMouseOver = false;
@@ -186,7 +187,7 @@ public abstract class Component {
         isMouseLeft = isMouseLeft(input);
 
         for(var automation: automations) {
-            automation.run(this, input);
+            automation.run(this, input, timeDelta);
         }
 
         for(var constraint: constraints) {
@@ -199,21 +200,25 @@ public abstract class Component {
             }
         }
 
+        if(parent != null) {
+            globalOrientation = parent.globalOrientation.multiply(orientation);
+        }
+
         for(var child: children) {
-            child.tick(globalChildrenConstraints, input);
+            child.tick(globalChildrenConstraints, input, timeDelta);
         }
 
         if(isClicked) {
-            onClick(input);
+            onClick(input, timeDelta);
         }
 
         if(currentIsMouseOver) {
-            onMouseOver(input);
+            onMouseOver(input, timeDelta);
             previousIsMouseOver = true;
         }
 
         if(isMouseLeft) {
-            onMouseLeave(input);
+            onMouseLeave(input, timeDelta);
             previousIsMouseOver = false;
         }
 
