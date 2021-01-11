@@ -26,6 +26,7 @@ public class RectangleShaderBlock extends RenderBlock {
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
+    public static final int INSTANCE_SIZE = 39;
 
     public RectangleShaderBlock(String id, RenderPipeline pipeline) {
         super(id, pipeline);
@@ -43,7 +44,7 @@ public class RectangleShaderBlock extends RenderBlock {
             rectangleUniformBuffer = glGenBuffers();
             glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
 
-            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(31);
+            var jointsDataInstancedBuffer = MemoryUtil.memAllocFloat(INSTANCE_SIZE);
             glBufferData(GL_UNIFORM_BUFFER, jointsDataInstancedBuffer, GL_DYNAMIC_DRAW);
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, rectangleUniformBuffer);
 
@@ -61,9 +62,9 @@ public class RectangleShaderBlock extends RenderBlock {
     }
 
     public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
-                                      Vector color, Vector overlayColor) {
+                                      Vector color, Vector overlayColor, Rectangle rect) {
 
-        FloatBuffer temp = MemoryUtil.memAllocFloat(31);
+        FloatBuffer temp = MemoryUtil.memAllocFloat(INSTANCE_SIZE);
         projectionViewMatrix.setValuesToBuffer(temp);
 
         if(radius != null) {
@@ -86,6 +87,11 @@ public class RectangleShaderBlock extends RenderBlock {
         else {
             temp.put(new float[]{0,0,0,0});
         }
+
+        rect.texUL.setValuesToBuffer(temp);
+        rect.texBL.setValuesToBuffer(temp);
+        rect.texUR.setValuesToBuffer(temp);
+        rect.texBR.setValuesToBuffer(temp);
 
         temp.put(width);
         temp.put(height);
@@ -129,7 +135,7 @@ public class RectangleShaderBlock extends RenderBlock {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
             setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
-                    masterComponent.texture == null ? false : true, masterComponent.color, masterComponent.overlayColor);
+                    masterComponent.texture == null ? false : true, masterComponent.color, masterComponent.overlayColor, (Rectangle) masterComponent);
 
             glDrawMeshTasksNV(0, 1);
         }

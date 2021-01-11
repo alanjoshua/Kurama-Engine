@@ -1,5 +1,6 @@
 package Kurama.font;
 
+import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 
 import javax.imageio.ImageIO;
@@ -19,6 +20,10 @@ public class FontTexture {
 
         public int startX;
         public int width;
+        public Vector texUL;
+        public Vector texBL;
+        public Vector texUR;
+        public Vector texBR;
 
         public CharInfo(int startX, int width) {
             this.startX = startX;
@@ -57,12 +62,20 @@ public class FontTexture {
         String allChars = getAllAvailableChars(charSetName);
         this.width = 0;
         this.height = fontMetrics.getHeight();
-        for (char c : allChars.toCharArray()) {
-            // Get the size for each character and update global image size
+        for (char c : allChars.toCharArray()) {  // Get the size for each character and update global image size
             CharInfo charInfo = new CharInfo(width, fontMetrics.charWidth(c));
             charMap.put(c, charInfo);
             width += charInfo.width + CHAR_PADDING;
         }
+
+        //Set texture coordinates
+        for(var charInfo: charMap.values()) {
+            charInfo.texUL = new Vector(new float[]{(float)charInfo.startX / (float)width,0});
+            charInfo.texBL = new Vector(new float[]{(float)charInfo.startX / (float)width,1});
+            charInfo.texUR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,0});
+            charInfo.texBR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,1});
+        }
+
         g2D.dispose();
 
         // Create the image associated to the charset
@@ -79,8 +92,6 @@ public class FontTexture {
             startX += charInfo.width + CHAR_PADDING;
         }
         g2D.dispose();
-
-//        ImageIO.write(img, "png", new File("savedFont.png"));
 
         ByteBuffer buf = null;
         try ( ByteArrayOutputStream out = new ByteArrayOutputStream()) {

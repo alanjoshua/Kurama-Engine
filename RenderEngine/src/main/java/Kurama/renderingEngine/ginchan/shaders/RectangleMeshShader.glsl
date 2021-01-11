@@ -10,6 +10,10 @@ layout (std140, binding = 0) uniform Rectangle {
     vec4 radius;
     vec4 color;
     vec4 overlayColor;
+    vec2 texUL;
+    vec2 texBL;
+    vec2 texUR;
+    vec2 texBR;
     vec2 dimensions;
     float hasTexture;
 } rectangle;
@@ -27,11 +31,6 @@ const vec4 v2 = vec4(0.5,-0.5,0f,1f);
 const vec4 v3 = vec4(-0.5,0.5,0f,1f);
 const vec4 v4 = vec4(0.5,0.5,0f,1f);
 
-const vec2 t1 = vec2(0,1);
-const vec2 t2 = vec2(1,1);
-const vec2 t3 = vec2(0,0);
-const vec2 t4 = vec2(1,0);
-
 void main() {
 
     gl_MeshVerticesNV[0].gl_Position = rectangle.projectionViewMatrix*v1;
@@ -39,10 +38,10 @@ void main() {
     gl_MeshVerticesNV[2].gl_Position = rectangle.projectionViewMatrix*v3;
     gl_MeshVerticesNV[3].gl_Position = rectangle.projectionViewMatrix*v4;
 
-    v_out[0].tex = t1;
-    v_out[1].tex = t2;
-    v_out[2].tex = t3;
-    v_out[3].tex = t4;
+    v_out[0].tex = rectangle.texBL;
+    v_out[1].tex = rectangle.texBR;
+    v_out[2].tex = rectangle.texUL;
+    v_out[3].tex = rectangle.texUR;
 
     gl_PrimitiveIndicesNV[0] = 0;
     gl_PrimitiveIndicesNV[1] = 1;

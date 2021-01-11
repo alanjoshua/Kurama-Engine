@@ -6,14 +6,18 @@ in PerVertexData {
     vec2 tex;
 } fragIn;
 
-layout (std140, location = 0) uniform Rectangle{
+layout (std140, binding = 0) uniform Rectangle {
     mat4 projectionViewMatrix;
     vec4 radius;
     vec4 color;
     vec4 overlayColor;
+    vec2 texUL;
+    vec2 texBL;
+    vec2 texUR;
+    vec2 texBR;
     vec2 dimensions;
     float hasTexture;
-}rectangle;
+} rectangle;
 
 uniform sampler2D texture_sampler;
 

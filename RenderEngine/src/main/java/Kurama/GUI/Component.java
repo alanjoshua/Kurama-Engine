@@ -181,10 +181,6 @@ public abstract class Component {
         currentIsMouseOver = false;
         isMouseLeft = false;
 
-        if(this instanceof MasterWindow) {
-            input = ((MasterWindow) this).input;
-        }
-
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input);

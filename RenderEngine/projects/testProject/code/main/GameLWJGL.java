@@ -418,7 +418,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
 
-        masterComponent.tick(null, null);
+        masterComponent.tick(null, masterComponent.input);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
         tickInput();
