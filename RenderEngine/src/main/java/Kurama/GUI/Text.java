@@ -1,10 +1,9 @@
 package Kurama.GUI;
 
 import Kurama.GUI.constraints.Constraint;
-import Kurama.Math.Vector;
+import Kurama.GUI.constraints.PosXYTopLeftAttachPix;
 import Kurama.font.FontTexture;
 import Kurama.inputs.Input;
-import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 
 import java.util.ArrayList;
@@ -12,13 +11,14 @@ import java.util.List;
 
 public class Text extends Component {
 
-    public String text;
+    public String text = "";
     public FontTexture fontTexture;
     protected boolean shouldUpdate = true;
 
     public Text(Component parent, FontTexture fontTexture, String identifier) {
         super(parent, identifier);
         this.fontTexture = fontTexture;
+        isContainerVisible = false;
     }
 
     public Component setText(String text) {
@@ -81,15 +81,21 @@ public class Text extends Component {
     }
 
     protected void updateText() {
+
+        if(text == null || text.length() == 0) {
+            return;
+        }
+
         children = new ArrayList<>();
 
-        Vector curPos = new Vector(pos);
-         this.width = 0;
+        int curPos = 0;
+        this.width = 0;
 
         for(char c: text.toCharArray()) {
             var charInfo = fontTexture.charMap.get(c);
             var newComp = new Rectangle(this, Utils.getUniqueID());
-            newComp.pos = curPos;
+
+            newComp.constraints.add(new PosXYTopLeftAttachPix(curPos, 0));
             newComp.texUL = charInfo.texUL;
             newComp.texBL = charInfo.texBL;
             newComp.texUR = charInfo.texUR;
@@ -97,12 +103,12 @@ public class Text extends Component {
             newComp.width = charInfo.width;
             newComp.height = fontTexture.height;
             newComp.texture = fontTexture.texture;
+            newComp.setOverlayColor(this.overlayColor);
 
-            curPos = curPos.add(new Vector(new float[]{charInfo.width, 0, 0}));
+            curPos += charInfo.width;
             width += charInfo.width;
 
             children.add(newComp);
-            Logger.log("adding child");
         }
 
         this.height = fontTexture.height;

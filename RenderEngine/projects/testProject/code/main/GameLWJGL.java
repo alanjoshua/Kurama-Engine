@@ -7,6 +7,7 @@ import Kurama.GUI.Text;
 import Kurama.GUI.automations.*;
 import Kurama.GUI.constraints.MaxHeight;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPercent;
+import Kurama.GUI.constraints.PosXYTopLeftAttachPix;
 import Kurama.GUI.constraints.WidthHeightPercent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -75,6 +76,7 @@ public class GameLWJGL extends Game implements Runnable {
 //    protected Vector mousePos;
 
     public Camera playerCamera;
+    public Text fpsText;
 
     public GameLWJGL(String threadName) {
         super(threadName);
@@ -120,6 +122,13 @@ public class GameLWJGL extends Game implements Runnable {
                 .addOnMouseLeftAction(new RemoveOverlayColor());
         masterComponent.children.add(leftDivide);
 
+        fpsText =
+            (Text)new Text(masterComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
+            .addConstraint(new PosXYTopLeftAttachPix(20, 20))
+            .addAutomation(new DisplayFPS(this, "fps: "))
+            .setOverlayColor(new Vector(1,0,0,0.5f));
+        masterComponent.children.add(fpsText);
+
         var rightDivide =
                 new Rectangle(masterComponent, "rightHalf")
                 .setColor(new Vector(0.5f, 0.4f, 0.9f, 1f))
@@ -135,6 +144,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,1)))
                 .addOnMouseLeftAction(new RemoveOverlayColor())
+                .addAutomation(new Rotate(new Vector(0,0,1), 50))
                 .addOnClickAction(new Log("Clicked button 1"));
         rightDivide.children.add(square1);
 
@@ -160,8 +170,7 @@ public class GameLWJGL extends Game implements Runnable {
         var text =
                 new Text(square2, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "text")
                 .setText("Alan")
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
-                .setContainerVisibility(false);
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f));
         square2.children.add(text);
 
         try {
@@ -425,8 +434,13 @@ public class GameLWJGL extends Game implements Runnable {
         scene.cleanUp();
     }
 
+    public void tickGUI() {
+
+    }
+
     public void tick() {
 
+        tickGUI();
         masterComponent.tick(null, masterComponent.input, timeDelta);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 

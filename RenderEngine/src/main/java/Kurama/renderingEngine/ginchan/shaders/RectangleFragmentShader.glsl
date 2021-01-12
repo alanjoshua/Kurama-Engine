@@ -69,7 +69,13 @@ void main() {
         outColor = rectangle.color*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
     }
     else {
-        outColor = texture(texture_sampler, fragIn.tex)*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
+        vec4 texColor = texture(texture_sampler, fragIn.tex);
+        if(texColor.w > 0) {
+            outColor = texColor*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
+        }
+        else {
+            outColor = vec4(0,0,0,0);
+        }
     }
 
 }

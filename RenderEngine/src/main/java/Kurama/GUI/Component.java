@@ -87,6 +87,11 @@ public abstract class Component {
         return this;
     }
 
+    public Component setOverlayColor(Vector color) {
+        this.overlayColor = color;
+        return this;
+    }
+
     public Component setShouldTriggerOnClick(boolean isClickable) {
         this.shouldTriggerOnClick = isClickable;
         return this;
@@ -117,19 +122,50 @@ public abstract class Component {
         Matrix rotationMatrix = this.orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
+        Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width / 2f, height / 2f, 0)));
+        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+        return transformationMatrix;
 
 //        var parentPosGlobal = parent.globalOrientation.rotatePoint(parent.pos);
 //        var posOff = pos.sub(parent.pos);
 //        var possGlobal = parentPosGlobal.add(globalOrientation.rotatePoint(posOff).add(new Vector(width/2f, height/2f, 0)));
 
-//        Vector tempPos = parent.globalOrientation.rotatePoint(pos.sub(parent.pos)).add(parent.parent.globalOrientation.rotatePoint(parent.pos))
+//        Vector tempPos = globalOrientation.rotatePoint(pos.sub(parent.pos))
+//                .add(parent.globalOrientation.rotatePoint(parent.pos))
 //                .add(new Vector(width/2, height/2, 0));
-//
-//        Matrix transformationMatrix = rotScalMatrix.addColumn(tempPos);
-        Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width/2f, height/2f, 0)));
-        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
-        return transformationMatrix;
+//        Matrix transformationMatrix = rotScalMatrix.addColumn(tempPos);
+
+//        Matrix transformationMatrix;
+//        if(parent!= null) {
+//            transformationMatrix =
+//                    rotScalMatrix
+//                            .addColumn(
+//                                    orientation.rotatePoint(
+//                                        pos
+//                                        .sub(parent.pos)
+//                                        .add(new Vector(width / 2f, height / 2f, 0))
+//                                    ));
+//        }
+//        else {
+//            transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width / 2f, height / 2f, 0)));
+//        }
+//
+//        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+//
+//        if(parent == null) {
+//            return transformationMatrix;
+//        }
+//        else {
+//            Matrix parentRotMat = parent.globalOrientation.getRotationMatrix();
+//            parentRotMat = parentRotMat.addColumn(parent.globalOrientation.rotatePoint(parent.pos.add(new Vector(parent.width / 2f, parent.height / 2f, 0))));
+//            parentRotMat = parentRotMat.addRow(new Vector(new float[]{0, 0, 0, 1}));
+//            var res = parentRotMat.matMul(transformationMatrix);
+////            if(res == null) {
+////
+////            }
+//            return res;
+//        }
     }
 
     public void onClick(Input input, float timeDelta) {
