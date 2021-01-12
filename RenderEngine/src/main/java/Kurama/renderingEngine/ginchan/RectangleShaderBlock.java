@@ -4,6 +4,7 @@ import Kurama.GUI.Component;
 import Kurama.GUI.Rectangle;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
+import Kurama.game.Game;
 import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 import Kurama.utils.Utils;
@@ -18,7 +19,7 @@ import static org.lwjgl.opengl.GL30C.glBindBufferBase;
 import static org.lwjgl.opengl.GL31C.GL_UNIFORM_BUFFER;
 import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 
-public class RectangleShaderBlock extends RenderBlock {
+public class RectangleShaderBlock extends RenderPipeline {
 
     private ShaderProgram shader;
     int rectangleUniformBuffer;
@@ -28,12 +29,12 @@ public class RectangleShaderBlock extends RenderBlock {
     public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
     public static final int INSTANCE_SIZE = 39;
 
-    public RectangleShaderBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
+    public RectangleShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineInput input) {
         shader = new ShaderProgram(Utils.getUniqueID());
 
         try {
@@ -102,7 +103,7 @@ public class RectangleShaderBlock extends RenderBlock {
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
 
         GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
         var masterComponent = inp.component;

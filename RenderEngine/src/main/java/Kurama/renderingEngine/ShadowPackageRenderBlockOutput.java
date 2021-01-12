@@ -2,7 +2,7 @@ package Kurama.renderingEngine;
 
 import Kurama.renderingEngine.defaultRenderPipeline.ShadowDepthRenderPackage;
 
-public class ShadowPackageRenderBlockOutput extends RenderBlockOutput {
+public class ShadowPackageRenderBlockOutput extends RenderPipelineOutput {
 
     public ShadowDepthRenderPackage shadowPackage;
 

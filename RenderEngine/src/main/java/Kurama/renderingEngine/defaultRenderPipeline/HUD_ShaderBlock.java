@@ -50,10 +50,10 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
         ShaderProgram hudShaderProgram = hud_shader;
         hudShaderProgram.bind();
 
-        for(String meshId :input.scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
+        for(String meshId :input.scene.shaderblock_mesh_model_map.get(pipelineID).keySet()) {
             Mesh mesh = input.scene.meshID_mesh_map.get(meshId);
 
-            for(String modelId : input.scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+            for(String modelId : input.scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
                 Model m = input.scene.modelID_model_map.get(modelId);
 
                 if (m.shouldRender) {

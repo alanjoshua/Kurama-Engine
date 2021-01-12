@@ -93,9 +93,9 @@ public class GameLWJGL extends Game implements Runnable {
 
         input = new InputLWJGL(this, display);
 
-        scene.renderPipeline = new DefaultRenderPipeline(this);
+        scene.renderPipeline = new DefaultRenderPipeline(this, null,"sceneRenderer");
         renderingEngine.sceneRenderPipeline = scene.renderPipeline;
-        renderingEngine.guiRenderPipeline = new Gintoki(this);
+        renderingEngine.guiRenderPipeline = new Gintoki(this, null,"Gintoki");
         renderingEngine.init(scene);
 
         playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,

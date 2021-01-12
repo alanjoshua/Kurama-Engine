@@ -1,24 +1,22 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
+import Kurama.game.Game;
 import Kurama.model.Model;
-import Kurama.renderingEngine.CurrentCameraBlockInput;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderBlockOutput;
-import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 
-public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
+public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
     private static String skyboxShaderID = "skyboxshader";
     private ShaderProgram skyboxShader;
 
-    public SkyboxShaderBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
+    public SkyboxShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineInput input) {
         try {
             skyboxShader = new ShaderProgram(skyboxShaderID);
 
@@ -41,7 +39,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
 
         if(input.scene.skybox == null) {
             return null;
@@ -65,7 +63,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderBlock {
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 
-            ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
+            ((DefaultRenderPipeline)parentPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
         }
         skyBoxShaderProgram.unbind();
         return null;

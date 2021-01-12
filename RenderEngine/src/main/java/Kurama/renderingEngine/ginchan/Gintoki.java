@@ -20,17 +20,16 @@ import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 public class Gintoki extends RenderPipeline {
 
     public static String rectangleShaderBlockID = "rectangleBlock";
-    public RectangleShaderBlock rectangleShaderBlock = new RectangleShaderBlock(rectangleShaderBlockID, this);
+    public RectangleShaderBlock rectangleShaderBlock = new RectangleShaderBlock(game, this, rectangleShaderBlockID);
 
-    public Gintoki(Game game) {
-        super(game);
+    public Gintoki(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
     public void setup(RenderPipelineInput input) {
-        rectangleShaderBlock.setup(new RenderBlockInput(input.scene, game, null));
-
-        renderBlockID_renderBlock_map.put(rectangleShaderBlockID, rectangleShaderBlock);
+        rectangleShaderBlock.setup(new RenderPipelineInput(input.scene, game, null));
+        renderBlocks.add(rectangleShaderBlock);
     }
 
     @Override

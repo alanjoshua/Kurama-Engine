@@ -3,20 +3,35 @@ package Kurama.renderingEngine;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class RenderPipeline {
 
     protected Game game;
-    public Map<String, RenderBlock> renderBlockID_renderBlock_map = new HashMap<>();
+    public String pipelineID = null;
+    public RenderPipeline parentPipeline;
+    public List<RenderPipeline> renderBlocks = new ArrayList<>();
 
-    public RenderPipeline(Game game) {
+    public RenderPipeline(Game game, RenderPipeline parentPipeline, String pipelineID) {
         this.game = game;
+        this.parentPipeline = parentPipeline;
+        this.pipelineID = pipelineID;
     }
     public abstract void setup(RenderPipelineInput input);
-    public abstract RenderPipelineOutput render(RenderPipelineInput input);
+
+    public RenderPipelineOutput render(RenderPipelineInput input) {
+        RenderPipelineOutput prevOutput = null;
+        for(var pipe: renderBlocks) {
+            if(prevOutput == null) {
+                prevOutput = pipe.render(input);
+            }
+            else {
+                prevOutput = pipe.render(prevOutput.nextInput);
+            }
+        }
+        return prevOutput;
+    }
     public abstract void cleanUp();
-    public abstract void initializeMesh(Mesh mesh);
-//    public abstract void renderResolutionChanged(Vector renderResolution);
+    public void initializeMesh(Mesh mesh) { }
 }

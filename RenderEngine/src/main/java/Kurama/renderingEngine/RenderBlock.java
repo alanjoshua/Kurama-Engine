@@ -2,10 +2,10 @@ package Kurama.renderingEngine;
 
 public abstract class RenderBlock {
 
-    public String blockID = null;
+    public String pipelineID = null;
     public RenderPipeline renderPipeline;
     public RenderBlock(String id, RenderPipeline pipeline) {
-        this.blockID = id;
+        this.pipelineID = id;
         this.renderPipeline = pipeline;
     }
 

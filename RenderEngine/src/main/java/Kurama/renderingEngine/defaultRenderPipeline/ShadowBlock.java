@@ -3,6 +3,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 import Kurama.Math.Matrix;
 import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
+import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.SpotLight;
 import Kurama.model.AnimatedModel;
@@ -22,17 +23,17 @@ import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 import static org.lwjgl.opengl.GL45C.glNamedBufferSubData;
 
-public class ShadowBlock extends RenderBlock {
+public class ShadowBlock extends RenderPipeline {
 
     private String shadow_ShaderID = "shadow_shader";
     private ShaderProgram shadow_shader;
 
-    public ShadowBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
+    public ShadowBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game,parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineInput input) {
         shadow_shader = new ShaderProgram(shadow_ShaderID);
         try {
             shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightVertexShader.glsl");
@@ -52,14 +53,14 @@ public class ShadowBlock extends RenderBlock {
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
         var shadowPackage = calculateShadowMaps(input.scene);
         return new ShadowPackageRenderBlockOutput(shadowPackage);
     }
 
     public ShadowDepthRenderPackage calculateShadowMaps(Scene scene) {
 
-        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
+        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) parentPipeline;
         boolean curShouldCull = true;
         int currCull = GL_BACK;
 

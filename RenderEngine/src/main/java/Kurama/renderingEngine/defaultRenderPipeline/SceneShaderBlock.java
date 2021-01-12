@@ -6,6 +6,7 @@ import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.camera.Camera;
+import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
@@ -28,24 +29,23 @@ import static org.lwjgl.opengl.GL45.glNamedBufferSubData;
 
 //import static org.lwjgl.opengl.GL30C.*;
 
-public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
+public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
     private String scene_shader_id = "scene_shader";
     private ShaderProgram scene_shader;
-    private DefaultRenderPipeline pipeline;
+//    private DefaultRenderPipeline pipeline;
 
-    public SceneShaderBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
-        this.pipeline = (DefaultRenderPipeline)pipeline;
+    public SceneShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineInput input) {
         setupSceneShader();
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
 
         CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
         ShadowPackageRenderBlockOutput out = (ShadowPackageRenderBlockOutput) input.previousOutput;
@@ -139,7 +139,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
     public void renderScene(Scene scene, Camera camera, ShadowDepthRenderPackage shadowPackage) {
 
-        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) renderPipeline;
+        DefaultRenderPipeline pipeline = (DefaultRenderPipeline) parentPipeline;
         boolean curShouldCull = true;
         int currCull = GL_BACK;
 
@@ -187,7 +187,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
         offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,offset);
         offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
-        for(String meshId :scene.shaderblock_mesh_model_map.get(blockID).keySet()) {
+        for(String meshId :scene.shaderblock_mesh_model_map.get(pipelineID).keySet()) {
 
             Mesh mesh = scene.meshID_mesh_map.get(meshId);
             if (curShouldCull != mesh.shouldCull) {
@@ -212,7 +212,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                 sceneShaderProgram.setUniform("isInstanced", 1);
 
                 List<Model> models = new ArrayList<>();
-                for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
                     Model model = scene.modelID_model_map.get(modelId);
                     if(model.shouldRender && model.isInsideFrustum) {
                         models.add(model);
@@ -276,7 +276,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
                 sceneShaderProgram.setUniform("isInstanced", 0);
 
-                for (String modelId : scene.shaderblock_mesh_model_map.get(blockID).get(meshId).keySet()) {
+                for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
                     Model model = scene.modelID_model_map.get(modelId);
 
                     if (model.shouldRender) {

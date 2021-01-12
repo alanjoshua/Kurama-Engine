@@ -38,16 +38,17 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     public static String sceneShaderBlockID = "sceneShaderBlock";
     public static String shadowBlockID = "shadowBlock";
-//    public static String hudShaderBlockID = "hudShaderBlock";
     public static String skyboxShaderBlockID = "skyboxShaderBlock";
     public static String particleShaderBlockID = "particleShaderBlock";
+//    public static String hudShaderBlockID = "hudShaderBlock";
 //    public static String fullscreenQuadShaderBlockID = "fullscreenQuadShaderBlock";
 
-    SceneShaderBlock sceneShaderBlock = new SceneShaderBlock(sceneShaderBlockID, this);
-    ShadowBlock shadowBlock = new ShadowBlock(shadowBlockID, this);
+    SceneShaderBlock sceneShaderBlock;
+    ShadowBlock shadowBlock;
+    SkyboxShaderBlock skyboxShaderBlock;
+    ParticleShaderBlock particleShaderBlock;
+
 //    HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID, this);
-    SkyboxShaderBlock skyboxShaderBlock = new SkyboxShaderBlock(skyboxShaderBlockID, this);
-    ParticleShaderBlock particleShaderBlock = new ParticleShaderBlock(particleShaderBlockID, this);
 //    FullScreenQuadBlock fullScreenQuadBlock = new FullScreenQuadBlock(fullscreenQuadShaderBlockID, this);
 
     public static int MAX_DIRECTIONAL_LIGHTS = 5;
@@ -71,29 +72,35 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public FrustumIntersection frustumIntersection = new FrustumIntersection();
     public int jointsInstancedBufferID;
 
-    public DefaultRenderPipeline(Game game) {
-        super(game);
+    public DefaultRenderPipeline(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
     public void setup(RenderPipelineInput input) {
 
         var scene = input.scene;
+        sceneShaderBlock = new SceneShaderBlock(game, this, sceneShaderBlockID);
+        shadowBlock = new ShadowBlock(game, this, shadowBlockID);
+        skyboxShaderBlock = new SkyboxShaderBlock(game, this, skyboxShaderBlockID);
+        particleShaderBlock = new ParticleShaderBlock(game, this, particleShaderBlockID);
 
         setupSkeletonSSBO();
 
-        sceneShaderBlock.setup(new RenderBlockInput(scene, game, null));
-        shadowBlock.setup(new RenderBlockInput(scene, game, null));
-        skyboxShaderBlock.setup(new RenderBlockInput(scene, game, null));
+        sceneShaderBlock.setup(new RenderPipelineInput(scene, game, null));
+        shadowBlock.setup(new RenderPipelineInput(scene, game, null));
+        skyboxShaderBlock.setup(new RenderPipelineInput(scene, game, null));
+        particleShaderBlock.setup(new RenderPipelineInput(scene, game, null));
+
 //        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
-        particleShaderBlock.setup(new RenderBlockInput(scene, game, null));
 //        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
 
-        renderBlockID_renderBlock_map.put(sceneShaderBlockID, sceneShaderBlock);
-        renderBlockID_renderBlock_map.put(shadowBlockID, shadowBlock);
-        renderBlockID_renderBlock_map.put(skyboxShaderBlockID, skyboxShaderBlock);
+        renderBlocks.add(sceneShaderBlock);
+        renderBlocks.add(shadowBlock);
+        renderBlocks.add(skyboxShaderBlock);
+        renderBlocks.add(particleShaderBlock);
+
 //        renderBlockID_renderBlock_map.put(hudShaderBlockID, hudShaderBlock);
-        renderBlockID_renderBlock_map.put(particleShaderBlockID, particleShaderBlock);
 //        renderBlockID_renderBlock_map.put(fullscreenQuadShaderBlockID, fullScreenQuadBlock);
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
@@ -136,7 +143,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         var scene = input.scene;
 
         glCullFace(GL_FRONT);
-        var shadowOut = shadowBlock.render(new RenderBlockInput(scene, game, null));
+        var shadowOut = shadowBlock.render(new RenderPipelineInput(scene, game, null));
         glCullFace(GL_BACK);
 
         for(var camera: input.scene.cameras) {

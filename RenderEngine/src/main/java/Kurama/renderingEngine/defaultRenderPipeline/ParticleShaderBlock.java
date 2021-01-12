@@ -4,6 +4,7 @@ import Kurama.Math.Matrix;
 import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
 import Kurama.camera.Camera;
+import Kurama.game.Game;
 import Kurama.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.*;
@@ -13,17 +14,17 @@ import java.util.*;
 
 import static org.lwjgl.opengl.GL15.*;
 
-public class ParticleShaderBlock extends RenderBlock {
+public class ParticleShaderBlock extends RenderPipeline {
 
     private static String particleShaderID = "particleShader";
     private ShaderProgram particleShader;
 
-    public ParticleShaderBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
+    public ParticleShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineInput input) {
         particleShader = new ShaderProgram(particleShaderID);
 
         try {
@@ -79,7 +80,7 @@ public class ParticleShaderBlock extends RenderBlock {
         glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
         glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
 
-        ((DefaultRenderPipeline)renderPipeline).renderInstanced(inst_mesh, chunk.size());
+        ((DefaultRenderPipeline)parentPipeline).renderInstanced(inst_mesh, chunk.size());
     }
 
     public void renderGenerator(ParticleGenerator generator, Camera camera, Matrix worldToCam, boolean curShouldCull, int currCull) {
@@ -143,7 +144,7 @@ public class ParticleShaderBlock extends RenderBlock {
             particleShader.setUniform("numCols", inst_mesh.materials.get(0).texture.numCols);
             particleShader.setUniform("numRows", inst_mesh.materials.get(0).texture.numRows);
 
-            ((DefaultRenderPipeline)renderPipeline).initRender(mesh);
+            ((DefaultRenderPipeline)parentPipeline).initRender(mesh);
 
             int modelsProcessedSoFar = 0;
             var chunks = InstancedUtils.getRenderChunks(sortedParticles_list, inst_mesh.instanceChunkSize);
@@ -151,15 +152,15 @@ public class ParticleShaderBlock extends RenderBlock {
                 renderChunk(chunk, inst_mesh, sorted_objectToCam, modelsProcessedSoFar);
                 modelsProcessedSoFar+=chunk.size();
             }
-            ((DefaultRenderPipeline)renderPipeline).endRender(mesh);
+            ((DefaultRenderPipeline)parentPipeline).endRender(mesh);
         }
 
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineOutput render(RenderPipelineInput input) {
 
-        if(input.scene.shaderBlockID_particelGenID_map.get(blockID) == null) {
+        if(input.scene.shaderBlockID_particelGenID_map.get(pipelineID) == null) {
             return null;
         }
 
@@ -178,7 +179,7 @@ public class ParticleShaderBlock extends RenderBlock {
         Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
         particleShader.setUniform("projectionMatrix", projectionMatrix);
 
-        for (var generatorID : input.scene.shaderBlockID_particelGenID_map.get(blockID)) {
+        for (var generatorID : input.scene.shaderBlockID_particelGenID_map.get(pipelineID)) {
             var generator = input.scene.particleGenID_generator_map.get(generatorID);
             renderGenerator(generator, camera, worldToCam, curShouldCull, currCull);
         }
