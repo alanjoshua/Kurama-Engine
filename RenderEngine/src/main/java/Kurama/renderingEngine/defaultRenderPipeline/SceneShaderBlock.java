@@ -164,7 +164,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
 
         if(scene.hasMatLibraryUpdated) {
             Logger.log("setting materials");
-            sceneShaderProgram.setOnlyMaterials_noTextureBinding("materials", "mat_textures",
+            sceneShaderProgram.setMaterials_bindTextures("materials", "mat_textures",
                     "mat_normalMaps", "mat_diffuseMaps", "mat_specularMaps", scene.materialLibrary, 0);
         }
         int offset = activateMaterialTextures(scene.materialLibrary, 0);
@@ -259,17 +259,9 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderBlock {
                             matsGlobalLoc.setDataElement(i, m.materials.get(meshId).get(i).globalSceneID);
                         }
 
-//                        Vector matsAtlas = new Vector(4, 0);
-//                        for(int i = 0;i < m.matAtlasOffset.get(meshId).size();i++) {
-//                            matsAtlas.setDataElement(i, m.matAtlasOffset.get(meshId).get(i));
-//                        }
-
                         for(var v: matsGlobalLoc.getData()) {
                             inst_mesh.instanceDataBuffer.put(v);
                         }
-//                        for(var v: matsAtlas.getData()) {
-//                            inst_mesh.instanceDataBuffer.put(v);
-//                        }
                         modelCount++;
                     }
                     inst_mesh.instanceDataBuffer.flip();

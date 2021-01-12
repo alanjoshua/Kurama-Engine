@@ -118,12 +118,15 @@ public abstract class Component {
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
+//        var parentPosGlobal = parent.globalOrientation.rotatePoint(parent.pos);
+//        var posOff = pos.sub(parent.pos);
+//        var possGlobal = parentPosGlobal.add(globalOrientation.rotatePoint(posOff).add(new Vector(width/2f, height/2f, 0)));
 
 //        Vector tempPos = parent.globalOrientation.rotatePoint(pos.sub(parent.pos)).add(parent.parent.globalOrientation.rotatePoint(parent.pos))
 //                .add(new Vector(width/2, height/2, 0));
 //
 //        Matrix transformationMatrix = rotScalMatrix.addColumn(tempPos);
-        Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width/2, height/2, 0)));
+        Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width/2f, height/2f, 0)));
         transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
         return transformationMatrix;

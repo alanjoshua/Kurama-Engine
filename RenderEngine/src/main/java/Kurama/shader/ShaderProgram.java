@@ -191,7 +191,7 @@ public class ShaderProgram {
         setUniform(uniformName + ".doesProduceShadow", spotLight.doesProduceShadow?1:0);
     }
 
-    public int setOnlyMaterials_noTextureBinding(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
+    public int setMaterials_bindTextures(String uniformName, String textureName, String normalName, String diffuseName, String specularName, List<Material> materials, int off) {
         int offset = off;
         for(int i = 0;i < materials.size();i++) {
 
@@ -243,7 +243,8 @@ public class ShaderProgram {
         return off+spotlights.size();
     }
 
-    public int setUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName, Material material,int offset) {
+    public int setUniform(String uniformName, String textureName, String normalName, String diffuseName, String specularName,
+                          Material material,int offset) {
 
         if(material.ambientColor == null) {
             Logger.logError("mat amb null");

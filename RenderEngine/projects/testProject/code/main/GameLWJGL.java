@@ -154,8 +154,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
-                .addOnMouseLeftAction(new RemoveOverlayColor())
-                .addAutomation(new Rotate(new Vector(0,0,1), 50));
+                .addOnMouseLeftAction(new RemoveOverlayColor());
         rightDivide.children.add(square2);
 
         var text =
