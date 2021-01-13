@@ -40,16 +40,11 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static String shadowBlockID = "shadowBlock";
     public static String skyboxShaderBlockID = "skyboxShaderBlock";
     public static String particleShaderBlockID = "particleShaderBlock";
-//    public static String hudShaderBlockID = "hudShaderBlock";
-//    public static String fullscreenQuadShaderBlockID = "fullscreenQuadShaderBlock";
 
     SceneShaderBlock sceneShaderBlock;
     ShadowBlock shadowBlock;
     SkyboxShaderBlock skyboxShaderBlock;
     ParticleShaderBlock particleShaderBlock;
-
-//    HUD_ShaderBlock hudShaderBlock = new HUD_ShaderBlock(hudShaderBlockID, this);
-//    FullScreenQuadBlock fullScreenQuadBlock = new FullScreenQuadBlock(fullscreenQuadShaderBlockID, this);
 
     public static int MAX_DIRECTIONAL_LIGHTS = 5;
     public static int MAX_SPOTLIGHTS = 10;
@@ -67,8 +62,6 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static final int INSTANCE_SIZE_BYTES = MATRIX_SIZE_BYTES + (1*VECTOR4F_SIZE_BYTES);
     public static final int INSTANCE_SIZE_FLOATS = MATRIX_SIZE_FLOATS + (1*4);
 
-//    public boolean performFrustumCulling = true;
-//
     public FrustumIntersection frustumIntersection = new FrustumIntersection();
     public int jointsInstancedBufferID;
 
@@ -92,16 +85,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         skyboxShaderBlock.setup(new RenderPipelineData(scene, game));
         particleShaderBlock.setup(new RenderPipelineData(scene, game));
 
-//        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
-//        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
-
         renderBlocks.add(sceneShaderBlock);
         renderBlocks.add(shadowBlock);
         renderBlocks.add(skyboxShaderBlock);
         renderBlocks.add(particleShaderBlock);
-
-//        renderBlockID_renderBlock_map.put(hudShaderBlockID, hudShaderBlock);
-//        renderBlockID_renderBlock_map.put(fullscreenQuadShaderBlockID, fullScreenQuadBlock);
 
         glEnable(GL_DEPTH_TEST);    //Enables depth testing
 
@@ -172,18 +159,6 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
                 particleShaderBlock.render(shaderInput);
             }
         }
-
-//        glDisable(GL_DEPTH_TEST);
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//        glViewport(0,0,(int)game.getDisplay().windowResolution.get(0),(int)game.getDisplay().windowResolution.get(1));
-//        RenderingEngineGL.clear();
-//
-//        fullScreenQuadBlock.render(new RenderBufferRenderBlockInput(scene, game, null, scene.cameras.get(0).renderBuffer));
-//
-////        Hud should be rendered at last, or else text would have background
-//        hudShaderBlock.render(new RenderBlockInput(scene, game, null));
-//
-//        glEnable(GL_DEPTH_TEST);
 
         return null;
     }
