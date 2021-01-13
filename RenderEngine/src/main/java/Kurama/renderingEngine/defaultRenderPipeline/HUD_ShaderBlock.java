@@ -2,23 +2,23 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
 import Kurama.Mesh.Mesh;
+import Kurama.game.Game;
 import Kurama.model.Model;
-import Kurama.renderingEngine.RenderBlockInput;
-import Kurama.renderingEngine.RenderBlockOutput;
 import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.RenderPipelineData;
 import Kurama.shader.ShaderProgram;
 
-public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
+public class HUD_ShaderBlock extends RenderPipeline {
 
     private String hud_shader_id = "hud_shader";
     private ShaderProgram hud_shader;
 
-    public HUD_ShaderBlock(String id, RenderPipeline pipeline) {
-        super(id, pipeline);
+    public HUD_ShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
+        super(game, parentPipeline, pipelineID);
     }
 
     @Override
-    public void setup(RenderBlockInput input) {
+    public void setup(RenderPipelineData input) {
 
         try {
 
@@ -43,7 +43,7 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
     }
 
     @Override
-    public RenderBlockOutput render(RenderBlockInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
 
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().width, input.game.getMasterWindow().height, 0);
 
@@ -62,13 +62,13 @@ public class HUD_ShaderBlock extends Kurama.renderingEngine.RenderBlock {
                     hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
                     hudShaderProgram.setUniform("color", mesh.materials.get(0).ambientColor);
 
-                    ((DefaultRenderPipeline)renderPipeline).initToEndFullRender(mesh, 0);
+                    ((DefaultRenderPipeline)parentPipeline).initToEndFullRender(mesh, 0);
                 }
             }
         }
 
         hudShaderProgram.unbind();
-        return null;
+        return input;
     }
 
     @Override

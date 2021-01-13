@@ -24,7 +24,7 @@ public class ParticleShaderBlock extends RenderPipeline {
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
         particleShader = new ShaderProgram(particleShaderID);
 
         try {
@@ -158,13 +158,13 @@ public class ParticleShaderBlock extends RenderPipeline {
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
 
         if(input.scene.shaderBlockID_particelGenID_map.get(pipelineID) == null) {
             return null;
         }
 
-        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
+        CurrentCameraBlockData inp = (CurrentCameraBlockData) input;
         var camera = inp.camera;
 
         boolean curShouldCull = true;
@@ -189,7 +189,7 @@ public class ParticleShaderBlock extends RenderPipeline {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-        return null;
+        return input;
     }
 
     @Override

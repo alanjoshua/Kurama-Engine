@@ -16,7 +16,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
         try {
             skyboxShader = new ShaderProgram(skyboxShaderID);
 
@@ -39,13 +39,13 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
 
         if(input.scene.skybox == null) {
             return null;
         }
 
-        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
+        CurrentCameraBlockData inp = (CurrentCameraBlockData) input;
         var camera = inp.camera;
 
         ShaderProgram skyBoxShaderProgram = skyboxShader;
@@ -66,7 +66,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
             ((DefaultRenderPipeline)parentPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
         }
         skyBoxShaderProgram.unbind();
-        return null;
+        return input;
     }
 
     @Override

@@ -33,7 +33,7 @@ public class ShadowBlock extends RenderPipeline {
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
         shadow_shader = new ShaderProgram(shadow_ShaderID);
         try {
             shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightVertexShader.glsl");
@@ -53,9 +53,9 @@ public class ShadowBlock extends RenderPipeline {
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
         var shadowPackage = calculateShadowMaps(input.scene);
-        return new ShadowPackageRenderBlockOutput(shadowPackage);
+        return new ShadowPackageData(input.scene, input.game, shadowPackage);
     }
 
     public ShadowDepthRenderPackage calculateShadowMaps(Scene scene) {

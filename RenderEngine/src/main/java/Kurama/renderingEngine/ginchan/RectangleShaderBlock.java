@@ -34,7 +34,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
         shader = new ShaderProgram(Utils.getUniqueID());
 
         try {
@@ -103,9 +103,9 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
 
-        GUIComponentRenderInput inp = (GUIComponentRenderInput) input;
+        GUIComponentRenderData inp = (GUIComponentRenderData) input;
         var masterComponent = inp.component;
 
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().width,
@@ -119,7 +119,7 @@ public class RectangleShaderBlock extends RenderPipeline {
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader.unbind();
-        return null;
+        return input;
     }
 
     // This only render rectangle components

@@ -77,7 +77,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
 
         var scene = input.scene;
         sceneShaderBlock = new SceneShaderBlock(game, this, sceneShaderBlockID);
@@ -87,10 +87,10 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
         setupSkeletonSSBO();
 
-        sceneShaderBlock.setup(new RenderPipelineInput(scene, game, null));
-        shadowBlock.setup(new RenderPipelineInput(scene, game, null));
-        skyboxShaderBlock.setup(new RenderPipelineInput(scene, game, null));
-        particleShaderBlock.setup(new RenderPipelineInput(scene, game, null));
+        sceneShaderBlock.setup(new RenderPipelineData(scene, game));
+        shadowBlock.setup(new RenderPipelineData(scene, game));
+        skyboxShaderBlock.setup(new RenderPipelineData(scene, game));
+        particleShaderBlock.setup(new RenderPipelineData(scene, game));
 
 //        hudShaderBlock.setup(new RenderBlockInput(scene, game, null));
 //        fullScreenQuadBlock.setup(new RenderBlockInput(scene, game, null));
@@ -139,11 +139,11 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
         var scene = input.scene;
 
         glCullFace(GL_FRONT);
-        var shadowOut = shadowBlock.render(new RenderPipelineInput(scene, game, null));
+        var shadowOut = shadowBlock.render(new RenderPipelineData(scene, game));
         glCullFace(GL_BACK);
 
         for(var camera: input.scene.cameras) {
@@ -156,7 +156,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
                     frustumCullParticles(input.scene.particleGenerators);
                 }
 
-                var shaderInput = new CurrentCameraBlockInput(scene, game, camera, shadowOut);
+                var shaderInput = new CurrentCameraBlockData(scene, game, camera, ((ShadowPackageData)shadowOut).shadowPackage);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, camera.renderBuffer.fboId);
                 glViewport(0, 0, camera.renderResolution.geti(0), camera.renderResolution.geti(1));

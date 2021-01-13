@@ -18,19 +18,13 @@ public abstract class RenderPipeline {
         this.parentPipeline = parentPipeline;
         this.pipelineID = pipelineID;
     }
-    public abstract void setup(RenderPipelineInput input);
+    public abstract void setup(RenderPipelineData input);
 
-    public RenderPipelineOutput render(RenderPipelineInput input) {
-        RenderPipelineOutput prevOutput = null;
+    public RenderPipelineData render(RenderPipelineData input) {
         for(var pipe: renderBlocks) {
-            if(prevOutput == null) {
-                prevOutput = pipe.render(input);
-            }
-            else {
-                prevOutput = pipe.render(prevOutput.nextInput);
-            }
+            input = pipe.render(input);
         }
-        return prevOutput;
+        return input;
     }
     public abstract void cleanUp();
     public void initializeMesh(Mesh mesh) { }

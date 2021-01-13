@@ -40,18 +40,17 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
     }
 
     @Override
-    public void setup(RenderPipelineInput input) {
+    public void setup(RenderPipelineData input) {
         setupSceneShader();
     }
 
     @Override
-    public RenderPipelineOutput render(RenderPipelineInput input) {
+    public RenderPipelineData render(RenderPipelineData input) {
 
-        CurrentCameraBlockInput inp = (CurrentCameraBlockInput) input;
-        ShadowPackageRenderBlockOutput out = (ShadowPackageRenderBlockOutput) input.previousOutput;
+        CurrentCameraBlockData inp = (CurrentCameraBlockData) input;
 
         var camera = inp.camera;
-        var shadowPackage = out.shadowPackage;
+        var shadowPackage = inp.shadowPackage;
 
         renderScene(input.scene, camera, shadowPackage);
 

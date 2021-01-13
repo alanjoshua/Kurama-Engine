@@ -12,8 +12,8 @@ public class RenderingEngineGL extends RenderingEngine {
     public RenderPipeline guiRenderPipeline;
 
     public void init(Scene scene) {
-        sceneRenderPipeline.setup(new RenderPipelineInput(scene, game, null));
-        guiRenderPipeline.setup(new RenderPipelineInput(scene, game, null));
+        sceneRenderPipeline.setup(new RenderPipelineData(scene, game));
+        guiRenderPipeline.setup(new RenderPipelineData(scene, game));
     }
 
     public RenderingEngineGL(Game game) {
@@ -25,8 +25,8 @@ public class RenderingEngineGL extends RenderingEngine {
     }
 
     public void render(Scene scene, Component masterWindow) {
-        var output = sceneRenderPipeline.render(new RenderPipelineInput(scene, game,null));
-        guiRenderPipeline.render(new GUIComponentRenderPipelineInput(scene, game, masterWindow, output));
+        sceneRenderPipeline.render(new RenderPipelineData(scene, game));
+        guiRenderPipeline.render(new GUIComponentRenderPipelineData(scene, game, masterWindow));
     }
 
     public void cleanUp() {
