@@ -144,11 +144,8 @@ public class RectangleShaderBlock extends RenderPipeline {
             glDrawMeshTasksNV(0, 1);
         }
 
-//        var rotatedPos = finalTrans.getSubMatrix(0, 0, 2,2).matMul(masterComponent.pos).toVector();
         var local = masterComponent.getObjectToWorldNoScale();
-//        local = local.setColumn(3, local.matMul(masterComponent.pos.append(1)).toVector().setDataElement(3, 1));
         var nextParent = parentTrans.matMul(local);
-//        nextParent = nextParent.setColumn(3, rotatedPos.append(1));
 
         for(var child: masterComponent.children) {
             recursiveRender(child, ortho, nextParent);
