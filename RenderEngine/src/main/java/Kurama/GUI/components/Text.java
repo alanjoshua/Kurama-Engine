@@ -1,7 +1,8 @@
-package Kurama.GUI;
+package Kurama.GUI.components;
 
 import Kurama.GUI.constraints.Constraint;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPix;
+import Kurama.Math.Vector;
 import Kurama.font.FontTexture;
 import Kurama.inputs.Input;
 import Kurama.utils.Utils;
@@ -36,7 +37,7 @@ public class Text extends Component {
 
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
-        isMouseLeft = isMouseLeft(input);
+        isMouseLeft = isMouseLeft(input, currentIsMouseOver);
 
         for(var automation: automations) {
             automation.run(this, input, timeDelta);
@@ -50,6 +51,14 @@ public class Text extends Component {
             for (var globalConstraints : parentGlobalConstraints) {
                 globalConstraints.solveConstraint(parent, this);
             }
+        }
+
+        if(parent != null) {
+            globalPos = parent.globalPos.add(pos);
+        }
+        else {
+            pos = new Vector(new float[]{width/2f, height/2f, 0});
+            globalPos = new Vector(new float[]{width/2f, height/2f, 0});
         }
 
         if(shouldUpdate) {

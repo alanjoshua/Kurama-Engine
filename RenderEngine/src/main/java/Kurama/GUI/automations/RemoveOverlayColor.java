@@ -1,6 +1,6 @@
 package Kurama.GUI.automations;
 
-import Kurama.GUI.Component;
+import Kurama.GUI.components.Component;
 import Kurama.inputs.Input;
 
 public class RemoveOverlayColor implements Automation {

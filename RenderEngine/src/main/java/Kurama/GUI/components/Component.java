@@ -1,4 +1,4 @@
-package Kurama.GUI;
+package Kurama.GUI.components;
 
 import Kurama.GUI.automations.Automation;
 import Kurama.GUI.constraints.Constraint;
@@ -14,6 +14,7 @@ import java.util.List;
 public abstract class Component {
 
     public Vector pos = new Vector(new float[]{0,0,0});
+    public Vector globalPos = new Vector(new float[]{0,0,0});
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
@@ -154,12 +155,12 @@ public abstract class Component {
     public boolean isMouseOverComponent(Input input) {
         if(input != null && input.isCursorEnabled) {
             var mp = input.getPos();
-
+            var tempPos = globalPos.sub(new Vector(new float[]{width/2f, height/2f, 0}));
             return
-                    mp.get(0) >= pos.get(0)
-                            && mp.get(0) <= (pos.get(0) + width)
-                            && mp.get(1) >= pos.get(1)
-                            && mp.get(1) <= (pos.get(1)  + height);
+                    mp.get(0) >= tempPos.get(0)
+                            && mp.get(0) <= (tempPos.get(0) + width)
+                            && mp.get(1) >= tempPos.get(1)
+                            && mp.get(1) <= (tempPos.get(1)  + height);
         }
         else {
             return false;
@@ -173,8 +174,8 @@ public abstract class Component {
         return false;
     }
 
-    public boolean isMouseLeft(Input input) {
-        if(previousIsMouseOver && input.isCursorEnabled && !isMouseOverComponent(input)) {
+    public boolean isMouseLeft(Input input, boolean isMouseOver) {
+        if(previousIsMouseOver && input.isCursorEnabled && !isMouseOver) {
             return true;
         }
         else if(!input.isCursorEnabled) {
@@ -191,14 +192,9 @@ public abstract class Component {
         currentIsMouseOver = false;
         isMouseLeft = false;
 
-        if(parent == null) {
-            pos.setDataElement(0, width/2f);
-            pos.setDataElement(1, height/2f);
-        }
-
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
-        isMouseLeft = isMouseLeft(input);
+        isMouseLeft = isMouseLeft(input, currentIsMouseOver);
 
         for(var automation: automations) {
             automation.run(this, input, timeDelta);
@@ -212,6 +208,14 @@ public abstract class Component {
             for (var globalConstraints : parentGlobalConstraints) {
                 globalConstraints.solveConstraint(parent, this);
             }
+        }
+
+        if(parent != null) {
+            globalPos = parent.globalPos.add(pos);
+        }
+        else {
+            pos = new Vector(new float[]{width/2f, height/2f, 0});
+            globalPos = new Vector(new float[]{width/2f, height/2f, 0});
         }
 
         for(var child: children) {

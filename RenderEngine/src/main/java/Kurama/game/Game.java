@@ -1,6 +1,6 @@
 package Kurama.game;
 
-import Kurama.GUI.MasterWindow;
+import Kurama.GUI.components.MasterWindow;
 import Kurama.Math.Vector;
 import Kurama.camera.Camera;
 import Kurama.inputs.Input;

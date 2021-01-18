@@ -1,6 +1,6 @@
 package Kurama.GUI.constraints;
 
-import Kurama.GUI.Component;
+import Kurama.GUI.components.Component;
 import Kurama.display.Display;
 
 public class DisplayAttach implements Constraint {

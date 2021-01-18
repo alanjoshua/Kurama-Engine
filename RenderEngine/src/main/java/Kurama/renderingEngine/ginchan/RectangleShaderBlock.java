@@ -1,7 +1,7 @@
 package Kurama.renderingEngine.ginchan;
 
-import Kurama.GUI.Component;
-import Kurama.GUI.Rectangle;
+import Kurama.GUI.components.Component;
+import Kurama.GUI.components.Rectangle;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.game.Game;

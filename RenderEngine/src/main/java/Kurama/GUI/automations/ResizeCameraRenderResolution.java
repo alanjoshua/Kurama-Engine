@@ -1,6 +1,6 @@
 package Kurama.GUI.automations;
 
-import Kurama.GUI.Component;
+import Kurama.GUI.components.Component;
 import Kurama.Math.Vector;
 import Kurama.camera.Camera;
 import Kurama.inputs.Input;

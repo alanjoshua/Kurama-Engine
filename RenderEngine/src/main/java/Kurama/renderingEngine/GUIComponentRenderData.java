@@ -1,6 +1,6 @@
 package Kurama.renderingEngine;
 
-import Kurama.GUI.Component;
+import Kurama.GUI.components.Component;
 import Kurama.game.Game;
 import Kurama.scene.Scene;
 

@@ -1,5 +1,6 @@
 package Kurama.GUI.automations;
 
+import Kurama.GUI.components.Component;
 import Kurama.Math.Vector;
 import Kurama.inputs.Input;
 
@@ -11,7 +12,7 @@ public class SetOverlayColor implements Automation {
     }
 
     @Override
-    public void run(Kurama.GUI.Component current, Input input, float timeDelta) {
+    public void run(Component current, Input input, float timeDelta) {
         current.overlayColor = overlayColor;
     }
 }

@@ -1,4 +1,4 @@
-package Kurama.GUI;
+package Kurama.GUI.components;
 
 import Kurama.GUI.constraints.DisplayAttach;
 import Kurama.Math.Vector;

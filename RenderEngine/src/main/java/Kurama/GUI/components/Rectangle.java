@@ -1,4 +1,4 @@
-package Kurama.GUI;
+package Kurama.GUI.components;
 
 import Kurama.Math.Vector;
 
