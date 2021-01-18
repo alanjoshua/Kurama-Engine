@@ -12,8 +12,8 @@ public class MaxPosX implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        if(current.pos.get(0) + current.width > maxPos) {
-            current.pos.setDataElement(0, maxPos - current.width);
+        if(current.pos.get(0) + current.width/2f > maxPos) {
+            current.pos.setDataElement(0, maxPos - current.width/2f);
         }
     }
 }

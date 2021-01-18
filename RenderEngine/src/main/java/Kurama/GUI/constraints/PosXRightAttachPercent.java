@@ -12,7 +12,7 @@ public class PosXRightAttachPercent implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newX = (parent.pos.get(0) + parent.width ) - (posXPercent*parent.width + current.width);
+        float newX = parent.width/2f - (parent.width*posXPercent + current.width / 2f);
         current.pos.setDataElement(0, newX);
     }
 }

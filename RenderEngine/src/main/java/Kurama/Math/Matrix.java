@@ -1249,4 +1249,24 @@ public class Matrix {
 		return Matrix.buildPerspectiveProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 	}
 
+    public Matrix setColumn(int i, Vector append) {
+		try {
+			if (i >= cols || append.getNumberOfDimensions() != cols) {
+				throw new IllegalArgumentException("The number of dimensions of vector to be appended should be the same as " +
+						"the number of columns in the matrix, and the column index must be valid");
+			}
+
+			Matrix res = this.getCopy();
+			for(int j = 0;j < append.getNumberOfDimensions();j++) {
+				res.getData()[j][i] = append.get(j);
+			}
+			return res;
+
+		}
+		catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		return null;
+	}
 }

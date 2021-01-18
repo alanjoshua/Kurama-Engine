@@ -12,8 +12,8 @@ public class MinPosX implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        if(current.pos.get(0) < minPos) {
-            current.pos.setDataElement(0, minPos);
+        if(current.pos.get(0) - current.width/2f < minPos) {
+            current.pos.setDataElement(0, minPos + current.width/2f);
         }
     }
 }

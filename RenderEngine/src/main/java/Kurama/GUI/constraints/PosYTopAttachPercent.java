@@ -12,7 +12,7 @@ public class PosYTopAttachPercent implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newY = parent.pos.get(1) + parent.height*posYPercent;
+        float newY = -parent.height/2f + parent.height*posYPercent + current.height / 2f;
         current.pos.setDataElement(1, newY);
     }
 }

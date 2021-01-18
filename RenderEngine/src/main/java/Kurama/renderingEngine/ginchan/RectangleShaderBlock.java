@@ -115,7 +115,7 @@ public class RectangleShaderBlock extends RenderPipeline {
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
         glActiveTexture(GL_TEXTURE0);
 
-        recursiveRender(masterComponent, ortho);
+        recursiveRender(masterComponent, ortho, Matrix.getIdentityMatrix(4));
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader.unbind();
@@ -123,15 +123,18 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     // This only render rectangle components
-    public void recursiveRender(Component masterComponent, Matrix ortho) {
+    public void recursiveRender(Component masterComponent, Matrix ortho, Matrix parentTrans) {
 
         if(!masterComponent.shouldRenderGroup) {
             return;
         }
 
+        var finalTrans = parentTrans.matMul(masterComponent.getObjectToWorldMatrix());
+
         if(masterComponent.isContainerVisible && masterComponent instanceof Rectangle) {
 
-            var mat = ortho.matMul(masterComponent.getObjectToWorldMatrix());
+            var mat = ortho.matMul(finalTrans);
+
             if (masterComponent.texture != null) {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
@@ -141,8 +144,14 @@ public class RectangleShaderBlock extends RenderPipeline {
             glDrawMeshTasksNV(0, 1);
         }
 
+//        var rotatedPos = finalTrans.getSubMatrix(0, 0, 2,2).matMul(masterComponent.pos).toVector();
+        var local = masterComponent.getObjectToWorldNoScale();
+//        local = local.setColumn(3, local.matMul(masterComponent.pos.append(1)).toVector().setDataElement(3, 1));
+        var nextParent = parentTrans.matMul(local);
+//        nextParent = nextParent.setColumn(3, rotatedPos.append(1));
+
         for(var child: masterComponent.children) {
-            recursiveRender(child, ortho);
+            recursiveRender(child, ortho, nextParent);
         }
 
     }

@@ -14,8 +14,8 @@ public class PosXYBottomRightAttachPix implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newX = (parent.pos.get(0) + parent.width) - (posXOff + current.width);
-        float newY = (parent.pos.get(1) + parent.height) - (posYOff + current.height);
+        float newX = parent.width/2f - (posXOff + current.width / 2f);
+        float newY = parent.height/2f - (posYOff + current.height / 2f);
         current.pos.setDataElement(0, newX);
         current.pos.setDataElement(1, newY);
     }

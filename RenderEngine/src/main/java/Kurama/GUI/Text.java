@@ -56,10 +56,6 @@ public class Text extends Component {
             updateText();
         }
 
-        if(parent != null) {
-            globalOrientation = parent.globalOrientation.multiply(orientation);
-        }
-
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta);
         }

@@ -15,7 +15,6 @@ public abstract class Component {
 
     public Vector pos = new Vector(new float[]{0,0,0});
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
-    public Quaternion globalOrientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
 
@@ -117,55 +116,21 @@ public abstract class Component {
         return this;
     }
 
+    public Matrix getObjectToWorldNoScale() {
+        var rot = orientation.getRotationMatrix();
+        var transformationMatrix = rot.addColumn(pos);
+        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+        return transformationMatrix;
+    }
+
     public Matrix getObjectToWorldMatrix() {
 
         Matrix rotationMatrix = this.orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-        Matrix transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width / 2f, height / 2f, 0)));
+        Matrix transformationMatrix = rotScalMatrix.addColumn(pos);
         transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
         return transformationMatrix;
-
-//        var parentPosGlobal = parent.globalOrientation.rotatePoint(parent.pos);
-//        var posOff = pos.sub(parent.pos);
-//        var possGlobal = parentPosGlobal.add(globalOrientation.rotatePoint(posOff).add(new Vector(width/2f, height/2f, 0)));
-
-//        Vector tempPos = globalOrientation.rotatePoint(pos.sub(parent.pos))
-//                .add(parent.globalOrientation.rotatePoint(parent.pos))
-//                .add(new Vector(width/2, height/2, 0));
-
-//        Matrix transformationMatrix = rotScalMatrix.addColumn(tempPos);
-
-//        Matrix transformationMatrix;
-//        if(parent!= null) {
-//            transformationMatrix =
-//                    rotScalMatrix
-//                            .addColumn(
-//                                    orientation.rotatePoint(
-//                                        pos
-//                                        .sub(parent.pos)
-//                                        .add(new Vector(width / 2f, height / 2f, 0))
-//                                    ));
-//        }
-//        else {
-//            transformationMatrix = rotScalMatrix.addColumn(pos.add(new Vector(width / 2f, height / 2f, 0)));
-//        }
-//
-//        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
-//
-//        if(parent == null) {
-//            return transformationMatrix;
-//        }
-//        else {
-//            Matrix parentRotMat = parent.globalOrientation.getRotationMatrix();
-//            parentRotMat = parentRotMat.addColumn(parent.globalOrientation.rotatePoint(parent.pos.add(new Vector(parent.width / 2f, parent.height / 2f, 0))));
-//            parentRotMat = parentRotMat.addRow(new Vector(new float[]{0, 0, 0, 1}));
-//            var res = parentRotMat.matMul(transformationMatrix);
-////            if(res == null) {
-////
-////            }
-//            return res;
-//        }
     }
 
     public void onClick(Input input, float timeDelta) {
@@ -226,6 +191,11 @@ public abstract class Component {
         currentIsMouseOver = false;
         isMouseLeft = false;
 
+        if(parent == null) {
+            pos.setDataElement(0, width/2f);
+            pos.setDataElement(1, height/2f);
+        }
+
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input);
@@ -242,10 +212,6 @@ public abstract class Component {
             for (var globalConstraints : parentGlobalConstraints) {
                 globalConstraints.solveConstraint(parent, this);
             }
-        }
-
-        if(parent != null) {
-            globalOrientation = parent.globalOrientation.multiply(orientation);
         }
 
         for(var child: children) {

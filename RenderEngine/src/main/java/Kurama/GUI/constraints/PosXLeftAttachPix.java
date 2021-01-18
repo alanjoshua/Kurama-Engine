@@ -12,7 +12,7 @@ public class PosXLeftAttachPix implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newX = parent.pos.get(0) + posXOff;
+        float newX = -parent.width/2f + posXOff + current.width / 2f;
         current.pos.setDataElement(0, newX);
     }
 }

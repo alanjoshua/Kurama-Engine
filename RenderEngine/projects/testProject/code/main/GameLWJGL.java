@@ -2,7 +2,6 @@ package main;
 
 import Kurama.Effects.Fog;
 import Kurama.GUI.MasterWindow;
-import Kurama.GUI.Rectangle;
 import Kurama.GUI.Text;
 import Kurama.GUI.automations.*;
 import Kurama.GUI.constraints.MaxHeight;
@@ -49,6 +48,7 @@ import Kurama.shadow.ShadowMap;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 import ModelBehaviour.SunRevolve;
+import Kurama.GUI.Rectangle;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -112,10 +112,14 @@ public class GameLWJGL extends Game implements Runnable {
         masterComponent
                 .setColor(new Vector(1,0,0,0.5f))
                 .setContainerVisibility(false);
+//                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
+//                .setTexture(new Texture(playerCamera.renderBuffer.textureId))
+//                .addAutomation(new ResizeCameraRenderResolution(playerCamera));
 
         var leftDivide =
                 new Rectangle(masterComponent, "leftHalf")
                 .setTexture(new Texture(playerCamera.renderBuffer.textureId))
+                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
                 .addAutomation(new ResizeCameraRenderResolution(playerCamera))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
@@ -164,7 +168,8 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
-                .addOnMouseLeftAction(new RemoveOverlayColor());
+                .addOnMouseLeftAction(new RemoveOverlayColor())
+                .addAutomation(new Rotate(new Vector(0,0,1), 50));
         rightDivide.children.add(square2);
 
         var text =

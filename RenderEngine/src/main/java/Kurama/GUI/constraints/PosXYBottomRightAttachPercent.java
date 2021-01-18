@@ -14,8 +14,8 @@ public class PosXYBottomRightAttachPercent implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newX = (parent.pos.get(0) + parent.width ) - (posXPercent*parent.width + current.width);
-        float newY = (parent.pos.get(1) + parent.height ) - (posYPercent*parent.height+ current.height);
+        float newX = parent.width/2f - (parent.width*posXPercent + current.width / 2f);
+        float newY = parent.height/2f - (parent.height*posYPercent + current.height / 2f);
         current.pos.setDataElement(0, newX);
         current.pos.setDataElement(1, newY);
     }

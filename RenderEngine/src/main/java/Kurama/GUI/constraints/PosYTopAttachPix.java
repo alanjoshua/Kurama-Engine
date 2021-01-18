@@ -12,7 +12,7 @@ public class PosYTopAttachPix implements Constraint {
 
     @Override
     public void solveConstraint(Component parent, Component current) {
-        float newY = parent.pos.get(1) + posYOff;
+        float newY = -parent.height/2f + posYOff + current.height / 2f;
         current.pos.setDataElement(1, newY);
     }
 }

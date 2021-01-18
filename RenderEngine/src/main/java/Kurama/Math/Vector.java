@@ -393,8 +393,9 @@ public class Vector {
 		return (int)data[index];
 	}
 
-	public void setDataElement(int index, float val) {
+	public Vector setDataElement(int index, float val) {
 		data[index] = val;
+		return this;
 	}
 
 	public Vector cross(Vector v) {
