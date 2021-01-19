@@ -7,6 +7,7 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.inputs.Input;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,8 @@ public abstract class Component {
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
+    public Matrix objectToWorldMatrix = Matrix.getIdentityMatrix(4);
+    public Matrix objectToWorldNoScaleMatrix = Matrix.getIdentityMatrix(4);
 
     public Vector color = new Vector(0,0,0,1);
     public Vector overlayColor = null;
@@ -40,6 +43,7 @@ public abstract class Component {
     public List<Constraint> constraints = new ArrayList<>();
     public List<Constraint> globalChildrenConstraints = new ArrayList<>();
     public List<Automation> automations = new ArrayList<>();
+//    public List<Automation> nonTransformationalAutomations = new ArrayList<>();  //Automations that promise not to make any positional changes.
     public List<Automation> onClickActions = new ArrayList<>();
     public List<Automation> onMouseOverActions = new ArrayList<>();
     public List<Automation> onMouseLeaveActions = new ArrayList<>();
@@ -117,21 +121,29 @@ public abstract class Component {
         return this;
     }
 
-    public Matrix getObjectToWorldNoScale() {
-        var rot = orientation.getRotationMatrix();
-        var transformationMatrix = rot.addColumn(pos);
-        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
-        return transformationMatrix;
-    }
-
-    public Matrix getObjectToWorldMatrix() {
-
-        Matrix rotationMatrix = this.orientation.getRotationMatrix();
+    public void setupTransformationMatrices() {
+        Matrix rotationMatrix = orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
-        Matrix transformationMatrix = rotScalMatrix.addColumn(pos);
-        transformationMatrix = transformationMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
-        return transformationMatrix;
+
+        objectToWorldNoScaleMatrix = rotationMatrix.addColumn(pos);
+        objectToWorldNoScaleMatrix = objectToWorldNoScaleMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+
+        objectToWorldMatrix = rotScalMatrix.addColumn(pos);
+        objectToWorldMatrix = objectToWorldMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
+
+
+        if(parent!=null) {
+            objectToWorldNoScaleMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldNoScaleMatrix);
+            objectToWorldMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldMatrix);
+
+            globalPos = objectToWorldMatrix.vecMul(pos.append(1)).removeDimensionFromVec(3);
+        }
+        else {
+            pos = new Vector(new float[]{width/2f, height/2f, 0});
+            globalPos = new Vector(new float[]{width/2f, height/2f, 0});
+        }
+
     }
 
     public void onClick(Input input, float timeDelta) {
@@ -196,10 +208,6 @@ public abstract class Component {
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input, currentIsMouseOver);
 
-        for(var automation: automations) {
-            automation.run(this, input, timeDelta);
-        }
-
         for(var constraint: constraints) {
             constraint.solveConstraint(parent, this);
         }
@@ -210,13 +218,11 @@ public abstract class Component {
             }
         }
 
-        if(parent != null) {
-            globalPos = parent.globalPos.add(pos);
+        for(var automation: automations) {
+            automation.run(this, input, timeDelta);
         }
-        else {
-            pos = new Vector(new float[]{width/2f, height/2f, 0});
-            globalPos = new Vector(new float[]{width/2f, height/2f, 0});
-        }
+
+        setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
 
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta);
@@ -229,6 +235,7 @@ public abstract class Component {
         if(currentIsMouseOver) {
             onMouseOver(input, timeDelta);
             previousIsMouseOver = true;
+            Logger.log("mouseover: "+identifier);
         }
 
         if(isMouseLeft) {

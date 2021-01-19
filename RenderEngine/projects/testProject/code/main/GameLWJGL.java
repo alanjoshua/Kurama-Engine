@@ -2,9 +2,9 @@ package main;
 
 import Kurama.Effects.Fog;
 import Kurama.GUI.automations.*;
+import Kurama.GUI.components.Button;
 import Kurama.GUI.components.MasterWindow;
 import Kurama.GUI.components.Rectangle;
-import Kurama.GUI.components.Button;
 import Kurama.GUI.components.Text;
 import Kurama.GUI.constraints.*;
 import Kurama.Math.Matrix;
@@ -161,7 +161,6 @@ public class GameLWJGL extends Game implements Runnable {
 
         var square2 =
         new Button(rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "alan", "button")
-//                new Rectangle(rightDivide, "button")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
@@ -170,12 +169,6 @@ public class GameLWJGL extends Game implements Runnable {
                 .addOnMouseLeftAction(new RemoveOverlayColor())
                 .addAutomation(new Rotate(new Vector(0,0,1), 50));
         rightDivide.children.add(square2);
-
-//        var text =
-//                new Text(square2, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "text")
-//                .setText("Alan")
-//                .addConstraint(new Center());
-//        square2.children.add(text);
 
         try {
             var soundManager = new SoundManager();

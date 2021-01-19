@@ -115,7 +115,7 @@ public class RectangleShaderBlock extends RenderPipeline {
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
         glActiveTexture(GL_TEXTURE0);
 
-        recursiveRender(masterComponent, ortho, Matrix.getIdentityMatrix(4));
+        recursiveRender(masterComponent, ortho);
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader.unbind();
@@ -123,17 +123,15 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     // This only render rectangle components
-    public void recursiveRender(Component masterComponent, Matrix ortho, Matrix parentTrans) {
+    public void recursiveRender(Component masterComponent, Matrix ortho) {
 
         if(!masterComponent.shouldRenderGroup) {
             return;
         }
 
-        var finalTrans = parentTrans.matMul(masterComponent.getObjectToWorldMatrix());
-
         if(masterComponent.isContainerVisible && masterComponent instanceof Rectangle) {
 
-            var mat = ortho.matMul(finalTrans);
+            var mat = ortho.matMul(masterComponent.objectToWorldMatrix);
 
             if (masterComponent.texture != null) {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
@@ -144,11 +142,11 @@ public class RectangleShaderBlock extends RenderPipeline {
             glDrawMeshTasksNV(0, 1);
         }
 
-        var local = masterComponent.getObjectToWorldNoScale();
-        var nextParent = parentTrans.matMul(local);
+//        var local = masterComponent.getObjectToWorldNoScale();
+//        var nextParent = parentTrans.matMul(local);
 
         for(var child: masterComponent.children) {
-            recursiveRender(child, ortho, nextParent);
+            recursiveRender(child, ortho);
         }
 
     }

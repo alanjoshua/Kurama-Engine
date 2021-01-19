@@ -9,7 +9,7 @@ public class Button extends Rectangle {
 
     public Button(Component parent, FontTexture fontTexture, String buttonTextString, String identifier) {
         super(parent, identifier);
-        buttonText = new Text(parent, fontTexture, identifier);
+        buttonText = new Text(this, fontTexture, identifier);
         buttonText.setText(buttonTextString);
         buttonText.addConstraint(new Center());
         children.add(buttonText);

@@ -585,6 +585,39 @@ public class Matrix {
 
 	}
 
+	public Vector vecMul(Vector m) {
+		Vector res = null;
+
+		try {
+			float[] resData;
+
+			if (cols == m.getNumberOfDimensions()) {
+
+				resData = new float[rows];
+
+				for (int rowsInA = 0; rowsInA < rows; rowsInA++) {
+
+					for (int colsInA = 0; colsInA < cols; colsInA++) {
+						resData[rowsInA] += data[rowsInA][colsInA] * m.getData()[colsInA];
+
+					}
+
+				}
+
+				res = new Vector(resData);
+			} else {
+				throw new Exception("The number of Columns of the matrix and the rows of the vector do not match");
+//			System.err.println("Size of Matrix A and B should be the same");
+//			System.out.println("Returning Matrix of size A with values 1");
+//			res = new Matrix(rows, cols, 1f);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+
+	}
+
 	public Matrix matMul(Vector[] v) {
 		float[][] resData = null;
 		try {
