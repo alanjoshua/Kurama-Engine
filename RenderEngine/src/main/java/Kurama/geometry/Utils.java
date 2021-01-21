@@ -1,11 +1,11 @@
 package Kurama.geometry;
 
-import Kurama.misc_structures.LinkedList.DoublyLinkedList;
 import Kurama.Math.Perlin;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Face;
 import Kurama.Mesh.Vertex;
 import Kurama.game.Game;
+import Kurama.misc_structures.LinkedList.DoublyLinkedList;
 import Kurama.model.Model;
 
 import java.util.ArrayList;
@@ -48,8 +48,30 @@ public class Utils {
         if (angle < 0) {
             angle = 180 - angle;
         }
-
         return angle <= 180;
+    }
+
+    //  Basic area implementation from https://www.geeksforgeeks.org/check-whether-given-point-lies-inside-rectangle-not/
+    public static boolean isPointInsideRectangle2D(Vector p, Vector tl, Vector tr, Vector bl, Vector br) {
+
+        float totalArea = areaOfTriangle(tl, bl, br) + areaOfTriangle(tl, br, tr);  // rounding to int since area's do not match due to very minuscule difference in decimal places
+
+        float areaA = areaOfTriangle(p, tl, bl);
+        float areaB = areaOfTriangle(p, bl, br);
+        float areaC = areaOfTriangle(p, br, tr);
+        float areaD = areaOfTriangle(p, tl, tr);
+
+        float totalDecompositionSum = areaA + areaB + areaC + areaD;
+        float diff = Math.abs(totalArea - totalDecompositionSum);
+        float smaller = Math.min(totalArea, totalDecompositionSum);
+
+        return diff < 0.01f*smaller;  //approximation
+    }
+
+    // Implementation from https://www.geeksforgeeks.org/check-whether-given-point-lies-inside-rectangle-not/
+    public static float areaOfTriangle(Vector a, Vector b, Vector c) {
+        return (float)Math.abs((a.get(0) * (b.get(1) - c.get(1)) +
+                b.get(0) * (c.get(1) - a.get(1)) + c.get(0) * (a.get(1) - b.get(1))) / 2.0);
     }
 
     public static boolean isPointInsideTriangle(Vertex v00, Vertex v11, Vertex v22, Vertex pp,List<Vector> vertices) {

@@ -7,7 +7,6 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.inputs.Input;
-import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,6 @@ import java.util.List;
 public abstract class Component {
 
     public Vector pos = new Vector(new float[]{0,0,0});
-    public Vector globalPos = new Vector(new float[]{0,0,0});
     public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
     public int width;
     public int height;
@@ -51,6 +49,10 @@ public abstract class Component {
     public Component(Component parent, String identifier) {
         this.identifier = identifier;
         this.parent = parent;
+    }
+
+    public Matrix getOrthoProjection() {
+        return Matrix.buildOrtho2D(0, width, height, 0);
     }
 
     public Component addOnClickAction(Automation action) {
@@ -136,12 +138,9 @@ public abstract class Component {
         if(parent!=null) {
             objectToWorldNoScaleMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldNoScaleMatrix);
             objectToWorldMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldMatrix);
-
-            globalPos = objectToWorldMatrix.vecMul(pos.append(1)).removeDimensionFromVec(3);
         }
         else {
             pos = new Vector(new float[]{width/2f, height/2f, 0});
-            globalPos = new Vector(new float[]{width/2f, height/2f, 0});
         }
 
     }
@@ -164,19 +163,9 @@ public abstract class Component {
         }
     }
 
+    // A default component can't have mouse over
     public boolean isMouseOverComponent(Input input) {
-        if(input != null && input.isCursorEnabled) {
-            var mp = input.getPos();
-            var tempPos = globalPos.sub(new Vector(new float[]{width/2f, height/2f, 0}));
-            return
-                    mp.get(0) >= tempPos.get(0)
-                            && mp.get(0) <= (tempPos.get(0) + width)
-                            && mp.get(1) >= tempPos.get(1)
-                            && mp.get(1) <= (tempPos.get(1)  + height);
-        }
-        else {
-            return false;
-        }
+        return false;
     }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
@@ -235,7 +224,6 @@ public abstract class Component {
         if(currentIsMouseOver) {
             onMouseOver(input, timeDelta);
             previousIsMouseOver = true;
-            Logger.log("mouseover: "+identifier);
         }
 
         if(isMouseLeft) {

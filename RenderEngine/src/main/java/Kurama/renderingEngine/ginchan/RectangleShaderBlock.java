@@ -108,8 +108,7 @@ public class RectangleShaderBlock extends RenderPipeline {
         GUIComponentRenderData inp = (GUIComponentRenderData) input;
         var masterComponent = inp.component;
 
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().width,
-                input.game.getMasterWindow().height, 0);
+        Matrix ortho = input.game.getMasterWindow().getOrthoProjection();
 
         shader.bind();
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
