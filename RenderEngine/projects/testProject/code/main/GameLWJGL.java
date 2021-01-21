@@ -2,10 +2,10 @@ package main;
 
 import Kurama.Effects.Fog;
 import Kurama.GUI.automations.*;
-import Kurama.GUI.components.*;
 import Kurama.GUI.components.Button;
 import Kurama.GUI.components.Component;
 import Kurama.GUI.components.Rectangle;
+import Kurama.GUI.components.*;
 import Kurama.GUI.constraints.*;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -32,7 +32,6 @@ import Kurama.inputs.InputLWJGL;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
-import Kurama.model.AnimatedModel;
 import Kurama.model.Model;
 import Kurama.model.modelBehaviour.AttachToCamera;
 import Kurama.model.modelBehaviour.BehaviourTickInput;
@@ -121,7 +120,11 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
                 .addAutomation(new ResizeCameraRenderResolution(playerCamera))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
-                .addOnMouseLeftAction(new RemoveOverlayColor());
+                .addOnMouseLeftAction(new RemoveOverlayColor())
+                .setKeyInputFocused(true)
+                .addOnClickAction(new GrabKeyboardFocus())
+                .addOnClickOutsideAction(new LoseKeyboardFocus())
+                .addOnKeyInputFocusedAction(new InputProcessing(this));
         masterComponent.children.add(leftDivide);
 
         fpsText =
@@ -464,7 +467,7 @@ public class GameLWJGL extends Game implements Runnable {
         masterComponent.tick(null, masterComponent.input, timeDelta);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
-        tickInput();
+        tickInput(); //this is global input handling.
 
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
@@ -473,10 +476,8 @@ public class GameLWJGL extends Game implements Runnable {
         if(isGameRunning != prevGameState) {
             if (isGameRunning)
                 masterComponent.input.disableCursor();
-//                masterComponent.disableCursor();
             else
                 masterComponent.input.enableCursor();
-//                masterComponent.enableCursor();
             prevGameState = isGameRunning;
         }
 
@@ -488,11 +489,6 @@ public class GameLWJGL extends Game implements Runnable {
             scene.particleGenerators.forEach(gen -> gen.tick(param));
 
             scene.soundManager.tick(playerCamera, timeDelta);
-
-        }
-
-        if(isGameRunning) {
-            calculate3DCamMovement();
         }
 
         input.reset();
@@ -501,162 +497,23 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tickInput() {
 
-        Vector velocity = new Vector(3,0);
-
-        if(input.keyDown(input.W)) {
-            float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-            Vector x = rotationMatrix[0];
-            Vector y = new Vector(new float[] {0,1,0});
-            Vector z = x.cross(y);
-            velocity = velocity.add((z.scalarMul(-cameraSpeed)));
-//            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDownOnce(input.B)) {
-            writeSceneToFile();
-        }
-
-        if(input.keyDown(input.UP_ARROW)) {
-            int counter = 0;
-            while(true) {
-                AnimatedModel monster = (AnimatedModel) scene.modelID_model_map.get("monster"+counter);
-                if(monster == null) {
-                    break;
-                }
-                monster.cycleFrame(20f * (counter+1) * timeDelta);
-                monster.generateCurrentSkeleton(monster.currentAnimation.currentFrame);
-                counter++;
-            }
-            var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
-            wolf.cycleFrame(20f * timeDelta);
-//            wolf.cycleFrame(1);
-            wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
-        }
-
-        if(input.keyDown(input.DOWN_ARROW)) {
-            int counter = 0;
-            while(true) {
-                AnimatedModel monster = (AnimatedModel) scene.modelID_model_map.get("monster"+counter);
-                if(monster == null) {
-                    break;
-                }
-                monster.cycleFrame(-20f * (counter+1) * timeDelta);
-                monster.generateCurrentSkeleton(monster.currentAnimation.currentFrame);
-                counter++;
-            }
-            var wolf = (AnimatedModel) scene.modelID_model_map.get("wolf");
-            wolf.cycleFrame(-20f * timeDelta);
-//            wolf.cycleFrame(-1);
-            wolf.generateCurrentSkeleton(wolf.currentAnimation.currentFrame);
-        }
-
-        if(input.keyDown(input.S)) {
-            float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-            Vector x = rotationMatrix[0];
-            Vector y = new Vector(new float[] {0,1,0});
-            Vector z = x.cross(y);
-            velocity = velocity.add(z.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDown(input.A)) {
-            float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-            Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
-//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDown(input.D)) {
-            float cameraSpeed = speed * speedMultiplier;
-            Vector[] rotationMatrix = playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-            Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDown(input.SPACE)) {
-            float cameraSpeed = speed * speedMultiplier;
-
-            Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDown(input.LEFT_SHIFT)) {
-            float cameraSpeed = speed * speedMultiplier;
-
-            Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
-//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
-        }
-
-        if(input.keyDownOnce(input.ESCAPE)) {
+        if (input.keyDownOnce(input.ESCAPE)) {
             isGameRunning = !isGameRunning;
         }
 
-        if(isGameRunning) {
-            if(input.keyDownOnce(input.LEFT_CONTROL)) {
-                if(speedMultiplier == 1) speedMultiplier = speedIncreaseMultiplier;
-                else speedMultiplier = 1;
-            }
-
-            if(input.keyDownOnce(input.F)) {
-                if(targetFPS == masterComponent.getRefreshRate()) {
+        if (isGameRunning) {
+            if (input.keyDownOnce(input.F)) {
+                if (targetFPS == masterComponent.getRefreshRate()) {
                     targetFPS = 10000;
-                }
-                else {
+                } else {
                     targetFPS = masterComponent.getRefreshRate();
                 }
-                System.out.println("Changed target resolution"+targetFPS);
+                System.out.println("Changed target resolution" + targetFPS);
             }
 
-            if(input.keyDownOnce(input.V)) {
+            if (input.keyDownOnce(input.V)) {
                 masterComponent.toggleWindowModes();
             }
-        }
-
-//        Vector newPos = scene.camera.getPos().add(posDelta);
-//        scene.camera.setPos(newPos);
-        playerCamera.velocity = velocity;
-
-//        Terrain.TerrainMovementDataPack terrainCollisionData = terrain.isPositionValid(newPos);
-//        if(terrainCollisionData.isValid) {
-//            this.cam.setPos(terrainCollisionData.validPosition);
-//        }
-
-    }
-
-    public void calculate3DCamMovement() {
-        if (input.getDelta().getNorm() != 0 && isGameRunning) {
-
-            float yawIncrease   = mouseXSensitivity * timeDelta * -input.getDelta().get(0);
-            float pitchIncrease = mouseYSensitivity * timeDelta * -input.getDelta().get(1);
-
-            Vector currentAngle = playerCamera.getOrientation().getPitchYawRoll();
-            float currentPitch = currentAngle.get(0) + pitchIncrease;
-
-            if(currentPitch >= 0 && currentPitch > 60) {
-                pitchIncrease = 0;
-            }
-            else if(currentPitch < 0 && currentPitch < -60) {
-                pitchIncrease = 0;
-            }
-
-            Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
-            Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
-
-            Quaternion q = playerCamera.getOrientation();
-
-            q = q.multiply(pitch);
-            q = yaw.multiply(q);
-            playerCamera.setOrientation(q);
         }
 
     }

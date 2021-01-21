@@ -16,8 +16,8 @@ import java.util.Date;
 
 public abstract class Game implements Runnable {
 
-    protected float timeDelta;  // In seconds
-    protected double targetFPS = 1000;
+    public float timeDelta;  // In seconds
+    public double targetFPS = 1000;
     protected boolean shouldDisplayFPS = false;
     protected boolean programRunning = true;
     public float fps;
