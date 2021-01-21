@@ -19,8 +19,8 @@
 * Sky box
 * Multiple materials for a single mesh (one draw call)
 * Capable of triangulating n-gons (polygons with number of sides greater than 3) and other 3D modelling features
-* Ability to create basic GUI
-* Supports a HUD overlay
+* GUI systme using the new experimental Mesh shaders
+* Supports a HUD overlay through the GUI system
 * Support for text and create 3D meshes for text with any font in the system.
 * Input handling
 
