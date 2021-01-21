@@ -2,10 +2,10 @@ package main;
 
 import Kurama.Effects.Fog;
 import Kurama.GUI.automations.*;
+import Kurama.GUI.components.*;
 import Kurama.GUI.components.Button;
-import Kurama.GUI.components.MasterWindow;
+import Kurama.GUI.components.Component;
 import Kurama.GUI.components.Rectangle;
-import Kurama.GUI.components.Text;
 import Kurama.GUI.constraints.*;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -169,6 +169,29 @@ public class GameLWJGL extends Game implements Runnable {
                 .addOnMouseLeftAction(new RemoveOverlayColor())
                 .addAutomation(new Rotate(new Vector(0,0,1), 50));
         rightDivide.children.add(square2);
+
+        var textBox =
+                new TextBox(rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "textBox")
+                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
+
+                .addOnKeyInputFocusedAction((Component current, Input input, float timeDelta) -> {
+                    Text t = ((TextBox)current).text;
+                   var s = new StringBuilder();
+                   s.append(t.text);
+                   for(int k: input.pressedChars) {
+                       if(input.keyDownOnce(Character.toUpperCase(k))) {
+                           s.append((char) k);
+                       }
+                   }
+                   if(!t.text.equals(s)) {
+                       t.setText(s.toString());
+                   }
+                });
+//                .addOnKeyInputFocusedAction(new Log("Text box has keyboard focus"))
+//                .addOnKeyInputFocusLossAction(new Log("Text box has lost keyboard focus"));
+        rightDivide.addChild(textBox);
 
         try {
             var soundManager = new SoundManager();

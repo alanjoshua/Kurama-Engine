@@ -20,6 +20,12 @@ public class Text extends Component {
         addAutomation(new CheckForTextUpdate(this));
     }
 
+    public Component setFontTexture(FontTexture fontTexture) {
+        this.fontTexture = fontTexture;
+        shouldUpdate = true;
+        return this;
+    }
+
     public Component setText(String text) {
         this.text = text;
         shouldUpdate = true;
@@ -42,19 +48,39 @@ public class Text extends Component {
             var newComp = new Rectangle(this, Utils.getUniqueID());
 
             newComp.constraints.add(new PosXYTopLeftAttachPix(curPos, 0));
-            newComp.texUL = charInfo.texUL;
-            newComp.texBL = charInfo.texBL;
-            newComp.texUR = charInfo.texUR;
-            newComp.texBR = charInfo.texBR;
-            newComp.width = charInfo.width;
-            newComp.height = fontTexture.height;
-            newComp.texture = fontTexture.texture;
-            newComp.setOverlayColor(this.overlayColor);
 
-            curPos += charInfo.width;
-            width += charInfo.width;
+            if(charInfo != null) {
+                newComp.texUL = charInfo.texUL;
+                newComp.texBL = charInfo.texBL;
+                newComp.texUR = charInfo.texUR;
+                newComp.texBR = charInfo.texBR;
+                newComp.width = charInfo.width;
+                newComp.height = fontTexture.height;
+                newComp.texture = fontTexture.texture;
 
-            children.add(newComp);
+                newComp.setOverlayColor(this.overlayColor);
+                curPos += newComp.width;
+                width += newComp.width;
+                children.add(newComp);
+            }
+            // Check for special characters
+            else if((int)c == 32) {
+                newComp.width = fontTexture.charMap.get('O').width;
+                newComp.height = fontTexture.height;
+                newComp.isContainerVisible = false;
+
+                newComp.setOverlayColor(this.overlayColor);
+                curPos += newComp.width;
+                width += newComp.width;
+                children.add(newComp);
+            }
+
+            else {
+//                newComp.width = fontTexture.charMap.get('a').width;
+//                newComp.height = fontTexture.height;
+//                newComp.isContainerVisible = false;
+            }
+
         }
 
         this.height = fontTexture.height;

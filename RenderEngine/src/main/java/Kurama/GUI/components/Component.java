@@ -32,9 +32,11 @@ public abstract class Component {
     public boolean shouldTriggerOnMouseLeave = false;
 
     public boolean isClicked = false;
+    public boolean isClickedOutside = false;
     public boolean currentIsMouseOver = false;
     public boolean isMouseLeft = false;
     protected boolean previousIsMouseOver = false;
+    public boolean isKeyInputFocused = false;
 
     public Component parent;
     public List<Component> children = new ArrayList<>();
@@ -43,8 +45,11 @@ public abstract class Component {
     public List<Automation> automations = new ArrayList<>();
 //    public List<Automation> nonTransformationalAutomations = new ArrayList<>();  //Automations that promise not to make any positional changes.
     public List<Automation> onClickActions = new ArrayList<>();
+    public List<Automation> onClickedOutsideActions = new ArrayList<>();
     public List<Automation> onMouseOverActions = new ArrayList<>();
     public List<Automation> onMouseLeaveActions = new ArrayList<>();
+    public List<Automation> onKeyInputFocused = new ArrayList<>();
+    public List<Automation> onKeyInputFocusLoss = new ArrayList<>();
 
     public Component(Component parent, String identifier) {
         this.identifier = identifier;
@@ -58,6 +63,27 @@ public abstract class Component {
     public Component addOnClickAction(Automation action) {
         onClickActions.add(action);
         shouldTriggerOnClick = true;
+        return this;
+    }
+
+    public Component addChild(Component child) {
+        children.add(child);
+        return this;
+    }
+
+    public Component addOnClickOutsideAction(Automation action) {
+        onClickedOutsideActions.add(action);
+        shouldTriggerOnClick = true;
+        return this;
+    }
+
+    public Component addOnKeyInputFocusedAction(Automation action) {
+        onKeyInputFocused.add(action);
+        return this;
+    }
+
+    public Component addOnKeyInputFocusLossAction(Automation action) {
+        onKeyInputFocusLoss.add(action);
         return this;
     }
 
@@ -100,6 +126,11 @@ public abstract class Component {
 
     public Component setShouldTriggerOnClick(boolean isClickable) {
         this.shouldTriggerOnClick = isClickable;
+        return this;
+    }
+
+    public Component setKeyInputFocused(boolean isKeyboardInputFocusable) {
+        this.isKeyInputFocused = isKeyboardInputFocusable;
         return this;
     }
 
@@ -151,6 +182,12 @@ public abstract class Component {
         }
     }
 
+    public void onClickedOutside(Input input, float timeDelta) {
+        for(var actions: onClickedOutsideActions) {
+            actions.run(this, input, timeDelta);
+        }
+    }
+
     public void onMouseOver(Input input, float timeDelta) {
         for(var actions: onMouseOverActions) {
             actions.run(this, input, timeDelta);
@@ -163,6 +200,18 @@ public abstract class Component {
         }
     }
 
+    public void onKeyFocus(Input input, float timeDelta) {
+        for(var actions: onKeyInputFocused) {
+            actions.run(this, input, timeDelta);
+        }
+    }
+
+    public void onKeyFocusLoss(Input input, float timeDelta) {
+        for(var actions: onKeyInputFocusLoss) {
+            actions.run(this, input, timeDelta);
+        }
+    }
+
     // A default component can't have mouse over
     public boolean isMouseOverComponent(Input input) {
         return false;
@@ -171,6 +220,13 @@ public abstract class Component {
     public boolean isClicked(Input input, boolean isMouseOver) {
         if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
             return isMouseOver;
+        }
+        return false;
+    }
+
+    public boolean isClickedOutside(Input input, boolean isMouseOver) {
+        if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
+            return !isMouseOver;
         }
         return false;
     }
@@ -192,10 +248,13 @@ public abstract class Component {
         isClicked = false; // Reset before processing inputs for current frame
         currentIsMouseOver = false;
         isMouseLeft = false;
+        isClickedOutside = false;
+        boolean previousKeyFocus = isKeyInputFocused;
 
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input, currentIsMouseOver);
+        isClickedOutside = isClickedOutside(input, currentIsMouseOver);
 
         for(var constraint: constraints) {
             constraint.solveConstraint(parent, this);
@@ -229,6 +288,20 @@ public abstract class Component {
         if(isMouseLeft) {
             onMouseLeave(input, timeDelta);
             previousIsMouseOver = false;
+        }
+
+        if(isClickedOutside) {
+            onClickedOutside(input, timeDelta);
+        }
+
+        // Called whenever component has keyboard focus
+        if(isKeyInputFocused) {
+            onKeyFocus(input, timeDelta);
+        }
+
+        // Called only once right after keyboard focus is lost
+        if((previousKeyFocus != isKeyInputFocused) && !isKeyInputFocused) {
+            onKeyFocusLoss(input, timeDelta);
         }
 
     }

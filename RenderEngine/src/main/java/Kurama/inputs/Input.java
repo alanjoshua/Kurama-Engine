@@ -3,6 +3,7 @@ package Kurama.inputs;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Input {
@@ -33,6 +34,33 @@ public abstract class Input {
     public int B;
     public int N;
     public int M;
+
+    public int q;
+    public int w;
+    public int e;
+    public int r;
+    public int t;
+    public int y;
+    public int u;
+    public int i;
+    public int o;
+    public int p;
+    public int a;
+    public int s;
+    public int d;
+    public int f;
+    public int g;
+    public int h;
+    public int j;
+    public int k;
+    public int l;
+    public int z;
+    public int x;
+    public int c;
+    public int v;
+    public int b;
+    public int n;
+    public int m;
 
     public int SPACE;
     public int LEFT_CONTROL;
@@ -75,6 +103,7 @@ public abstract class Input {
 
     protected int KEY_COUNT;
 
+    public List<Integer> pressedChars = new ArrayList<>();
     public boolean isCursorEnabled = true;
 
     Game game;
@@ -110,6 +139,7 @@ public abstract class Input {
     public void reset() {
         mouseDx = 0;
         mouseDy = 0;
+        pressedChars = new ArrayList<>();
     }
 
     public void enableCursor() {

@@ -2,6 +2,7 @@ package Kurama.inputs;
 
 import Kurama.display.DisplayLWJGL;
 import Kurama.game.Game;
+import org.lwjgl.glfw.GLFWCharCallback;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
@@ -59,6 +60,33 @@ public class InputLWJGL extends Input {
         N = GLFW_KEY_N;
         M = GLFW_KEY_M;
 
+//        q = GLFW_KEY_;
+//        w = GLFW_KEY_W;
+//        e = GLFW_KEY_E;
+//        r = GLFW_KEY_R;
+//        t = GLFW_KEY_T;
+//        y = GLFW_KEY_Y;
+//        u = GLFW_KEY_U;
+//        i = GLFW_KEY_I;
+//        o = GLFW_KEY_O;
+//        p = GLFW_KEY_P;
+//        a = GLFW_KEY_A;
+//        s = GLFW_KEY_S;
+//        d = GLFW_KEY_D;
+//        f = GLFW_KEY_F;
+//        g = GLFW_KEY_G;
+//        h = GLFW_KEY_H;
+//        j = GLFW_KEY_J;
+//        k = GLFW_KEY_K;
+//        l = GLFW_KEY_L;
+//        z = GLFW_KEY_Z;
+//        x = GLFW_KEY_X;
+//        c = GLFW_KEY_C;
+//        v = GLFW_KEY_V;
+//        b = GLFW_KEY_B;
+//        n = GLFW_KEY_N;
+//        m = GLFW_KEY_M;
+
         SPACE = GLFW_KEY_SPACE;
         LEFT_CONTROL = GLFW_KEY_LEFT_CONTROL;
         LEFT_SHIFT = GLFW_KEY_LEFT_SHIFT;
@@ -105,7 +133,17 @@ public class InputLWJGL extends Input {
             }
         };
 
-        glfwSetKeyCallback(window,keyCallback);
+        GLFWCharCallback charCallback = new GLFWCharCallback() {
+            @Override
+            public void invoke(long l, int key) {
+                if(key > 0 && key < keys.size()) {
+                    pressedChars.add(key);
+                }
+            }
+        };
+
+        glfwSetCharCallback(window,charCallback);
+        glfwSetKeyCallback(window, keyCallback);
     }
 
     public void poll() {
