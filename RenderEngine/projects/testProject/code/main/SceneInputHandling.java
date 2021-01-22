@@ -7,11 +7,11 @@ import Kurama.Math.Vector;
 import Kurama.inputs.Input;
 import Kurama.model.AnimatedModel;
 
-public class InputProcessing implements Automation {
+public class SceneInputHandling implements Automation {
 
     public GameLWJGL game;
 
-    public InputProcessing(GameLWJGL game) {
+    public SceneInputHandling(GameLWJGL game) {
         this.game = game;
     }
 

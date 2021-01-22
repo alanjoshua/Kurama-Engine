@@ -71,6 +71,8 @@ public abstract class Input {
     public int RIGHT_SHIFT;
     public int RIGHT_ALT;
     public int ESCAPE;
+    public int DELETE;
+    public int BACKSPACE;
 
     public int UP_ARROW;
     public int DOWN_ARROW;

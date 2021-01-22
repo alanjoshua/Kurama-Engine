@@ -124,7 +124,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .setKeyInputFocused(true)
                 .addOnClickAction(new GrabKeyboardFocus())
                 .addOnClickOutsideAction(new LoseKeyboardFocus())
-                .addOnKeyInputFocusedAction(new InputProcessing(this));
+                .addOnKeyInputFocusedAction(new SceneInputHandling(this));
         masterComponent.children.add(leftDivide);
 
         fpsText =
@@ -178,20 +178,35 @@ public class GameLWJGL extends Game implements Runnable {
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
+                .addOnKeyInputFocusedAction(new InputHandling(0.05f) {
+                    @Override
+                    public void run(Component current, Input input, float timeDelta) {
 
-                .addOnKeyInputFocusedAction((Component current, Input input, float timeDelta) -> {
-                    Text t = ((TextBox)current).text;
-                   var s = new StringBuilder();
-                   s.append(t.text);
-                   for(int k: input.pressedChars) {
-                       if(input.keyDownOnce(Character.toUpperCase(k))) {
-                           s.append((char) k);
-                       }
-                   }
-                   if(!t.text.equals(s)) {
-                       t.setText(s.toString());
-                   }
+                        Text t = ((TextBox)current).text;
+                        timeFromLastDelete += timeDelta;
+                        var s = new StringBuilder();
+                        s.append(t.text);
+
+                        for(int k: input.pressedChars) {
+                            if(input.keyDownOnce(Character.toUpperCase(k))) {
+                                s.append((char) k);
+                            }
+                        }
+
+                        if(input.keyDown(input.DELETE) || input.keyDown(input.BACKSPACE)) {
+                            if(s.length() > 0 && timeFromLastDelete > minDeleteTime) {
+                                timeFromLastDelete = 0;
+                                s.deleteCharAt(s.length() - 1);
+                            }
+                        }
+
+                        if(!t.text.equals(s)) {
+                            t.setText(s.toString());
+                        }
+
+                    }
                 });
+
 //                .addOnKeyInputFocusedAction(new Log("Text box has keyboard focus"))
 //                .addOnKeyInputFocusLossAction(new Log("Text box has lost keyboard focus"));
         rightDivide.addChild(textBox);

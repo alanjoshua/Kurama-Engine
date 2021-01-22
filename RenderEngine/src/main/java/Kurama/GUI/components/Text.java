@@ -35,6 +35,7 @@ public class Text extends Component {
     public void updateText() {
 
         if(text == null || text.length() == 0) {
+            children = new ArrayList<>();
             return;
         }
 
