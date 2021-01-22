@@ -6,6 +6,7 @@ import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
+import Kurama.game.Game;
 import Kurama.inputs.Input;
 
 import java.util.ArrayList;
@@ -37,8 +38,10 @@ public abstract class Component {
     public boolean isMouseLeft = false;
     protected boolean previousIsMouseOver = false;
     public boolean isKeyInputFocused = false;
+    protected boolean shouldForceCheckKeyInputFocusUpdate = false;
 
     public Component parent;
+    public Game game;
     public List<Component> children = new ArrayList<>();
     public List<Constraint> constraints = new ArrayList<>();
     public List<Constraint> globalChildrenConstraints = new ArrayList<>();
@@ -49,11 +52,13 @@ public abstract class Component {
     public List<Automation> onMouseOverActions = new ArrayList<>();
     public List<Automation> onMouseLeaveActions = new ArrayList<>();
     public List<Automation> onKeyInputFocused = new ArrayList<>();
-    public List<Automation> onKeyInputFocusLoss = new ArrayList<>();
+    public List<Automation> onKeyInputFocusedInit = new ArrayList<>();
+    public List<Automation> onKeyInputFocusLossInit = new ArrayList<>();
 
-    public Component(Component parent, String identifier) {
+    public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
         this.parent = parent;
+        this.game = game;
     }
 
     public Matrix getOrthoProjection() {
@@ -82,8 +87,13 @@ public abstract class Component {
         return this;
     }
 
+    public Component addOnKeyInputFocusedInitAction(Automation action) {
+        onKeyInputFocusedInit.add(action);
+        return this;
+    }
+
     public Component addOnKeyInputFocusLossAction(Automation action) {
-        onKeyInputFocusLoss.add(action);
+        onKeyInputFocusLossInit.add(action);
         return this;
     }
 
@@ -130,6 +140,7 @@ public abstract class Component {
     }
 
     public Component setKeyInputFocused(boolean isKeyboardInputFocusable) {
+        shouldForceCheckKeyInputFocusUpdate = !(isKeyInputFocused == isKeyboardInputFocusable);
         this.isKeyInputFocused = isKeyboardInputFocusable;
         return this;
     }
@@ -206,8 +217,14 @@ public abstract class Component {
         }
     }
 
-    public void onKeyFocusLoss(Input input, float timeDelta) {
-        for(var actions: onKeyInputFocusLoss) {
+    public void onKeyFocusInit(Input input, float timeDelta) {
+        for(var actions: onKeyInputFocusedInit) {
+            actions.run(this, input, timeDelta);
+        }
+    }
+
+    public void onKeyFocusLossInit(Input input, float timeDelta) {
+        for(var actions: onKeyInputFocusLossInit) {
             actions.run(this, input, timeDelta);
         }
     }
@@ -299,9 +316,15 @@ public abstract class Component {
             onKeyFocus(input, timeDelta);
         }
 
-        // Called only once right after keyboard focus is lost
-        if((previousKeyFocus != isKeyInputFocused) && !isKeyInputFocused) {
-            onKeyFocusLoss(input, timeDelta);
+        // Called only once right after keyboard focus is lost or gained
+        if(previousKeyFocus != isKeyInputFocused || shouldForceCheckKeyInputFocusUpdate) {
+            if(!isKeyInputFocused) {
+                onKeyFocusLossInit(input, timeDelta);
+            }
+            else {
+                onKeyFocusInit(input, timeDelta);
+            }
+            shouldForceCheckKeyInputFocusUpdate = false;
         }
 
     }

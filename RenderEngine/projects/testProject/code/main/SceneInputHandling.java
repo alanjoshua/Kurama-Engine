@@ -6,6 +6,7 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.inputs.Input;
 import Kurama.model.AnimatedModel;
+import Kurama.utils.Logger;
 
 public class SceneInputHandling implements Automation {
 
@@ -27,7 +28,23 @@ public class SceneInputHandling implements Automation {
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
             velocity = velocity.add((z.scalarMul(-cameraSpeed)));
-//            cam.setPos(cam.getPos().sub(z.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDownOnce(input.ESCAPE)) {
+            current.isKeyInputFocused = false;
+        }
+
+        if (input.keyDownOnce(input.F)) {
+            if (game.targetFPS == game.masterComponent.getRefreshRate()) {
+                game.targetFPS = 10000;
+            } else {
+                game.targetFPS = game.masterComponent.getRefreshRate();
+            }
+            Logger.log("Changed target resolution" + game.targetFPS);
+        }
+
+        if (input.keyDownOnce(input.V)) {
+            game.masterComponent.toggleWindowModes();
         }
 
         if(input.keyDownOnce(input.B)) {

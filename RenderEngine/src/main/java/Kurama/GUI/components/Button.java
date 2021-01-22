@@ -2,14 +2,15 @@ package Kurama.GUI.components;
 
 import Kurama.GUI.constraints.Center;
 import Kurama.font.FontTexture;
+import Kurama.game.Game;
 
 public class Button extends Rectangle {
 
     public Text buttonText;
 
-    public Button(Component parent, FontTexture fontTexture, String buttonTextString, String identifier) {
-        super(parent, identifier);
-        buttonText = new Text(this, fontTexture, identifier);
+    public Button(Game game, Component parent, FontTexture fontTexture, String buttonTextString, String identifier) {
+        super(game, parent, identifier);
+        buttonText = new Text(game, this, fontTexture, identifier);
         buttonText.setText(buttonTextString);
         buttonText.addConstraint(new Center());
         children.add(buttonText);

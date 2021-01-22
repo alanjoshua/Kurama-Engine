@@ -3,6 +3,7 @@ package Kurama.GUI.components;
 import Kurama.GUI.automations.CheckForTextUpdate;
 import Kurama.GUI.constraints.PosXYTopLeftAttachPix;
 import Kurama.font.FontTexture;
+import Kurama.game.Game;
 import Kurama.utils.Utils;
 
 import java.util.ArrayList;
@@ -13,8 +14,8 @@ public class Text extends Component {
     public FontTexture fontTexture;
     public boolean shouldUpdate = true;
 
-    public Text(Component parent, FontTexture fontTexture, String identifier) {
-        super(parent, identifier);
+    public Text(Game game, Component parent, FontTexture fontTexture, String identifier) {
+        super(game, parent, identifier);
         this.fontTexture = fontTexture;
         isContainerVisible = false;
         addAutomation(new CheckForTextUpdate(this));
@@ -46,7 +47,7 @@ public class Text extends Component {
 
         for(char c: text.toCharArray()) {
             var charInfo = fontTexture.charMap.get(c);
-            var newComp = new Rectangle(this, Utils.getUniqueID());
+            var newComp = new Rectangle(game, this, Utils.getUniqueID());
 
             newComp.constraints.add(new PosXYTopLeftAttachPix(curPos, 0));
 

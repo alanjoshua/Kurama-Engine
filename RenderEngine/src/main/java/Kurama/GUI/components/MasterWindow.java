@@ -3,6 +3,7 @@ package Kurama.GUI.components;
 import Kurama.GUI.constraints.DisplayAttach;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
+import Kurama.game.Game;
 import Kurama.inputs.Input;
 
 public class MasterWindow extends Rectangle {
@@ -10,8 +11,8 @@ public class MasterWindow extends Rectangle {
     public Display display;
     public Input input;
 
-    public MasterWindow(Display display, Input input, String identifier) {
-        super(null, new Vector(0,0,0,0), identifier);
+    public MasterWindow(Game game, Display display, Input input, String identifier) {
+        super(game, null, new Vector(0,0,0,0), identifier);
         this.display = display;
         this.input = input;
         this.constraints.add(new DisplayAttach(display));

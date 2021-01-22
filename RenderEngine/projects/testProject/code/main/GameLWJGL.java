@@ -66,8 +66,8 @@ public class GameLWJGL extends Game implements Runnable {
     protected float speedMultiplier = 1;
     protected float speedIncreaseMultiplier = 2;
 
+    public boolean isGameRunning = true;  //temp. Replace with game state
     protected int lookAtIndex = 1;
-    protected boolean isGameRunning = true;
     protected boolean prevGameState = false;
 //    protected Vector mouseDelta;
 //    protected Vector mousePos;
@@ -105,7 +105,7 @@ public class GameLWJGL extends Game implements Runnable {
         });
         scene.cameras.add(playerCamera);
 
-        masterComponent = new MasterWindow(display, input,"masterWindow");
+        masterComponent = new MasterWindow(this, display, input,"masterWindow");
         masterComponent
                 .setColor(new Vector(1,0,0,0.5f))
                 .setContainerVisibility(false);
@@ -114,7 +114,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                .addAutomation(new ResizeCameraRenderResolution(playerCamera));
 
         var leftDivide =
-                new Rectangle(masterComponent, "leftHalf")
+                new Rectangle(this, masterComponent, "leftHalf")
                 .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                 .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
@@ -123,26 +123,33 @@ public class GameLWJGL extends Game implements Runnable {
                 .addOnMouseLeftAction(new RemoveOverlayColor())
                 .setKeyInputFocused(true)
                 .addOnClickAction(new GrabKeyboardFocus())
-                .addOnClickOutsideAction(new LoseKeyboardFocus())
-                .addOnKeyInputFocusedAction(new SceneInputHandling(this));
+                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
+                    masterComponent.input.disableCursor();
+                    isGameRunning = true;
+                })
+                .addOnKeyInputFocusedAction(new SceneInputHandling(this))
+                .addOnKeyInputFocusLossAction((Component current, Input input, float timeDelta) -> {
+                    masterComponent.input.enableCursor();
+                    isGameRunning = false;
+                });
         masterComponent.children.add(leftDivide);
 
         fpsText =
-            (Text)new Text(masterComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
+            (Text)new Text(this, masterComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
             .addConstraint(new PosXYTopLeftAttachPix(20, 20))
             .addAutomation(new DisplayFPS(this, "fps: "))
             .setOverlayColor(new Vector(1,0,0,0.5f));
         masterComponent.children.add(fpsText);
 
         var rightDivide =
-                new Rectangle(masterComponent, "rightHalf")
+                new Rectangle(this, masterComponent, "rightHalf")
                 .setColor(new Vector(0.5f, 0.4f, 0.9f, 1f))
                 .addConstraint(new WidthHeightPercent(0.25f, 1f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.75f,0));
         masterComponent.children.add(rightDivide);
 
         var square1 =
-                new Rectangle(rightDivide, "s1")
+                new Rectangle(this, rightDivide, "s1")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
@@ -154,7 +161,7 @@ public class GameLWJGL extends Game implements Runnable {
         rightDivide.children.add(square1);
 
         var squareIn =
-                new Rectangle(square1, "ss1")
+                new Rectangle(this, square1, "ss1")
                 .setColor(new Vector(0.1f, 0.3f, 0.7f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.5f))
                 .addConstraint(new Center())
@@ -163,7 +170,7 @@ public class GameLWJGL extends Game implements Runnable {
         square1.children.add(squareIn);
 
         var square2 =
-        new Button(rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "alan", "button")
+        new Button(this, rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "alan", "button")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
@@ -174,7 +181,7 @@ public class GameLWJGL extends Game implements Runnable {
         rightDivide.children.add(square2);
 
         var textBox =
-                new TextBox(rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "textBox")
+                new TextBox(this, rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "textBox")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
@@ -482,18 +489,8 @@ public class GameLWJGL extends Game implements Runnable {
         masterComponent.tick(null, masterComponent.input, timeDelta);
         scene.cameras.forEach(c -> c.tick(timeDelta));
 
-        tickInput(); //this is global input handling.
-
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
-        }
-
-        if(isGameRunning != prevGameState) {
-            if (isGameRunning)
-                masterComponent.input.disableCursor();
-            else
-                masterComponent.input.enableCursor();
-            prevGameState = isGameRunning;
         }
 
         if(isGameRunning) {
@@ -510,29 +507,6 @@ public class GameLWJGL extends Game implements Runnable {
 
     }
 
-    public void tickInput() {
-
-        if (input.keyDownOnce(input.ESCAPE)) {
-            isGameRunning = !isGameRunning;
-        }
-
-        if (isGameRunning) {
-            if (input.keyDownOnce(input.F)) {
-                if (targetFPS == masterComponent.getRefreshRate()) {
-                    targetFPS = 10000;
-                } else {
-                    targetFPS = masterComponent.getRefreshRate();
-                }
-                System.out.println("Changed target resolution" + targetFPS);
-            }
-
-            if (input.keyDownOnce(input.V)) {
-                masterComponent.toggleWindowModes();
-            }
-        }
-
-    }
-
     public void render() {
         renderingEngine.render(scene, masterComponent);
         glfwSwapBuffers(display.getWindow());
@@ -544,10 +518,6 @@ public class GameLWJGL extends Game implements Runnable {
     public RenderingEngineGL getRenderingEngine() {
         return renderingEngine;
     }
-
-//    public DisplayLWJGL getDisplay() {
-//        return display;
-//    }
 
     public Camera getCamera() {
         return playerCamera;

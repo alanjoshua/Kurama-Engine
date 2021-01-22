@@ -1,6 +1,7 @@
 package Kurama.GUI.components;
 
 import Kurama.Math.Vector;
+import Kurama.game.Game;
 import Kurama.geometry.Utils;
 import Kurama.inputs.Input;
 
@@ -18,13 +19,13 @@ public class Rectangle extends Component {
     private static Vector v3 =  new Vector(-0.5f,0.5f,0f,1f);
     private static Vector v4 =  new Vector(0.5f,0.5f,0f,1f);
 
-    public Rectangle(Component parent, Vector radii, String identifier) {
-        super(parent, identifier);
+    public Rectangle(Game game, Component parent, Vector radii, String identifier) {
+        super(game, parent, identifier);
         this.radii = radii;
     }
 
-    public Rectangle(Component parent, String identifier) {
-        super(parent, identifier);
+    public Rectangle(Game game, Component parent, String identifier) {
+        super(game, parent, identifier);
         this.radii = new Vector(0,0,0,0);
         texUL = new Vector(new float[]{0,0});
         texBL = new Vector(new float[]{0, 1});
