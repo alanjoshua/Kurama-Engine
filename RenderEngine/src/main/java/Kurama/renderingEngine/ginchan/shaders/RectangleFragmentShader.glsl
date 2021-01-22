@@ -17,6 +17,7 @@ layout (std140, binding = 0) uniform Rectangle {
     vec2 texBR;
     vec2 dimensions;
     float hasTexture;
+    float alphaMask;
 } rectangle;
 
 uniform sampler2D texture_sampler;
@@ -64,7 +65,6 @@ void main() {
         }
     }
 
-    vec4 finalColor;
     if (rectangle.hasTexture == 0) {
         outColor = rectangle.color*(1-rectangle.overlayColor.w) + rectangle.overlayColor*(rectangle.overlayColor.w);
     }
@@ -77,5 +77,7 @@ void main() {
             outColor = vec4(0,0,0,0);
         }
     }
+
+    outColor.w *= rectangle.alphaMask;
 
 }

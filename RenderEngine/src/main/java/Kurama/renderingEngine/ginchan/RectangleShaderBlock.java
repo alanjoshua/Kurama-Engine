@@ -27,7 +27,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;
     public static final int MATRIX_SIZE_BYTES = 4 * VECTOR4F_SIZE_BYTES;
-    public static final int INSTANCE_SIZE = 39;
+    public static final int INSTANCE_SIZE = 43;
 
     public RectangleShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
         super(game, parentPipeline, pipelineID);
@@ -63,7 +63,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     public void setupRectangleUniform(Matrix projectionViewMatrix, Vector radius, int width, int height, boolean hasTexture,
-                                      Vector color, Vector overlayColor, Rectangle rect) {
+                                      Vector color, Vector overlayColor, float alphaMaskSoFar, Rectangle rect) {
 
         FloatBuffer temp = MemoryUtil.memAllocFloat(INSTANCE_SIZE);
         projectionViewMatrix.setValuesToBuffer(temp);
@@ -97,6 +97,9 @@ public class RectangleShaderBlock extends RenderPipeline {
         temp.put(width);
         temp.put(height);
         temp.put(hasTexture?1f:0f);
+
+        temp.put(alphaMaskSoFar);
+
         temp.flip();
         glBufferSubData(GL_UNIFORM_BUFFER, 0, temp);
         MemoryUtil.memFree(temp);
@@ -114,7 +117,7 @@ public class RectangleShaderBlock extends RenderPipeline {
         glBindBuffer(GL_UNIFORM_BUFFER, rectangleUniformBuffer);
         glActiveTexture(GL_TEXTURE0);
 
-        recursiveRender(masterComponent, ortho);
+        recursiveRender(masterComponent, ortho, new Vector(0,0,0,0), 1);
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         shader.unbind();
@@ -122,7 +125,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     // This only render rectangle components
-    public void recursiveRender(Component masterComponent, Matrix ortho) {
+    public void recursiveRender(Component masterComponent, Matrix ortho, Vector colorSoFar, float alphaMaskSoFar) {
 
         if(!masterComponent.shouldRenderGroup) {
             return;
@@ -131,12 +134,16 @@ public class RectangleShaderBlock extends RenderPipeline {
         if(masterComponent.isContainerVisible && masterComponent instanceof Rectangle) {
 
             var mat = ortho.matMul(masterComponent.objectToWorldMatrix);
+            if(masterComponent.overlayColor != null) {
+                colorSoFar = masterComponent.overlayColor.add(colorSoFar);
+            }
+            alphaMaskSoFar = alphaMaskSoFar*masterComponent.alphaMask;
 
             if (masterComponent.texture != null) {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
             setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
-                    masterComponent.texture == null ? false : true, masterComponent.color, masterComponent.overlayColor, (Rectangle) masterComponent);
+                    masterComponent.texture == null ? false : true, masterComponent.color, colorSoFar, alphaMaskSoFar, (Rectangle) masterComponent);
 
             glDrawMeshTasksNV(0, 1);
         }
@@ -145,7 +152,7 @@ public class RectangleShaderBlock extends RenderPipeline {
 //        var nextParent = parentTrans.matMul(local);
 
         for(var child: masterComponent.children) {
-            recursiveRender(child, ortho);
+            recursiveRender(child, ortho, colorSoFar, alphaMaskSoFar);
         }
 
     }

@@ -1,5 +1,6 @@
 package Kurama.GUI.components;
 
+import Kurama.GUI.animations.Animation;
 import Kurama.GUI.automations.Automation;
 import Kurama.GUI.constraints.Constraint;
 import Kurama.Math.Matrix;
@@ -24,6 +25,7 @@ public abstract class Component {
     public Vector color = new Vector(0,0,0,1);
     public Vector overlayColor = null;
     public Texture texture = null;
+    public float alphaMask = 1;
 
     public String identifier;
     public boolean isContainerVisible = true;
@@ -54,6 +56,8 @@ public abstract class Component {
     public List<Automation> onKeyInputFocused = new ArrayList<>();
     public List<Automation> onKeyInputFocusedInit = new ArrayList<>();
     public List<Automation> onKeyInputFocusLossInit = new ArrayList<>();
+
+    public List<Animation> animations = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
@@ -109,6 +113,11 @@ public abstract class Component {
         return this;
     }
 
+    public Component addAnimation(Animation animation) {
+        animations.add(animation);
+        return this;
+    }
+
     public Component addConstraint(Constraint constraint) {
         this.constraints.add(constraint);
         return this;
@@ -121,6 +130,11 @@ public abstract class Component {
 
     public Component setColor(Vector color) {
         this.color = color;
+        return this;
+    }
+
+    public Component setAlphaMask(float alphaMask) {
+        this.alphaMask = alphaMask;
         return this;
     }
 
@@ -249,10 +263,7 @@ public abstract class Component {
     }
 
     public boolean isMouseLeft(Input input, boolean isMouseOver) {
-        if(previousIsMouseOver && input.isCursorEnabled && !isMouseOver) {
-            return true;
-        }
-        else if(!input.isCursorEnabled) {
+        if(previousIsMouseOver && !isMouseOver) {
             return true;
         }
         else {
@@ -261,6 +272,10 @@ public abstract class Component {
     }
 
     public void tick(List<Constraint> parentGlobalConstraints, Input input, float timeDelta) {
+
+        if(!shouldRenderGroup) {
+            return;
+        }
 
         isClicked = false; // Reset before processing inputs for current frame
         currentIsMouseOver = false;
@@ -286,6 +301,15 @@ public abstract class Component {
         for(var automation: automations) {
             automation.run(this, input, timeDelta);
         }
+
+        List<Animation> toBeRemoved = new ArrayList<>();
+        for(var anim: animations) {
+            anim.run(this, input, timeDelta);
+            if(anim.hasAnimEnded) {
+                toBeRemoved.add(anim);
+            }
+        }
+        animations.removeAll(toBeRemoved);
 
         setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
 

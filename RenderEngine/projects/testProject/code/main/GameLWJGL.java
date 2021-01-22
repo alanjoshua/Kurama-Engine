@@ -1,6 +1,7 @@
 package main;
 
 import Kurama.Effects.Fog;
+import Kurama.GUI.animations.Animation;
 import Kurama.GUI.automations.*;
 import Kurama.GUI.components.Button;
 import Kurama.GUI.components.Component;
@@ -154,10 +155,16 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
-                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,1)))
-                .addOnMouseLeftAction(new RemoveOverlayColor())
-                .addAutomation(new Rotate(new Vector(0,0,1), 50))
-                .addOnClickAction(new Log("Clicked button 1"));
+                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
+                .addOnMouseLeftAction(new SetOverlayColor(new Vector(0,0,0,0f)))
+                .addOnClickAction(new Log("Clicked button 1"))
+                .addAnimation(new Animation(1,
+                        Arrays.asList(
+                                new Automation[]{
+                                        new Move(new Vector(-3000, 0,0)),
+                                        new Fade(0.6f)
+                        }),
+                        null, Arrays.asList(new Automation[]{new TurnOffRender()})));
         rightDivide.children.add(square1);
 
         var squareIn =
@@ -176,8 +183,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new MaxHeight(100))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.5f))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
-                .addOnMouseLeftAction(new RemoveOverlayColor())
-                .addAutomation(new Rotate(new Vector(0,0,1), 50));
+                .addOnMouseLeftAction(new RemoveOverlayColor());
         rightDivide.children.add(square2);
 
         var textBox =

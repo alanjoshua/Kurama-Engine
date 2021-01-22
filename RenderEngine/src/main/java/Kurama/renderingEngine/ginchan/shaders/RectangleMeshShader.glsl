@@ -16,6 +16,7 @@ layout (std140, binding = 0) uniform Rectangle {
     vec2 texBR;
     vec2 dimensions;
     float hasTexture;
+    float alphaMask;
 } rectangle;
 
 // Custom vertex output block
