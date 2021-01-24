@@ -4,6 +4,7 @@ import Kurama.GUI.automations.Automation;
 import Kurama.GUI.components.Component;
 import Kurama.inputs.Input;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Animation {
@@ -20,6 +21,13 @@ public class Animation {
         this.actions = actions;
         this.onAnimStart = onAnimStart;
         this.onAnimEnd = onAnimEnd;
+    }
+
+    public Animation(float animTime, Automation action) {
+        this.animTime = animTime;
+        this.actions = Arrays.asList(new Automation[]{action});
+        this.onAnimStart = null;
+        this.onAnimEnd = null;
     }
 
     public void run(Component current, Input input, float timeDelta) {

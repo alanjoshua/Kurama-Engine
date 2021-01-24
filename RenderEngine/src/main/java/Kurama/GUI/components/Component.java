@@ -96,7 +96,7 @@ public abstract class Component {
         return this;
     }
 
-    public Component addOnKeyInputFocusLossAction(Automation action) {
+    public Component addOnKeyInputFocusLossInitAction(Automation action) {
         onKeyInputFocusLossInit.add(action);
         return this;
     }
@@ -130,6 +130,16 @@ public abstract class Component {
 
     public Component setColor(Vector color) {
         this.color = color;
+        return this;
+    }
+
+    public Component setWidth(int width) {
+        this.width = width;
+        return this;
+    }
+
+    public Component setHeight(int height) {
+        this.height = height;
         return this;
     }
 
@@ -256,7 +266,7 @@ public abstract class Component {
     }
 
     public boolean isClickedOutside(Input input, boolean isMouseOver) {
-        if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
+        if(shouldTriggerOnClick && input != null && input.isLeftMouseButtonPressed) {
             return !isMouseOver;
         }
         return false;

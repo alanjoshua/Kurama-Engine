@@ -129,7 +129,7 @@ public class GameLWJGL extends Game implements Runnable {
                     isGameRunning = true;
                 })
                 .addOnKeyInputFocusedAction(new SceneInputHandling(this))
-                .addOnKeyInputFocusLossAction((Component current, Input input, float timeDelta) -> {
+                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
                     masterComponent.input.enableCursor();
                     isGameRunning = false;
                 });
@@ -186,12 +186,23 @@ public class GameLWJGL extends Game implements Runnable {
                 .addOnMouseLeftAction(new RemoveOverlayColor());
         rightDivide.children.add(square2);
 
+        var caret =
+                new Rectangle(this, null, Utils.getUniqueID())
+                .setColor(new Vector(1,1,1,0.8f))
+                .setContainerVisibility(false)
+                .setWidth(3)
+                .setHeight(20);
+
         var textBox =
-                new TextBox(this, rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "textBox")
+                new TextBox(this, rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), caret,"textBox")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
-                .addOnKeyInputFocusedAction(new InputHandling(0.05f) {
+                .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
+                .addOnKeyInputFocusedInitAction(new MakeComponentVisible(caret))
+                .addOnKeyInputFocusLossInitAction(new MakeComponentInvisible(caret))
+                .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
+                .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
                     @Override
                     public void run(Component current, Input input, float timeDelta) {
 
