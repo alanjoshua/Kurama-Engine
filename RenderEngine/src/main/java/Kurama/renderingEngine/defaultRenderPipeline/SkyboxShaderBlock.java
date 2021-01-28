@@ -2,7 +2,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 
 import Kurama.Math.Matrix;
 import Kurama.game.Game;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
 
@@ -59,7 +59,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
             Model skyBox = input.scene.skybox;
             skyBox.setPos(camera.getPos());
-            Matrix modelViewMatrix = camera.getWorldToCam().matMul(input.scene.skybox.getObjectToWorldMatrix());
+            Matrix modelViewMatrix = camera.getWorldToObject().matMul(input.scene.skybox.getObjectToWorldMatrix());
             skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
             skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 

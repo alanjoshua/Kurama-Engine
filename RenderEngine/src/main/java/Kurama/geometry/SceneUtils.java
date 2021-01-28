@@ -16,8 +16,8 @@ import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
-import Kurama.model.Model;
-import Kurama.model.modelBehaviour.Behaviour;
+import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.components.model.modelBehaviour.Behaviour;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
@@ -299,7 +299,7 @@ public class SceneUtils {
                                 break;
                         }
                     }
-                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight));
+                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight, Kurama.utils.Utils.getUniqueID()));
                 }
 
                 if(isLoadingPointLights) {
@@ -543,7 +543,7 @@ public class SceneUtils {
 
                             l = new DirectionalLight(game, color, orientation, intensity,
                                     new ShadowMap(shadowMapWidth, shadowMapHeight), meshes,
-                                    null, shadowProjectMatrix, id);
+                                    shadowProjectMatrix, id);
 
                             l.setPos(pos);
                             l.setScale(scale);
@@ -551,7 +551,6 @@ public class SceneUtils {
                             l.shouldRender = shouldRender;
                             l.doesProduceShadow = shouldCastShadow;
                             l.lightPosScale = lightPosScale;
-                            l.behaviours.add(behaviour);
                             scene.addDirectionalLight(l, shaderIds);
                         }
 
@@ -560,12 +559,11 @@ public class SceneUtils {
 
                             s = new SpotLight(game, new PointLight(color, pos, intensity, new PointLight.Attenuation(att_constant, att_linear, att_exp)),
                                     orientation, angle, new ShadowMap(shadowMapWidth, shadowMapHeight),
-                                    meshes, null, shadowProjectMatrix, id);
+                                    meshes, shadowProjectMatrix, id);
                             s.setPos(pos);
                             s.setScale(scale);
                             s.shouldRender = shouldRender;
                             s.shouldSelfCastShadow = shouldCastShadow;
-                            s.behaviours.add(behaviour);
                             scene.addSplotLight(s, shaderIds);
                         }
 
@@ -605,7 +603,6 @@ public class SceneUtils {
                             m.setScale(scale);
                             m.shouldRender = shouldRender;
                             m.shouldSelfCastShadow = shouldCastShadow;
-                            m.behaviours.add(behaviour);
                             scene.addModel(m, shaderIds);
                         }
 
@@ -1656,12 +1653,12 @@ public class SceneUtils {
                 writer.write("shouldCastShadow:"+model.shouldSelfCastShadow +"\n");
                 writer.write("shouldRender:"+model.shouldRender+"\n");
 
-                if(model.behaviours == null) {
-                    writer.write("modelBehaviour:null\n");
-                }
-                else{
-                    writer.write("modelBehaviour:"+model.behaviours.get(0).getClass().getCanonicalName()+"\n");
-                }
+//                if(model.behaviours == null) {
+//                    writer.write("modelBehaviour:null\n");
+//                }
+//                else{
+//                    writer.write("modelBehaviour:"+model.behaviours.get(0).getClass().getCanonicalName()+"\n");
+//                }
 
                 if(type.equals("Text")) {
                     Text t = (Text)model;

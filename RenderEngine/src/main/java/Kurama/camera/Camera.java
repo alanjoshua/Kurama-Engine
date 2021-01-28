@@ -1,5 +1,8 @@
 package Kurama.camera;
 
+import Kurama.ComponentSystem.automations.DefaultCameraUpdate;
+import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.components.model.SceneComponent;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -7,36 +10,33 @@ import Kurama.buffers.RenderBuffer;
 import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.geometry.Utils;
-import Kurama.model.Model;
 import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
 
 import java.util.ArrayList;
 
-public class Camera {
+public class Camera extends SceneComponent {
 
 	private Game game;
 
-	private float filmApertureWidth;
-	private float filmApertureHeight;
-	private float focalLength;
-	private float nearClippingPlane;
-	private float farClippingPlane;
-//	private int imageWidth = 0;
-//	private int imageHeight = 0;
+	public float filmApertureWidth;
+	public float filmApertureHeight;
+	public float focalLength;
+	public float nearClippingPlane;
+	public float farClippingPlane;
 
-	private float fovX;
-	private float fovY;
-	private float canvasWidth;
-	private float canvasHeight;
-	private float right, left, top, bottom;
+	public float fovX;
+	public float fovY;
+	public float canvasWidth;
+	public float canvasHeight;
+	public float right, left, top, bottom;
 
 	public static final int FILL = 0;
 	public static final int OVERSCAN = 1;
-	private int fitMode = 0;
-	private float filmAspectRatio = 1;
-	private float imageAspectRatio = 1;
-	private float xScale = 1;
-	private float yScale = 1;
+	public int fitMode = 0;
+	public float filmAspectRatio = 1;
+	public float imageAspectRatio = 1;
+	public float xScale = 1;
+	public float yScale = 1;
 	
 	private int cameraMode = gameModeCamera;
 	private static final int simulateTrueCamera = 1;
@@ -44,15 +44,10 @@ public class Camera {
 
 	private Matrix perspectiveProjectionMatrix = null;
 	private Matrix orthographicProjectionMatrix = null;
-	
-	private Vector pos = null;
-	public Vector velocity = new Vector(0,0,0);
-	public Vector acceleration = new Vector(0,0,0);
 
 	private final float inchToMm = 25.4f;
 	
-	private boolean shouldUpdateValues = false;
-	private Quaternion orientation;
+	public boolean shouldUpdateValues = false;
 
 	public RenderBuffer renderBuffer;
 	public boolean isActive = true;
@@ -60,36 +55,16 @@ public class Camera {
 
 	public Vector renderResolution = new Vector(new float[]{Display.defaultWindowedWidth, Display.defaultWindowedHeight});
 
-//	public Camera(Game game, float[][] data, float focalLength, float filmApertureWidth, float filmApertureHeight,
-//			float nearClippingPlane, float farClippingPlane, int imageWidht, int imageHeight, int cameraMode) {
-//		this.camMatrix = new Matrix(data);
-//		this.game = game;
-//		this.filmApertureWidth = filmApertureWidth;
-//		this.filmApertureHeight = filmApertureHeight;
-//		this.focalLength = focalLength;
-//		this.nearClippingPlane = nearClippingPlane;
-//		this.farClippingPlane = farClippingPlane;
-//		this.imageWidth = imageWidht;
-//		this.imageHeight = imageHeight;
-//		this.cameraMode = cameraMode;
-//
-//		canvasWidth = 0;
-//		canvasHeight = 0;
-//
-//		computeInverse();
-//		updateValues();
-//	}
 
 	public Camera(Game game, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
-				  int imageWidth, int imageHeight) {
+				  int imageWidth, int imageHeight, String identifier) {
+		super(game, null, identifier);
 		this.game = game;
 		this.filmApertureWidth = 0;
 		this.filmApertureHeight = 0;
 		this.focalLength = 0;
 		this.nearClippingPlane = nearClippingPlane;
 		this.farClippingPlane = farClippingPlane;
-//		this.imageWidth = imageWidth;
-//		this.imageHeight = imageHeight;
 		this.fovX = fovX;
 		this.pos = pos;
 		canvasWidth = 0;
@@ -105,19 +80,9 @@ public class Camera {
 		if(pos == null) {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
-		
-		updateValues();
-	}
 
-	public void tick(float timeDelta) {
-		velocity = velocity.add(acceleration.scalarMul(timeDelta));
-		var detlaV = velocity.scalarMul(timeDelta);
-		pos = pos.add(detlaV);
-		
-		if(shouldUpdateValues) {
-			updateValues();
-			this.setShouldUpdateValues(false);
-		}
+		finalComponentUpdate = new DefaultCameraUpdate();
+		updateValues();
 	}
 
 	public void updateValues() {
@@ -136,8 +101,8 @@ public class Camera {
 			else if(game.getRenderingEngine().projectionMode == ProjectionMode.ORTHO) {
 				
 				Vector[] bounds = Utils.getWorldBoundingBox(new ArrayList<>(game.scene.getModels()));
-				Vector minCam = (getWorldToCam().matMul(bounds[0].append(1))).toVector();
-				Vector maxCam = (getWorldToCam().matMul(bounds[1].append(1))).toVector();
+				Vector minCam = (getWorldToObject().matMul(bounds[0].append(1))).toVector();
+				Vector maxCam = (getWorldToObject().matMul(bounds[1].append(1))).toVector();
 
 				float maxX = Math.max(Math.abs(minCam.get(0)), Math.abs(maxCam.get(0)));
 				float maxY = Math.max(Math.abs(minCam.get(1)), Math.abs(maxCam.get(1)));
@@ -274,50 +239,6 @@ public class Camera {
 		return perspectiveProjectionMatrix;
 	}
 
-	public Matrix getOrthographicProjectionMatrix() {
-		return orthographicProjectionMatrix;
-	}
-
-	public int getCameraMode() {
-		return cameraMode;
-	}
-
-	public void setCameraMode(int cameraMode) {
-		this.cameraMode = cameraMode;
-	}
-
-	public int getFitMode() {
-		return fitMode;
-	}
-
-	public void setFitMode(int fitMode) {
-		this.fitMode = fitMode;
-	}
-
-	public int getFILL() {
-		return FILL;
-	}
-
-	public int getOVERSCAN() {
-		return OVERSCAN;
-	}
-
-	public float getFilmAspectRatio() {
-		return filmAspectRatio;
-	}
-
-	public float getDeviceAspectRatio() {
-		return imageAspectRatio;
-	}
-
-	public float getxScale() {
-		return xScale;
-	}
-
-	public float getyScale() {
-		return yScale;
-	}
-
 	public int getImageWidth() {
 		return renderResolution.geti(0);
 	}
@@ -326,24 +247,12 @@ public class Camera {
 		return renderResolution.geti(1);
 	}
 
-	public boolean isShouldUpdateValues() {
-		return shouldUpdateValues;
-	}
-
 	public void setShouldUpdateValues(boolean shouldUpdateValues) {
 		this.shouldUpdateValues = shouldUpdateValues;
 	}
 
 	public float getFovX() {
 		return fovX;
-	}
-
-	public void setFovX(float fovX) {
-		this.fovX = fovX;
-	}
-
-	public float getFovY() {
-		return fovY;
 	}
 
 	public float getRight() {
@@ -370,67 +279,13 @@ public class Camera {
 		this.orientation = orientation;
 	}
 
-	public float getFilmApertureWidth() {
-		return filmApertureWidth;
-	}
-
-	public void setFilmApertureWidth(float filmApertureWidth) {
-		this.filmApertureWidth = filmApertureWidth;
-	}
-
-	public float getFilmApertureHeight() {
-		return filmApertureHeight;
-	}
-
-	public void setFilmApertureHeight(float filmApertureHeight) {
-		this.filmApertureHeight = filmApertureHeight;
-	}
-
-	public float getFocalLength() {
-		return focalLength;
-	}
-
-	public void setFocalLength(float focalLength) {
-		this.focalLength = focalLength;
-	}
-
 	public float getNearClippingPlane() {
 		return nearClippingPlane;
 	}
 
-	public void setNearClippingPlane(float nearClippingPlane) {
-		this.nearClippingPlane = nearClippingPlane;
-	}
 
 	public float getFarClippingPlane() {
 		return farClippingPlane;
-	}
-
-	public void setFarClippingPlane(float farClippingPlane) {
-		this.farClippingPlane = farClippingPlane;
-	}
-
-	public float getCanvasWidth() {
-		return canvasWidth;
-	}
-
-	public float getCanvasHeight() {
-		return canvasHeight;
-	}
-
-	public Matrix getCamToWorld() {
-		Matrix m = orientation.getRotationMatrix();
-		m = m.addColumn(pos);
-		m = m.addRow(new Vector(new float[] {0,0,0,1}));
-		return m;
-	}
-
-	public Matrix getWorldToCam() {
-		Matrix m_ = orientation.getInverse().getRotationMatrix();
-		Vector pos_ = (m_.matMul(pos).toVector()).scalarMul(-1);
-		Matrix res = m_.addColumn(pos_);
-		res = res.addRow(new Vector(new float[]{0,0,0,1}));
-		return res;
 	}
 
 	public Vector getPos() {

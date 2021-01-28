@@ -5,7 +5,7 @@ import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
 import Kurama.camera.Camera;
 import Kurama.game.Game;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.*;
 import Kurama.shader.ShaderProgram;
@@ -175,7 +175,7 @@ public class ParticleShaderBlock extends RenderPipeline {
 
         particleShader.bind();
 
-        Matrix worldToCam = camera.getWorldToCam();
+        Matrix worldToCam = camera.getWorldToObject();
         Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
         particleShader.setUniform("projectionMatrix", projectionMatrix);
 

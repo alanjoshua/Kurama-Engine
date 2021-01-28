@@ -1,7 +1,7 @@
 package Kurama.particle;
 
 import Kurama.Math.Vector;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 
 public class FlowParticleGenerator extends ParticleGenerator {
 

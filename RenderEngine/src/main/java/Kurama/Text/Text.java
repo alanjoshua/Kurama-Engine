@@ -8,7 +8,7 @@ import Kurama.Math.Vector;
 import Kurama.font.FontTexture;
 import Kurama.game.Game;
 import Kurama.geometry.MeshBuilder;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.utils.Utils;
 
 import java.util.ArrayList;

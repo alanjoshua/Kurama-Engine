@@ -6,7 +6,7 @@ import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 
 import java.util.List;
 
@@ -21,33 +21,33 @@ public class DirectionalLight extends Model {
     public boolean doesProduceShadow = false;
 
     public DirectionalLight(Game game,Vector color, Quaternion direction, float intensity, ShadowMap shadowMap,
-                            Mesh mesh, Mesh boundingBox,  Matrix shadowProjectionMatrix, String identifier) {
+                            Mesh mesh,  Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, mesh, identifier);
         this.color = color;
         this.orientation = direction;
         this.intensity = intensity;
         this.shadowMap = shadowMap;
-        this.boundingbox = boundingBox;
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
     public DirectionalLight(Game game, Vector color, Quaternion direction, float intensity, ShadowMap shadowMap,
-                            List<Mesh> meshes, Mesh boundingBox, Matrix shadowProjectionMatrix, String identifier) {
+                            List<Mesh> meshes, Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, meshes, identifier);
         this.color = color;
         this.orientation = direction;
         this.intensity = intensity;
         this.shadowMap = shadowMap;
-        this.boundingbox = boundingBox;
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
     public DirectionalLight(DirectionalLight light) {
         this(light.game,new Vector(light.color), new Quaternion(light.orientation), light.intensity, light.shadowMap,
-                light.meshes, light.boundingbox,  light.shadowProjectionMatrix, light.identifier);
+                light.meshes,  light.shadowProjectionMatrix, light.identifier);
         this.doesProduceShadow = light.doesProduceShadow;
         this.shouldSelfCastShadow = light.shouldSelfCastShadow;
+        this.objectToWorldMatrix = light.objectToWorldMatrix;
+        this.worldToObject = light.worldToObject;
     }
 }

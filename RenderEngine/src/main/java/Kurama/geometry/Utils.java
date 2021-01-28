@@ -6,7 +6,7 @@ import Kurama.Mesh.Face;
 import Kurama.Mesh.Vertex;
 import Kurama.game.Game;
 import Kurama.misc_structures.LinkedList.DoublyLinkedList;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 
 import java.util.ArrayList;
 import java.util.List;

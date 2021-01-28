@@ -1,13 +1,14 @@
 package main;
 
+import Kurama.ComponentSystem.animations.Animation;
+import Kurama.ComponentSystem.automations.*;
+import Kurama.ComponentSystem.components.Button;
+import Kurama.ComponentSystem.components.Component;
+import Kurama.ComponentSystem.components.Rectangle;
+import Kurama.ComponentSystem.components.*;
+import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.constraints.*;
 import Kurama.Effects.Fog;
-import Kurama.GUI.animations.Animation;
-import Kurama.GUI.automations.*;
-import Kurama.GUI.components.Button;
-import Kurama.GUI.components.Component;
-import Kurama.GUI.components.Rectangle;
-import Kurama.GUI.components.*;
-import Kurama.GUI.constraints.*;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -33,9 +34,6 @@ import Kurama.inputs.InputLWJGL;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
-import Kurama.model.Model;
-import Kurama.model.modelBehaviour.AttachToCamera;
-import Kurama.model.modelBehaviour.BehaviourTickInput;
 import Kurama.particle.FlowParticleGenerator;
 import Kurama.particle.Particle;
 import Kurama.particle.ParticleGeneratorTickInput;
@@ -46,7 +44,6 @@ import Kurama.scene.Scene;
 import Kurama.shadow.ShadowMap;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
-import ModelBehaviour.SunRevolve;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -97,7 +94,7 @@ public class GameLWJGL extends Game implements Runnable {
         renderingEngine.init(scene);
 
         playerCamera = new Camera(this,null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                Display.defaultWindowedWidth, Display.defaultWindowedHeight);
+                Display.defaultWindowedWidth, Display.defaultWindowedHeight, "playerCam");
         playerCamera.shouldPerformFrustumCulling = true;
 
         glfwSetFramebufferSizeCallback(display.getWindow(), (window, width, height) -> {
@@ -276,7 +273,8 @@ public class GameLWJGL extends Game implements Runnable {
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),
-                sunMesh, null, directionalLightOrthoProjection, "Sun");
+                sunMesh, directionalLightOrthoProjection, "Sun");
+
         scene.renderPipeline.initializeMesh(sunMesh);
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
@@ -284,7 +282,6 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
         directionalLight.setScale(100);
-        directionalLight.addBehavior(new SunRevolve());
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,11 +291,10 @@ public class GameLWJGL extends Game implements Runnable {
 
         Vector lightPos = new Vector(new float[]{0,0,10});
         PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
-        sl_pointLight.attenuation = new PointLight.Attenuation(0f,0.1f, 0f);
+        sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
-                null,
-                (Mesh) null, null, null,"spotlight 1");
+                null, (Mesh) null, null,"spotlight 1");
 
 //        spotLight.generateShadowProjectionMatrix(0.1f , 100, 1, 1);
         spotLight.shadowProjectionMatrix = Matrix.getIdentityMatrix(4);
@@ -306,16 +302,19 @@ public class GameLWJGL extends Game implements Runnable {
 
 //        spotLight.addMesh(scene.loadMesh("res/torch/test/hand_light.obj", "torchlight_mesh", hints));
 //        spotLight.meshes.add(scene.loadMesh("res/apricot/Apricot_02_hi_poly.obj", "apricot", hints));
-        spotLight.setScale(0.05f);
-        spotLight.setPos(new Vector(new float[]{20,45f,12f}));
-        spotLight.shouldRender = false;
+        spotLight.setScale(1f);
+        spotLight.setPos(new Vector(new float[]{0,0f,5f}));
+        spotLight.shouldRender = true;
 
 //        spotLight.setOrientation(Quaternion.getAxisAsQuat(new Vector(new float[]{1, 0, 0}), -30).
 //                multiply(Quaternion.getAxisAsQuat(new Vector(0, 0, 1), 90)));
 
         spotLight.shouldSelfCastShadow = false;
-        spotLight.addBehavior(new AttachToCamera(playerCamera));
         scene.addSplotLight(spotLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+
+        playerCamera.addChild(spotLight);
+        spotLight.shouldBeConsideredForFrustumCulling = false;
+        spotLight.parent = playerCamera;
 
 //     -------------------------------------------------------------------------------------------------------------------
 
@@ -355,7 +354,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         for(int i = 0;i < 30;i++) {
             for(int y = 0;y < 20;y++) {
-                Vector pos = bounds[0].removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
+                Vector pos = new Vector(0,0,0).removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
                 cube.setScale(boxScale,boxScale,1);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
@@ -496,27 +495,21 @@ public class GameLWJGL extends Game implements Runnable {
         scene.cleanUp();
     }
 
-    public void tickGUI() {
-
-    }
-
     public void tick() {
 
-        tickGUI();
         masterComponent.tick(null, masterComponent.input, timeDelta);
-        scene.cameras.forEach(c -> c.tick(timeDelta));
+        scene.cameras.forEach(c -> c.tick(null, input, timeDelta));
+
+//        System.out.println(((SceneComponent)playerCamera.children.get(0)).isInsideFrustum);
 
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
         }
 
         if(isGameRunning) {
-            BehaviourTickInput params = new BehaviourTickInput(timeDelta, scene);
-            scene.modelID_model_map.values().forEach(m -> m.tick(params));
-
+            scene.modelID_model_map.values().forEach(m -> m.tick(null, input, timeDelta));
             ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
             scene.particleGenerators.forEach(gen -> gen.tick(param));
-
             scene.soundManager.tick(playerCamera, timeDelta);
         }
 

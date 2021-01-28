@@ -3,7 +3,7 @@ package Kurama.renderingEngine.defaultRenderPipeline;
 import Kurama.Math.Matrix;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
 import Kurama.shader.ShaderProgram;

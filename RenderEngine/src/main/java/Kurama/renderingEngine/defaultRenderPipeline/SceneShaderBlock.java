@@ -10,8 +10,8 @@ import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
-import Kurama.model.AnimatedModel;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.AnimatedModel;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.*;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
@@ -145,7 +145,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         ShaderProgram sceneShaderProgram = scene_shader;
         sceneShaderProgram.bind();
 
-        Matrix worldToCam = camera.getWorldToCam();
+        Matrix worldToCam = camera.getWorldToObject();
         Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
 
         sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);

@@ -1,11 +1,11 @@
 package main;
 
-import Kurama.GUI.automations.Automation;
-import Kurama.GUI.components.Component;
+import Kurama.ComponentSystem.automations.Automation;
+import Kurama.ComponentSystem.components.Component;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.inputs.Input;
-import Kurama.model.AnimatedModel;
+import Kurama.ComponentSystem.components.model.AnimatedModel;
 import Kurama.utils.Logger;
 
 public class SceneInputHandling implements Automation {

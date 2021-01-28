@@ -71,10 +71,10 @@ public class FontTexture {
 
         //Set texture coordinates
         for(var charInfo: charMap.values()) {
-            charInfo.texBL = new Vector(new float[]{(float)charInfo.startX / (float)width,0});
-            charInfo.texUL = new Vector(new float[]{(float)charInfo.startX / (float)width,1});
-            charInfo.texBR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,0});
-            charInfo.texUR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,1});
+            charInfo.texBL = new Vector(new float[]{(float)charInfo.startX / (float)width, 0, 0, 0});
+            charInfo.texUL = new Vector(new float[]{(float)charInfo.startX / (float)width,1, 0, 0});
+            charInfo.texBR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,0, 0, 0});
+            charInfo.texUR = new Vector(new float[]{((float)charInfo.startX + charInfo.width) / (float)width,1, 0, 0});
         }
 
         g2D.dispose();

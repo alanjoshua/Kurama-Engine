@@ -3,9 +3,9 @@ package ModelBehaviour;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.lighting.DirectionalLight;
-import Kurama.model.Model;
-import Kurama.model.modelBehaviour.Behaviour;
-import Kurama.model.modelBehaviour.BehaviourTickInput;
+import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.components.model.modelBehaviour.Behaviour;
+import Kurama.ComponentSystem.components.model.modelBehaviour.BehaviourTickInput;
 import Kurama.scene.Scene;
 
 public class SunRevolve extends Behaviour {

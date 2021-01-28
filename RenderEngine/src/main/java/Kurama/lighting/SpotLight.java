@@ -6,7 +6,7 @@ import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 
 import java.util.List;
 
@@ -21,36 +21,36 @@ public class SpotLight extends Model {
     public boolean doesProduceShadow = false;
 
     public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
-                     Mesh mesh, Mesh boundingBox, Matrix shadowProjectionMatrix, String identifier) {
+                     Mesh mesh, Matrix shadowProjectionMatrix, String identifier) {
         super(game,mesh, identifier);
         this.pointLight = pointLight;
         this.angle = angle;
         this.cutOff = (float)Math.cos(Math.toRadians(angle));
         this.shadowMap = shadowMap;
         this.orientation = orientation;
-        this.boundingbox = boundingBox;
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
     public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
-                     List<Mesh> meshes, Mesh boundingBox, Matrix shadowProjectionMatrix, String identifier) {
+                     List<Mesh> meshes, Matrix shadowProjectionMatrix, String identifier) {
         super(game, meshes, identifier);
         this.pointLight = pointLight;
         this.angle = angle;
         this.cutOff = (float)Math.cos(Math.toRadians(angle));
         this.shadowMap = shadowMap;
         this.orientation = orientation;
-        this.boundingbox = boundingBox;
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
     public SpotLight(SpotLight spotLight) {
         this(spotLight.game,new PointLight(spotLight.pointLight),spotLight.orientation,spotLight.angle,
-                spotLight.shadowMap,spotLight.meshes, spotLight.boundingbox, spotLight.shadowProjectionMatrix,
+                spotLight.shadowMap,spotLight.meshes, spotLight.shadowProjectionMatrix,
                 spotLight.identifier);
         cutOff = spotLight.cutOff;
         this.doesProduceShadow = spotLight.doesProduceShadow;
         this.shouldSelfCastShadow = spotLight.shouldSelfCastShadow;
+        this.objectToWorldMatrix = spotLight.objectToWorldMatrix;
+        this.worldToObject = spotLight.worldToObject;
     }
 
     public void setPos(Vector newPos) {

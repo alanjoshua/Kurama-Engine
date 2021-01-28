@@ -1,6 +1,6 @@
 package Kurama.Math;
 
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 
 import java.util.ArrayList;
 import java.util.List;

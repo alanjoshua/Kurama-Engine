@@ -12,7 +12,7 @@ import Kurama.geometry.MD5.AnimationFrame;
 import Kurama.geometry.MD5.Joint;
 import Kurama.geometry.MD5.MD5Utils;
 import Kurama.geometry.MeshBuilderHints;
-import Kurama.model.AnimatedModel;
+import Kurama.ComponentSystem.components.model.AnimatedModel;
 import Kurama.utils.Utils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;

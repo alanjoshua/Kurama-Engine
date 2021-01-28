@@ -6,7 +6,7 @@ import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.geometry.MD5.MD5Utils;
-import Kurama.model.Model;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.*;
 import Kurama.scene.Scene;
@@ -138,7 +138,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             if(camera.isActive) {
 
                 if(camera.shouldPerformFrustumCulling) {
-                    frustumIntersection.set(camera.getPerspectiveProjectionMatrix().matMul(camera.getWorldToCam()));
+                    frustumIntersection.set(camera.getPerspectiveProjectionMatrix().matMul(camera.getWorldToObject()));
                     frustumCullModels(input.scene.shaderblock_mesh_model_map.get(sceneShaderBlockID), input.scene);
                     frustumCullParticles(input.scene.particleGenerators);
                 }
@@ -172,7 +172,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             for (var modelID : mesh_model_map.get(meshID).keySet()) {
                 var model = scene.modelID_model_map.get(modelID);
 
-                if(model.shouldRender) {
+                if(model.shouldRender && model.shouldBeConsideredForFrustumCulling) {
                     var radius = model.scale.getNorm() * meshBoundingRadius;
                     model.isInsideFrustum = frustumIntersection.testSphere(model.pos, radius);
                 }
