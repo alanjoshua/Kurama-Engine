@@ -174,7 +174,9 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 if(model.shouldRender && model.shouldBeConsideredForFrustumCulling) {
                     var radius = model.scale.getNorm() * meshBoundingRadius;
-                    model.isInsideFrustum = frustumIntersection.testSphere(model.pos, radius);
+
+                    model.isInsideFrustum = frustumIntersection.testSphere(model.getObjectToWorldMatrix().getColumn(3).
+                            removeDimensionFromVec(3), radius);
                 }
 
             }
@@ -184,7 +186,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public void frustumCullParticles(List<ParticleGenerator> generators) {
         for(var gen: generators) {
             for(var part: gen.particles) {
-                part.isInsideFrustum = frustumIntersection.testPoint(part.pos);
+                part.isInsideFrustum = frustumIntersection.testPoint(part.getObjectToWorldMatrix().getColumn(3).
+                        removeDimensionFromVec(3));
             }
         }
     }
@@ -194,9 +197,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         shadowBlock.cleanUp();
         sceneShaderBlock.cleanUp();
         skyboxShaderBlock.cleanUp();
-//        hudShaderBlock.cleanUp();
         particleShaderBlock.cleanUp();
-//        fullScreenQuadBlock.cleanUp();
     }
 
     @Override

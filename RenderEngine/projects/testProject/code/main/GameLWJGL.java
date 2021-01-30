@@ -278,11 +278,41 @@ public class GameLWJGL extends Game implements Runnable {
         scene.renderPipeline.initializeMesh(sunMesh);
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
-        directionalLight.lightPosScale = 500;
         directionalLight.shouldSelfCastShadow = false;
-        directionalLight.doesProduceShadow = true;
+        directionalLight.doesProduceShadow = false;
         directionalLight.setScale(100);
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
+
+        directionalLight.addAutomation((current, input, timeDelta) -> {
+            Scene scene = current.game.scene;
+
+            float lightPosScale = 500;
+
+            DirectionalLight light = (DirectionalLight) current;
+            light.setPos(light.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-lightPosScale));
+
+            float delta = (10f * timeDelta);
+            float currentPitch = light.getOrientation().getPitchYawRoll().get(0);
+
+            float lightAngle = currentPitch + delta;
+
+            if (lightAngle > 180 || lightAngle < 0) {
+                light.intensity = 0;
+
+            } else if (lightAngle <= 10 || lightAngle >= 170) {
+                float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
+                light.intensity = factor;
+
+            } else {
+                light.intensity = 1;
+                light.color = new Vector(3, 1);
+            }
+
+            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
+            light.setOrientation(rot.multiply(light.getOrientation()));
+
+            scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, light.intensity);
+        });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -290,7 +320,7 @@ public class GameLWJGL extends Game implements Runnable {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         Vector lightPos = new Vector(new float[]{0,0,10});
-        PointLight sl_pointLight = new PointLight(new Vector(new float[]{1, 1, 1}), lightPos, 1f);
+        PointLight sl_pointLight = new PointLight(this, null, "pointlight", new Vector(new float[]{1, 1, 1}), lightPos, 1f);
         sl_pointLight.attenuation = new PointLight.Attenuation(0f,0f, 0f);
         Quaternion coneOrientation = Quaternion.getQuaternionFromEuler(0,0,0);
         SpotLight spotLight = new SpotLight(this,sl_pointLight, coneOrientation, 45,
@@ -436,15 +466,17 @@ public class GameLWJGL extends Game implements Runnable {
         Texture partTex = new Texture("res/misc/explosion2.png", 4,5);
         partMesh.materials.get(0).texture = partTex;
 
-        Particle particle = new Particle(this, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
+        Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
         particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(particle, 1000, 0.01f, "generator");
+        var particleGenerator = new FlowParticleGenerator(this, null, particle, 1000, 0.01f, "generator");
         particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
         particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
         particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
+        particleGenerator.addConstraint(new AttachComponentPos(madara_model));
+        particleGenerator.addAutomation((current, input, timeDelta) -> current.pos = current.pos.add(new Vector(-0.5f,9f,0)));
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
         Logger.log("loading assimp model");
@@ -500,8 +532,6 @@ public class GameLWJGL extends Game implements Runnable {
         masterComponent.tick(null, masterComponent.input, timeDelta);
         scene.cameras.forEach(c -> c.tick(null, input, timeDelta));
 
-//        System.out.println(((SceneComponent)playerCamera.children.get(0)).isInsideFrustum);
-
         if(glfwWindowShouldClose(display.getWindow())) {
             programRunning = false;
         }
@@ -509,7 +539,7 @@ public class GameLWJGL extends Game implements Runnable {
         if(isGameRunning) {
             scene.modelID_model_map.values().forEach(m -> m.tick(null, input, timeDelta));
             ParticleGeneratorTickInput param = new ParticleGeneratorTickInput(timeDelta);
-            scene.particleGenerators.forEach(gen -> gen.tick(param));
+            scene.particleGenerators.forEach(gen -> gen.tick(null, input, timeDelta));
             scene.soundManager.tick(playerCamera, timeDelta);
         }
 

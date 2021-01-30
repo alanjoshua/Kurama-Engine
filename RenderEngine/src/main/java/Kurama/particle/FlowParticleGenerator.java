@@ -1,7 +1,9 @@
 package Kurama.particle;
 
-import Kurama.Math.Vector;
+import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.model.Model;
+import Kurama.Math.Vector;
+import Kurama.game.Game;
 
 public class FlowParticleGenerator extends ParticleGenerator {
 
@@ -15,43 +17,45 @@ public class FlowParticleGenerator extends ParticleGenerator {
     public Vector scaleRange = new Vector(0,0,0);
     public float animUpdateRange = 0;
 
-    public FlowParticleGenerator(Particle baseParticle, int maxParticles, float creationPeriodSeconds, String id) {
-        super(id);
+    public FlowParticleGenerator(Game game, Component parent, Particle baseParticle, int maxParticles, float creationPeriodSeconds, String id) {
+        super(game, parent, id);
+
         this.baseParticle = baseParticle;
+        this.baseParticle.parent = this;
+        this.baseParticle.pos = new Vector(0,0,0);  // makes sure that the base particle is at the particle generator's position
+
         this.maxParticles = maxParticles;
         this.creationPeriodSeconds = creationPeriodSeconds;
+
+        // update particles. This is run once every frame
+        this.addAutomation((current, input, timeDelta) -> {
+            long now = System.nanoTime();
+            if(lastCreationTime == 0){
+                lastCreationTime = now;
+            }
+
+            var it = particles.iterator();
+            while(it.hasNext()) {
+                var particle = (Particle)it.next();
+                if(particle.updateTimeToLive(timeDelta) < 0) {
+                    it.remove();
+                }
+                else {
+//                    particle.tick(timeDelta);
+                }
+            }
+
+            if((now - lastCreationTime)/1000000000.0 >= this.creationPeriodSeconds && children.size() < maxParticles) {
+                createParticle();
+                this.lastCreationTime = now;
+            }
+        });
     }
 
     @Override
     public void cleanup() {
         for(Model p: particles) {
             p.cleanUp();
-        }
-    }
-
-    @Override
-    public void tick(ParticleGeneratorTickInput params) {
-        float timeDelta = params.timeDelta;  //Seconds
-
-        long now = System.nanoTime();
-        if(lastCreationTime == 0){
-            lastCreationTime = now;
-        }
-
-        var it = particles.iterator();
-        while(it.hasNext()) {
-            var particle = (Particle)it.next();
-            if(particle.updateTimeToLive(timeDelta) < 0) {
-                it.remove();
-            }
-            else {
-                particle.tick(timeDelta);
-            }
-        }
-
-        if((now - lastCreationTime)/1000000000.0 >= this.creationPeriodSeconds && particles.size() < maxParticles) {
-            createParticle();
-            this.lastCreationTime = now;
         }
     }
 

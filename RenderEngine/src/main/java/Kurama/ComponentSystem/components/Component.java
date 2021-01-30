@@ -158,6 +158,10 @@ public abstract class Component {
         return this;
     }
 
+    public Vector getTranslatedPos() {
+        return objectToWorldMatrix.getColumn(3).removeDimensionFromVec(3);
+    }
+
     public Component setShouldTriggerOnClick(boolean isClickable) {
         this.shouldTriggerOnClick = isClickable;
         return this;

@@ -16,8 +16,10 @@ public class SunRevolve extends Behaviour {
         Scene scene = params.scene;
         float timeDelta = params.timeDelta;
 
+        float lightPosScale = 500;
+
         DirectionalLight directionalLight = (DirectionalLight) m;
-        m.setPos(m.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-directionalLight.lightPosScale));
+        m.setPos(m.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-lightPosScale));
 
         float delta = (10f * timeDelta);
         float currentPitch = directionalLight.getOrientation().getPitchYawRoll().get(0);
@@ -35,7 +37,6 @@ public class SunRevolve extends Behaviour {
             directionalLight.intensity = 1;
             directionalLight.color = new Vector(3, 1);
         }
-        double angRad = Math.toRadians(lightAngle);
 
         Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
         directionalLight.setOrientation(rot.multiply(directionalLight.getOrientation()));

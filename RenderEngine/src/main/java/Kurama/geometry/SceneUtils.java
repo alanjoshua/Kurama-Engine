@@ -349,9 +349,9 @@ public class SceneUtils {
                                     break;
                             }
 
-                            PointLight p = new PointLight(color, pos, intensity,
-                                    new PointLight.Attenuation(att_constant, att_linear, att_exp));
-                            scene.addPointlight(p);
+//                            PointLight p = new PointLight(color, pos, intensity,
+//                                    new PointLight.Attenuation(att_constant, att_linear, att_exp));
+//                            scene.addPointlight(p);
                         }
                     }
                 }
@@ -550,21 +550,20 @@ public class SceneUtils {
                             Logger.logError("Directional light scale: "+scale.toString());
                             l.shouldRender = shouldRender;
                             l.doesProduceShadow = shouldCastShadow;
-                            l.lightPosScale = lightPosScale;
                             scene.addDirectionalLight(l, shaderIds);
                         }
 
                         else if(type.equals("SpotLight")) {
                             SpotLight s;
 
-                            s = new SpotLight(game, new PointLight(color, pos, intensity, new PointLight.Attenuation(att_constant, att_linear, att_exp)),
-                                    orientation, angle, new ShadowMap(shadowMapWidth, shadowMapHeight),
-                                    meshes, shadowProjectMatrix, id);
-                            s.setPos(pos);
-                            s.setScale(scale);
-                            s.shouldRender = shouldRender;
-                            s.shouldSelfCastShadow = shouldCastShadow;
-                            scene.addSplotLight(s, shaderIds);
+//                            s = new SpotLight(game, new PointLight(color, pos, intensity, new PointLight.Attenuation(att_constant, att_linear, att_exp)),
+//                                    orientation, angle, new ShadowMap(shadowMapWidth, shadowMapHeight),
+//                                    meshes, shadowProjectMatrix, id);
+//                            s.setPos(pos);
+//                            s.setScale(scale);
+//                            s.shouldRender = shouldRender;
+//                            s.shouldSelfCastShadow = shouldCastShadow;
+//                            scene.addSplotLight(s, shaderIds);
                         }
 
                         else if(type.equals("Text")) {  // Fix this
@@ -1672,7 +1671,7 @@ public class SceneUtils {
                     DirectionalLight l = (DirectionalLight)model;
                     writer.write("color:"+l.color.toString()+"\n");
                     writer.write("intensity:"+l.intensity+"\n");
-                    writer.write("lightPosScale:"+l.lightPosScale+"\n");
+//                    writer.write("lightPosScale:"+l.lightPosScale+"\n");
                     writer.write("shadowMap_width:"+l.shadowMap.shadowMapWidth+"\n");
                     writer.write("shadowMap_height:"+l.shadowMap.shadowMapHeight+"\n");
                     writer.write("shadowProjectionMatrix:"+l.shadowProjectionMatrix.toString()+"\n");

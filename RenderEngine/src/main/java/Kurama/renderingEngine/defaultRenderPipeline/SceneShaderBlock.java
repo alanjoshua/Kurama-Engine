@@ -332,7 +332,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         pointLightsRes = pointLights.stream()
                 .map(l -> {
                     PointLight currLight = new PointLight(l);
-                    currLight.pos = worldToCam.matMul(currLight.pos.append(1)).getColumn(0).removeDimensionFromVec(3);
+                    currLight.pos = worldToCam.matMul(currLight.getTranslatedPos().append(1)).getColumn(0).removeDimensionFromVec(3);
                     return currLight;
                 })
                 .collect(Collectors.toList());
@@ -341,8 +341,8 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
                 .map(l -> {
                     DirectionalLight currDirectionalLight = new DirectionalLight(l);
 
-                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getOrientation().
-                            getRotationMatrix().getColumn(2).scalarMul(-1).append(0)).
+                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getObjectToWorldMatrix().
+                            getSubMatrix(0,0,2,2).getColumn(2).scalarMul(-1).append(0)).
                             getColumn(0).removeDimensionFromVec(3);
 
                     return currDirectionalLight;
@@ -354,10 +354,11 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
                     SpotLight currSpotLight = new SpotLight(l);
 
                     //Vector dir = new Vector(currSpotLight.coneDirection).addDimensionToVec(0);
-                    currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getOrientation().getRotationMatrix().
+                    currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getObjectToWorldMatrix().
+                                    getSubMatrix(0,0,2,2).
                             getColumn(2).scalarMul(-1).append(0)).getColumn(0).removeDimensionFromVec(3);
 
-                    Vector spotLightPos = currSpotLight.pointLight.pos;
+                    Vector spotLightPos = currSpotLight.pointLight.getTranslatedPos();
                     Vector auxSpot = new Vector(spotLightPos).append(1);
                     currSpotLight.setPos(worldToCam.matMul(auxSpot).getColumn(0).removeDimensionFromVec(3));
                     return currSpotLight;

@@ -15,7 +15,6 @@ public class DirectionalLight extends Model {
     public Vector color;
     public float intensity;
     public Vector direction_Vector;
-    public float lightPosScale = 100;
     public ShadowMap shadowMap;
     public Matrix shadowProjectionMatrix;
     public boolean doesProduceShadow = false;

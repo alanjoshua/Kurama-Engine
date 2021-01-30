@@ -1,13 +1,14 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
-import Kurama.camera.Camera;
 import Kurama.game.Game;
-import Kurama.ComponentSystem.components.model.Model;
 import Kurama.particle.ParticleGenerator;
-import Kurama.renderingEngine.*;
+import Kurama.renderingEngine.CurrentCameraBlockData;
+import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.RenderPipelineData;
 import Kurama.shader.ShaderProgram;
 
 import java.util.*;
@@ -83,7 +84,7 @@ public class ParticleShaderBlock extends RenderPipeline {
         ((DefaultRenderPipeline)parentPipeline).renderInstanced(inst_mesh, chunk.size());
     }
 
-    public void renderGenerator(ParticleGenerator generator, Camera camera, Matrix worldToCam, boolean curShouldCull, int currCull) {
+    public void renderGenerator(ParticleGenerator generator, Matrix worldToCam, boolean curShouldCull, int currCull) {
 
         var baseParticle = generator.baseParticle;
 
@@ -94,9 +95,6 @@ public class ParticleShaderBlock extends RenderPipeline {
                 var objectToCam = worldToCam.matMul(p.getObjectToWorldMatrix());
                 var trans = objectToCam.matMul(p.pos.append(1)).toVector();
                 float dist = -trans.get(2);
-//                float dist = (float) Math.sqrt(Math.pow(camera.getPos().get(0) - p.pos.get(0), 2) +
-//                        Math.pow(camera.getPos().get(1) - p.pos.get(1), 2) +
-//                        Math.pow(camera.getPos().get(2) - p.pos.get(2), 2));
                 var store = new ArrayList();
                 store.add(p);
                 store.add(objectToCam);
@@ -181,7 +179,7 @@ public class ParticleShaderBlock extends RenderPipeline {
 
         for (var generatorID : input.scene.shaderBlockID_particelGenID_map.get(pipelineID)) {
             var generator = input.scene.particleGenID_generator_map.get(generatorID);
-            renderGenerator(generator, camera, worldToCam, curShouldCull, currCull);
+            renderGenerator(generator, worldToCam, curShouldCull, currCull);
         }
 
         particleShader.unbind();

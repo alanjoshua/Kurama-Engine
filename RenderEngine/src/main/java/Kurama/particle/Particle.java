@@ -1,5 +1,6 @@
 package Kurama.particle;
 
+import Kurama.ComponentSystem.components.Component;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -15,7 +16,7 @@ public class Particle extends Model {
     public float currentAnimationTime = 0;
     public int animationFrames;
 
-    public Particle(Game game, Mesh mesh, Vector velocity, Vector acceleration, float timeToLive, float updateTexture,
+    public Particle(Game game, Component parent, Mesh mesh, Vector velocity, Vector acceleration, float timeToLive, float updateTexture,
                     String identifier) {
         super(game, mesh, identifier);
 
@@ -24,6 +25,7 @@ public class Particle extends Model {
                     " has multiple materials. The particle shader will ignore the other materials.");
         }
 
+        this.parent = parent;
         this.velocity = velocity;
         this.acceleration = acceleration;
         this.timeToLive = timeToLive;
@@ -34,6 +36,7 @@ public class Particle extends Model {
     public Particle(Particle p) {
         super(p.game, p.meshes, Utils.getUniqueID());
         this.pos = new Vector(p.pos);
+        this.parent = p.parent;
         this.orientation = new Quaternion(p.orientation);
         this.velocity = new Vector(p.velocity);
         this.acceleration = new Vector(p.acceleration);
@@ -62,12 +65,12 @@ public class Particle extends Model {
         return this.timeToLive;
     }
 
-    public void tick(float timeDelta) {
+//    public void tick(float timeDelta) {
 //        Logger.log("ticking");
-        velocity = velocity.add(acceleration.scalarMul(timeDelta));
-        var detlaV = velocity.scalarMul(timeDelta);
-        pos = pos.add(detlaV);
+//        velocity = velocity.add(acceleration.scalarMul(timeDelta));
+//        var detlaV = velocity.scalarMul(timeDelta);
+//        pos = pos.add(detlaV);
 //        Logger.log("delta V: "+detlaV.toString());
-    }
+//    }
 
 }

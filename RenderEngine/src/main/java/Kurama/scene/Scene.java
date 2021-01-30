@@ -97,7 +97,7 @@ public class Scene {
     }
 
     public void addParticleGenerator(ParticleGenerator generator, List<String> shaderID) {
-        var id = generator.ID;
+        var id = generator.identifier;
 
         if (id == null) {
             id = Utils.getUniqueID();
@@ -107,13 +107,13 @@ public class Scene {
             id = Utils.getUniqueID();
         }
 
-        generator.ID = id;
+        generator.identifier = id;
         particleGenID_generator_map.put(id, generator);
         particleGenerators.add(generator);
         particleGenID_shaderID_map.put(id, shaderID);
         for(var shaID: shaderID) {
             shaderBlockID_particelGenID_map.putIfAbsent(shaID, new ArrayList<>());
-            shaderBlockID_particelGenID_map.get(shaID).add(generator.ID);
+            shaderBlockID_particelGenID_map.get(shaID).add(generator.identifier);
         }
 
     }
