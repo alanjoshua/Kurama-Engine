@@ -35,16 +35,16 @@ public class SceneInputHandling implements Automation {
         }
 
         if (input.keyDownOnce(input.F)) {
-            if (game.targetFPS == game.masterComponent.getRefreshRate()) {
+            if (game.targetFPS == game.rootGuiComponent.getRefreshRate()) {
                 game.targetFPS = 10000;
             } else {
-                game.targetFPS = game.masterComponent.getRefreshRate();
+                game.targetFPS = game.rootGuiComponent.getRefreshRate();
             }
             Logger.log("Changed target resolution" + game.targetFPS);
         }
 
         if (input.keyDownOnce(input.V)) {
-            game.masterComponent.toggleWindowModes();
+            game.rootGuiComponent.toggleWindowModes();
         }
 
         if(input.keyDownOnce(input.B)) {

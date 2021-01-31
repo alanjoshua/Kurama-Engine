@@ -102,8 +102,8 @@ public class GameLWJGL extends Game implements Runnable {
 //        });
         scene.cameras.add(playerCamera);
 
-        masterComponent = new MasterWindow(this, display, input,"masterWindow");
-        masterComponent
+        rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
+        rootGuiComponent
                 .setColor(new Vector(1,0,0,0.5f))
                 .setContainerVisibility(false);
 //                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
@@ -111,7 +111,7 @@ public class GameLWJGL extends Game implements Runnable {
 //                .addAutomation(new ResizeCameraRenderResolution(playerCamera));
 
         var leftDivide =
-                new Rectangle(this, masterComponent, "leftHalf")
+                new Rectangle(this, rootGuiComponent, "leftHalf")
                 .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                 .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
@@ -121,29 +121,29 @@ public class GameLWJGL extends Game implements Runnable {
                 .setKeyInputFocused(true)
                 .addOnClickAction(new GrabKeyboardFocus())
                 .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
-                    masterComponent.input.disableCursor();
+                    rootGuiComponent.input.disableCursor();
                     isGameRunning = true;
                 })
                 .addOnKeyInputFocusedAction(new SceneInputHandling(this))
                 .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
-                    masterComponent.input.enableCursor();
+                    rootGuiComponent.input.enableCursor();
                     isGameRunning = false;
                 });
-        masterComponent.children.add(leftDivide);
+        rootGuiComponent.children.add(leftDivide);
 
         fpsText =
-            (Text)new Text(this, masterComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
+            (Text)new Text(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
             .addConstraint(new PosXYTopLeftAttachPix(20, 20))
             .addAutomation(new DisplayFPS(this, "fps: "))
             .setOverlayColor(new Vector(1,0,0,0.5f));
-        masterComponent.children.add(fpsText);
+        rootGuiComponent.children.add(fpsText);
 
         var rightDivide =
-                new Rectangle(this, masterComponent, "rightHalf")
+                new Rectangle(this, rootGuiComponent, "rightHalf")
                 .setColor(new Vector(0.5f, 0.4f, 0.9f, 1f))
                 .addConstraint(new WidthHeightPercent(0.25f, 1f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.75f,0));
-        masterComponent.children.add(rightDivide);
+        rootGuiComponent.children.add(rightDivide);
 
         var square1 =
                 new Rectangle(this, rightDivide, "s1")
@@ -287,7 +287,7 @@ public class GameLWJGL extends Game implements Runnable {
 //
 //            scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, light.intensity);
 //        });
-        masterComponent.findComponent("s1").setTexture(directionalLight.shadowMap.depthMap);
+        rootGuiComponent.findComponent("s1").setTexture(directionalLight.shadowMap.depthMap);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
@@ -512,14 +512,14 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void cleanUp() {
-        masterComponent.cleanUp();
+        rootGuiComponent.cleanUp();
         renderingEngine.cleanUp();
         scene.cleanUp();
     }
 
     public void tick() {
 
-        masterComponent.tick(null, masterComponent.input, timeDelta);
+        rootGuiComponent.tick(null, rootGuiComponent.input, timeDelta);
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
@@ -535,7 +535,7 @@ public class GameLWJGL extends Game implements Runnable {
     }
 
     public void render() {
-        ((RenderingEngineGL)renderingEngine).render(scene, masterComponent);
+        ((RenderingEngineGL)renderingEngine).render(scene, rootGuiComponent);
         glfwSwapBuffers(((DisplayLWJGL)display).getWindow());
         glfwPollEvents();
         input.poll();

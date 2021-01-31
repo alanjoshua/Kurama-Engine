@@ -31,7 +31,7 @@ public abstract class Game implements Runnable {
     protected BufferedWriter bw;
 
     public Scene scene;
-    public MasterWindow masterComponent;
+    public MasterWindow rootGuiComponent;
     public RenderingEngine renderingEngine;
     public Display display;
     public Input input;
@@ -187,7 +187,7 @@ public abstract class Game implements Runnable {
 //    public abstract RenderingEngine getRenderingEngine();
 
     public MasterWindow getMasterWindow() {
-        return masterComponent;
+        return rootGuiComponent;
     }
 
 //    public abstract Camera getCamera();
