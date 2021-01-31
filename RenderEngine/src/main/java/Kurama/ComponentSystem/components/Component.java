@@ -59,6 +59,9 @@ public abstract class Component {
 
     public List<Animation> animations = new ArrayList<>();
 
+    public List<Automation> finalAutomationsBeforePosConfirm = new ArrayList<>();
+    public List<Automation> automationsAfterPosConfirm = new ArrayList<>();
+
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
         this.parent = parent;
@@ -67,6 +70,25 @@ public abstract class Component {
 
     public Matrix getOrthoProjection() {
         return Matrix.buildOrtho2D(0, width, height, 0);
+    }
+
+    public Component findComponent(String id) {
+        if(this.identifier.equals(id))
+            return this;
+
+        for(var child: children) {
+            var res = child.findComponent(id);
+            if(res != null)
+                return res;
+        }
+        return null;
+    }
+
+    public Component getRoot() {
+        if(this.parent == null)
+            return this;
+        this.parent.getRoot();
+        return null; // this would theoretically never happen
     }
 
     public Component addOnClickAction(Automation action) {
@@ -262,9 +284,7 @@ public abstract class Component {
     }
 
     // A default component can't have mouse over
-    public boolean isMouseOverComponent(Input input) {
-        return false;
-    }
+    public boolean isMouseOverComponent(Input input) { return false; }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
         if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
@@ -329,11 +349,14 @@ public abstract class Component {
         }
         animations.removeAll(toBeRemoved);
 
+        finalAutomationsBeforePosConfirm.forEach(a -> a.run(this, input, timeDelta));
         setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
 
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta);
         }
+
+        automationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
 
         if(isClicked) {
             onClick(input, timeDelta);

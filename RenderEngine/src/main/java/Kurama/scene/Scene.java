@@ -1,5 +1,6 @@
 package Kurama.scene;
 
+import Kurama.ComponentSystem.components.model.SceneComponent;
 import Kurama.Effects.Fog;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Material;
@@ -57,9 +58,11 @@ public class Scene {
     public boolean hasMatLibraryUpdated = false;
     private Game game;
     public SoundManager soundManager;
+    public SceneComponent rootSceneComp;
 
     public Scene(Game game) {
         this.game = game;
+        rootSceneComp = new SceneComponent(game, null, Utils.getUniqueID());
     }
 
     public void addPointlight(PointLight pl) {

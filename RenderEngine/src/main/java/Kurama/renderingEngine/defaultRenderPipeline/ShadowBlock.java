@@ -1,14 +1,16 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
+import Kurama.ComponentSystem.components.model.AnimatedModel;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Mesh.InstancedUtils;
 import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.SpotLight;
-import Kurama.ComponentSystem.components.model.AnimatedModel;
-import Kurama.ComponentSystem.components.model.Model;
-import Kurama.renderingEngine.*;
+import Kurama.renderingEngine.RenderPipeline;
+import Kurama.renderingEngine.RenderPipelineData;
+import Kurama.renderingEngine.ShadowPackageData;
 import Kurama.scene.Scene;
 import Kurama.shader.ShaderProgram;
 import org.lwjgl.system.MemoryUtil;
@@ -78,7 +80,6 @@ public class ShadowBlock extends RenderPipeline {
             worldToDirectionalLights.add(worldToLight);
 
             if(light.doesProduceShadow) {
-
                 glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
                 glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glClear(GL_DEPTH_BUFFER_BIT);
@@ -188,7 +189,7 @@ public class ShadowBlock extends RenderPipeline {
                     }
                     pipeline.endRender(mesh);
                 }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//                glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
         }
 
@@ -312,10 +313,10 @@ public class ShadowBlock extends RenderPipeline {
                     }
                     pipeline.endRender(mesh);
                 }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
         }
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         depthShaderProgram.unbind();
         return new ShadowDepthRenderPackage(worldToDirectionalLights,worldToSpotLights);
     }

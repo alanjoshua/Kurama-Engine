@@ -154,6 +154,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
 
         LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
+
         sceneShaderProgram.setUniform("spotLights",lights.spotLights);
         sceneShaderProgram.setUniform("pointLights",lights.pointLights);
         sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
@@ -340,11 +341,14 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         directionalLightsRes = directionalLights.stream()
                 .map(l -> {
                     DirectionalLight currDirectionalLight = new DirectionalLight(l);
-
-                    currDirectionalLight.direction_Vector = worldToCam.matMul(currDirectionalLight.getObjectToWorldMatrix().
-                            getSubMatrix(0,0,2,2).getColumn(2).scalarMul(-1).append(0)).
-                            getColumn(0).removeDimensionFromVec(3);
-
+                    currDirectionalLight.direction_Vector =
+                            worldToCam.vecMul(
+                                currDirectionalLight.
+                                getObjectToWorldMatrix().
+                                getSubMatrix(0,0,2,2).
+                                getColumn(2).scalarMul(-1).append(0)).
+                            removeDimensionFromVec(3).
+                            normalise();
                     return currDirectionalLight;
                 })
                 .collect(Collectors.toList());
@@ -353,7 +357,6 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
                 .map(l -> {
                     SpotLight currSpotLight = new SpotLight(l);
 
-                    //Vector dir = new Vector(currSpotLight.coneDirection).addDimensionToVec(0);
                     currSpotLight.coneDirection = worldToCam.matMul(currSpotLight.getObjectToWorldMatrix().
                                     getSubMatrix(0,0,2,2).
                             getColumn(2).scalarMul(-1).append(0)).getColumn(0).removeDimensionFromVec(3);

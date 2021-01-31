@@ -2,7 +2,7 @@ package Kurama.game;
 
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.Math.Vector;
-import Kurama.camera.Camera;
+import Kurama.display.Display;
 import Kurama.inputs.Input;
 import Kurama.misc_structures.GridNode;
 import Kurama.renderingEngine.RenderingEngine;
@@ -32,6 +32,9 @@ public abstract class Game implements Runnable {
 
     public Scene scene;
     public MasterWindow masterComponent;
+    public RenderingEngine renderingEngine;
+    public Display display;
+    public Input input;
 
     public Game(String threadName) {
         gameLoopThread = new Thread(this,threadName);
@@ -181,15 +184,15 @@ public abstract class Game implements Runnable {
         this.programRunning = programRunning;
     }
 
-    public abstract RenderingEngine getRenderingEngine();
+//    public abstract RenderingEngine getRenderingEngine();
 
     public MasterWindow getMasterWindow() {
         return masterComponent;
     }
 
-    public abstract Camera getCamera();
-
-    public abstract Input getInput();
+//    public abstract Camera getCamera();
+//
+//    public abstract Input getInput();
 
     public float getMovementCost(GridNode current) {
         return 0f;

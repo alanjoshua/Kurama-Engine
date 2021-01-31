@@ -1,12 +1,13 @@
 package Kurama.geometry;
 
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Perlin;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Face;
 import Kurama.Mesh.Vertex;
+import Kurama.camera.Camera;
 import Kurama.game.Game;
 import Kurama.misc_structures.LinkedList.DoublyLinkedList;
-import Kurama.ComponentSystem.components.model.Model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -128,7 +129,7 @@ public class Utils {
             return (bc.dot(ba) / (bc.cross(ba)).getNorm());
         }
 
-    public static List<Vector> getBoundingBox(Face f, List<Vector> projectedVectors, Game game) {
+    public static List<Vector> getBoundingBox(Face f, Camera camera, List<Vector> projectedVectors, Game game) {
 
         Vector bbMax = new Vector(new float[]{Float.NEGATIVE_INFINITY,Float.NEGATIVE_INFINITY});
         Vector bbMin = new Vector(new float[]{Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY});
@@ -151,10 +152,10 @@ public class Utils {
             }
         }
 
-        int xMin = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMin.get(0))));
-        int yMin = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMin.get(1))));
-        int xMax = (int) Math.max(0, Math.min(game.getCamera().getImageWidth() - 1, Math.floor(bbMax.get(0))));
-        int yMax = (int) Math.max(0, Math.min(game.getCamera().getImageHeight() - 1, Math.floor(bbMax.get(1))));
+        int xMin = (int) Math.max(0, Math.min(camera.getImageWidth() - 1, Math.floor(bbMin.get(0))));
+        int yMin = (int) Math.max(0, Math.min(camera.getImageHeight() - 1, Math.floor(bbMin.get(1))));
+        int xMax = (int) Math.max(0, Math.min(camera.getImageWidth() - 1, Math.floor(bbMax.get(0))));
+        int yMax = (int) Math.max(0, Math.min(camera.getImageHeight() - 1, Math.floor(bbMax.get(1))));
 
         Vector min = new Vector(new float[]{xMin,yMin});
         Vector max = new Vector(new float[]{xMax,yMax});

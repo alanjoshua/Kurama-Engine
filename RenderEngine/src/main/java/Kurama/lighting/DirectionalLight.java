@@ -19,23 +19,23 @@ public class DirectionalLight extends Model {
     public Matrix shadowProjectionMatrix;
     public boolean doesProduceShadow = false;
 
-    public DirectionalLight(Game game,Vector color, Quaternion direction, float intensity, ShadowMap shadowMap,
+    public DirectionalLight(Game game,Vector color, Quaternion orientation, float intensity, ShadowMap shadowMap,
                             Mesh mesh,  Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, mesh, identifier);
         this.color = color;
-        this.orientation = direction;
+        this.orientation = orientation;
         this.intensity = intensity;
         this.shadowMap = shadowMap;
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
-    public DirectionalLight(Game game, Vector color, Quaternion direction, float intensity, ShadowMap shadowMap,
+    public DirectionalLight(Game game, Vector color, Quaternion orientation, float intensity, ShadowMap shadowMap,
                             List<Mesh> meshes, Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, meshes, identifier);
         this.color = color;
-        this.orientation = direction;
+        this.orientation = orientation;
         this.intensity = intensity;
         this.shadowMap = shadowMap;
         this.shadowProjectionMatrix = shadowProjectionMatrix;

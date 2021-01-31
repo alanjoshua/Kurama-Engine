@@ -4,7 +4,7 @@ import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.model.SceneComponent;
 import Kurama.inputs.Input;
 
-public class DefaultPosUpdate implements Automation {
+public class DefaultPosVelAccelUpdate implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
         SceneComponent m = (SceneComponent) current;

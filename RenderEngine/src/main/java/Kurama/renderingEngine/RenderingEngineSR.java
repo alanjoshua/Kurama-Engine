@@ -42,8 +42,8 @@ public class RenderingEngineSR extends RenderingEngine {
     }
 
     public void resetBuffers() {
-        depthBuffer = new float[game.getCamera().renderResolution.geti(0)][game.getCamera().renderResolution.geti(1)];
-        frameBuffer = new Color[game.getCamera().renderResolution.geti(0)][game.getCamera().renderResolution.geti(1)];
+        depthBuffer = new float[game.scene.cameras.get(0).renderResolution.geti(0)][game.scene.cameras.get(0).renderResolution.geti(1)];
+        frameBuffer = new Color[game.scene.cameras.get(0).renderResolution.geti(0)][game.scene.cameras.get(0).renderResolution.geti(1)];
     }
 
 //    Renders only the outlines of polygons

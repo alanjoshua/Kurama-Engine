@@ -12,6 +12,7 @@ import java.awt.*;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.opengl.GL30.GL_TRUE;
 import static org.lwjgl.opengl.GL30.glClearColor;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -36,6 +37,11 @@ public class DisplayLWJGL extends Display {
         //System.setProperty("java.awt.headless", "true"); //To ensure fonttexture loading works properly in OSX
         startGLFW();
         initWindow();
+
+        glfwSetFramebufferSizeCallback(this.getWindow(), (window, width, height) -> {
+            glViewport(0,0,width,height);
+            this.windowResolution = new Vector(new float[]{width, height});
+        });
     }
 
     public void startScreen() {

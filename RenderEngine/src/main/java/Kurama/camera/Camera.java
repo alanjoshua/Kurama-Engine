@@ -1,6 +1,7 @@
 package Kurama.camera;
 
 import Kurama.ComponentSystem.automations.DefaultCameraUpdate;
+import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.ComponentSystem.components.model.SceneComponent;
 import Kurama.Math.Matrix;
@@ -81,7 +82,40 @@ public class Camera extends SceneComponent {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 
-		finalComponentUpdate = new DefaultCameraUpdate();
+		finalAutomationsBeforePosConfirm = new ArrayList<>();
+		finalAutomationsBeforePosConfirm.add(new DefaultCameraUpdate());
+
+		updateValues();
+	}
+
+	public Camera(Game game, Component parent, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
+				  int imageWidth, int imageHeight, String identifier) {
+		super(game, parent, identifier);
+		this.game = game;
+		this.filmApertureWidth = 0;
+		this.filmApertureHeight = 0;
+		this.focalLength = 0;
+		this.nearClippingPlane = nearClippingPlane;
+		this.farClippingPlane = farClippingPlane;
+		this.fovX = fovX;
+		this.pos = pos;
+		canvasWidth = 0;
+		canvasHeight = 0;
+		this.orientation = quaternion;
+		this.renderResolution = new Vector(new float[]{imageWidth, imageHeight});
+		renderBuffer = new RenderBuffer(renderResolution);
+
+		if(quaternion == null) {
+			this.setOrientation(new Quaternion(new Vector(new float[] {1,0, 0, 0})));
+		}
+
+		if(pos == null) {
+			this.pos = new Vector(new float[] {0,0,0});
+		}
+
+		finalAutomationsBeforePosConfirm = new ArrayList<>();
+		finalAutomationsBeforePosConfirm.add(new DefaultCameraUpdate());
+
 		updateValues();
 	}
 
@@ -95,10 +129,10 @@ public class Camera extends SceneComponent {
 
 			 renderBuffer.resizeTexture(renderResolution);
 
-			if (game.getRenderingEngine().projectionMode == ProjectionMode.PERSPECTIVE) {
+			if (game.renderingEngine.projectionMode == ProjectionMode.PERSPECTIVE) {
 				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveMatrix(fovX, imageAspectRatio, nearClippingPlane, farClippingPlane, 1, 1);
 			}
-			else if(game.getRenderingEngine().projectionMode == ProjectionMode.ORTHO) {
+			else if(game.renderingEngine.projectionMode == ProjectionMode.ORTHO) {
 				
 				Vector[] bounds = Utils.getWorldBoundingBox(new ArrayList<>(game.scene.getModels()));
 				Vector minCam = (getWorldToObject().matMul(bounds[0].append(1))).toVector();
