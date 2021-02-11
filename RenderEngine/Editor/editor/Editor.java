@@ -2,8 +2,13 @@ package editor;
 
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.Rectangle;
-import Kurama.ComponentSystem.constraints.PosXYTopLeftAttachPercent;
-import Kurama.ComponentSystem.constraints.WidthHeightPercent;
+import Kurama.ComponentSystem.components.constraints.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraints.HorizontalBoundary;
+import Kurama.ComponentSystem.components.constraints.VerticalBoundary;
+import Kurama.ComponentSystem.automations.HeightPercent;
+import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
+import Kurama.ComponentSystem.automations.WidthHeightPercent;
+import Kurama.ComponentSystem.automations.WidthPercent;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -18,7 +23,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Editor extends Game {
 
-    Rectangle hierarchyWindow;
+    ConstraintComponent hierarchyWindow;
     Rectangle sceneWindow;
 
     public Editor(String threadName) {
@@ -53,7 +58,7 @@ public class Editor extends Game {
                 .setContainerVisibility(false);
 
         hierarchyWindow =
-                (Rectangle) new Rectangle(this, rootGuiComponent, "hierarchyWindow")
+                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
                 .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                 .addConstraint(new WidthHeightPercent(0.1f, 1f))
                 .setColor(new Vector(1,1,1,1));
@@ -65,6 +70,13 @@ public class Editor extends Game {
                 .addConstraint(new WidthHeightPercent(0.9f, 1f))
                 .setColor(new Vector(1,0,0,1));
         rootGuiComponent.addChild(sceneWindow);
+
+        var testBoundary = new VerticalBoundary(this, hierarchyWindow, "test");
+        testBoundary.addConstraint(new HeightPercent(1f));
+        var testBoundary2 = new HorizontalBoundary(this, hierarchyWindow, "test2");
+        testBoundary2.addConstraint(new WidthPercent(1f));
+        hierarchyWindow.addBoundary(testBoundary);
+        hierarchyWindow.addBoundary(testBoundary2);
     }
 
     @Override

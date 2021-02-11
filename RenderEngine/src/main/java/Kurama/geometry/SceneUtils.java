@@ -17,7 +17,7 @@ import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
 import Kurama.ComponentSystem.components.model.Model;
-import Kurama.ComponentSystem.components.model.modelBehaviour.Behaviour;
+//import Kurama.ComponentSystem.components.model.modelBehaviour.Behaviour;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.scene.Scene;
 import Kurama.utils.Logger;
@@ -56,18 +56,18 @@ public class SceneUtils {
 //        return null;
 //    }
 
-    public static Behaviour getMiniBehaviour(String behaviour_classname) {
-        Logger.log("Retrieving model behaviour...");
-        try {
-            Class behaviour_class = Class.forName(behaviour_classname);
-            Constructor  constructor = behaviour_class.getConstructor();
-            return (Behaviour) constructor.newInstance();
-
-        }  catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+//    public static Behaviour getMiniBehaviour(String behaviour_classname) {
+//        Logger.log("Retrieving model behaviour...");
+//        try {
+//            Class behaviour_class = Class.forName(behaviour_classname);
+//            Constructor  constructor = behaviour_class.getConstructor();
+//            return (Behaviour) constructor.newInstance();
+//
+//        }  catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
 
     public static Scene loadScene(Game game, String directory) {
         Logger.log("Verifying project structure...");
@@ -386,7 +386,7 @@ public class SceneUtils {
 
                         String text=null;
 
-                        Behaviour behaviour = null;
+//                        Behaviour behaviour = null;
 
                         while(!(line2 = reader.readLine()).equals("")) {
                             String[] tokens2 = line2.split(":");
@@ -445,14 +445,14 @@ public class SceneUtils {
                                     break;
 
                                 case "modelBehaviour":
-                                    if(!tokens2[1].equals("null")) {
-                                        behaviour = getMiniBehaviour(tokens2[1]);
-                                        if (behaviour == null) {
-                                            Logger.logError("Was not able to load Model behaviour class. Returning  null...");
-                                            return null;
-                                        }
-                                        Logger.log("Successfully loaded model behaviour: "+behaviour.getClass().getSimpleName()+" for model ID: "+id);
-                                    }
+//                                    if(!tokens2[1].equals("null")) {
+//                                        behaviour = getMiniBehaviour(tokens2[1]);
+//                                        if (behaviour == null) {
+//                                            Logger.logError("Was not able to load Model behaviour class. Returning  null...");
+//                                            return null;
+//                                        }
+//                                        Logger.log("Successfully loaded model behaviour: "+behaviour.getClass().getSimpleName()+" for model ID: "+id);
+//                                    }
                                     break;
 
                                 case "shader_ID":

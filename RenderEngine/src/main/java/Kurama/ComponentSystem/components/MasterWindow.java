@@ -1,6 +1,6 @@
 package Kurama.ComponentSystem.components;
 
-import Kurama.ComponentSystem.constraints.DisplayAttach;
+import Kurama.ComponentSystem.automations.DisplayAttach;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.game.Game;

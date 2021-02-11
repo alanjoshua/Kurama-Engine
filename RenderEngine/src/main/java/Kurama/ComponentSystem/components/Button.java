@@ -1,6 +1,6 @@
 package Kurama.ComponentSystem.components;
 
-import Kurama.ComponentSystem.constraints.Center;
+import Kurama.ComponentSystem.automations.Center;
 import Kurama.font.FontTexture;
 import Kurama.game.Game;
 

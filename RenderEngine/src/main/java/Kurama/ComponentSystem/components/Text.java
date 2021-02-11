@@ -1,7 +1,7 @@
 package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.automations.CheckForTextUpdate;
-import Kurama.ComponentSystem.constraints.PosXYTopLeftAttachPix;
+import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPix;
 import Kurama.font.FontTexture;
 import Kurama.game.Game;
 import Kurama.utils.Utils;

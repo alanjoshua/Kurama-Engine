@@ -2,7 +2,6 @@ package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.animations.Animation;
 import Kurama.ComponentSystem.automations.Automation;
-import Kurama.ComponentSystem.constraints.Constraint;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -45,22 +44,22 @@ public abstract class Component {
     public Component parent;
     public Game game;
     public List<Component> children = new ArrayList<>();
-    public List<Constraint> constraints = new ArrayList<>();
-    public List<Constraint> globalChildrenConstraints = new ArrayList<>();
-    public List<Automation> automations = new ArrayList<>();
-//    public List<Automation> nonTransformationalAutomations = new ArrayList<>();  //Automations that promise not to make any positional changes.
-    public List<Automation> onClickActions = new ArrayList<>();
-    public List<Automation> onClickedOutsideActions = new ArrayList<>();
-    public List<Automation> onMouseOverActions = new ArrayList<>();
-    public List<Automation> onMouseLeaveActions = new ArrayList<>();
-    public List<Automation> onKeyInputFocused = new ArrayList<>();
-    public List<Automation> onKeyInputFocusedInit = new ArrayList<>();
-    public List<Automation> onKeyInputFocusLossInit = new ArrayList<>();
+    public List<Automation> constraints = new ArrayList<>();
+    public List<Automation> globalChildrenConstraints = new ArrayList<>();
+
+    public List<Kurama.ComponentSystem.automations.Automation> automations = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onClickActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onClickedOutsideActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onMouseOverActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onMouseLeaveActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocused = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocusedInit = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocusLossInit = new ArrayList<>();
 
     public List<Animation> animations = new ArrayList<>();
 
-    public List<Automation> finalAutomationsBeforePosConfirm = new ArrayList<>();
-    public List<Automation> automationsAfterPosConfirm = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> finalAutomationsBeforePosConfirm = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterPosConfirm = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
@@ -91,7 +90,7 @@ public abstract class Component {
         return null; // this would theoretically never happen
     }
 
-    public Component addOnClickAction(Automation action) {
+    public Component addOnClickAction(Kurama.ComponentSystem.automations.Automation action) {
         onClickActions.add(action);
         shouldTriggerOnClick = true;
         return this;
@@ -102,34 +101,34 @@ public abstract class Component {
         return this;
     }
 
-    public Component addOnClickOutsideAction(Automation action) {
+    public Component addOnClickOutsideAction(Kurama.ComponentSystem.automations.Automation action) {
         onClickedOutsideActions.add(action);
         shouldTriggerOnClick = true;
         return this;
     }
 
-    public Component addOnKeyInputFocusedAction(Automation action) {
+    public Component addOnKeyInputFocusedAction(Kurama.ComponentSystem.automations.Automation action) {
         onKeyInputFocused.add(action);
         return this;
     }
 
-    public Component addOnKeyInputFocusedInitAction(Automation action) {
+    public Component addOnKeyInputFocusedInitAction(Kurama.ComponentSystem.automations.Automation action) {
         onKeyInputFocusedInit.add(action);
         return this;
     }
 
-    public Component addOnKeyInputFocusLossInitAction(Automation action) {
+    public Component addOnKeyInputFocusLossInitAction(Kurama.ComponentSystem.automations.Automation action) {
         onKeyInputFocusLossInit.add(action);
         return this;
     }
 
-    public Component addOnMouseOvertAction(Automation action) {
+    public Component addOnMouseOvertAction(Kurama.ComponentSystem.automations.Automation action) {
         this.shouldTriggerOnMouseOver = true;
         onMouseOverActions.add(action);
         return this;
     }
 
-    public Component addOnMouseLeftAction(Automation action) {
+    public Component addOnMouseLeftAction(Kurama.ComponentSystem.automations.Automation action) {
         this.shouldTriggerOnMouseLeave = true;
         onMouseLeaveActions.add(action);
         return this;
@@ -140,12 +139,12 @@ public abstract class Component {
         return this;
     }
 
-    public Component addConstraint(Constraint constraint) {
+    public Component addConstraint(Automation constraint) {
         this.constraints.add(constraint);
         return this;
     }
 
-    public Component addAutomation(Automation automation) {
+    public Component addAutomation(Kurama.ComponentSystem.automations.Automation automation) {
         this.automations.add(automation);
         return this;
     }
@@ -309,7 +308,7 @@ public abstract class Component {
         }
     }
 
-    public void tick(List<Constraint> parentGlobalConstraints, Input input, float timeDelta) {
+    public void tick(List<Automation> parentGlobalConstraints, Input input, float timeDelta) {
 
         if(!shouldRenderGroup) {
             return;
@@ -327,12 +326,12 @@ public abstract class Component {
         isClickedOutside = isClickedOutside(input, currentIsMouseOver);
 
         for(var constraint: constraints) {
-            constraint.solveConstraint(parent, this);
+            constraint.run(this, input, timeDelta);
         }
 
         if(parentGlobalConstraints != null) {
             for (var globalConstraints : parentGlobalConstraints) {
-                globalConstraints.solveConstraint(parent, this);
+                globalConstraints.run(this, input, timeDelta);
             }
         }
 

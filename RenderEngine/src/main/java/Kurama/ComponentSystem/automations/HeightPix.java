@@ -1,17 +1,20 @@
 package Kurama.ComponentSystem.automations;
 
+import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.inputs.Input;
 
-public class AttachComponentPos implements Automation {
+public class HeightPix implements Automation {
 
-    Component comp;
-    public AttachComponentPos(Component comp) {
-        this.comp = comp;
+    public int height;
+
+    public HeightPix(int height) {
+        this.height = height;
     }
+
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        current.pos = comp.pos;
+        current.height = height;
     }
 }
