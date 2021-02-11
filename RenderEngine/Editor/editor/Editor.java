@@ -1,23 +1,26 @@
 package editor;
 
+import Kurama.ComponentSystem.automations.HeightPercent;
+import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
+import Kurama.ComponentSystem.automations.WidthHeightPercent;
+import Kurama.ComponentSystem.automations.WidthPercent;
+import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraints.ConstraintComponent;
 import Kurama.ComponentSystem.components.constraints.HorizontalBoundary;
 import Kurama.ComponentSystem.components.constraints.VerticalBoundary;
-import Kurama.ComponentSystem.automations.HeightPercent;
-import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
-import Kurama.ComponentSystem.automations.WidthHeightPercent;
-import Kurama.ComponentSystem.automations.WidthPercent;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
 import Kurama.game.Game;
+import Kurama.inputs.Input;
 import Kurama.inputs.InputLWJGL;
 import Kurama.renderingEngine.RenderingEngineGL;
 import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.renderingEngine.ginchan.Gintoki;
 import Kurama.scene.Scene;
+import Kurama.utils.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -55,7 +58,11 @@ public class Editor extends Game {
         rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
         rootGuiComponent
                 .setColor(new Vector(0,1,0,0.5f))
-                .setContainerVisibility(false);
+                .setContainerVisibility(false)
+
+        .addOnClickAction((Component current, Input input, float timeDelta) -> {
+            Logger.log(input.mouseX + " " + input.mouseY);
+        });
 
         hierarchyWindow =
                 (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
