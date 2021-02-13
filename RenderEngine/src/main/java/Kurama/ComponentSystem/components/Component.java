@@ -47,6 +47,9 @@ public abstract class Component {
     public Component parent;
     public Game game;
     public List<Component> children = new ArrayList<>();
+
+    // Constraints are updated only when components are resized.
+    // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> constraints = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
 
@@ -379,7 +382,8 @@ public abstract class Component {
         isClickedOutside = isClickedOutside(input, currentIsMouseOver);
         isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
 
-        // Constraints are updated only when components are resized
+        // Constraints are updated only when components are resized.
+        // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
         if(this.isResizedOrMoved || (parent != null && parent.isResizedOrMoved)) {
             Logger.log("resize called: "+identifier);
             for (var constraint : constraints) {
