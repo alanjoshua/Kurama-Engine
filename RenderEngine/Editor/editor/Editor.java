@@ -1,14 +1,11 @@
 package editor;
 
-import Kurama.ComponentSystem.automations.HeightPercent;
 import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
 import Kurama.ComponentSystem.automations.WidthHeightPercent;
-import Kurama.ComponentSystem.automations.WidthPercent;
+import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraints.ConstraintComponent;
-import Kurama.ComponentSystem.components.constraints.HorizontalBoundary;
-import Kurama.ComponentSystem.components.constraints.VerticalBoundary;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -23,8 +20,8 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Editor extends Game {
 
-    ConstraintComponent hierarchyWindow;
-    Rectangle sceneWindow;
+    Component hierarchyWindow;
+    Component sceneWindow;
 
     public Editor(String threadName) {
         super(threadName);
@@ -58,25 +55,18 @@ public class Editor extends Game {
                 .setContainerVisibility(false);
 
         hierarchyWindow =
-                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
-                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
-                .addConstraint(new WidthHeightPercent(0.1f, 1f))
-                .setColor(new Vector(1,1,1,1));
+                 new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
+                 .addConstraint(new WidthHeightPercent(0.1f, 1f))
+                 .addConstraint(new PosXYTopLeftAttachPercent(0,0))
+                 .setColor(new Vector(1,1,1,1));
         rootGuiComponent.addChild(hierarchyWindow);
 
         sceneWindow =
-                (Rectangle) new Rectangle(this, rootGuiComponent, "sceneWindow")
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0))
+                 new Rectangle(this, rootGuiComponent, "sceneWindow")
                 .addConstraint(new WidthHeightPercent(0.9f, 1f))
+                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0))
                 .setColor(new Vector(1,0,0,1));
         rootGuiComponent.addChild(sceneWindow);
-
-        var testBoundary = new VerticalBoundary(this, hierarchyWindow, "vert", true);
-        testBoundary.addConstraint(new HeightPercent(1f));
-        var testBoundary2 = new HorizontalBoundary(this, hierarchyWindow, "horiz", true);
-        testBoundary2.addConstraint(new WidthPercent(1f));
-        hierarchyWindow.addBoundary(testBoundary);
-        hierarchyWindow.addBoundary(testBoundary2);
     }
 
     @Override

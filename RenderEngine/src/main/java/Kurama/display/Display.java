@@ -1,10 +1,13 @@
 package Kurama.display;
 
+import Kurama.ComponentSystem.automations.ExternalAutomation;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Display {
 
@@ -12,6 +15,7 @@ public abstract class Display {
     protected Input input;
     public static int defaultWindowedWidth = 1280;
     public static int defaultWindowedHeight = 720;
+    public List<ExternalAutomation> resizeEvents = new ArrayList<>();
 
     public Vector windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
 

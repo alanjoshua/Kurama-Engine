@@ -5,6 +5,7 @@ import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
+import Kurama.utils.Logger;
 
 public class MasterWindow extends Rectangle {
 
@@ -16,6 +17,11 @@ public class MasterWindow extends Rectangle {
         this.display = display;
         this.input = input;
         this.constraints.add(new DisplayAttach(display));
+        display.resizeEvents.add( () -> {
+            Logger.log("resizing main event");
+            this.isResizedOrMoved = true;
+        });
+
     }
 
     public void cleanUp() {

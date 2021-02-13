@@ -8,6 +8,7 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ public abstract class Component {
     public boolean shouldTriggerOnMouseOver = false;
     public boolean shouldTriggerOnMouseLeave = false;
 
+    public boolean isResizedOrMoved = true;
     public boolean isClicked = false;
     public boolean isClickDragged = false;
     public boolean isClickedOutside = false;
@@ -48,6 +50,8 @@ public abstract class Component {
     public List<Automation> constraints = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
 
+    public boolean isFirstRun = true;
+    public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> automations = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onClickActions = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onClickedOutsideActions = new ArrayList<>();
@@ -161,6 +165,11 @@ public abstract class Component {
 
     public Component addAutomation(Kurama.ComponentSystem.automations.Automation automation) {
         this.automations.add(automation);
+        return this;
+    }
+
+    public Component addInitAutomation(Kurama.ComponentSystem.automations.Automation automation) {
+        this.initAutomations.add(automation);
         return this;
     }
 
@@ -347,9 +356,11 @@ public abstract class Component {
             return;
         }
 
-//        if(identifier.equals("test2")) {
-//            Logger.log("here");
-//        }
+        if(isFirstRun) {
+            initAutomations.forEach(a -> a.run(this, input, timeDelta));
+            isFirstRun = false;
+            isResizedOrMoved = true;
+        }
 
         isClicked = false; // Reset before processing inputs for current frame
         currentIsMouseOver = false;
@@ -358,19 +369,27 @@ public abstract class Component {
         boolean previousKeyFocus = isKeyInputFocused;
         boolean previousClickDragged = isClickDragged;
 
+        Vector previousPos = pos.getCopy();
+        int width = this.width;
+        int height = this.height;
+
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input, currentIsMouseOver);
         isClickedOutside = isClickedOutside(input, currentIsMouseOver);
         isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
 
-        for(var constraint: constraints) {
-            constraint.run(this, input, timeDelta);
-        }
+        // Constraints are updated only when components are resized
+        if(this.isResizedOrMoved || (parent != null && parent.isResizedOrMoved)) {
+            Logger.log("resize called: "+identifier);
+            for (var constraint : constraints) {
+                constraint.run(this, input, timeDelta);
+            }
 
-        if(parentGlobalConstraints != null) {
-            for (var globalConstraints : parentGlobalConstraints) {
-                globalConstraints.run(this, input, timeDelta);
+            if (parentGlobalConstraints != null) {
+                for (var globalConstraints : parentGlobalConstraints) {
+                    globalConstraints.run(this, input, timeDelta);
+                }
             }
         }
 
@@ -389,6 +408,13 @@ public abstract class Component {
 
         finalAutomationsBeforePosConfirm.forEach(a -> a.run(this, input, timeDelta));
         setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
+
+        if(previousPos.sub(pos).sumSquared() != 0 || width != this.width | height != this.height) {
+            this.isResizedOrMoved = true;
+        }
+        if(this.isResizedOrMoved) {
+            Logger.log("resized: "+identifier);
+        }
 
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta);
@@ -437,6 +463,8 @@ public abstract class Component {
             }
             shouldForceCheckKeyInputFocusUpdate = false;
         }
+
+        isResizedOrMoved = false;
 
     }
 

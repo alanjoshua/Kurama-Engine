@@ -41,6 +41,7 @@ public class DisplayLWJGL extends Display {
         glfwSetFramebufferSizeCallback(this.getWindow(), (window, width, height) -> {
             glViewport(0,0,width,height);
             this.windowResolution = new Vector(new float[]{width, height});
+            resizeEvents.forEach(a -> a.run());
         });
     }
 

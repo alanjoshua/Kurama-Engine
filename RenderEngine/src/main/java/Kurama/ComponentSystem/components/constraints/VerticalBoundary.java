@@ -11,4 +11,11 @@ public class VerticalBoundary extends Boundary {
         width = 10;
         if(isDraggable) addOnClickDraggedAction(new OnlyVerticalCompDrag());
     }
+
+    public VerticalBoundary(Game game, Component parent, String identifier, int borderSize, boolean isDraggable) {
+        super(game, parent, identifier);
+        width = borderSize;
+        if(isDraggable) addOnClickDraggedAction(new OnlyVerticalCompDrag());
+    }
+
 }
