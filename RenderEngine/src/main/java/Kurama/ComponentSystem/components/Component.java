@@ -8,7 +8,6 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
-import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -269,9 +268,7 @@ public abstract class Component {
     }
 
     public void onClickDragged(Input input, float timeDelta) {
-        Logger.log("click dragged called by : "+ this.identifier);
         for(var actions: onClickDraggedActions) {
-//            Logger.log("click dragged");
             actions.run(this, input, timeDelta);
         }
     }

@@ -71,9 +71,9 @@ public class Editor extends Game {
                 .setColor(new Vector(1,0,0,1));
         rootGuiComponent.addChild(sceneWindow);
 
-        var testBoundary = new VerticalBoundary(this, hierarchyWindow, "test");
+        var testBoundary = new VerticalBoundary(this, hierarchyWindow, "vert", true);
         testBoundary.addConstraint(new HeightPercent(1f));
-        var testBoundary2 = new HorizontalBoundary(this, hierarchyWindow, "test2");
+        var testBoundary2 = new HorizontalBoundary(this, hierarchyWindow, "horiz", true);
         testBoundary2.addConstraint(new WidthPercent(1f));
         hierarchyWindow.addBoundary(testBoundary);
         hierarchyWindow.addBoundary(testBoundary2);
