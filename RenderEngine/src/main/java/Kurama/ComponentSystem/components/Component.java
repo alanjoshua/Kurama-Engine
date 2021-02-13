@@ -8,6 +8,7 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public abstract class Component {
     public boolean shouldTriggerOnMouseLeave = false;
 
     public boolean isClicked = false;
+    public boolean isClickDragged = false;
     public boolean isClickedOutside = false;
     public boolean currentIsMouseOver = false;
     public boolean isMouseLeft = false;
@@ -50,6 +52,8 @@ public abstract class Component {
     public List<Kurama.ComponentSystem.automations.Automation> automations = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onClickActions = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onClickedOutsideActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onClickDraggedActions = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> onClickDragEndActions = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onMouseOverActions = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onMouseLeaveActions = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocused = new ArrayList<>();
@@ -109,6 +113,18 @@ public abstract class Component {
 
     public Component addOnKeyInputFocusedAction(Kurama.ComponentSystem.automations.Automation action) {
         onKeyInputFocused.add(action);
+        return this;
+    }
+
+    public Component addOnClickDraggedAction(Kurama.ComponentSystem.automations.Automation action) {
+        onClickDraggedActions.add(action);
+        shouldTriggerOnClick = true;
+        return this;
+    }
+
+    public Component addOnClickDragEndedAction(Kurama.ComponentSystem.automations.Automation action) {
+        onClickDragEndActions.add(action);
+        shouldTriggerOnClick = true;
         return this;
     }
 
@@ -252,6 +268,20 @@ public abstract class Component {
         }
     }
 
+    public void onClickDragged(Input input, float timeDelta) {
+        Logger.log("click dragged called by : "+ this.identifier);
+        for(var actions: onClickDraggedActions) {
+//            Logger.log("click dragged");
+            actions.run(this, input, timeDelta);
+        }
+    }
+
+    public void onClickDragEnd(Input input, float timeDelta) {
+        for(var actions: onClickDragEndActions) {
+            actions.run(this, input, timeDelta);
+        }
+    }
+
     public void onMouseOver(Input input, float timeDelta) {
         for(var actions: onMouseOverActions) {
             actions.run(this, input, timeDelta);
@@ -292,6 +322,12 @@ public abstract class Component {
         return false;
     }
 
+    public boolean isClickDragged(Input input, boolean isClicked, boolean isClickedOutside, boolean previousIsClickDragged) {
+        if(isClicked) return true;
+        else if(previousIsClickDragged && input.isLeftMouseButtonPressed()) return true;
+        else return false;
+    }
+
     public boolean isClickedOutside(Input input, boolean isMouseOver) {
         if(shouldTriggerOnClick && input != null && input.isLeftMouseButtonPressed) {
             return !isMouseOver;
@@ -314,16 +350,22 @@ public abstract class Component {
             return;
         }
 
+//        if(identifier.equals("test2")) {
+//            Logger.log("here");
+//        }
+
         isClicked = false; // Reset before processing inputs for current frame
         currentIsMouseOver = false;
         isMouseLeft = false;
         isClickedOutside = false;
         boolean previousKeyFocus = isKeyInputFocused;
+        boolean previousClickDragged = isClickDragged;
 
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input, currentIsMouseOver);
         isClickedOutside = isClickedOutside(input, currentIsMouseOver);
+        isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
 
         for(var constraint: constraints) {
             constraint.run(this, input, timeDelta);
@@ -378,6 +420,14 @@ public abstract class Component {
         // Called whenever component has keyboard focus
         if(isKeyInputFocused) {
             onKeyFocus(input, timeDelta);
+        }
+
+        if(isClickDragged) {
+            onClickDragged(input, timeDelta);
+        }
+
+        if(previousClickDragged != isClickDragged) {
+            onClickDragEnd(input, timeDelta);
         }
 
         // Called only once right after keyboard focus is lost or gained
