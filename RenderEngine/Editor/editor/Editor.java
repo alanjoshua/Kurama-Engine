@@ -61,6 +61,10 @@ public class Editor extends Game {
                  .setColor(new Vector(1,1,1,1));
         rootGuiComponent.addChild(hierarchyWindow);
 
+//        var testComp =
+//                new Rectangle(this, hierarchyWindow, "testComp")
+
+
         sceneWindow =
                  new Rectangle(this, rootGuiComponent, "sceneWindow")
                 .addConstraint(new WidthHeightPercent(0.9f, 1f))

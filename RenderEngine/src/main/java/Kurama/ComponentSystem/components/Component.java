@@ -8,7 +8,6 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
-import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +68,8 @@ public abstract class Component {
     public List<Animation> animations = new ArrayList<>();
 
     public List<Kurama.ComponentSystem.automations.Automation> finalAutomationsBeforePosConfirm = new ArrayList<>();
-    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterPosConfirm = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> finalAutomationsAfterPosConfirm = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterChildTick = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
@@ -372,10 +372,6 @@ public abstract class Component {
         boolean previousKeyFocus = isKeyInputFocused;
         boolean previousClickDragged = isClickDragged;
 
-        Vector previousPos = pos.getCopy();
-        int width = this.width;
-        int height = this.height;
-
         currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
         isClicked = isClicked(input, currentIsMouseOver);
         isMouseLeft = isMouseLeft(input, currentIsMouseOver);
@@ -385,7 +381,7 @@ public abstract class Component {
         // Constraints are updated only when components are resized.
         // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
         if(this.isResizedOrMoved || (parent != null && parent.isResizedOrMoved)) {
-            Logger.log("resize called: "+identifier);
+            this.isResizedOrMoved = true;
             for (var constraint : constraints) {
                 constraint.run(this, input, timeDelta);
             }
@@ -412,19 +408,13 @@ public abstract class Component {
 
         finalAutomationsBeforePosConfirm.forEach(a -> a.run(this, input, timeDelta));
         setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
-
-        if(previousPos.sub(pos).sumSquared() != 0 || width != this.width | height != this.height) {
-            this.isResizedOrMoved = true;
-        }
-        if(this.isResizedOrMoved) {
-            Logger.log("resized: "+identifier);
-        }
+        finalAutomationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
 
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta);
         }
 
-        automationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
+        automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
 
         if(isClicked) {
             onClick(input, timeDelta);

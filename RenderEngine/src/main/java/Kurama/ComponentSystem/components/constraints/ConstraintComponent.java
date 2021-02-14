@@ -30,24 +30,28 @@ public class ConstraintComponent extends Rectangle {
     public void init() {
         boundaries = new ArrayList<>();
 
-        left = new VerticalBoundary(game, this, identifier+"_left", true);
-        right = new VerticalBoundary(game, this, identifier+"_right", true);
-        top = new HorizontalBoundary(game, this, identifier+"_top", true);
-        bottom = new HorizontalBoundary(game, this, identifier+"_bottom", true);
+        left = new VerticalBoundary(game, this, identifier+"_left", 5,false);
+        right = new VerticalBoundary(game, this, identifier+"_right", 5,false);
+        top = new HorizontalBoundary(game, this, identifier+"_top",5, false);
+        bottom = new HorizontalBoundary(game, this, identifier+"_bottom", 5,false);
 
         left.
                 addConstraint(new HeightPercent(1)).
-                addConstraint(new PosXLeftAttachPercent(0));
+                addConstraint(new PosXLeftAttachPercent(0)).
+                setContainerVisibility(true);
         right.
                 addConstraint(new HeightPercent(1)).
-                addConstraint(new PosXRightAttachPercent(0));
+                addConstraint(new PosXRightAttachPercent(0)).
+                setContainerVisibility(true);
 
         top.
                 addConstraint(new WidthPercent(1)).
-                addConstraint(new PosYTopAttachPercent(0));
+                addConstraint(new PosYTopAttachPercent(0)).
+                setContainerVisibility(true);
         bottom.
                 addConstraint(new WidthPercent(1)).
-                addConstraint(new PosYBottomAttachPercent(0));
+                addConstraint(new PosYBottomAttachPercent(0)).
+                setContainerVisibility(true);
 
         addBoundary(left);
         addBoundary(right);
@@ -57,7 +61,7 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent addBoundary(Boundary b) {
         boundaries.add(b);
-        children.add(b);
+        children.add(0, b);
         return this;
     }
 

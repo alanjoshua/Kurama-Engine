@@ -110,9 +110,9 @@ public class GameLWJGL extends Game implements Runnable {
         var leftDivide =
                 new Rectangle(this, rootGuiComponent, "leftHalf")
                 .setTexture(new Texture(playerCamera.renderBuffer.textureId))
-                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                 .addConstraint(new WidthHeightPercent(0.75f, 1f))
-                .addAutomation(new ResizeCameraRenderResolution(playerCamera))
+                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
+                .addConstraint(new ResizeCameraRenderResolution(playerCamera))
                 .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
                 .addOnMouseLeftAction(new RemoveOverlayColor())
                 .setKeyInputFocused(true)
