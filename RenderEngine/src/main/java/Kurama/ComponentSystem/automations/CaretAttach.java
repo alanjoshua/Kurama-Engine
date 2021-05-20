@@ -1,6 +1,5 @@
 package Kurama.ComponentSystem.automations;
 
-import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Text;
 import Kurama.Math.Vector;

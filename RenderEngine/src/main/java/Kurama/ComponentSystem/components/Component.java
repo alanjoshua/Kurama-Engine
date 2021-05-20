@@ -2,6 +2,9 @@ package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.animations.Animation;
 import Kurama.ComponentSystem.automations.Automation;
+import Kurama.ComponentSystem.components.constraints.Boundary;
+import Kurama.ComponentSystem.components.constraints.HorizontalBoundary;
+import Kurama.ComponentSystem.components.constraints.VerticalBoundary;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -51,6 +54,12 @@ public abstract class Component {
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> constraints = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
+
+    public List<Boundary> boundaries;
+    public VerticalBoundary left;
+    public VerticalBoundary right;
+    public HorizontalBoundary top;
+    public HorizontalBoundary bottom;
 
     public boolean isFirstRun = true;
     public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
@@ -108,6 +117,7 @@ public abstract class Component {
 
     public Component addChild(Component child) {
         children.add(child);
+        child.parent = this;
         return this;
     }
 
@@ -460,6 +470,11 @@ public abstract class Component {
 
         isResizedOrMoved = false;
 
+    }
+
+    // Should probably be overwritten, or more control should be specified
+    public boolean isValidLocation(Vector newPos, int width, int height) {
+            return true;
     }
 
 }

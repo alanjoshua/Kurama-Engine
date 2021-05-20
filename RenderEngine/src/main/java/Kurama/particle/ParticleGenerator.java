@@ -18,8 +18,8 @@ public abstract class ParticleGenerator extends SceneComponent {
         super(game, parent, id);
 
         // automation to update particles
-        automationsAfterChildTick.add((comp, input, timeDelta) ->
-                this.particles.forEach(part -> part.tick(globalChildrenConstraints, input, timeDelta)));
+//        automationsAfterChildTick.add((comp, input, timeDelta) ->
+//                this.particles.forEach(part -> part.tick(globalChildrenConstraints, input, timeDelta)));
     }
 
     public abstract void cleanup();

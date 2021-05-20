@@ -11,7 +11,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../Editor" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../target" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="13" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl:3.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-assimp:3.2.3" level="project" />

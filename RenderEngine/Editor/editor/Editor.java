@@ -5,6 +5,7 @@ import Kurama.ComponentSystem.automations.WidthHeightPercent;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.Rectangle;
+import Kurama.ComponentSystem.components.constraints.BoundaryType;
 import Kurama.ComponentSystem.components.constraints.ConstraintComponent;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
@@ -36,6 +37,7 @@ public class Editor extends Game {
         display = new DisplayLWJGL(this);
         display.displayMode = Display.DisplayMode.WINDOWED;
         display.startScreen();
+        display.setWindowedMode(1920, 1080);
 
         input = new InputLWJGL(this, (DisplayLWJGL) display);
 
@@ -61,8 +63,17 @@ public class Editor extends Game {
                  .setColor(new Vector(1,1,1,1));
         rootGuiComponent.addChild(hierarchyWindow);
 
-//        var testComp =
-//                new Rectangle(this, hierarchyWindow, "testComp")
+        var testComp = new Rectangle(this, hierarchyWindow, "testComp").
+                setColor(new Vector(1,0.5f,0.3f,1))
+                .addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.5f))
+                .setWidth(100)
+                .setHeight(100);
+
+        hierarchyWindow.addChild(testComp);
+
+        hierarchyWindow.left.bindComponent(testComp, BoundaryType.LEFT);
+        hierarchyWindow.left.setColor(new Vector(1,0.2f,0.7f,1));
+        hierarchyWindow.right.bindComponent(testComp, BoundaryType.RIGHT);
 
 
         sceneWindow =

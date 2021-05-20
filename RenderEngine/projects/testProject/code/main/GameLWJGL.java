@@ -154,9 +154,9 @@ public class GameLWJGL extends Game implements Runnable {
         rightDivide.children.add(square1);
 
         var caret =
-                new Rectangle(this, null, Utils.getUniqueID())
+                new Rectangle(this, null, "caret")
                 .setColor(new Vector(1,1,1,0.8f))
-                .setContainerVisibility(false)
+                .setShouldRenderGroup(false)
                 .setWidth(3)
                 .setHeight(20);
 
@@ -166,10 +166,13 @@ public class GameLWJGL extends Game implements Runnable {
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
+
                 .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
-                .addOnKeyInputFocusedInitAction(new MakeComponentVisible(caret))
-                .addOnKeyInputFocusLossInitAction(new MakeComponentInvisible(caret))
+                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldRenderGroup = true)
+
+                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldRenderGroup = false)
                 .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
+
                 .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
                     @Override
                     public void run(Component current, Input input, float timeDelta) {
@@ -249,10 +252,13 @@ public class GameLWJGL extends Game implements Runnable {
         directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
         directionalLight.setScale(100);
-        directionalLight.parent = scene.rootSceneComp;
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         scene.rootSceneComp.addChild(directionalLight);
         directionalLight.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+
+        directionalLight.pos = new Vector(0, 60, 500);
+        directionalLight.orientation = new Quaternion(0, 1, 0, 0);
+//        directionalLight.orientation = Quaternion.getQuaternionFromEuler(0,0,-90);
 
 //        directionalLight.addAutomation((current, input, timeDelta) -> {
 //            Scene scene = current.game.scene;
@@ -262,7 +268,7 @@ public class GameLWJGL extends Game implements Runnable {
 //            DirectionalLight light = (DirectionalLight) current;
 //            light.setPos(light.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-lightPosScale));
 //
-//            float delta = (10f * timeDelta);
+//            float delta = (5f * timeDelta);
 //            float currentPitch = light.getOrientation().getPitchYawRoll().get(0);
 //
 //            float lightAngle = currentPitch + delta;
@@ -282,8 +288,13 @@ public class GameLWJGL extends Game implements Runnable {
 //            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
 //            light.setOrientation(rot.multiply(light.getOrientation()));
 //
+//            Logger.log("pos: "+light.pos.toString());
+//            Logger.log("orient: "+light.orientation.toString());
+//            Logger.log();
+//
 //            scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, light.intensity);
 //        });
+
         rootGuiComponent.findComponent("s1").setTexture(directionalLight.shadowMap.depthMap);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -361,7 +372,6 @@ public class GameLWJGL extends Game implements Runnable {
             for(int y = 0;y < 20;y++) {
                 Vector pos = new Vector(0,0,0).removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
-                cube.parent = minecraftWall;
                 minecraftWall.addChild(cube);
                 cube.setScale(boxScale,boxScale,1);
                 cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
@@ -381,7 +391,6 @@ public class GameLWJGL extends Game implements Runnable {
         scene.renderPipeline.initializeMesh(terrain_mesh);
         var terrain = new Terrain(this, terrain_mesh, "Terrain", heightMap.length, heightMap[0].length, 2);
         terrain.setScale(boxCount,yRange,boxCount);
-        terrain.parent = scene.rootSceneComp;
         scene.rootSceneComp.addChild(terrain);
         scene.addModel(terrain, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
 
@@ -404,7 +413,6 @@ public class GameLWJGL extends Game implements Runnable {
             monster.setScale(0.1f);
             monster.setPos(new Vector(10 + (i*10), 30, 10));
             monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-            monster.parent = scene.rootSceneComp;
             scene.rootSceneComp.addChild(monster);
 //            SoundSource monsterSource = new SoundSource("monster_"+i, true, false);
 //            monsterSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
@@ -426,7 +434,6 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setScale(5f);
         madara_model.setPos(new Vector(10, 30, 30));
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-        madara_model.parent = scene.rootSceneComp;
         scene.rootSceneComp.addChild(madara_model);
 
 //        SoundSource madaraSource = new SoundSource("madara", true, false);
@@ -458,7 +465,6 @@ public class GameLWJGL extends Game implements Runnable {
         particleGenerator.animUpdateRange = 0.1f;
         particleGenerator.addConstraint(new AttachComponentPos(madara_model));
         particleGenerator.addAutomation((current, input, timeDelta) -> current.pos = current.pos.add(new Vector(-0.5f,9f,0)));
-        particleGenerator.parent = scene.rootSceneComp;
         scene.rootSceneComp.addChild(particleGenerator);
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
@@ -474,7 +480,6 @@ public class GameLWJGL extends Game implements Runnable {
             model.pos = new Vector(30, 30, 50);
             model.scale = new Vector(20,20,20);
             model.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
-            model.parent = scene.rootSceneComp;
             scene.rootSceneComp.addChild(model);
             model.meshes.forEach(m -> {
                 m.shouldCull = false;
@@ -498,7 +503,6 @@ public class GameLWJGL extends Game implements Runnable {
             anim.meshes.forEach(m -> {
                 m.shouldCull = false;
             });
-            anim.parent = scene.rootSceneComp;
             scene.rootSceneComp.addChild(anim);
         }
         catch (Exception e) {
@@ -523,7 +527,8 @@ public class GameLWJGL extends Game implements Runnable {
         }
 
         if(isGameRunning) {
-            scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta));
+            scene.rootSceneComp.tick(null, input, timeDelta);
+//            scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta));
             scene.soundManager.tick(playerCamera, timeDelta);
         }
 

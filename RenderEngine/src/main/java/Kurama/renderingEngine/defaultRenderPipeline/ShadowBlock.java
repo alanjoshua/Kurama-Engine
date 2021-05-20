@@ -80,6 +80,7 @@ public class ShadowBlock extends RenderPipeline {
             worldToDirectionalLights.add(worldToLight);
 
             if(light.doesProduceShadow) {
+
                 glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
                 glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glClear(GL_DEPTH_BUFFER_BIT);

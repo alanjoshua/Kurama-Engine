@@ -9,7 +9,7 @@
         <module name="KuramaEngine" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
+    <bytecodeTargetLevel target="13">
       <module name="KuramaEngine" target="13" />
     </bytecodeTargetLevel>
   </component>

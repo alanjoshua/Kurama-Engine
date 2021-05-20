@@ -35,12 +35,11 @@ public class Text extends Component {
 
     public void updateText() {
 
+        children = new ArrayList<>();
+
         if(text == null || text.length() == 0) {
-            children = new ArrayList<>();
             return;
         }
-
-        children = new ArrayList<>();
 
         int curPos = 0;
         this.width = 0;

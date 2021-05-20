@@ -11,6 +11,12 @@ public class Logger {
         }
     }
 
+    public static void log() {
+        if (showLogs) {
+            System.out.println();
+        }
+    }
+
     public static void log(Object text) {
         if (showLogs) {
             System.out.println(text.toString());

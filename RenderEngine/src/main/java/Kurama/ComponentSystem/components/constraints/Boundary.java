@@ -13,7 +13,7 @@ public abstract class Boundary extends Rectangle {
 
     public Map<BoundaryType, List<Component>> attachedComponents = new HashMap<>();
 
-    public Boundary(Game game, Component parent, String identifier) {
+    public Boundary(Game game, Component parent, boolean isDraggable, String identifier) {
         super(game, parent, identifier);
         color = new Vector(0,0,0,1);
     }

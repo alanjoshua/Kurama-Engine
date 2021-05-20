@@ -75,6 +75,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
         particle.scale = particle.scale.add(scaleInc);
         particle.updateTexture += updateAnimInc;
         particles.add(particle);
+        addChild(particle);
     }
 
 }
