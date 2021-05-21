@@ -143,7 +143,7 @@ public class GameLWJGL extends Game implements Runnable {
         rootGuiComponent.children.add(rightDivide);
 
         var square1 =
-                new Rectangle(this, rightDivide, "s1")
+                new Rectangle(this, rightDivide, "shadowMap")
                 .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
                 .addConstraint(new WidthHeightPercent(0.7f, 0.4f))
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
@@ -237,8 +237,8 @@ public class GameLWJGL extends Game implements Runnable {
     public void initScene() {
         MeshBuilderHints hints = new MeshBuilderHints();
 
-        Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-700,100,-100,-100,100);
-//        hints.initLWJGLAttribs = false;
+        Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-70,10,-10,-10,10);
+
         scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
@@ -246,56 +246,56 @@ public class GameLWJGL extends Game implements Runnable {
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),
                 sunMesh, directionalLightOrthoProjection, "Sun");
 
+        rootGuiComponent.findComponent("shadowMap").setTexture(directionalLight.shadowMap.depthMap);
         scene.renderPipeline.initializeMesh(sunMesh);
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
-        directionalLight.setScale(100);
+        directionalLight.setScale(10);
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         scene.rootSceneComp.addChild(directionalLight);
-        directionalLight.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+//        directionalLight.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
 
-        directionalLight.pos = new Vector(0, 60, 500);
-        directionalLight.orientation = new Quaternion(0, 1, 0, 0);
-//        directionalLight.orientation = Quaternion.getQuaternionFromEuler(0,0,-90);
+//        directionalLight.pos = new Vector(0, 60, 100);
+//        directionalLight.orientation = new Quaternion(0, 1, 0, 0);
 
-//        directionalLight.addAutomation((current, input, timeDelta) -> {
-//            Scene scene = current.game.scene;
-//
-//            float lightPosScale = 500;
-//
-//            DirectionalLight light = (DirectionalLight) current;
-//            light.setPos(light.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-lightPosScale));
-//
-//            float delta = (5f * timeDelta);
-//            float currentPitch = light.getOrientation().getPitchYawRoll().get(0);
-//
-//            float lightAngle = currentPitch + delta;
-//
-//            if (lightAngle > 180 || lightAngle < 0) {
-//                light.intensity = 0;
-//
-//            } else if (lightAngle <= 10 || lightAngle >= 170) {
-//                float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
-//                light.intensity = factor;
-//
-//            } else {
-//                light.intensity = 1;
-//                light.color = new Vector(3, 1);
-//            }
-//
-//            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
-//            light.setOrientation(rot.multiply(light.getOrientation()));
-//
+        directionalLight.orientation = Quaternion.getQuaternionFromEuler(0,0,0);
+
+        directionalLight.addAutomation((current, input, timeDelta) -> {
+            Scene scene = current.game.scene;
+
+            float lightPosScale = 500;
+
+            DirectionalLight light = (DirectionalLight) current;
+            light.setPos(light.getOrientation().getRotationMatrix().getColumn(2).scalarMul(-lightPosScale));
+
+            float delta = (5f * timeDelta);
+            float currentPitch = light.getOrientation().getPitchYawRoll().get(0);
+
+            float lightAngle = currentPitch + delta;
+
+            if (lightAngle > 180 || lightAngle < 0) {
+                light.intensity = 0;
+
+            } else if (lightAngle <= 10 || lightAngle >= 170) {
+                float factor = (lightAngle > 10?180-lightAngle:lightAngle)/20f;
+                light.intensity = factor;
+
+            } else {
+                light.intensity = 1;
+                light.color = new Vector(3, 1);
+            }
+
+            Quaternion rot = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}), delta);
+            light.setOrientation(rot.multiply(light.getOrientation()));
+
 //            Logger.log("pos: "+light.pos.toString());
 //            Logger.log("orient: "+light.orientation.toString());
 //            Logger.log();
-//
-//            scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, light.intensity);
-//        });
 
-        rootGuiComponent.findComponent("s1").setTexture(directionalLight.shadowMap.depthMap);
+            scene.skybox.meshes.get(0).materials.get(0).ambientColor = new Vector(4, light.intensity);
+        });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         scene.fog = new Fog(true, new Vector(new float[]{0.5f, 0.5f, 0.5f}), 0.005f);
