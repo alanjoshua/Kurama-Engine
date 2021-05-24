@@ -2,9 +2,6 @@ package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.animations.Animation;
 import Kurama.ComponentSystem.automations.Automation;
-import Kurama.ComponentSystem.components.constraints.Boundary;
-import Kurama.ComponentSystem.components.constraints.HorizontalBoundary;
-import Kurama.ComponentSystem.components.constraints.VerticalBoundary;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -54,12 +51,6 @@ public abstract class Component {
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> constraints = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
-
-    public List<Boundary> boundaries;
-    public VerticalBoundary left;
-    public VerticalBoundary right;
-    public HorizontalBoundary top;
-    public HorizontalBoundary bottom;
 
     public boolean isFirstRun = true;
     public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
@@ -183,6 +174,11 @@ public abstract class Component {
 
     public Component addInitAutomation(Kurama.ComponentSystem.automations.Automation automation) {
         this.initAutomations.add(automation);
+        return this;
+    }
+
+    public Component addAutomationAfterChildTick(Kurama.ComponentSystem.automations.Automation automation) {
+        this.automationsAfterChildTick.add(automation);
         return this;
     }
 
@@ -335,7 +331,7 @@ public abstract class Component {
     public boolean isMouseOverComponent(Input input) { return false; }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
-        if(shouldTriggerOnClick && input != null && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
+        if(shouldTriggerOnClick && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
             return isMouseOver;
         }
         return false;
@@ -348,7 +344,7 @@ public abstract class Component {
     }
 
     public boolean isClickedOutside(Input input, boolean isMouseOver) {
-        if(shouldTriggerOnClick && input != null && input.isLeftMouseButtonPressed) {
+        if(shouldTriggerOnClick && input.isLeftMouseButtonPressed) {
             return !isMouseOver;
         }
         return false;

@@ -25,26 +25,27 @@ uniform int isInstanced;
 uniform vec4 materialsGlobalLoc;
 uniform vec4 materialsAtlas;
 
-struct Material {
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
-    float specularPower;
-    float reflectance;
-    int hasTexture;
-    int hasNormalMap;
-    int hasDiffuseMap;
-    int hasSpecularMap;
-    int numRows;
-    int numCols;
-};
+//struct Material {
+//    vec4 ambient;
+//    vec4 diffuse;
+//    vec4 specular;
+//    float specularPower;
+//    float reflectance;
+//    int hasTexture;
+//    int hasNormalMap;
+//    int hasDiffuseMap;
+//    int hasSpecularMap;
+//    int numRows;
+//    int numCols;
+//};
 
 layout (column_major, std430, binding=0) buffer joindsDataBlock {
     mat4 jointsDataInstanced[];
 };
 
 const int MAX_MATERIALS = 50;
-uniform Material materials[MAX_MATERIALS];
+//uniform Material materials[MAX_MATERIALS];
+
 uniform mat4 worldToDirectionalLightMatrix[MAX_DIRECTIONAL_LIGHTS];
 uniform mat4 worldToSpotlightMatrix[MAX_SPOT_LIGHTS];
 uniform mat4 worldToCam;

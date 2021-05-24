@@ -50,7 +50,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
     public static int MAX_SPOTLIGHTS = 10;
     public static int MAX_POINTLIGHTS = 10;
     public static int MAX_JOINTS = 150;
-    public static int MAX_MATERIALS = 50;
+    public static int MAX_MATERIALS = 10;
 
     public static final int FLOAT_SIZE_BYTES = 4;
     public static final int VECTOR4F_SIZE_BYTES = 4 * FLOAT_SIZE_BYTES;

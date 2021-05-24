@@ -1,12 +1,9 @@
 package editor;
 
-import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
 import Kurama.ComponentSystem.automations.WidthHeightPercent;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
-import Kurama.ComponentSystem.components.Rectangle;
-import Kurama.ComponentSystem.components.constraints.BoundaryType;
-import Kurama.ComponentSystem.components.constraints.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -53,35 +50,14 @@ public class Editor extends Game {
 
         rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
         rootGuiComponent
-                .setColor(new Vector(0,1,0,0.5f))
                 .setContainerVisibility(false);
 
         hierarchyWindow =
                  new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
-                 .addConstraint(new WidthHeightPercent(0.1f, 1f))
-                 .addConstraint(new PosXYTopLeftAttachPercent(0,0))
-                 .setColor(new Vector(1,1,1,1));
+                 .addConstraint(new WidthHeightPercent(1f, 1f))
+                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var testComp = new Rectangle(this, hierarchyWindow, "testComp").
-                setColor(new Vector(1,0.5f,0.3f,1))
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.5f))
-                .setWidth(100)
-                .setHeight(100);
-
-        hierarchyWindow.addChild(testComp);
-
-        hierarchyWindow.left.bindComponent(testComp, BoundaryType.LEFT);
-        hierarchyWindow.left.setColor(new Vector(1,0.2f,0.7f,1));
-        hierarchyWindow.right.bindComponent(testComp, BoundaryType.RIGHT);
-
-
-        sceneWindow =
-                 new Rectangle(this, rootGuiComponent, "sceneWindow")
-                .addConstraint(new WidthHeightPercent(0.9f, 1f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0))
-                .setColor(new Vector(1,0,0,1));
-        rootGuiComponent.addChild(sceneWindow);
     }
 
     @Override

@@ -54,7 +54,7 @@ const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOT_LIGHTS = 10;
 const int MAX_DIRECTIONAL_LIGHTS = 5;
 
-const int MAX_MATERIALS = 50;
+const int MAX_MATERIALS = 10;
 uniform Material materials[MAX_MATERIALS];
 uniform sampler2D mat_textures[MAX_MATERIALS];
 uniform sampler2D mat_normalMaps[MAX_MATERIALS];
@@ -144,7 +144,7 @@ float calculateShadow(vec4 position,sampler2D shadowMap,vec3 normal,vec3 lightDi
             shadowFactor += (projCoords.z - bias) > textDepth ? 1.0 : 0.0;
         }
     }
-    shadowFactor /= 9f;
+    shadowFactor /= 9.0;
 
 //    shadowFactor = 0;
 //    float textDepth = texture(shadowMap, projCoords.xy).r;

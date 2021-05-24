@@ -51,7 +51,7 @@ void main() {
                 jointTransMat = jointMatrices[jointIndex];
             }
 
-            if (weight > 0f) {
+            if (weight > 0.0) {
                 count++;
                 vec4 temp = jointTransMat * vec4(position, 1.0);
                 initPos += weight * temp;
