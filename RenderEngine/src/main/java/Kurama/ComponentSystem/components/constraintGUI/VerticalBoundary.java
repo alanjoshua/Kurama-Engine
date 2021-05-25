@@ -45,6 +45,7 @@ public class VerticalBoundary extends Boundary {
             if(!b.alreadyUpdated)
                 b.move(info, this, temp);
         });
+
     }
 
 }

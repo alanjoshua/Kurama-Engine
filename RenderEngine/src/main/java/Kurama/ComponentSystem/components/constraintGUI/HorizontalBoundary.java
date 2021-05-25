@@ -45,5 +45,6 @@ public class HorizontalBoundary extends Boundary {
             if(!b.alreadyUpdated)
                 b.move(info, this, temp);
         });
+
     }
 }

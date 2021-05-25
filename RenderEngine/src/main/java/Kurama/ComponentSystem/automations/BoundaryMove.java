@@ -21,15 +21,15 @@ public class BoundaryMove implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
         // H-boundary, so can only move vertically
+        float deltaMove = 0;
         if(boundaryType == 0) {
-            attachedBoundary.deltaMove = input.mouseDy;
+            deltaMove = input.mouseDy;
         }
         // V-boundary, so can only move horizontally
         else {
-            attachedBoundary.deltaMove = input.mouseDx;
+            deltaMove = input.mouseDx;
         }
-        attachedBoundary.shouldMove();
-
+        attachedBoundary.shouldMove(deltaMove);
     }
 
 }

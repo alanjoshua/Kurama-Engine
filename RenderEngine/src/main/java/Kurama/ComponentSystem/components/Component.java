@@ -420,8 +420,6 @@ public abstract class Component {
             child.tick(globalChildrenConstraints, input, timeDelta);
         }
 
-        automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
-
         if(isClicked) {
             onClick(input, timeDelta);
         }
@@ -464,6 +462,7 @@ public abstract class Component {
             shouldForceCheckKeyInputFocusUpdate = false;
         }
 
+        automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
         isResizedOrMoved = false;
 
     }

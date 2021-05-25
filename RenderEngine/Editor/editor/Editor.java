@@ -1,9 +1,12 @@
 package editor;
 
-import Kurama.ComponentSystem.automations.WidthHeightPercent;
+import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
+import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraintGUI.HorizontalBoundary;
+import Kurama.ComponentSystem.components.constraintGUI.VerticalBoundary;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -18,7 +21,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Editor extends Game {
 
-    Component hierarchyWindow;
+    ConstraintComponent hierarchyWindow;
     Component sceneWindow;
 
     public Editor(String threadName) {
@@ -53,11 +56,26 @@ public class Editor extends Game {
                 .setContainerVisibility(false);
 
         hierarchyWindow =
-                 new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
-                 .addConstraint(new WidthHeightPercent(1f, 1f))
-                 .setColor(new Vector(0,1,1,0.5f));
+                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow")
+                .addConstraint(new WidthHeightPercent(1f, 1f))
+                .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
+        var rr = new VerticalBoundary(this, hierarchyWindow, "rr");
+        var bb = new HorizontalBoundary(this, hierarchyWindow, "bb");
+        var tt = new HorizontalBoundary(this, hierarchyWindow, "tt");
+
+        rr.addConnectedBoundary(tt, 0, 1);
+        rr.addConnectedBoundary(bb, 0, 1);
+        ((Boundary)hierarchyWindow.findComponent("rightB")).addConnectedBoundary(tt, 1, 0);
+
+        hierarchyWindow.addBoundary(rr);
+        hierarchyWindow.addBoundary(tt);
+        hierarchyWindow.addBoundary(bb);
+
+        rr.addInitAutomation(new HeightPercent(0.5f)).addInitAutomation(new PosXRightAttachPercent(0.1f));
+        tt.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.25f));
+        bb.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.75f));
     }
 
     @Override

@@ -1,9 +1,6 @@
 package Kurama.ComponentSystem.components.constraintGUI;
 
-import Kurama.ComponentSystem.automations.PosXLeftAttachPercent;
-import Kurama.ComponentSystem.automations.PosXRightAttachPercent;
-import Kurama.ComponentSystem.automations.PosYBottomAttachPercent;
-import Kurama.ComponentSystem.automations.PosYTopAttachPercent;
+import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.Math.Vector;
@@ -41,17 +38,22 @@ public class ConstraintComponent extends Rectangle {
         var r = new VerticalBoundary(this.game, this, "rightB");
         var b = new HorizontalBoundary(this.game, this, "bottomB");
 
-        r.addInitAutomation(new PosXRightAttachPercent(0f));
-        b.addInitAutomation(new PosYBottomAttachPercent(0f));
-        l.addInitAutomation(new PosXLeftAttachPercent(0f));
-        t.addInitAutomation(new PosYTopAttachPercent(0f));
+        r.initAutomations.add(new HeightPercent(0.5f));
+        l.initAutomations.add(new HeightPercent(0.5f));
+        t.initAutomations.add(new WidthPercent(0.5f));
+        b.initAutomations.add(new WidthPercent(0.5f));
+
+        r.addInitAutomation(new PosXYBottomRightAttachPercent(0.25f, 0.25f));
+        t.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f)).setColor(new Vector(1,0,0,1));
+        l.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f)).setColor(new Vector(0,1,0,1));
+        b.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.75f));
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
         l.addConnectedBoundary(t, 1, 0);
         l.addConnectedBoundary(b, 1, 0);
-        t.addConnectedBoundary(r, 1, 0);
-        b.addConnectedBoundary(r, 1, 0);
+        r.addConnectedBoundary(t, 0, 1);
+        r.addConnectedBoundary(b, 0, 1);
     }
 
 }
