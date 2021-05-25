@@ -19,18 +19,31 @@ public class HorizontalBoundary extends Boundary {
         return true;
     }
 
-    public void move(BoundMoveDataPack info) {
+    public void move(BoundMoveDataPack info, Boundary parent, int parentMoveDir) {
 
-        if(info.isParent) {
+        if(parent == null) {
             pos = pos.add(new Vector(0, (int) info.deltaMove, 0));
+            parentMoveDir = 1;
         }
         else {
-            pos = pos.add(new Vector((int) info.deltaMove,0, 0));
+            if(parentMoveDir == 0) {
+                pos = pos.add(new Vector((int) info.deltaMove,0, 0));
+            }
+            else {
+                pos = pos.add(new Vector(0, (int) info.deltaMove, 0));
+            }
         }
 
-        info.isParent = false;
+        this.alreadyUpdated = true;
+        int temp = parentMoveDir;
 
-        negativeAttachments.forEach(b -> b.move(info));
-        positiveAttachments.forEach(b -> b.move(info));
+        negativeAttachments.forEach(b -> {
+            if(!b.alreadyUpdated)
+                b.move(info, this, temp);
+        });
+        positiveAttachments.forEach(b -> {
+            if(!b.alreadyUpdated)
+                b.move(info, this, temp);
+        });
     }
 }

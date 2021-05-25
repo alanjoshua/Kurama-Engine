@@ -48,8 +48,10 @@ public class ConstraintComponent extends Rectangle {
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
-        l.addConnectedBoundary(t, 1, true);
-        l.addConnectedBoundary(b, 1, true);
+        l.addConnectedBoundary(t, 1, 0);
+        l.addConnectedBoundary(b, 1, 0);
+        t.addConnectedBoundary(r, 1, 0);
+        b.addConnectedBoundary(r, 1, 0);
     }
 
 }

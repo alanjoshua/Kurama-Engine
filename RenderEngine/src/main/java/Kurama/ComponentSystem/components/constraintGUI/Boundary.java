@@ -16,10 +16,11 @@ public abstract class Boundary extends Rectangle {
     public ArrayList<Boundary> positiveAttachments = new ArrayList<>();
 
     public float deltaMove = 0;
+    public boolean alreadyUpdated = false; // This would be reset in each tick. Mainly used during border movement to prevent cycles
 
     public Boundary(Game game, Component parent, String identifier) {
         super(game, parent, identifier);
-        this.addAutomationAfterChildTick((c,i,t) -> deltaMove = 0); // Reset delta Move after children are ticked
+        this.addAutomationAfterChildTick((c,i,t) -> {deltaMove = 0;alreadyUpdated = false;}); // Reset delta Move after children are ticked
 
         this.addOnClickDraggedAction(new BoundaryMove(this)); // This will set delta move, and call relevant methods to move the boundary
     }
@@ -50,30 +51,28 @@ public abstract class Boundary extends Rectangle {
         return this;
     }
 
-    public Component addConnectedBoundary(Boundary connection, int connectionType, boolean attachReverseConnection) {
+    public Component addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
+
         if(connectionType == 0) {
             negativeAttachments.add(connection);
-            if(attachReverseConnection) {
-                connection.addConnectedBoundary(this, 1);
-            }
         }
         else {
             positiveAttachments.add(connection);
-            if(attachReverseConnection) {
-                connection.addConnectedBoundary(this, 0);
-            }
         }
+        connection.addConnectedBoundary(this, reverseConnectionType);
         return this;
     }
 
     public void shouldMove() {
         var data = new BoundMoveDataPack(deltaMove);
         if(canBeMoved(data)) {
-            move(data);
+            move(data, null, -1);
         }
     }
 
     // Definitely moves everything
-    public abstract void move(BoundMoveDataPack info);
+
+    // parentMoveDir: -1 = nothing, 0 = x, 1 = y
+    public abstract void move(BoundMoveDataPack info, Boundary parent, int parentMoveDir);
 
 }
