@@ -32,11 +32,11 @@ public class ConstraintComponent extends Rectangle {
     public void init() {
         // This is probably kinda temp
 
-        var l = new VerticalBoundary(this.game, this, "leftB");
-        var t = new HorizontalBoundary(this.game, this, "topB");
+        var l = new Boundary(this.game, this, "leftB", Boundary.BoundaryOrient.Vertical);
+        var t = new Boundary(this.game, this, "topB", Boundary.BoundaryOrient.Horizontal);
 
-        var r = new VerticalBoundary(this.game, this, "rightB");
-        var b = new HorizontalBoundary(this.game, this, "bottomB");
+        var r = new Boundary(this.game, this, "rightB", Boundary.BoundaryOrient.Vertical);
+        var b = new Boundary(this.game, this, "bottomB", Boundary.BoundaryOrient.Horizontal);
 
         r.initAutomations.add(new HeightPercent(0.5f));
         l.initAutomations.add(new HeightPercent(0.5f));

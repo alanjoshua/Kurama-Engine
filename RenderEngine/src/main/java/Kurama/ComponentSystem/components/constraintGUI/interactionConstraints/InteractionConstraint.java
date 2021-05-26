@@ -1,0 +1,10 @@
+package Kurama.ComponentSystem.components.constraintGUI.interactionConstraints;
+
+import Kurama.ComponentSystem.components.constraintGUI.BoundMoveDataPack;
+import Kurama.ComponentSystem.components.constraintGUI.Boundary;
+
+public interface InteractionConstraint {
+
+    public abstract boolean isValid(Boundary boundary, BoundMoveDataPack info);
+
+}

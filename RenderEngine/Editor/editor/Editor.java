@@ -5,8 +5,6 @@ import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
-import Kurama.ComponentSystem.components.constraintGUI.HorizontalBoundary;
-import Kurama.ComponentSystem.components.constraintGUI.VerticalBoundary;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -61,9 +59,9 @@ public class Editor extends Game {
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var rr = new VerticalBoundary(this, hierarchyWindow, "rr");
-        var bb = new HorizontalBoundary(this, hierarchyWindow, "bb");
-        var tt = new HorizontalBoundary(this, hierarchyWindow, "tt");
+        var rr = new Boundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical);
+        var bb = new Boundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal);
+        var tt = new Boundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal);
 
         rr.addConnectedBoundary(tt, 0, 1);
         rr.addConnectedBoundary(bb, 0, 1);

@@ -1,44 +1,60 @@
 package Kurama.ComponentSystem.components.constraintGUI;
 
 import Kurama.ComponentSystem.automations.BoundaryMove;
+import Kurama.ComponentSystem.automations.HeightPercent;
+import Kurama.ComponentSystem.automations.WidthPercent;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
+import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.*;
+import Kurama.Math.Vector;
 import Kurama.game.Game;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public abstract class Boundary extends Rectangle {
+public class Boundary extends Rectangle {
 
-    // in a H-Bound, positive is top and negative is bottom.
-    // in a V-bound, positive is right and negative is left.
+    // in a H-Boundary, positive is top and negative is bottom.
+    // in a V-boundary, positive is right and negative is left.
 
-    public ArrayList<Boundary> negativeAttachments = new ArrayList<>();
-    public ArrayList<Boundary> positiveAttachments = new ArrayList<>();
+    public static enum BoundaryOrient {Vertical, Horizontal};
 
-//    public float deltaMove = 0;
-    public boolean alreadyUpdated = false; // This would be reset in each tick. Mainly used during border movement to prevent cycles
+    public BoundaryOrient boundaryOrient;
 
-    public Boundary(Game game, Component parent, String identifier) {
+    public List<Boundary> negativeAttachments = new ArrayList<>();
+    public List<Boundary> positiveAttachments = new ArrayList<>();
+    public List<InteractionConstraint> interactionConstraints = new ArrayList<>();
+    public Interaction interaction = new TemporaryBoundMove(); // This is very temporary
+
+    // Default behaviour - override it to change it
+    public IVRequestPackGenerator IVRequestPackGenerator = new TemporaryIVRG();
+
+    public boolean alreadyUpdated = false; // This would be reset in after interaction. Mainly used during border movement to prevent cycles
+
+    public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient) {
         super(game, parent, identifier);
-//        this.addAutomationAfterChildTick((c,i,t) -> {deltaMove = 0;alreadyUpdated = false;}); // Reset delta Move after children are ticked
+
+        this.boundaryOrient = orient;
+        this.color = new Vector(1,1,1,1);
+
+        //temporary
+        addInteractionConstraint(new MaxXPos(0.8f)).addInteractionConstraint(new RecursiveValidifierConstraint());
 
         this.addOnClickDraggedAction(new BoundaryMove(this)); // This will set delta move, and call relevant methods to move the boundary
+
+        if(boundaryOrient == BoundaryOrient.Horizontal) {
+            this.height = 10;
+            this.initAutomations.add(new WidthPercent(1));
+        }
+        else {
+            this.width = 10;
+            this.initAutomations.add(new HeightPercent(1));
+        }
     }
 
-    public boolean canBeMoved(BoundMoveDataPack info) {
-
-        for(var b: negativeAttachments) {
-            if(!b.canBeMoved(info)) {
-                return false;
-            }
-        }
-        for(var b: positiveAttachments) {
-            if(!b.canBeMoved(info)) {
-                return false;
-            }
-        }
-
-        return true;
+    public Boundary addInteractionConstraint(InteractionConstraint i) {
+        interactionConstraints.add(i);
+        return this;
     }
 
     public Component addConnectedBoundary(Boundary connection, int connectionType) {
@@ -63,10 +79,20 @@ public abstract class Boundary extends Rectangle {
         return this;
     }
 
-    public void shouldMove(float deltaMove) {
-        var data = new BoundMoveDataPack(deltaMove);
-        if(canBeMoved(data)) {
-            move(data, null, -1);
+    public boolean isValidInteraction(BoundMoveDataPack info) {
+        for(var i: interactionConstraints) {
+            if(!i.isValid(this, info))
+                return false;
+        }
+        return true;
+    }
+
+    // Is intended to be overridden
+    public void initialiseInteraction(float deltaMove) {
+        var data = IVRequestPackGenerator.getValidificationRequestPack(deltaMove);
+        if(isValidInteraction(data)) {
+            resetParams();
+            interact(data, null);
             resetParams();
         }
     }
@@ -85,9 +111,8 @@ public abstract class Boundary extends Rectangle {
         });
     }
 
-    // Definitely moves everything
-
-    // parentMoveDir: -1 = nothing, 0 = x, 1 = y
-    public abstract void move(BoundMoveDataPack info, Boundary parent, int parentMoveDir);
+    public void interact(BoundMoveDataPack info, Boundary parent) {
+        interaction.interact(info, this, parent);
+    }
 
 }
