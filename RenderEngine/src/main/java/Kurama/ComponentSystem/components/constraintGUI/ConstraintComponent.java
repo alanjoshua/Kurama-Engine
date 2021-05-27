@@ -15,12 +15,17 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent(Game game, Component parent, Vector radii, String identifier) {
         super(game, parent, radii, identifier);
-        init();
+        init(null);
     }
 
     public ConstraintComponent(Game game, Component parent, String identifier) {
         super(game, parent, identifier);
-        init();
+        init(null);
+    }
+
+    public ConstraintComponent(Game game, Component parent, String identifier, BoundaryConfigurator configurator) {
+        super(game, parent, identifier);
+        init(configurator);
     }
 
     public ConstraintComponent addBoundary(Boundary bound) {
@@ -29,14 +34,14 @@ public class ConstraintComponent extends Rectangle {
         return this;
     }
 
-    public void init() {
+    public void init(BoundaryConfigurator configurator) {
         // This is probably kinda temp
 
-        var l = new Boundary(this.game, this, "leftB", Boundary.BoundaryOrient.Vertical);
-        var t = new Boundary(this.game, this, "topB", Boundary.BoundaryOrient.Horizontal);
+        var l = new Boundary(this.game, this, "leftB", Boundary.BoundaryOrient.Vertical, configurator);
+        var t = new Boundary(this.game, this, "topB", Boundary.BoundaryOrient.Horizontal, configurator);
 
-        var r = new Boundary(this.game, this, "rightB", Boundary.BoundaryOrient.Vertical);
-        var b = new Boundary(this.game, this, "bottomB", Boundary.BoundaryOrient.Horizontal);
+        var r = new Boundary(this.game, this, "rightB", Boundary.BoundaryOrient.Vertical, configurator);
+        var b = new Boundary(this.game, this, "bottomB", Boundary.BoundaryOrient.Horizontal, configurator);
 
         r.initAutomations.add(new HeightPercent(0.5f));
         l.initAutomations.add(new HeightPercent(0.5f));

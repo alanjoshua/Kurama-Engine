@@ -1,7 +1,8 @@
-package Kurama.ComponentSystem.components.constraintGUI.interactionConstraints;
+package Kurama.ComponentSystem.components.constraintGUI.RigidBodySystem;
 
 import Kurama.ComponentSystem.components.constraintGUI.BoundMoveDataPack;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
+import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.InteractionConstraint;
 
 public class RecursiveValidifierConstraint implements InteractionConstraint {
 
