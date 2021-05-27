@@ -6,8 +6,7 @@ import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.BoundaryConfigurator;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
-import Kurama.ComponentSystem.components.constraintGUI.RigidBodySystem.RigidBodyConfigurator;
-import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.MaxXPos;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -57,11 +56,13 @@ public class Editor extends Game {
                 .setContainerVisibility(false);
 
 
-        BoundaryConfigurator customRigidConfig = (boundary) -> {
-            new RigidBodyConfigurator().configure(boundary);
-            boundary.interactionConstraints.add(0, new MaxXPos(0.95f));
-            return boundary;
-        };
+//        BoundaryConfigurator customRigidConfig = (boundary) -> {
+//            new RigidBodyConfigurator().configure(boundary);
+//            boundary.interactionConstraints.add(0, new MaxXPos(0.95f));
+//            return boundary;
+//        };
+
+        BoundaryConfigurator customRigidConfig = new StretchSystemConfigurator();
 
         hierarchyWindow =
                 (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow", customRigidConfig)
@@ -69,19 +70,15 @@ public class Editor extends Game {
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var rr = new Boundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical, customRigidConfig);
-        var bb = new Boundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal, customRigidConfig);
-        var tt = new Boundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal, customRigidConfig);
+        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical);
+        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal);
+        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal);
 
-        rr.addConnectedBoundary(tt, 0, 1);
+        rr.addConnectedBoundary(tt, 0, 0);
         rr.addConnectedBoundary(bb, 0, 1);
 
         var right =  ((Boundary)hierarchyWindow.findComponent("rightB"));
-       right.addConnectedBoundary(tt, 1, 0).addConnectedBoundary(bb, 1, 0);
-
-        hierarchyWindow.addBoundary(rr);
-        hierarchyWindow.addBoundary(tt);
-        hierarchyWindow.addBoundary(bb);
+       right.addConnectedBoundary(tt, 1, 0).addConnectedBoundary(bb, 1, 1);
 
         rr.addInitAutomation(new HeightPercent(0.5f)).addInitAutomation(new PosXRightAttachPercent(0.1f));
         tt.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.25f));

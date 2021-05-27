@@ -12,15 +12,15 @@ public class RigidBoundaryInteractor implements Interactor {
 
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
             if(parentBoundary == null) {
-                boundary.pos = boundary.pos.add(new Vector((int) data.deltaMoveX,0, 0));
+                boundary.pos = boundary.pos.add(new Vector(data.deltaMoveX,0, 0));
                 data.parentMoveDir = 0;
             }
             else {
                 if(data.parentMoveDir == 0) {
-                    boundary.pos = boundary.pos.add(new Vector((int) data.deltaMoveX,0, 0));
+                    boundary.pos = boundary.pos.add(new Vector(data.deltaMoveX,0, 0));
                 }
                 else {
-                    boundary.pos = boundary.pos.add(new Vector(0, (int) data.deltaMoveY, 0));
+                    boundary.pos = boundary.pos.add(new Vector(0, data.deltaMoveY, 0));
                 }
             }
 
@@ -38,15 +38,15 @@ public class RigidBoundaryInteractor implements Interactor {
         }
         else { // Horizontal boundary
             if(parentBoundary == null) {
-                boundary.pos = boundary.pos.add(new Vector(0, (int) data.deltaMoveY, 0));
+                boundary.pos = boundary.pos.add(new Vector(0, data.deltaMoveY, 0));
                 data.parentMoveDir = 1;
             }
             else {
                 if(data.parentMoveDir == 0) {
-                    boundary.pos = boundary.pos.add(new Vector((int) data.deltaMoveX,0, 0));
+                    boundary.pos = boundary.pos.add(new Vector(data.deltaMoveX,0, 0));
                 }
                 else {
-                    boundary.pos = boundary.pos.add(new Vector(0, (int) data.deltaMoveY, 0));
+                    boundary.pos = boundary.pos.add(new Vector(0,  data.deltaMoveY, 0));
                 }
             }
 

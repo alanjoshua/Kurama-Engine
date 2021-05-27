@@ -1,6 +1,9 @@
 package Kurama.ComponentSystem.components.constraintGUI;
 
-import Kurama.ComponentSystem.automations.*;
+import Kurama.ComponentSystem.automations.HeightPercent;
+import Kurama.ComponentSystem.automations.PosXYBottomRightAttachPercent;
+import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
+import Kurama.ComponentSystem.automations.WidthPercent;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.Math.Vector;
@@ -12,6 +15,7 @@ import java.util.List;
 public class ConstraintComponent extends Rectangle {
 
     public List<Boundary> boundaries = new ArrayList<>();
+    public BoundaryConfigurator configurator = null;
 
     public ConstraintComponent(Game game, Component parent, Vector radii, String identifier) {
         super(game, parent, radii, identifier);
@@ -25,6 +29,7 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent(Game game, Component parent, String identifier, BoundaryConfigurator configurator) {
         super(game, parent, identifier);
+        this.configurator = configurator;
         init(configurator);
     }
 
@@ -32,6 +37,18 @@ public class ConstraintComponent extends Rectangle {
         boundaries.add(bound);
         this.children.add(bound);
         return this;
+    }
+
+    public Boundary createBoundary(Game game, Component parent, String identifier, Boundary.BoundaryOrient orient) {
+        var b = new Boundary(game, parent, identifier, orient, configurator);
+        addBoundary(b);
+        return b;
+    }
+
+    public Boundary createBoundary(Game game, Component parent, String identifier, Boundary.BoundaryOrient orient, BoundaryConfigurator configurator) {
+        var b = new Boundary(game, parent, identifier, orient, configurator);
+        addBoundary(b);
+        return b;
     }
 
     public void init(BoundaryConfigurator configurator) {
@@ -56,8 +73,8 @@ public class ConstraintComponent extends Rectangle {
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
         l.addConnectedBoundary(t, 1, 0);
-        l.addConnectedBoundary(b, 1, 0);
-        r.addConnectedBoundary(t, 0, 1);
+        l.addConnectedBoundary(b, 1, 1);
+        r.addConnectedBoundary(t, 0, 0);
         r.addConnectedBoundary(b, 0, 1);
     }
 
