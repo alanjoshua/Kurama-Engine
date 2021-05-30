@@ -18,6 +18,7 @@ public class Boundary extends Rectangle {
     // in a V-boundary, positive is right and negative is left.
 
     public static enum BoundaryOrient {Vertical, Horizontal};
+    public static IVRequestPackGenerator defaultIVRGenerator = (parent, boundary, dx, dy) -> new BoundInteractionMessage(null, dx, dy);;
 
     public BoundaryOrient boundaryOrient;
 
@@ -27,7 +28,7 @@ public class Boundary extends Rectangle {
     public Interactor interactor = new DefaultBoundaryInteractor();
 
     // Default behaviour - override it to change it
-    public IVRequestPackGenerator IVRequestPackGenerator = (boundary, dx, dy) -> new BoundMoveDataPack(dx, dy);
+    public IVRequestPackGenerator IVRequestPackGenerator = defaultIVRGenerator;
 
     public boolean alreadyUpdated = false; // This would be reset in after interaction. Mainly used during border movement to prevent cycles
 
@@ -98,7 +99,7 @@ public class Boundary extends Rectangle {
         return this;
     }
 
-    public boolean isValidInteraction(BoundMoveDataPack info) {
+    public boolean isValidInteraction(BoundInteractionMessage info) {
 
         for(var i: interactionConstraints) {
             if(!i.isValid(this, info)) {
@@ -110,10 +111,10 @@ public class Boundary extends Rectangle {
 
     // Is intended to be overridden
     public void initialiseInteraction(float deltaMoveX, float deltaMoveY) {
-        var data = IVRequestPackGenerator.getValidificationRequestPack(this, deltaMoveX, deltaMoveY);
-        if(isValidInteraction(data)) {
-            interact(data, null);
-        }
+        var data = IVRequestPackGenerator.getValidificationRequestPack(null,this, deltaMoveX, deltaMoveY);
+//        if(isValidInteraction(data)) {
+            interact(data, null, -1);
+//        }
         resetParams();
     }
 
@@ -131,8 +132,8 @@ public class Boundary extends Rectangle {
         });
     }
 
-    public void interact(BoundMoveDataPack info, Boundary parent) {
-        interactor.interact(info, this, parent);
+    public boolean interact(BoundInteractionMessage info, Boundary parent, int relativePos) {
+        return interactor.interact(info, this, parent, relativePos);
     }
 
 }

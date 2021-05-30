@@ -6,6 +6,7 @@ import Kurama.ComponentSystem.components.constraintGUI.BoundaryConfigurator;
 public class StretchSystemConfigurator implements BoundaryConfigurator {
     @Override
     public Boundary configure(Boundary boundary) {
+        boundary.IVRequestPackGenerator = new StretchIVRG();
         boundary.interactor = new StretchSystemInteractor();
         return boundary;
     }

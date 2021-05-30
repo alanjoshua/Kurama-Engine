@@ -6,6 +6,7 @@ import Kurama.ComponentSystem.components.MasterWindow;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.BoundaryConfigurator;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraintGUI.RigidBodySystem.RigidBodyConfigurator;
 import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
 import Kurama.Math.Vector;
 import Kurama.display.Display;
@@ -56,23 +57,26 @@ public class Editor extends Game {
                 .setContainerVisibility(false);
 
 
-//        BoundaryConfigurator customRigidConfig = (boundary) -> {
+//        BoundaryConfigurator customRigidConfig2 = (boundary) -> {
 //            new RigidBodyConfigurator().configure(boundary);
 //            boundary.interactionConstraints.add(0, new MaxXPos(0.95f));
 //            return boundary;
 //        };
 
-        BoundaryConfigurator customRigidConfig = new StretchSystemConfigurator();
+        BoundaryConfigurator rigidBodyConfig = new RigidBodyConfigurator();
+        BoundaryConfigurator stretchConfig = new StretchSystemConfigurator();
 
         hierarchyWindow =
-                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow", customRigidConfig)
+                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow", rigidBodyConfig)
                 .addConstraint(new WidthHeightPercent(1f, 1f))
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical);
-        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal);
-        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal);
+        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical, stretchConfig);
+        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal, stretchConfig);
+        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal, stretchConfig);
+
+        bb.setColor(new Vector(0,1,1,1));
 
         rr.addConnectedBoundary(tt, 0, 0);
         rr.addConnectedBoundary(bb, 0, 1);

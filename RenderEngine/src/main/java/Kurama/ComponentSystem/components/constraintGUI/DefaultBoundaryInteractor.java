@@ -5,7 +5,7 @@ import Kurama.Math.Vector;
 public class DefaultBoundaryInteractor implements Interactor {
 
     @Override
-    public void interact(BoundMoveDataPack info, Boundary boundary, Boundary parentBoundary) {
+    public boolean interact(BoundInteractionMessage info, Boundary boundary, Boundary parentBoundary, int relativePos) {
 
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
             boundary.pos = boundary.pos.add(new Vector(info.deltaMoveX, 0f, 0f));
@@ -14,5 +14,6 @@ public class DefaultBoundaryInteractor implements Interactor {
             boundary.pos = boundary.pos.add(new Vector(0f, info.deltaMoveY, 0f));
         }
 
+        return true;
     }
 }

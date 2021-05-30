@@ -1,6 +1,6 @@
 package Kurama.ComponentSystem.components.constraintGUI.interactionConstraints;
 
-import Kurama.ComponentSystem.components.constraintGUI.BoundMoveDataPack;
+import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 
 public class MaxXPos implements InteractionConstraint {
@@ -13,10 +13,10 @@ public class MaxXPos implements InteractionConstraint {
     }
 
     @Override
-    public boolean isValid(Boundary boundary, BoundMoveDataPack info) {
+    public boolean isValid(Boundary boundary, BoundInteractionMessage info) {
 
         if(info.parentMoveDir == 1) {
-            return true; // Don't check anything if not moving horizontally
+            return true; // Don't check anything if not moving vertically
         }
 
         float cur = boundary.pos.get(0) + boundary.width/2f + boundary.parent.width/2f + info.deltaMoveX;

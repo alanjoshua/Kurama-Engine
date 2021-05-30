@@ -1,12 +1,12 @@
 package Kurama.ComponentSystem.components.constraintGUI.stretchSystem;
 
-import Kurama.ComponentSystem.components.constraintGUI.BoundMoveDataPack;
+import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.InteractionConstraint;
 
 public class StretchConstraint implements InteractionConstraint {
     @Override
-    public boolean isValid(Boundary boundary, BoundMoveDataPack info) {
+    public boolean isValid(Boundary boundary, BoundInteractionMessage info) {
 
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
 
