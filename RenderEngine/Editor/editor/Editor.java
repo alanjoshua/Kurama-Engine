@@ -67,7 +67,7 @@ public class Editor extends Game {
         BoundaryConfigurator stretchConfig = new StretchSystemConfigurator();
 
         hierarchyWindow =
-                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow", rigidBodyConfig)
+                (ConstraintComponent) new ConstraintComponent(this, rootGuiComponent, "hierarchyWindow", stretchConfig)
                 .addConstraint(new WidthHeightPercent(1f, 1f))
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);

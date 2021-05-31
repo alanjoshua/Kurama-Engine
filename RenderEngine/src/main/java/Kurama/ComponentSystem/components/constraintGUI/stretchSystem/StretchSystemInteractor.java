@@ -4,7 +4,6 @@ import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.Interactor;
 import Kurama.Math.Vector;
-import Kurama.utils.Logger;
 
 public class StretchSystemInteractor implements Interactor {
     @Override
@@ -38,74 +37,60 @@ public class StretchSystemInteractor implements Interactor {
         // vertical being moved either by user
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveX!=0) {
 
-            Logger.log("inside stretch vert");
+//            Logger.log("inside stretch vert: "+boundary.identifier);
 
             boundary.pos = boundary.pos.add(new Vector(info.deltaMoveX, 0, 0));
 
             var newInfo = new StretchMessage(info);
             newInfo.shouldValidify = !verified;
 
-//            var addVec = new Vector(info.deltaMoveX/2f, 0, 0);
             for(var b: boundary.positiveAttachments) {
                 b.interact(newInfo, boundary, 1);
-
-//                b.width -= info.deltaMoveX;
-//                b.pos = b.pos.add(addVec);
             }
             for(var b: boundary.negativeAttachments) {
                 b.interact(newInfo, boundary, -1);
-//                b.width += info.deltaMoveX;
-//                b.pos = b.pos.add(addVec);
             }
         }
 
-        // Horizontal being moved either by user
+        // Horizontal being moved either by user or rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal && info.deltaMoveY!=0) {
 
-            Logger.log("inside stretch hor: "+boundary.identifier);
+//            Logger.log("inside stretch hor: "+boundary.identifier);
 
             boundary.pos = boundary.pos.add(new Vector(0, info.deltaMoveY, 0));
 
             var newInfo = new StretchMessage(info);
             newInfo.shouldValidify = !verified;
 
-//            var addVec = new Vector(0, info.deltaMoveY/2f, 0);
             for(var b: boundary.positiveAttachments) {
                 b.interact(newInfo, boundary, 1);
-//                b.height += info.deltaMoveY;
-//                b.pos = b.pos.add(addVec);
             }
             for(var b: boundary.negativeAttachments) {
                 b.interact(newInfo, boundary, -1);
-//                b.height -= info.deltaMoveY;
-//                b.pos = b.pos.add(addVec);
             }
         }
 
         // most likely being stretched by the stretch system or the rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal && info.deltaMoveX!=0) {
 
-            Logger.log("inside hor x mov");
-
-            var addVec = new Vector(info.deltaMoveX/2f, 0, 0);
+//            Logger.log("inside hor x mov: "+boundary.identifier);
 
             boundary.width += (-relativePos * info.deltaMoveX);
-            boundary.pos = boundary.pos.add(addVec);
+            boundary.pos = boundary.pos.add(new Vector(info.deltaMoveX/2f, 0, 0));
         }
 
         // most likely being stretched by the stretch system or the rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveY!=0) {
 
-            Logger.log("inside vert y mov");
+//            Logger.log("inside vert y mov: "+boundary.identifier);
 
-            var addVec = new Vector(0, info.deltaMoveY/2f, 0);
             boundary.height += relativePos * info.deltaMoveY;
-            boundary.pos = boundary.pos.add(addVec);
+            boundary.pos = boundary.pos.add(new Vector(0, info.deltaMoveY/2f, 0));
         }
 
-        else {
-            Logger.log("Stretch system else called. Shouldn't be here " +info.toString() + " type: "+boundary.boundaryOrient.toString() + " id: "+boundary.identifier);
-        }
+//        else {
+//            Logger.log("Stretch system else called. Shouldn't be here " +info.toString() + " type: "+boundary.boundaryOrient.toString() + " id: "+boundary.identifier);
+//        }
 
         return true;
     }

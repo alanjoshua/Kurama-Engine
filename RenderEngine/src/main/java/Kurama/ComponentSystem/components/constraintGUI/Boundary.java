@@ -112,10 +112,9 @@ public class Boundary extends Rectangle {
     // Is intended to be overridden
     public void initialiseInteraction(float deltaMoveX, float deltaMoveY) {
         var data = IVRequestPackGenerator.getValidificationRequestPack(null,this, deltaMoveX, deltaMoveY);
-//        if(isValidInteraction(data)) {
-            interact(data, null, -1);
-//        }
+        interact(data, null, -1);
         resetParams();
+        System.out.println();
     }
 
     // Reset alreadyUpdated param

@@ -3,11 +3,16 @@ package Kurama.ComponentSystem.components.constraintGUI.RigidBodySystem;
 import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.Interactor;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchMessage;
 import Kurama.Math.Vector;
 
 public class RigidBoundaryInteractor implements Interactor {
     @Override
     public boolean interact(BoundInteractionMessage info, Boundary boundary, Boundary parentBoundary, int relativePos) {
+
+        if(info instanceof StretchMessage) {
+            return false; // Since we know this system cannot stretch, no use in interacting
+        }
 
         if(!(info instanceof RigidBoundaryMessage) || ((info instanceof RigidBoundaryMessage) && ((RigidBoundaryMessage) info).shouldValidify)) {
             if(!boundary.isValidInteraction(info)) {
