@@ -1,6 +1,5 @@
 package Kurama.ComponentSystem.components.constraintGUI;
 
-import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.automations.BoundaryInteractable;
 import Kurama.ComponentSystem.automations.HeightPercent;
 import Kurama.ComponentSystem.automations.WidthPercent;
@@ -9,7 +8,6 @@ import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.InteractionConstraint;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
-import Kurama.inputs.Input;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,22 +20,22 @@ public class Boundary extends Rectangle {
     public static enum BoundaryOrient {Vertical, Horizontal};
     public static IVRequestPackGenerator defaultIVRGenerator = (parent, boundary, dx, dy) -> new BoundInteractionMessage(null, dx, dy);
 
-    public static Automation updateBoundaryAutomation = (Component current, Input input, float timeDelta) -> {
-        var b = (Boundary)current;
-        if(b.shouldUpdatePos) {
-            b.pos = b.updatedPos;
-        }
-        if(b.shouldUpdateWidth) {
-            b.width = (int) b.updatedWidth;
-        }
-        if(b.shouldUpdateHeight) {
-            b.height = (int) b.updatedHeight;
-        }
-        b.shouldUpdatePos = false;
-        b.shouldUpdateWidth = false;
-        b.shouldUpdateHeight = false;
-        b.alreadyVisited = false;
-    };
+//    public static Automation updateBoundaryAutomation = (Component current, Input input, float timeDelta) -> {
+//        var b = (Boundary)current;
+//        if(b.shouldUpdatePos) {
+//            b.pos = b.updatedPos;
+//        }
+//        if(b.shouldUpdateWidth) {
+//            b.width = (int) b.updatedWidth;
+//        }
+//        if(b.shouldUpdateHeight) {
+//            b.height = (int) b.updatedHeight;
+//        }
+//        b.shouldUpdatePos = false;
+//        b.shouldUpdateWidth = false;
+//        b.shouldUpdateHeight = false;
+//        b.alreadyVisited = false;
+//    };
 
     public BoundaryOrient boundaryOrient;
 
@@ -70,7 +68,7 @@ public class Boundary extends Rectangle {
         this.color = new Vector(1,1,1,1);
 
         this.addOnClickDraggedAction(new BoundaryInteractable(this)); // This will set delta move, and call relevant methods to move the boundary
-        this.addAutomation(updateBoundaryAutomation);
+//        this.addAutomation(updateBoundaryAutomation);
 
         if(boundaryOrient == BoundaryOrient.Horizontal) {
             this.height = 10;
@@ -155,31 +153,38 @@ public class Boundary extends Rectangle {
     public void initialiseInteraction(float deltaMoveX, float deltaMoveY) {
         var data = IVRequestPackGenerator.getValidificationRequestPack(null,this, deltaMoveX, deltaMoveY);
         interact(data, null, -1);
-//        resetParams();
-    }
-
-    // Reset alreadyUpdated param
-    public void resetParams() {
-        this.alreadyVisited = false;
-
-        negativeAttachments.forEach(b -> {
-            if(b.alreadyVisited)
-                b.resetParams();
-        });
-        positiveAttachments.forEach(b -> {
-            if(b.alreadyVisited)
-                b.resetParams();
-        });
     }
 
     public boolean interact(BoundInteractionMessage info, Boundary parent, int relativePos) {
+
         var isValid = isValidInteraction_pre(info);
-        if(!isValid) return false;
 
-        isValid = interactor.interact(info, this, parent, relativePos);
-        if(!isValid) return false;
+        if(isValid) {
+            isValid = interactor.interact(info, this, parent, relativePos);
+        }
 
-        return isValidInteraction_post(info);
+        if(isValid) {
+            isValid = isValidInteraction_post(info);
+        }
+
+        if(isValid) {
+            if (shouldUpdatePos) {
+                pos = updatedPos;
+            }
+            if (shouldUpdateWidth) {
+                width = (int) updatedWidth;
+            }
+            if (shouldUpdateHeight) {
+                height = (int) updatedHeight;
+            }
+        }
+
+        shouldUpdatePos = false;
+        shouldUpdateWidth = false;
+        shouldUpdateHeight = false;
+        alreadyVisited = false;
+
+        return isValid;
     }
 
 }
