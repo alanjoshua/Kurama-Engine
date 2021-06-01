@@ -72,9 +72,9 @@ public class Editor extends Game {
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical, stretchConfig);
-        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal, stretchConfig);
-        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal, stretchConfig);
+        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical);
+        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal);
+        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal);
 
         bb.setColor(new Vector(0,1,1,1));
 
@@ -105,7 +105,7 @@ public class Editor extends Game {
         }
 
         scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta));
-
+//        Logger.log("FPS: "+displayFPS);
         input.reset();
     }
 

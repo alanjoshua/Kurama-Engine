@@ -9,88 +9,65 @@ public class StretchSystemInteractor implements Interactor {
     @Override
     public boolean interact(BoundInteractionMessage info, Boundary boundary, Boundary parentBoundary, int relativePos) {
 
-        boolean verified = false;
+        boolean areChildInteractionsValid = true;
 
-        if(!(info instanceof StretchMessage) || ((info instanceof StretchMessage) && ((StretchMessage) info).shouldValidify)) {
-
-            if(!boundary.isValidInteraction(info)) {
-                return false;
-            }
-
-            for(var b: boundary.positiveAttachments) {
-                if(!b.isValidInteraction(info)) {
-                    return false;
-                }
-            }
-
-            for(var b: boundary.negativeAttachments) {
-                if(!b.isValidInteraction(info)) {
-                    return false;
-                }
-            }
-
-            verified = true;
-        }
-
-        boundary.alreadyUpdated = true;
+        boundary.alreadyVisited = true;
 
         // vertical being moved either by user
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveX!=0) {
 
-//            Logger.log("inside stretch vert: "+boundary.identifier);
-
-            boundary.pos = boundary.pos.add(new Vector(info.deltaMoveX, 0, 0));
+            boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX, 0, 0));
+            boundary.shouldUpdatePos = true;
 
             var newInfo = new StretchMessage(info);
-            newInfo.shouldValidify = !verified;
 
             for(var b: boundary.positiveAttachments) {
-                b.interact(newInfo, boundary, 1);
+                areChildInteractionsValid = b.interact(newInfo, boundary, 1);
+                if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
-                b.interact(newInfo, boundary, -1);
+                areChildInteractionsValid = b.interact(newInfo, boundary, -1);
+                if(!areChildInteractionsValid) return false;
             }
         }
 
         // Horizontal being moved either by user or rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal && info.deltaMoveY!=0) {
 
-//            Logger.log("inside stretch hor: "+boundary.identifier);
-
-            boundary.pos = boundary.pos.add(new Vector(0, info.deltaMoveY, 0));
+            boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY, 0));
+            boundary.shouldUpdatePos = true;
 
             var newInfo = new StretchMessage(info);
-            newInfo.shouldValidify = !verified;
 
             for(var b: boundary.positiveAttachments) {
-                b.interact(newInfo, boundary, 1);
+                areChildInteractionsValid = b.interact(newInfo, boundary, 1);
+                if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
-                b.interact(newInfo, boundary, -1);
+                areChildInteractionsValid = b.interact(newInfo, boundary, -1);
+                if(!areChildInteractionsValid) return false;
             }
         }
 
         // most likely being stretched by the stretch system or the rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal && info.deltaMoveX!=0) {
 
-//            Logger.log("inside hor x mov: "+boundary.identifier);
+            boundary.updatedWidth = boundary.width + (-relativePos * info.deltaMoveX);
+            boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX/2f, 0, 0));
 
-            boundary.width += (-relativePos * info.deltaMoveX);
-            boundary.pos = boundary.pos.add(new Vector(info.deltaMoveX/2f, 0, 0));
+            boundary.shouldUpdateWidth = true;
+            boundary.shouldUpdatePos = true;
         }
 
         // most likely being stretched by the stretch system or the rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveY!=0) {
 
-//            Logger.log("inside vert y mov: "+boundary.identifier);
+            boundary.updatedHeight = boundary.height + relativePos * info.deltaMoveY;
+            boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY/2f, 0));
 
-            boundary.height += relativePos * info.deltaMoveY;
-            boundary.pos = boundary.pos.add(new Vector(0, info.deltaMoveY/2f, 0));
+            boundary.shouldUpdateHeight = true;
+            boundary.shouldUpdatePos = true;
         }
-
-//        else {
-//            Logger.log("Stretch system else called. Shouldn't be here " +info.toString() + " type: "+boundary.boundaryOrient.toString() + " id: "+boundary.identifier);
-//        }
 
         return true;
     }
