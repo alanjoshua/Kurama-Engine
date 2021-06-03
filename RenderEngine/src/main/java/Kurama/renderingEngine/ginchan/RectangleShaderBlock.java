@@ -161,7 +161,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     }
 
     public void countNumCompsToRender(Component masterComponent) {
-        if(!masterComponent.shouldRenderGroup) {
+        if(!masterComponent.shouldTickGroup) {
             return;
         }
 
@@ -177,7 +177,7 @@ public class RectangleShaderBlock extends RenderPipeline {
     // This only render rectangle components
     public void recursiveRenderSetup(Component masterComponent, Matrix ortho, Vector colorSoFar, float alphaMaskSoFar, FloatBuffer buffer) {
 
-        if(!masterComponent.shouldRenderGroup) {
+        if(!masterComponent.shouldTickGroup) {
             return;
         }
 

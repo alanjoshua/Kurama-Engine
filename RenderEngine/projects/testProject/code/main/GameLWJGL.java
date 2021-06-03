@@ -7,9 +7,6 @@ import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.*;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.ComponentSystem.components.model.SceneComponent;
-import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
-import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPix;
-import Kurama.ComponentSystem.automations.WidthHeightPercent;
 import Kurama.Effects.Fog;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
@@ -20,6 +17,7 @@ import Kurama.Mesh.Texture;
 import Kurama.Terrain.Terrain;
 import Kurama.audio.SoundBuffer;
 import Kurama.audio.SoundManager;
+import Kurama.audio.SoundSource;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -156,7 +154,7 @@ public class GameLWJGL extends Game implements Runnable {
         var caret =
                 new Rectangle(this, null, "caret")
                 .setColor(new Vector(1,1,1,0.8f))
-                .setShouldRenderGroup(false)
+                .setShouldTickGroup(false)
                 .setWidth(3)
                 .setHeight(20);
 
@@ -168,9 +166,9 @@ public class GameLWJGL extends Game implements Runnable {
                 .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
 
                 .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
-                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldRenderGroup = true)
+                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickGroup = true)
 
-                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldRenderGroup = false)
+                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickGroup = false)
                 .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
 
                 .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
@@ -366,21 +364,21 @@ public class GameLWJGL extends Game implements Runnable {
         cubeMesh.materials.set(0, cubeMat);
 
         SceneComponent minecraftWall = new SceneComponent(this, scene.rootSceneComp, "wall");
+        minecraftWall.pos = new Vector(0,25,0);
         scene.rootSceneComp.addChild(minecraftWall);
 
         for(int i = 0;i < 30;i++) {
             for(int y = 0;y < 20;y++) {
-                Vector pos = new Vector(0,0,0).removeDimensionFromVec(3).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
+                Vector pos = new Vector(0,0,0).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube");
                 minecraftWall.addChild(cube);
+                cube.pos = pos;
                 cube.setScale(boxScale,boxScale,1);
-                cube.setPos(pos.add(new Vector(new float[]{0,25,0})));
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
         }
 
-        minecraftWall.addAutomation((cur, in, timedelta) -> cur.pos = cur.pos.add(new Vector(timedelta * 5f, 0, 0)));
-//        minecraftWall.finalAutomationsAfterPosConfirm.add((curr, in, timeDelta) -> System.out.println(curr.pos));
+//        minecraftWall.addAutomation((cur, in, timedelta) -> cur.pos = cur.pos.add(new Vector(timedelta * 5f, 0, 0)));
 
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
@@ -414,17 +412,17 @@ public class GameLWJGL extends Game implements Runnable {
             Model monster = scene.createAnimatedModel(monsterMeshes, frames, monsterAnim.frameRate, "monster"+i,
                     Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             monster.setScale(0.1f);
-            monster.setPos(new Vector(10 + (i*10), 30, 10));
+            monster.setPos(new Vector(10 + (i*10), 5, 10));
             monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-            scene.rootSceneComp.addChild(monster);
+            minecraftWall.children.get(0).addChild(monster);
 //            SoundSource monsterSource = new SoundSource("monster_"+i, true, false);
 //            monsterSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
 //            monsterSource.setGain(10);
 //            monsterSource.attachToModel(monster);
 //            monsterSource.play();
 //            scene.soundManager.addSoundSource(monsterSource);
-
         }
+
         var madara = new MD5Model("res/madara/madara.md5mesh");
         hints.isInstanced = false;
         hints.numInstances = 1;
@@ -439,14 +437,12 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
         scene.rootSceneComp.addChild(madara_model);
 
-//        madara_model.addAutomation(new Log("Final pos of madara: " + madara_model.objectToWorldMatrix.getColumn(3).toString()));
-
-//        SoundSource madaraSource = new SoundSource("madara", true, false);
-//        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
-//        madaraSource.setGain(10);
-//        madaraSource.attachToModel(madara_model);
-//        madaraSource.play();
-//        scene.soundManager.addSoundSource(madaraSource);
+        SoundSource madaraSource = new SoundSource("madara", true, false);
+        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+        madaraSource.setGain(10);
+        madaraSource.attachToModel(madara_model);
+        madaraSource.play();
+        scene.soundManager.addSoundSource(madaraSource);
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
@@ -462,22 +458,18 @@ public class GameLWJGL extends Game implements Runnable {
         Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
-        particle.pos = new Vector(0,0,0);
+        particle.shouldTickGroup = false;
 
         var particleGenerator = new FlowParticleGenerator(this, madara_model, particle, 1000, 0.01f, "generator");
-        particleGenerator.posRange = new Vector(0f, 0f, 0f);
-//        particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
-//        particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
+        particleGenerator.pos = new Vector(0,-1,9);
+        particleGenerator.posRange = new Vector(0.2f, 0f, 0.2f);
+        particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
+        particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
-        particleGenerator.pos = new Vector(0,0,0);
-        particleGenerator.addConstraint(new AttachComponentPos(madara_model));
-        particleGenerator.addAutomation((current, input, timeDelta) -> current.pos = current.pos.add(new Vector(timeDelta * -0.5f,0f,0)));
 
-//        particleGenerator.finalAutomationsAfterPosConfirm.add((curr, in, timeDelta) -> System.out.println("particle gen: " + curr.objectToWorldMatrix.getColumn(3)));
+        particleGenerator.orientation = Quaternion.getQuaternionFromEuler(0, 0,90);
         particleGenerator.shouldRespectParentScaling = false;
         particle.parent = particleGenerator;
-
-//        particleGenerator.addChild(particle);
 
         madara_model.addChild(particleGenerator);
 
@@ -491,14 +483,12 @@ public class GameLWJGL extends Game implements Runnable {
             var meshes = scene.loadMeshesAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
                     houseHints);
             meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
-            var model = new Model(this, meshes, "woflf_static");
+            var model = new Model(this, meshes, "wolf_static");
             model.pos = new Vector(30, 30, 50);
             model.scale = new Vector(20,20,20);
             model.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
             scene.rootSceneComp.addChild(model);
-            model.meshes.forEach(m -> {
-                m.shouldCull = false;
-            });
+            model.meshes.forEach(m -> m.shouldCull = false);
             scene.addModel(model, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         }
         catch (Exception e) {

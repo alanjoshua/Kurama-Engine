@@ -77,12 +77,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
         particle.scale = particle.scale.add(scaleInc);
         particle.updateTexture += updateAnimInc;
 
-        particle.addAutomation((curr, in, timeDelta) -> System.out.println(" particle: " + curr.objectToWorldMatrix.getColumn(3)));
-
         particles.add(particle);
-
-//        Logger.log("Created particle pos: "+particle.pos);
-
         addChild(particle);
     }
 

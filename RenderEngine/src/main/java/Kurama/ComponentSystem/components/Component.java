@@ -28,7 +28,7 @@ public abstract class Component {
 
     public String identifier;
     public boolean isContainerVisible = true;
-    public boolean shouldRenderGroup = true;
+    public boolean shouldTickGroup = true;
     public boolean shouldTriggerOnClick = false;
     public boolean shouldTriggerOnMouseOver = false;
     public boolean shouldTriggerOnMouseLeave = false;
@@ -242,8 +242,8 @@ public abstract class Component {
         return this;
     }
 
-    public Component setShouldRenderGroup(boolean shouldRender) {
-        this.shouldRenderGroup = shouldRender;
+    public Component setShouldTickGroup(boolean shouldRender) {
+        this.shouldTickGroup = shouldRender;
         return this;
     }
 
@@ -361,7 +361,7 @@ public abstract class Component {
 
     public void tick(List<Automation> parentGlobalConstraints, Input input, float timeDelta) {
 
-        if(!shouldRenderGroup) {
+        if(!shouldTickGroup) {
             return;
         }
 
