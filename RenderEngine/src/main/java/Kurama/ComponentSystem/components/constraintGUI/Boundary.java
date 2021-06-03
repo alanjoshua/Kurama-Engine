@@ -5,7 +5,7 @@ import Kurama.ComponentSystem.automations.HeightPercent;
 import Kurama.ComponentSystem.automations.WidthPercent;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
-import Kurama.ComponentSystem.components.constraintGUI.interactionConstraints.InteractionConstraint;
+import Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers.InteractionValidifier;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
 
@@ -17,32 +17,15 @@ public class Boundary extends Rectangle {
     // in a H-Boundary, positive is top and negative is bottom.
     // in a V-boundary, positive is right and negative is left.
 
-    public static enum BoundaryOrient {Vertical, Horizontal};
+    public enum BoundaryOrient {Vertical, Horizontal};
     public static IVRequestPackGenerator defaultIVRGenerator = (parent, boundary, dx, dy) -> new BoundInteractionMessage(null, dx, dy);
-
-//    public static Automation updateBoundaryAutomation = (Component current, Input input, float timeDelta) -> {
-//        var b = (Boundary)current;
-//        if(b.shouldUpdatePos) {
-//            b.pos = b.updatedPos;
-//        }
-//        if(b.shouldUpdateWidth) {
-//            b.width = (int) b.updatedWidth;
-//        }
-//        if(b.shouldUpdateHeight) {
-//            b.height = (int) b.updatedHeight;
-//        }
-//        b.shouldUpdatePos = false;
-//        b.shouldUpdateWidth = false;
-//        b.shouldUpdateHeight = false;
-//        b.alreadyVisited = false;
-//    };
 
     public BoundaryOrient boundaryOrient;
 
     public List<Boundary> negativeAttachments = new ArrayList<>();
     public List<Boundary> positiveAttachments = new ArrayList<>();
-    public List<InteractionConstraint> preInteractionConstraints = new ArrayList<>();
-    public List<InteractionConstraint> postInteractionConstraints = new ArrayList<>();
+    public List<InteractionValidifier> preInteractionValidifiers = new ArrayList<>();
+    public List<InteractionValidifier> postInteractionValidifiers = new ArrayList<>();
     public Interactor interactor = new DefaultBoundaryInteractor();
 
     // Default behaviour - override it to change it
@@ -84,13 +67,13 @@ public class Boundary extends Rectangle {
         }
     }
 
-    public Boundary addPreInteractionConstraint(InteractionConstraint i) {
-        preInteractionConstraints.add(i);
+    public Boundary addPreInteractionValidifier(InteractionValidifier i) {
+        preInteractionValidifiers.add(i);
         return this;
     }
 
-    public Boundary addPostInteractionConstraint(InteractionConstraint i) {
-        postInteractionConstraints.add(i);
+    public Boundary addPostInteractionValidifier(InteractionValidifier i) {
+        postInteractionValidifiers.add(i);
         return this;
     }
 
@@ -120,7 +103,7 @@ public class Boundary extends Rectangle {
 
         var vd = new ConstraintVerificationData(pos, width, height);
 
-        for(var i: preInteractionConstraints) {
+        for(var i: preInteractionValidifiers) {
             if(!i.isValid(this, info, vd)) {
                 return false;
             }
@@ -141,7 +124,7 @@ public class Boundary extends Rectangle {
             vd.height = (int) updatedHeight;
         }
 
-        for(var i: preInteractionConstraints) {
+        for(var i: preInteractionValidifiers) {
             if(!i.isValid(this, info, vd)) {
                 return false;
             }

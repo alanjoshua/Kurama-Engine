@@ -379,6 +379,9 @@ public class GameLWJGL extends Game implements Runnable {
             }
         }
 
+        minecraftWall.addAutomation((cur, in, timedelta) -> cur.pos = cur.pos.add(new Vector(timedelta * 5f, 0, 0)));
+//        minecraftWall.finalAutomationsAfterPosConfirm.add((curr, in, timeDelta) -> System.out.println(curr.pos));
+
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
         ter_mat.matName = "TERRAIN";
@@ -436,6 +439,8 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
         scene.rootSceneComp.addChild(madara_model);
 
+//        madara_model.addAutomation(new Log("Final pos of madara: " + madara_model.objectToWorldMatrix.getColumn(3).toString()));
+
 //        SoundSource madaraSource = new SoundSource("madara", true, false);
 //        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
 //        madaraSource.setGain(10);
@@ -457,15 +462,25 @@ public class GameLWJGL extends Game implements Runnable {
         Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
-        particle.pos = new Vector(8.5f, 39, 30);
-        var particleGenerator = new FlowParticleGenerator(this, null, particle, 1000, 0.01f, "generator");
-        particleGenerator.posRange = new Vector(0.1f, 0.1f, 0.2f);
-        particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
-        particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
+        particle.pos = new Vector(0,0,0);
+
+        var particleGenerator = new FlowParticleGenerator(this, madara_model, particle, 1000, 0.01f, "generator");
+        particleGenerator.posRange = new Vector(0f, 0f, 0f);
+//        particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
+//        particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
+        particleGenerator.pos = new Vector(0,0,0);
         particleGenerator.addConstraint(new AttachComponentPos(madara_model));
-        particleGenerator.addAutomation((current, input, timeDelta) -> current.pos = current.pos.add(new Vector(-0.5f,9f,0)));
-        scene.rootSceneComp.addChild(particleGenerator);
+        particleGenerator.addAutomation((current, input, timeDelta) -> current.pos = current.pos.add(new Vector(timeDelta * -0.5f,0f,0)));
+
+//        particleGenerator.finalAutomationsAfterPosConfirm.add((curr, in, timeDelta) -> System.out.println("particle gen: " + curr.objectToWorldMatrix.getColumn(3)));
+        particleGenerator.shouldRespectParentScaling = false;
+        particle.parent = particleGenerator;
+
+//        particleGenerator.addChild(particle);
+
+        madara_model.addChild(particleGenerator);
+
         scene.addParticleGenerator(particleGenerator, Arrays.asList(new String[]{DefaultRenderPipeline.particleShaderBlockID}));
 
         Logger.log("loading assimp model");
@@ -528,7 +543,6 @@ public class GameLWJGL extends Game implements Runnable {
 
         if(isGameRunning) {
             scene.rootSceneComp.tick(null, input, timeDelta);
-//            scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta));
             scene.soundManager.tick(playerCamera, timeDelta);
         }
 

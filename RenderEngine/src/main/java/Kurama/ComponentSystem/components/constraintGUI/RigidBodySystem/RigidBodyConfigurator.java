@@ -9,7 +9,7 @@ public class RigidBodyConfigurator implements BoundaryConfigurator {
     @Override
     public Boundary configure(Boundary boundary) {
 
-        boundary.addPreInteractionConstraint( (b, info, verificationData) -> !(info instanceof StretchMessage));
+        boundary.addPreInteractionValidifier( (b, info, verificationData) -> !(info instanceof StretchMessage));
         boundary.interactor = new RigidBoundaryInteractor();
         boundary.IVRequestPackGenerator = new RigidBodyIVRG();
         return boundary;

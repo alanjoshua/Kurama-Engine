@@ -1,10 +1,10 @@
-package Kurama.ComponentSystem.components.constraintGUI.interactionConstraints;
+package Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers;
 
 import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintVerificationData;
 
-public class MaxXPos implements InteractionConstraint {
+public class MaxXPos implements InteractionValidifier {
 
     public float maxXPos;
 

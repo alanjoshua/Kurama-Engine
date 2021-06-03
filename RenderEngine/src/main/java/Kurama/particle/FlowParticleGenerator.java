@@ -39,9 +39,10 @@ public class FlowParticleGenerator extends ParticleGenerator {
                 var particle = (Particle)it.next();
                 if(particle.updateTimeToLive(timeDelta) < 0) {
                     it.remove();
+                    children.remove(particle);
                 }
                 else {
-//                    particle.tick(timeDelta);
+//                    particle.tick(timeDelta);d
                 }
             }
 
@@ -60,6 +61,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
     }
 
     public void createParticle() {
+
         var particle = new Particle(this.baseParticle);
         float sign = Math.random() > 0.5d ? -1.0f : 1.0f;
 
@@ -74,7 +76,13 @@ public class FlowParticleGenerator extends ParticleGenerator {
         particle.velocity = particle.velocity.add(speedInc);
         particle.scale = particle.scale.add(scaleInc);
         particle.updateTexture += updateAnimInc;
+
+        particle.addAutomation((curr, in, timeDelta) -> System.out.println(" particle: " + curr.objectToWorldMatrix.getColumn(3)));
+
         particles.add(particle);
+
+//        Logger.log("Created particle pos: "+particle.pos);
+
         addChild(particle);
     }
 

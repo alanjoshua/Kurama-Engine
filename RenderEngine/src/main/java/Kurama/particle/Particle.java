@@ -34,6 +34,7 @@ public class Particle extends Model {
     }
 
     public Particle(Particle p) {
+
         super(p.game, p.meshes, Utils.getUniqueID());
         this.pos = new Vector(p.pos);
         this.parent = p.parent;
