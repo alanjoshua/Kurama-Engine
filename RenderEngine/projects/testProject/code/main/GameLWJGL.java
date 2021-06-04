@@ -100,107 +100,6 @@ public class GameLWJGL extends Game implements Runnable {
 //        });
         scene.cameras.add(playerCamera);
 
-        rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
-        rootGuiComponent
-                .setColor(new Vector(1,0,0,0.5f))
-                .setContainerVisibility(false);
-
-        var leftDivide =
-                new Rectangle(this, rootGuiComponent, "leftHalf")
-                .setTexture(new Texture(playerCamera.renderBuffer.textureId))
-                .addConstraint(new WidthHeightPercent(0.75f, 1f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0,0))
-                .addConstraint(new ResizeCameraRenderResolution(playerCamera))
-                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
-                .addOnMouseLeftAction(new RemoveOverlayColor())
-                .setKeyInputFocused(true)
-                .addOnClickAction(new GrabKeyboardFocus())
-                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
-                    rootGuiComponent.input.disableCursor();
-                    isGameRunning = true;
-                })
-                .addOnKeyInputFocusedAction(new SceneInputHandling(this))
-                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
-                    rootGuiComponent.input.enableCursor();
-                    isGameRunning = false;
-                });
-        rootGuiComponent.children.add(leftDivide);
-
-        fpsText =
-            (Text)new Text(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 14), FontTexture.defaultCharSet), "fps")
-            .addConstraint(new PosXYTopLeftAttachPix(20, 20))
-            .addAutomation(new DisplayFPS(this, "fps: "))
-            .setOverlayColor(new Vector(1,0,0,0.5f));
-        rootGuiComponent.children.add(fpsText);
-
-        var rightDivide =
-                new Rectangle(this, rootGuiComponent, "rightHalf")
-                .setColor(new Vector(0.5f, 0.4f, 0.9f, 1f))
-                .addConstraint(new WidthHeightPercent(0.25f, 1f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.75f,0));
-        rootGuiComponent.children.add(rightDivide);
-
-        var square1 =
-                new Rectangle(this, rightDivide, "shadowMap")
-                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
-                .addConstraint(new WidthHeightPercent(0.7f, 0.4f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
-                .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
-                .addOnMouseLeftAction(new SetOverlayColor(new Vector(0,0,0,0f)))
-                .addOnClickAction(new Log("Clicked button 1"));
-
-        rightDivide.children.add(square1);
-
-        var caret =
-                new Rectangle(this, null, "caret")
-                .setColor(new Vector(1,1,1,0.8f))
-                .setShouldTickGroup(false)
-                .setWidth(3)
-                .setHeight(20);
-
-        var textBox =
-                new TextBox(this, rightDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20),
-                        FontTexture.defaultCharSet), caret,"textBox")
-                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
-                .addConstraint(new WidthHeightPercent(0.5f, 0.2f))
-                .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.75f))
-
-                .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
-                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickGroup = true)
-
-                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickGroup = false)
-                .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
-
-                .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
-                    @Override
-                    public void run(Component current, Input input, float timeDelta) {
-
-                        Text t = ((TextBox)current).text;
-                        timeFromLastDelete += timeDelta;
-                        var s = new StringBuilder();
-                        s.append(t.text);
-
-                        for(int k: input.pressedChars) {
-                            if(input.keyDownOnce(Character.toUpperCase(k))) {
-                                s.append((char) k);
-                            }
-                        }
-
-                        if(input.keyDown(input.DELETE) || input.keyDown(input.BACKSPACE)) {
-                            if(s.length() > 0 && timeFromLastDelete > minDeleteTime) {
-                                timeFromLastDelete = 0;
-                                s.deleteCharAt(s.length() - 1);
-                            }
-                        }
-
-                        if(!t.text.equals(s)) {
-                            t.setText(s.toString());
-                        }
-
-                    }
-                });
-        rightDivide.addChild(textBox);
-
         try {
             var soundManager = new SoundManager();
             soundManager.init();
@@ -212,6 +111,7 @@ public class GameLWJGL extends Game implements Runnable {
             System.exit(1);
         }
 
+        initGUI();
         initScene();
 
         ((DisplayLWJGL)display).setClearColor(0,0,0,1);
@@ -226,6 +126,159 @@ public class GameLWJGL extends Game implements Runnable {
 
     }
 
+    public void initGUI() {
+
+        rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
+        rootGuiComponent
+                .setColor(new Vector(1,0,0,0.5f))
+                .setContainerVisibility(false);
+
+        var leftDivide =
+                new Rectangle(this, rootGuiComponent, "leftHalf")
+                        .setTexture(new Texture(playerCamera.renderBuffer.textureId))
+                        .addConstraint(new WidthHeightPercent(1f, 1f))
+                        .addConstraint(new PosXYTopLeftAttachPercent(0,0))
+                        .addConstraint(new ResizeCameraRenderResolution(playerCamera))
+//                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
+//                        .addOnMouseLeftAction(new RemoveOverlayColor())
+                        .setKeyInputFocused(true)
+                        .addOnClickAction(new GrabKeyboardFocus())
+                        .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
+                            rootGuiComponent.input.disableCursor();
+                            isGameRunning = true;
+                        })
+                        .addOnKeyInputFocusedAction(new SceneInputHandling(this))
+                        .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
+                            rootGuiComponent.input.enableCursor();
+                            isGameRunning = false;
+                        });
+        rootGuiComponent.addChild(leftDivide);
+
+        fpsText =
+                (Text)new Text(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
+                        .addConstraint(new PosXYTopLeftAttachPix(40, 20))
+                        .addAutomation(new DisplayFPS(this, "FPS: "))
+                        .setOverlayColor(new Vector(1,0,0,0.5f));
+        rootGuiComponent.children.add(fpsText);
+
+        var guiSection =
+                new Rectangle(this, leftDivide, "rightHalf")
+                        .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
+                        .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
+                        .addConstraint(new WidthHeightPercent(0.2f, 1f))
+                        .addConstraint(new PosXYBottomRightAttachPercent(0,0));
+        leftDivide.addChild(guiSection);
+
+//        var square1 =
+//                new Rectangle(this, rightDivide, "shadowMap")
+//                        .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+//                        .addConstraint(new WidthHeightPercent(0.7f, 0.4f))
+//                        .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
+//                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
+//                        .addOnMouseLeftAction(new SetOverlayColor(new Vector(0,0,0,0f)))
+//                        .addOnClickAction(new Log("Clicked button 1"));
+//        rightDivide.addChild(square1);
+
+        var sampleGUITitle =
+                new Text(this, guiSection, new FontTexture(fpsText.fontTexture.font, FontTexture.defaultCharSet), "info text")
+                .setText("Sample Menu")
+//                        .setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f))
+                .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
+                .addConstraint(new PosYTopAttachPercent(0.05f));
+        guiSection.addChild(sampleGUITitle);
+
+        var enterName =
+                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.BOLD, 20), FontTexture.defaultCharSet), "enterName")
+                        .setText("Enter name")
+                        .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
+                        .addConstraint(new PosYTopAttachPercent(0.2f));
+        guiSection.addChild(enterName);
+        enterName.setRadii(new Vector(10,10,10,10));
+//        enterName.text.setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f));
+
+        var saveMessage =
+                new Text(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 12), FontTexture.defaultCharSet), "save message")
+                        .setText("successfully Saved")
+                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
+                        .addConstraint(new PosYTopAttachPercent(0.5f))
+                        .setShouldTickRenderGroup(false);
+        guiSection.addChild(saveMessage);
+
+        var saveBox =
+                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.BOLD, 20), FontTexture.defaultCharSet), "save")
+                        .setText("Save")
+                        .setColor(new Vector(0.4f, 0.5f, 0.4f, 0.5f))
+                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
+                        .addConstraint(new PosYTopAttachPercent(0.42f))
+                        .addOnClickAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.8f)))
+                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.4f)))
+                        .addOnMouseLeftAction(new RemoveOverlayColor());
+        saveBox
+                        .addOnClickAction(new AddAnimationToComponent(saveBox,
+                                new Animation(7,
+                                        (comp, in, timeDelta) -> saveMessage.shouldTickRenderGroup = true,
+                                        null,
+                                        (comp, in, timeDelta) -> saveMessage.shouldTickRenderGroup = false)));
+
+        guiSection.addChild(saveBox);
+        saveBox.setRadii(new Vector(10,10,10,10));
+//        saveBox.text.setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f));
+
+
+        var caret =
+                new Rectangle(this, null, "caret")
+                        .setColor(new Vector(1f, 1f, 1f, 0.7f))
+                        .setShouldTickRenderGroup(false)
+                        .setWidth(3)
+                        .setHeight(20);
+
+        var textBox =
+                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 16),
+                        FontTexture.defaultCharSet), caret,"textBox")
+                        .setRadii(new Vector(1f,0.8f,0.8f,0.8f))
+                        .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
+                        .addConstraint(new PosYTopAttachPercent(0.31f))
+
+                        .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
+                        .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickRenderGroup = true)
+
+                        .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickRenderGroup = false)
+                        .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
+
+                        .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
+                            @Override
+                            public void run(Component current, Input input, float timeDelta) {
+
+                                Text t = ((TextBox)current).text;
+                                timeFromLastDelete += timeDelta;
+                                var s = new StringBuilder();
+                                s.append(t.text);
+
+                                for(int k: input.pressedChars) {
+                                    if(input.keyDownOnce(Character.toUpperCase(k))) {
+                                        s.append((char) k);
+                                    }
+                                }
+
+                                if(input.keyDown(input.DELETE) || input.keyDown(input.BACKSPACE)) {
+                                    if(s.length() > 0 && timeFromLastDelete > minDeleteTime) {
+                                        timeFromLastDelete = 0;
+                                        s.deleteCharAt(s.length() - 1);
+                                    }
+                                }
+
+                                if(!t.text.equals(s)) {
+                                    t.setText(s.toString());
+                                }
+
+                            }
+                        });
+        guiSection.addChild(textBox);
+        textBox.setRadii(new Vector(10,10,10,10));
+    }
+
     public void writeSceneToFile() {
 //        SceneUtils.writeSceneToKE(scene, "projects", "testProject", null,
 //                null, "projects/testProject/code/HUD",
@@ -235,7 +288,7 @@ public class GameLWJGL extends Game implements Runnable {
     public void initScene() {
         MeshBuilderHints hints = new MeshBuilderHints();
 
-        Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-70,10,-10,-10,10);
+        Matrix directionalLightOrthoProjection = Matrix.buildOrthographicProjectionMatrix(1,-15,1,-1,-1,1);
 
         scene.ambientLight = new Vector(0.3f,0.3f,0.3f);
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
@@ -244,13 +297,13 @@ public class GameLWJGL extends Game implements Runnable {
                 new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),
                 sunMesh, directionalLightOrthoProjection, "Sun");
 
-        rootGuiComponent.findComponent("shadowMap").setTexture(directionalLight.shadowMap.depthMap);
+//        rootGuiComponent.findComponent("shadowMap").setTexture(directionalLight.shadowMap.depthMap);
         scene.renderPipeline.initializeMesh(sunMesh);
 //        sunMesh.initOpenGLMeshData();
         directionalLight.setPos(new Vector(0,500,0));
         directionalLight.shouldSelfCastShadow = false;
         directionalLight.doesProduceShadow = true;
-        directionalLight.setScale(10);
+        directionalLight.setScale(100);
         scene.addDirectionalLight(directionalLight, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
         scene.rootSceneComp.addChild(directionalLight);
 //        directionalLight.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
@@ -458,7 +511,7 @@ public class GameLWJGL extends Game implements Runnable {
         Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
         particle.scale = new Vector(3, 1f);
-        particle.shouldTickGroup = false;
+        particle.shouldTickRenderGroup = false;
 
         var particleGenerator = new FlowParticleGenerator(this, madara_model, particle, 1000, 0.01f, "generator");
         particleGenerator.pos = new Vector(0,-1,9);

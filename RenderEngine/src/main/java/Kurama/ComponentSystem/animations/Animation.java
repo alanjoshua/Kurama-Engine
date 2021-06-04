@@ -30,6 +30,19 @@ public class Animation {
         this.onAnimEnd = null;
     }
 
+    public Animation(float animTime, Automation initAction, Automation action, Automation endAction) {
+        this.animTime = animTime;
+        if(action != null) {
+            this.actions = Arrays.asList(new Automation[]{action});
+        }
+        if(initAction != null) {
+            this.onAnimStart = Arrays.asList(new Automation[]{initAction});
+        }
+        if(endAction != null) {
+            this.onAnimEnd = Arrays.asList(new Automation[]{endAction});
+        }
+    }
+
     public void run(Component current, Input input, float timeDelta) {
 
         // animation start
@@ -52,7 +65,7 @@ public class Animation {
 
         // anim end
         else {
-            if(onAnimEnd != null) {
+            if(onAnimEnd != null && !hasAnimEnded) {
                 for (var action : onAnimEnd) {
                     action.run(current, input, timeDelta);
                 }

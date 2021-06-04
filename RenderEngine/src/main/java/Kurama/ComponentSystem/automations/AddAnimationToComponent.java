@@ -16,6 +16,8 @@ public class AddAnimationToComponent implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
+        anim.timeSinceStart = 0;
+        anim.hasAnimEnded = false;
         comp.addAnimation(anim);
     }
 }

@@ -8,6 +8,7 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public abstract class Component {
 
     public String identifier;
     public boolean isContainerVisible = true;
-    public boolean shouldTickGroup = true;
+    public boolean shouldTickRenderGroup = true;
     public boolean shouldTriggerOnClick = false;
     public boolean shouldTriggerOnMouseOver = false;
     public boolean shouldTriggerOnMouseLeave = false;
@@ -37,7 +38,7 @@ public abstract class Component {
     public boolean isClicked = false;
     public boolean isClickDragged = false;
     public boolean isClickedOutside = false;
-    public boolean currentIsMouseOver = false;
+    public boolean isMouseOver = false;
     public boolean isMouseLeft = false;
     protected boolean previousIsMouseOver = false;
     public boolean isKeyInputFocused = false;
@@ -51,6 +52,8 @@ public abstract class Component {
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> constraints = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
+    public boolean doesChildHaveInputAccess = false;
+    public boolean allowParentComponentsInputAccess = false;
 
     public boolean isFirstRun = true;
     public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
@@ -242,8 +245,8 @@ public abstract class Component {
         return this;
     }
 
-    public Component setShouldTickGroup(boolean shouldRender) {
-        this.shouldTickGroup = shouldRender;
+    public Component setShouldTickRenderGroup(boolean shouldRender) {
+        this.shouldTickRenderGroup = shouldRender;
         return this;
     }
 
@@ -361,7 +364,7 @@ public abstract class Component {
 
     public void tick(List<Automation> parentGlobalConstraints, Input input, float timeDelta) {
 
-        if(!shouldTickGroup) {
+        if(!shouldTickRenderGroup) {
             return;
         }
 
@@ -372,17 +375,23 @@ public abstract class Component {
         }
 
         isClicked = false; // Reset before processing inputs for current frame
-        currentIsMouseOver = false;
+        isMouseOver = false;
         isMouseLeft = false;
         isClickedOutside = false;
         boolean previousKeyFocus = isKeyInputFocused;
         boolean previousClickDragged = isClickDragged;
 
-        currentIsMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
-        isClicked = isClicked(input, currentIsMouseOver);
-        isMouseLeft = isMouseLeft(input, currentIsMouseOver);
-        isClickedOutside = isClickedOutside(input, currentIsMouseOver);
+        isMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
+        isClicked = isClicked(input, isMouseOver);
+        isMouseLeft = isMouseLeft(input, isMouseOver);
+        isClickedOutside = isClickedOutside(input, isMouseOver);
         isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
+
+        if(isMouseOver | isClicked | isClickDragged | isKeyInputFocused) {
+            if(!allowParentComponentsInputAccess && parent != null) {
+                parent.doesChildHaveInputAccess = true;
+            }
+        }
 
         // Constraints are updated only when components are resized.
         // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
@@ -420,11 +429,18 @@ public abstract class Component {
             child.tick(globalChildrenConstraints, input, timeDelta);
         }
 
+        if(doesChildHaveInputAccess) {
+            isClicked =false;
+            isKeyInputFocused = false;
+            isMouseOver = false;
+            isClickDragged = false;
+        }
+
         if(isClicked) {
             onClick(input, timeDelta);
         }
 
-        if(currentIsMouseOver) {
+        if(isMouseOver) {
             onMouseOver(input, timeDelta);
             previousIsMouseOver = true;
         }
@@ -464,6 +480,7 @@ public abstract class Component {
 
         automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
         isResizedOrMoved = false;
+        doesChildHaveInputAccess = false;
 
     }
 

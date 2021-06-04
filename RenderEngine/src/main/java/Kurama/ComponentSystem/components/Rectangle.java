@@ -33,6 +33,11 @@ public class Rectangle extends Component {
         texBR = new Vector(new float[]{1,1, 0, 0});
     }
 
+    public Rectangle setRadii(Vector radii) {
+        this.radii = radii;
+        return this;
+    }
+
     @Override
     public boolean isMouseOverComponent(Input input) {
             if(input != null && input.isCursorEnabled) {

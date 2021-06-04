@@ -1,12 +1,9 @@
 package Kurama.ComponentSystem.components;
 
-import Kurama.ComponentSystem.animations.Animation;
-import Kurama.ComponentSystem.automations.Blink;
-import Kurama.ComponentSystem.automations.GrabKeyboardFocus;
-import Kurama.ComponentSystem.automations.LoseKeyboardFocus;
 import Kurama.ComponentSystem.automations.CaretAttach;
 import Kurama.ComponentSystem.automations.Center;
-import Kurama.Math.Vector;
+import Kurama.ComponentSystem.automations.GrabKeyboardFocus;
+import Kurama.ComponentSystem.automations.LoseKeyboardFocus;
 import Kurama.font.FontTexture;
 import Kurama.game.Game;
 import Kurama.utils.Utils;
@@ -24,14 +21,13 @@ public class TextBox extends Rectangle {
         addOnClickAction(new GrabKeyboardFocus());
         addOnClickOutsideAction(new LoseKeyboardFocus());
 
-        caret = new Rectangle(game, this, Utils.getUniqueID());
-
-        caret.color = new Vector(1,1,1,0.8f);
-        caret.addAnimation(new Animation(Float.POSITIVE_INFINITY, new Blink(0.3f)));
-        caret.addAutomation(new CaretAttach(text));
-        caret.height = text.fontTexture.height;
-        caret.width = 3;
-        children.add(caret);
+//        caret = new Rectangle(game, this, Utils.getUniqueID());
+//        caret.color = new Vector(1,1,1,0.8f);
+//        caret.addAnimation(new Animation(Float.POSITIVE_INFINITY, new Blink(0.3f)));
+//        caret.addAutomation(new CaretAttach(text));
+//        caret.height = text.fontTexture.height;
+//        caret.width = 3;
+//        children.add(caret);
     }
 
     public TextBox(Game game, Component parent, FontTexture fontTexture, Component caret, String identifier) {
@@ -46,6 +42,11 @@ public class TextBox extends Rectangle {
         this.caret.parent = this;
         this.caret.addAutomation(new CaretAttach(text));
         children.add(caret);
+    }
+
+    public TextBox setText(String t) {
+        text.setText(t);
+        return this;
     }
 
 }

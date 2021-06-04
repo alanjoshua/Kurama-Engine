@@ -27,7 +27,7 @@ public class Text extends Component {
         return this;
     }
 
-    public Component setText(String text) {
+    public Text setText(String text) {
         this.text = text;
         shouldUpdate = true;
         return this;
