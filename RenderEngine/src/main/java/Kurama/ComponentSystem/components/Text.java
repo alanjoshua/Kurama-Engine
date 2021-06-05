@@ -48,7 +48,7 @@ public class Text extends Component {
             var charInfo = fontTexture.charMap.get(c);
             var newComp = new Rectangle(game, this, Utils.getUniqueID());
 
-            newComp.positionalAutomations.add(new PosXYTopLeftAttachPix(curPos, 0));
+            newComp.onResizeAutomations.add(new PosXYTopLeftAttachPix(curPos, 0));
 
             if(charInfo != null) {
                 newComp.texUL = charInfo.texUL;

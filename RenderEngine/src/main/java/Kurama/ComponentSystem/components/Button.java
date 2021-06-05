@@ -12,7 +12,7 @@ public class Button extends Rectangle {
         super(game, parent, identifier);
         buttonText = new Text(game, this, fontTexture, identifier);
         buttonText.setText(buttonTextString);
-        buttonText.addConstraint(new Center());
+        buttonText.addOnResizeAction(new Center());
         children.add(buttonText);
     }
 }

@@ -15,7 +15,7 @@ public class MasterWindow extends Rectangle {
         super(game, null, new Vector(0,0,0,0), identifier);
         this.display = display;
         this.input = input;
-        this.positionalAutomations.add(new DisplayAttach(display));
+        this.onResizeAutomations.add(new DisplayAttach(display));
         display.resizeEvents.add( () -> this.isResizedOrMoved = true);
 
     }

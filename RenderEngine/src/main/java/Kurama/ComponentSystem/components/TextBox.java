@@ -17,7 +17,7 @@ public class TextBox extends Rectangle {
         super(game, parent, identifier);
         text = new Text(game, this, fontTexture, Utils.getUniqueID());
         children.add(text);
-        text.addConstraint(new Center());
+        text.addOnResizeAction(new Center());
         addOnClickAction(new GrabKeyboardFocus());
         addOnClickOutsideAction(new LoseKeyboardFocus());
 
@@ -34,7 +34,7 @@ public class TextBox extends Rectangle {
         super(game, parent, identifier);
         text = new Text(game, this, fontTexture, Utils.getUniqueID());
         children.add(text);
-        text.addConstraint(new Center());
+        text.addOnResizeAction(new Center());
         addOnClickAction(new GrabKeyboardFocus());
         addOnClickOutsideAction(new LoseKeyboardFocus());
 

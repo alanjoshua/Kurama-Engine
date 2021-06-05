@@ -49,7 +49,7 @@ public abstract class Component {
 
     // Constraints are updated only when components are resized.
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
-    public List<Automation> positionalAutomations = new ArrayList<>();
+    public List<Automation> onResizeAutomations = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
     public boolean doesChildHaveInputAccess = false;
     public boolean allowParentComponentsInputAccess = false;
@@ -164,8 +164,8 @@ public abstract class Component {
         return this;
     }
 
-    public Component addConstraint(Automation constraint) {
-        this.positionalAutomations.add(constraint);
+    public Component addOnResizeAction(Automation constraint) {
+        this.onResizeAutomations.add(constraint);
         return this;
     }
 
@@ -361,7 +361,7 @@ public abstract class Component {
         }
     }
 
-    public void tick(List<Automation> globalPositionalAutomations, Input input, float timeDelta, boolean parentResized) {
+    public void tick(List<Automation> globalResizeAutomations, Input input, float timeDelta, boolean parentResized) {
 
         if(!shouldTickRenderGroup) {
             return;
@@ -398,13 +398,13 @@ public abstract class Component {
         if(shouldUpdateSize) {
             this.isResizedOrMoved = false;
 
-            for (var posAutomation : positionalAutomations) {
-                posAutomation.run(this, input, timeDelta);
+            for (var automation : onResizeAutomations) {
+                automation.run(this, input, timeDelta);
             }
 
-            if (globalPositionalAutomations != null) {
-                for (var globalPosAutomation : globalPositionalAutomations) {
-                    globalPosAutomation.run(this, input, timeDelta);
+            if (globalResizeAutomations != null) {
+                for (var automation : globalResizeAutomations) {
+                    automation.run(this, input, timeDelta);
                 }
             }
         }

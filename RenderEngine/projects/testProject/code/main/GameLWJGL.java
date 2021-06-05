@@ -136,16 +136,16 @@ public class GameLWJGL extends Game implements Runnable {
         var leftDivide =
                 new Rectangle(this, rootGuiComponent, "leftHalf")
                         .setTexture(new Texture(playerCamera.renderBuffer.textureId))
-                        .addConstraint(new WidthHeightPercent(1f, 1f))
-                        .addConstraint(new PosXYTopLeftAttachPercent(0,0))
-                        .addConstraint(new ResizeCameraRenderResolution(playerCamera))
+                        .addOnResizeAction(new WidthHeightPercent(1f, 1f))
+                        .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
+                        .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
                         .setKeyInputFocused(true)
                         .addOnClickAction(new GrabKeyboardFocus());
         rootGuiComponent.addChild(leftDivide);
 
         fpsText =
                 (Text)new Text(this, leftDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
-                        .addConstraint(new PosXYTopLeftAttachPix(40, 20))
+                        .addOnResizeAction(new PosXYTopLeftAttachPix(40, 20))
                         .addAutomation(new DisplayFPS(this, "FPS: "))
                         .setOverlayColor(new Vector(1,0,0,0.5f));
         leftDivide.addChild(fpsText);
@@ -154,8 +154,8 @@ public class GameLWJGL extends Game implements Runnable {
                 new Rectangle(this, leftDivide, "rightHalf")
                         .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
                         .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
-                        .addConstraint(new WidthHeightPercent(0.2f, 1f))
-                        .addConstraint(new PosXYBottomRightAttachPercent(0,0));
+                        .addOnResizeAction(new WidthHeightPercent(0.2f, 1f))
+                        .addOnResizeAction(new PosXYBottomRightAttachPercent(0,0));
         leftDivide.addChild(guiSection);
 
         leftDivide
@@ -186,16 +186,16 @@ public class GameLWJGL extends Game implements Runnable {
                 new Text(this, guiSection, new FontTexture(fpsText.fontTexture.font, FontTexture.defaultCharSet), "info text")
                 .setText("Sample Menu")
 //                        .setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f))
-                .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
-                .addConstraint(new PosYTopAttachPercent(0.05f));
+                .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                .addOnResizeAction(new PosYTopAttachPercent(0.05f));
         guiSection.addChild(sampleGUITitle);
 
         var enterName =
                 (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.BOLD, 20), FontTexture.defaultCharSet), "enterName")
                         .setText("Enter name")
                         .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
-                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
-                        .addConstraint(new PosYTopAttachPercent(0.2f));
+                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.2f));
         guiSection.addChild(enterName);
         enterName.setRadii(new Vector(10,10,10,10));
 //        enterName.text.setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f));
@@ -203,8 +203,8 @@ public class GameLWJGL extends Game implements Runnable {
         var saveMessage =
                 new Text(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 12), FontTexture.defaultCharSet), "save message")
                         .setText("successfully Saved")
-                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
-                        .addConstraint(new PosYTopAttachPercent(0.5f))
+                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.5f))
                         .setShouldTickRenderGroup(false);
         guiSection.addChild(saveMessage);
 
@@ -212,8 +212,8 @@ public class GameLWJGL extends Game implements Runnable {
                 (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.BOLD, 20), FontTexture.defaultCharSet), "save")
                         .setText("Save")
                         .setColor(new Vector(0.4f, 0.5f, 0.4f, 0.5f))
-                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
-                        .addConstraint(new PosYTopAttachPercent(0.42f))
+                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.42f))
                         .addOnClickAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.8f)))
                         .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.4f)))
                         .addOnMouseLeftAction(new RemoveOverlayColor());
@@ -241,8 +241,8 @@ public class GameLWJGL extends Game implements Runnable {
                         FontTexture.defaultCharSet), caret,"textBox")
                         .setRadii(new Vector(1f,0.8f,0.8f,0.8f))
                         .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
-                        .addConstraint(new WidthHeightPercent(0.75f, 0.1f))
-                        .addConstraint(new PosYTopAttachPercent(0.31f))
+                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.31f))
 
                         .addOnKeyInputFocusedInitAction(new AddAnimationToComponent(caret, new Animation(Float.POSITIVE_INFINITY, new Blink(0.4f))))
                         .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickRenderGroup = true)
