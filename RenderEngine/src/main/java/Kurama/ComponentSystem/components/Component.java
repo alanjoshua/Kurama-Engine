@@ -364,6 +364,7 @@ public abstract class Component {
     public void tick(List<Automation> globalResizeAutomations, Input input, float timeDelta, boolean parentResized) {
 
         if(!shouldTickRenderGroup) {
+            if(parentResized) this.isResizedOrMoved = true;
             return;
         }
 

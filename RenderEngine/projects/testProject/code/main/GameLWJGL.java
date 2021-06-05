@@ -187,7 +187,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .setText("Sample Menu")
 //                        .setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f))
                 .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
-                .addOnResizeAction(new PosYTopAttachPercent(0.05f));
+                .addOnResizeAction(new PosYTopAttachPercent(0.06f));
         guiSection.addChild(sampleGUITitle);
 
         var enterName =
