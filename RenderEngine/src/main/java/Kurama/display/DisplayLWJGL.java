@@ -130,6 +130,7 @@ public class DisplayLWJGL extends Display {
     }
 
     public void setFullScreen() {
+
         GLFWVidMode vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(),0,0,vid.width(),vid.height(),vid.refreshRate());
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
@@ -138,6 +139,8 @@ public class DisplayLWJGL extends Display {
 //        HEIGHT = vid.height();
 
         windowResolution = new Vector(new float[]{vid.width(), vid.height()});
+//        glViewport(0,0,vid.width(), vid.height());
+
 //        renderResolution = new Vector(new float[]{vid.width(), vid.height()});
     }
 
@@ -156,7 +159,12 @@ public class DisplayLWJGL extends Display {
 //        WIDTH = defaultWindowedWidth;
 //        HEIGHT = defaultWindowedHeight;
 
-        windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+//        windowResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
+
+//        glViewport(0,0,defaultWindowedWidth,defaultWindowedHeight);
+
+//        this.windowResolution = new Vector(new float[]{width, height});
+
 //        renderResolution = new Vector(new float[]{defaultWindowedWidth, defaultWindowedHeight});
     }
 
@@ -173,7 +181,8 @@ public class DisplayLWJGL extends Display {
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         glfwShowWindow(window);
 
-        windowResolution = new Vector(new float[]{width, height});
+//        windowResolution = new Vector(new float[]{width, height});
+//        glViewport(0,0,width,height);
 //        renderResolution = new Vector(new float[]{width, height});
     }
 

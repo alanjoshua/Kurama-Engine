@@ -98,13 +98,13 @@ public class Editor extends Game {
 
     @Override
     public void tick() {
-        rootGuiComponent.tick(null, rootGuiComponent.input, timeDelta);
+        rootGuiComponent.tick(null, rootGuiComponent.input, timeDelta, false);
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
         }
 
-        scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta));
+        scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta, false));
 //        Logger.log("FPS: "+displayFPS);
         input.reset();
     }

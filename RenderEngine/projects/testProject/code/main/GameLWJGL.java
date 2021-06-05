@@ -139,27 +139,16 @@ public class GameLWJGL extends Game implements Runnable {
                         .addConstraint(new WidthHeightPercent(1f, 1f))
                         .addConstraint(new PosXYTopLeftAttachPercent(0,0))
                         .addConstraint(new ResizeCameraRenderResolution(playerCamera))
-//                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.1f)))
-//                        .addOnMouseLeftAction(new RemoveOverlayColor())
                         .setKeyInputFocused(true)
-                        .addOnClickAction(new GrabKeyboardFocus())
-                        .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
-                            rootGuiComponent.input.disableCursor();
-                            isGameRunning = true;
-                        })
-                        .addOnKeyInputFocusedAction(new SceneInputHandling(this))
-                        .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
-                            rootGuiComponent.input.enableCursor();
-                            isGameRunning = false;
-                        });
+                        .addOnClickAction(new GrabKeyboardFocus());
         rootGuiComponent.addChild(leftDivide);
 
         fpsText =
-                (Text)new Text(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
+                (Text)new Text(this, leftDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
                         .addConstraint(new PosXYTopLeftAttachPix(40, 20))
                         .addAutomation(new DisplayFPS(this, "FPS: "))
                         .setOverlayColor(new Vector(1,0,0,0.5f));
-        rootGuiComponent.children.add(fpsText);
+        leftDivide.addChild(fpsText);
 
         var guiSection =
                 new Rectangle(this, leftDivide, "rightHalf")
@@ -168,6 +157,20 @@ public class GameLWJGL extends Game implements Runnable {
                         .addConstraint(new WidthHeightPercent(0.2f, 1f))
                         .addConstraint(new PosXYBottomRightAttachPercent(0,0));
         leftDivide.addChild(guiSection);
+
+        leftDivide
+                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
+                    rootGuiComponent.input.disableCursor();
+                    isGameRunning = true;
+                    guiSection.shouldTickRenderGroup = false;
+            })
+                .addOnKeyInputFocusedAction(new SceneInputHandling(this))
+                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
+                    rootGuiComponent.input.enableCursor();
+                    isGameRunning = false;
+                    guiSection.shouldTickRenderGroup = true;
+                });
+
 
 //        var square1 =
 //                new Rectangle(this, rightDivide, "shadowMap")
@@ -423,7 +426,7 @@ public class GameLWJGL extends Game implements Runnable {
         for(int i = 0;i < 30;i++) {
             for(int y = 0;y < 20;y++) {
                 Vector pos = new Vector(0,0,0).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
-                Model cube = new Model(this,cubeMesh , "cube");
+                Model cube = new Model(this,cubeMesh , "cube"+Utils.getUniqueID());
                 minecraftWall.addChild(cube);
                 cube.pos = pos;
                 cube.setScale(boxScale,boxScale,1);
@@ -578,14 +581,14 @@ public class GameLWJGL extends Game implements Runnable {
 
     public void tick() {
 
-        rootGuiComponent.tick(null, rootGuiComponent.input, timeDelta);
+        rootGuiComponent.tick(null, rootGuiComponent.input, timeDelta, false);
 
         if(glfwWindowShouldClose(((DisplayLWJGL)display).getWindow())) {
             programRunning = false;
         }
 
         if(isGameRunning) {
-            scene.rootSceneComp.tick(null, input, timeDelta);
+            scene.rootSceneComp.tick(null, input, timeDelta, false);
             scene.soundManager.tick(playerCamera, timeDelta);
         }
 

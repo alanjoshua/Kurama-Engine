@@ -15,10 +15,8 @@ public class MasterWindow extends Rectangle {
         super(game, null, new Vector(0,0,0,0), identifier);
         this.display = display;
         this.input = input;
-        this.constraints.add(new DisplayAttach(display));
-        display.resizeEvents.add( () -> {
-            this.isResizedOrMoved = true;
-        });
+        this.positionalAutomations.add(new DisplayAttach(display));
+        display.resizeEvents.add( () -> this.isResizedOrMoved = true);
 
     }
 
@@ -29,7 +27,11 @@ public class MasterWindow extends Rectangle {
 //    Provides the same API as Display
     public int getDPI() { return display.getDPI(); }
     public float getScalingRelativeToDPI() { return display.getScalingRelativeToDPI();}
-    public void toggleWindowModes() {display.toggleWindowModes();}
+    public void toggleWindowModes() {
+//            isResizedOrMoved=true;
+//            Logger.log();
+            display.toggleWindowModes();
+    }
     public void setFullScreen() {display.setFullScreen();}
     public void setWindowedMode() {display.setWindowedMode();}
     public void setWindowedMode(int width, int height) {display.setWindowedMode(width, height);}

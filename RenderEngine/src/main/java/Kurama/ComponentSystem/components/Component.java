@@ -8,7 +8,6 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Texture;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
-import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +49,7 @@ public abstract class Component {
 
     // Constraints are updated only when components are resized.
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
-    public List<Automation> constraints = new ArrayList<>();
+    public List<Automation> positionalAutomations = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
     public boolean doesChildHaveInputAccess = false;
     public boolean allowParentComponentsInputAccess = false;
@@ -166,7 +165,7 @@ public abstract class Component {
     }
 
     public Component addConstraint(Automation constraint) {
-        this.constraints.add(constraint);
+        this.positionalAutomations.add(constraint);
         return this;
     }
 
@@ -362,7 +361,7 @@ public abstract class Component {
         }
     }
 
-    public void tick(List<Automation> parentGlobalConstraints, Input input, float timeDelta) {
+    public void tick(List<Automation> globalPositionalAutomations, Input input, float timeDelta, boolean parentResized) {
 
         if(!shouldTickRenderGroup) {
             return;
@@ -386,6 +385,7 @@ public abstract class Component {
         isMouseLeft = isMouseLeft(input, isMouseOver);
         isClickedOutside = isClickedOutside(input, isMouseOver);
         isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
+        boolean shouldUpdateSize = isResizedOrMoved || parentResized;
 
         if(isMouseOver | isClicked | isClickDragged | isKeyInputFocused) {
             if(!allowParentComponentsInputAccess && parent != null) {
@@ -395,15 +395,16 @@ public abstract class Component {
 
         // Constraints are updated only when components are resized.
         // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
-        if(this.isResizedOrMoved || (parent != null && parent.isResizedOrMoved)) {
-            this.isResizedOrMoved = true;
-            for (var constraint : constraints) {
-                constraint.run(this, input, timeDelta);
+        if(shouldUpdateSize) {
+            this.isResizedOrMoved = false;
+
+            for (var posAutomation : positionalAutomations) {
+                posAutomation.run(this, input, timeDelta);
             }
 
-            if (parentGlobalConstraints != null) {
-                for (var globalConstraints : parentGlobalConstraints) {
-                    globalConstraints.run(this, input, timeDelta);
+            if (globalPositionalAutomations != null) {
+                for (var globalPosAutomation : globalPositionalAutomations) {
+                    globalPosAutomation.run(this, input, timeDelta);
                 }
             }
         }
@@ -426,8 +427,10 @@ public abstract class Component {
         finalAutomationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
 
         for(var child: children) {
-            child.tick(globalChildrenConstraints, input, timeDelta);
+            child.tick(globalChildrenConstraints, input, timeDelta, shouldUpdateSize);
         }
+
+//        if(isResizedOrMoved) isResizedOrMoved = false;
 
         if(doesChildHaveInputAccess) {
             isClicked =false;
@@ -479,7 +482,6 @@ public abstract class Component {
         }
 
         automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
-        isResizedOrMoved = false;
         doesChildHaveInputAccess = false;
 
     }
