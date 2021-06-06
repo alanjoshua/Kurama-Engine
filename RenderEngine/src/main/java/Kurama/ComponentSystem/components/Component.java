@@ -51,8 +51,9 @@ public abstract class Component {
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> onResizeAutomations = new ArrayList<>();
     public List<Automation> globalChildrenConstraints = new ArrayList<>();
-    public boolean doesChildHaveInputAccess = false;
+    protected boolean doesChildHaveInputAccess = false;
     public boolean allowParentComponentsInputAccess = false;
+    public boolean allowMultipleComponentsClickTriggers = false;
 
     public boolean isFirstRun = true;
     public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
@@ -330,9 +331,13 @@ public abstract class Component {
     }
 
     // A default component can't have mouse over
-    public boolean isMouseOverComponent(Input input) { return false; }
+    public boolean isMouseOverComponent(Input input) {
+        return false;
+    }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
+        if(input != null && input.isLocked != null && input.isLocked != this) {return false;}
+
         if(shouldTriggerOnClick && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
             return isMouseOver;
         }
@@ -340,6 +345,7 @@ public abstract class Component {
     }
 
     public boolean isClickDragged(Input input, boolean isClicked, boolean isClickedOutside, boolean previousIsClickDragged) {
+
         if(isClicked) return true;
         else if(previousIsClickDragged && input.isLeftMouseButtonPressed()) return true;
         else return false;
@@ -388,7 +394,7 @@ public abstract class Component {
         isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
         boolean shouldUpdateSize = isResizedOrMoved || parentResized;
 
-        if(isMouseOver | isClicked | isClickDragged | isKeyInputFocused) {
+        if(isClicked | isClickDragged | isMouseOver) {
             if(!allowParentComponentsInputAccess && parent != null) {
                 parent.doesChildHaveInputAccess = true;
             }
@@ -431,13 +437,15 @@ public abstract class Component {
             child.tick(globalChildrenConstraints, input, timeDelta, shouldUpdateSize);
         }
 
-//        if(isResizedOrMoved) isResizedOrMoved = false;
-
         if(doesChildHaveInputAccess) {
             isClicked =false;
-            isKeyInputFocused = false;
             isMouseOver = false;
             isClickDragged = false;
+        }
+        else {
+            if(!allowMultipleComponentsClickTriggers && (isClicked | isClickDragged | isMouseOver)) {
+                input.isLocked = this;
+            }
         }
 
         if(isClicked) {

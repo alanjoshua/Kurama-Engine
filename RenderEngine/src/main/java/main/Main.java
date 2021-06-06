@@ -1,6 +1,7 @@
 package main;
 
 import Kurama.game.Game;
+import editor.Editor;
 
 public class Main {
 	
@@ -12,8 +13,8 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new GameLWJGL("OpenGL Renderer");
-//		game = new Editor("Editor");
+//		game = new GameLWJGL("OpenGL Renderer");
+		game = new Editor("Editor");
 		game.start();
 
 	}

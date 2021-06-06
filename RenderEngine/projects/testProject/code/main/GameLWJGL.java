@@ -134,7 +134,7 @@ public class GameLWJGL extends Game implements Runnable {
                 .setContainerVisibility(false);
 
         var leftDivide =
-                new Rectangle(this, rootGuiComponent, "leftHalf")
+                new Rectangle(this, rootGuiComponent, "gameScreen")
                         .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                         .addOnResizeAction(new WidthHeightPercent(1f, 1f))
                         .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
@@ -151,8 +151,9 @@ public class GameLWJGL extends Game implements Runnable {
         leftDivide.addChild(fpsText);
 
         var guiSection =
-                new Rectangle(this, leftDivide, "rightHalf")
+                new Rectangle(this, leftDivide, "gui")
                         .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
+                        .setShouldTriggerOnClick(true)
                         .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
                         .addOnResizeAction(new WidthHeightPercent(0.2f, 1f))
                         .addOnResizeAction(new PosXYBottomRightAttachPercent(0,0));

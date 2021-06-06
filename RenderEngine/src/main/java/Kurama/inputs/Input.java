@@ -1,5 +1,6 @@
 package Kurama.inputs;
 
+import Kurama.ComponentSystem.components.Component;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
 
@@ -110,6 +111,8 @@ public abstract class Input {
 
     Game game;
 
+    public Component isLocked = null;
+
     public Input(Game game) {
         this.game = game;
     }
@@ -142,6 +145,7 @@ public abstract class Input {
         mouseDx = 0;
         mouseDy = 0;
         pressedChars = new ArrayList<>();
+        isLocked = null;
     }
 
     public void enableCursor() {

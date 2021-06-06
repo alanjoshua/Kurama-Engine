@@ -40,19 +40,22 @@ public class Rectangle extends Component {
 
     @Override
     public boolean isMouseOverComponent(Input input) {
-            if(input != null && input.isCursorEnabled) {
-                var mp = input.getPos().append(0);
 
-                var topLeft = objectToWorldMatrix.vecMul(v1).removeDimensionFromVec(3).removeDimensionFromVec(2);
-                var topRight = objectToWorldMatrix.vecMul(v2).removeDimensionFromVec(3).removeDimensionFromVec(2);
-                var bottomLeft = objectToWorldMatrix.vecMul(v3).removeDimensionFromVec(3).removeDimensionFromVec(2);
-                var bottomRight = objectToWorldMatrix.vecMul(v4).removeDimensionFromVec(3).removeDimensionFromVec(2);
+        if(input != null && input.isLocked != null && input.isLocked != this) {return false;}
 
-                return Utils.isPointInsideRectangle2D(mp, topLeft, topRight, bottomLeft, bottomRight);
-            }
-            else {
-                return false;
-            }
+        if(input != null && input.isCursorEnabled) {
+            var mp = input.getPos().append(0);
+
+            var topLeft = objectToWorldMatrix.vecMul(v1).removeDimensionFromVec(3).removeDimensionFromVec(2);
+            var topRight = objectToWorldMatrix.vecMul(v2).removeDimensionFromVec(3).removeDimensionFromVec(2);
+            var bottomLeft = objectToWorldMatrix.vecMul(v3).removeDimensionFromVec(3).removeDimensionFromVec(2);
+            var bottomRight = objectToWorldMatrix.vecMul(v4).removeDimensionFromVec(3).removeDimensionFromVec(2);
+
+            return Utils.isPointInsideRectangle2D(mp, topLeft, topRight, bottomLeft, bottomRight);
+        }
+        else {
+            return false;
+        }
         }
 
 }
