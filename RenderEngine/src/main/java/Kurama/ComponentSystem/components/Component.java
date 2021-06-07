@@ -420,8 +420,11 @@ public abstract class Component {
         setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
         finalAutomationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
 
+        boolean isChildMouseOver = false, isChildClicked = false;
         for(var child: children) {
             child.tick(globalChildrenConstraints, input, timeDelta, shouldUpdateSize);
+            isChildMouseOver = isChildMouseOver || child.isClicked;
+            isChildClicked = isChildClicked || child.isMouseOver;
         }
 
         isClicked = false; // Reset before processing inputs for current frame
@@ -432,8 +435,20 @@ public abstract class Component {
         boolean previousClickDragged = isClickDragged;
 
         if(!doesChildHaveInputAccess) {
-            isMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
-            isClicked = isClicked(input, isMouseOver);
+
+            // If the child has triggered mouseover or click, then it means the parent also should trigger them. Don't need to check again
+
+            // The below does the opposite; Checks only when we are sure none of the children triggered those events
+            if(!isChildMouseOver && !isChildClicked) {
+                isMouseOver = isMouseOverComponent(input);
+                isClicked = isClicked(input, isMouseOver);
+            }
+            else {
+                if(!shouldTriggerOnClick) {
+                    isClicked = false;
+                }
+            }
+
             isMouseLeft = isMouseLeft(input, isMouseOver);
             isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
         }
