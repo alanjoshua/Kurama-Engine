@@ -330,6 +330,11 @@ public abstract class Component {
         }
     }
 
+    public Component setParent(Component parent) {
+        parent.addChild(this);
+        return this;
+    }
+
     // A default component can't have mouse over
     public boolean isMouseOverComponent(Input input) {
         return false;
@@ -380,25 +385,7 @@ public abstract class Component {
             isResizedOrMoved = true;
         }
 
-        isClicked = false; // Reset before processing inputs for current frame
-        isMouseOver = false;
-        isMouseLeft = false;
-        isClickedOutside = false;
-        boolean previousKeyFocus = isKeyInputFocused;
-        boolean previousClickDragged = isClickDragged;
-
-        isMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
-        isClicked = isClicked(input, isMouseOver);
-        isMouseLeft = isMouseLeft(input, isMouseOver);
-        isClickedOutside = isClickedOutside(input, isMouseOver);
-        isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
         boolean shouldUpdateSize = isResizedOrMoved || parentResized;
-
-        if(isClicked | isClickDragged | isMouseOver) {
-            if(!allowParentComponentsInputAccess && parent != null) {
-                parent.doesChildHaveInputAccess = true;
-            }
-        }
 
         // Constraints are updated only when components are resized.
         // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
@@ -437,14 +424,30 @@ public abstract class Component {
             child.tick(globalChildrenConstraints, input, timeDelta, shouldUpdateSize);
         }
 
-        if(doesChildHaveInputAccess) {
-            isClicked =false;
-            isMouseOver = false;
-            isClickDragged = false;
+        isClicked = false; // Reset before processing inputs for current frame
+        isMouseOver = false;
+        isMouseLeft = false;
+        isClickedOutside = false;
+        boolean previousKeyFocus = isKeyInputFocused;
+        boolean previousClickDragged = isClickDragged;
+
+        if(!doesChildHaveInputAccess) {
+            isMouseOver = isMouseOverComponent(input);  // This should always be first, since its result is used by isClicked
+            isClicked = isClicked(input, isMouseOver);
+            isMouseLeft = isMouseLeft(input, isMouseOver);
+            isClickDragged = isClickDragged(input, isClicked, isClickedOutside, isClickDragged);
         }
-        else {
-            if(!allowMultipleComponentsClickTriggers && (isClicked | isClickDragged | isMouseOver)) {
-                input.isLocked = this;
+
+        isClickedOutside = isClickedOutside(input, isMouseOver);
+
+        if(!doesChildHaveInputAccess) {
+            if(isClicked | isClickDragged | isMouseOver) {
+                if(!allowParentComponentsInputAccess && parent != null) {
+                    parent.doesChildHaveInputAccess = true;
+                }
+                if(!allowMultipleComponentsClickTriggers) {
+                    input.isLocked = this;
+                }
             }
         }
 

@@ -17,7 +17,6 @@ import Kurama.Mesh.Texture;
 import Kurama.Terrain.Terrain;
 import Kurama.audio.SoundBuffer;
 import Kurama.audio.SoundManager;
-import Kurama.audio.SoundSource;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -133,62 +132,70 @@ public class GameLWJGL extends Game implements Runnable {
                 .setColor(new Vector(1,0,0,0.5f))
                 .setContainerVisibility(false);
 
-        var leftDivide =
-                new Rectangle(this, rootGuiComponent, "gameScreen")
-                        .setTexture(new Texture(playerCamera.renderBuffer.textureId))
-                        .addOnResizeAction(new WidthHeightPercent(1f, 1f))
-                        .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
-                        .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
-                        .setKeyInputFocused(true)
-                        .addOnClickAction(new GrabKeyboardFocus());
-        rootGuiComponent.addChild(leftDivide);
-
-        fpsText =
-                (Text)new Text(this, leftDivide, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
-                        .addOnResizeAction(new PosXYTopLeftAttachPix(40, 20))
-                        .addAutomation(new DisplayFPS(this, "FPS: "))
-                        .setOverlayColor(new Vector(1,0,0,0.5f));
-        leftDivide.addChild(fpsText);
 
         var guiSection =
-                new Rectangle(this, leftDivide, "gui")
+                new Rectangle(this, null, "gui")
                         .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
                         .setShouldTriggerOnClick(true)
                         .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
                         .addOnResizeAction(new WidthHeightPercent(0.2f, 1f))
-                        .addOnResizeAction(new PosXYBottomRightAttachPercent(0,0));
-        leftDivide.addChild(guiSection);
+                        .addOnResizeAction(new PosXYBottomRightAttachPercent(0,0));;
 
-        leftDivide
-                .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
-                    rootGuiComponent.input.disableCursor();
-                    isGameRunning = true;
-                    guiSection.shouldTickRenderGroup = false;
-            })
-                .addOnKeyInputFocusedAction(new SceneInputHandling(this))
-                .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
-                    rootGuiComponent.input.enableCursor();
-                    isGameRunning = false;
-                    guiSection.shouldTickRenderGroup = true;
-                });
+        var gameScreen =
+                new Rectangle(this, rootGuiComponent, "gameScreen")
+                        .setTexture(new Texture(playerCamera.renderBuffer.textureId))
+                        .addChild(guiSection)
+                        .addOnResizeAction(new WidthHeightPercent(1f, 1f))
+                        .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
+                        .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
+                        .setKeyInputFocused(true)
+                        .addOnClickAction(new GrabKeyboardFocus())
+                        .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
+                            rootGuiComponent.input.disableCursor();
+                            isGameRunning = true;
+                            guiSection.shouldTickRenderGroup = false;
+                        })
+                        .addOnKeyInputFocusedAction(new SceneInputHandling(this))
+                        .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
+                            rootGuiComponent.input.enableCursor();
+                            isGameRunning = false;
+                            guiSection.shouldTickRenderGroup = true;
+                        });
+        rootGuiComponent.addChild(gameScreen);
 
+        var gameScreenTitle =
+                (TextBox)new TextBox(this, gameScreen, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "gameScreenTitle")
+                        .setText("Test scene setup haphazardly, so apologies for the mess")
+                        .setRadii(new Vector(10,10,10,10))
+                        .setColor(new Vector(0.05f, 0.05f, 0.05f , 0.5f))
+                        .addOnResizeAction(new WidthHeightPercent(0.5f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.1f))
+                        .setParent(gameScreen);
 
-//        var square1 =
-//                new Rectangle(this, rightDivide, "shadowMap")
-//                        .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
-//                        .addConstraint(new WidthHeightPercent(0.7f, 0.4f))
-//                        .addConstraint(new PosXYTopLeftAttachPercent(0.1f, 0.1f))
-//                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0,0,0.5f)))
-//                        .addOnMouseLeftAction(new SetOverlayColor(new Vector(0,0,0,0f)))
-//                        .addOnClickAction(new Log("Clicked button 1"));
-//        rightDivide.addChild(square1);
+        gameScreenTitle.text.setOverlayColor(new Vector(1,0,0,0.5f));
+
+        fpsText =
+                (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
+                        .addOnResizeAction(new PosXYTopLeftAttachPix(40, 20))
+                        .addAutomation(new DisplayFPS(this, "FPS: "))
+                        .setOverlayColor(new Vector(1,0,0,0.5f));
+        gameScreen.addChild(fpsText);
+
+        var engineTitle =
+                (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.ITALIC, 20), FontTexture.defaultCharSet), "engineName")
+                        .setText("Kurama Engine")
+                        .setColor(new Vector(0.05f, 0.05f, 0.05f , 0.5f))
+                        .addOnResizeAction(new PosYTopAttachPercent( 0.98f))
+                        .addOnResizeAction(new PosXLeftAttachPix(80))
+                        .addOnResizeAction(new WidthHeightPercent(0.1f, 0.1f))
+                        .setParent(gameScreen);
+
 
         var sampleGUITitle =
                 new Text(this, guiSection, new FontTexture(fpsText.fontTexture.font, FontTexture.defaultCharSet), "info text")
                 .setText("Sample Menu")
-//                        .setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f))
                 .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
-                .addOnResizeAction(new PosYTopAttachPercent(0.06f));
+                .addOnResizeAction(new PosYTopAttachPercent(0.1f));
         guiSection.addChild(sampleGUITitle);
 
         var enterName =
@@ -205,16 +212,16 @@ public class GameLWJGL extends Game implements Runnable {
                 new Text(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 12), FontTexture.defaultCharSet), "save message")
                         .setText("successfully Saved")
                         .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
-                        .addOnResizeAction(new PosYTopAttachPercent(0.5f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.58f))
                         .setShouldTickRenderGroup(false);
         guiSection.addChild(saveMessage);
 
         var saveBox =
-                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.BOLD, 20), FontTexture.defaultCharSet), "save")
+                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "save")
                         .setText("Save")
                         .setColor(new Vector(0.4f, 0.5f, 0.4f, 0.5f))
                         .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
-                        .addOnResizeAction(new PosYTopAttachPercent(0.42f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.5f))
                         .addOnClickAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.8f)))
                         .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.4f)))
                         .addOnMouseLeftAction(new RemoveOverlayColor());
@@ -227,8 +234,19 @@ public class GameLWJGL extends Game implements Runnable {
 
         guiSection.addChild(saveBox);
         saveBox.setRadii(new Vector(10,10,10,10));
-//        saveBox.text.setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f));
 
+
+        var exitBox =
+                (TextBox)new TextBox(this, guiSection, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "exit")
+                        .setText("EXIT")
+                        .setRadii(new Vector(10,10,10,10))
+                        .setColor(new Vector(0.4f, 0.5f, 0.4f, 0.5f))
+                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.68f))
+                        .addOnClickAction(new ExitGame())
+                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.4f)))
+                        .addOnMouseLeftAction(new RemoveOverlayColor())
+                        .setParent(guiSection);
 
         var caret =
                 new Rectangle(this, null, "caret")
@@ -250,6 +268,9 @@ public class GameLWJGL extends Game implements Runnable {
 
                         .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> caret.shouldTickRenderGroup = false)
                         .addOnKeyInputFocusLossInitAction(new RemoveAnimationsFromComponent(caret))
+
+                        .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.2f)))
+                        .addOnMouseLeftAction(new RemoveOverlayColor())
 
                         .addOnKeyInputFocusedAction(new InputHandling(0.1f) {
                             @Override
@@ -494,12 +515,12 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
         scene.rootSceneComp.addChild(madara_model);
 
-        SoundSource madaraSource = new SoundSource("madara", true, false);
-        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
-        madaraSource.setGain(10);
-        madaraSource.attachToModel(madara_model);
-        madaraSource.play();
-        scene.soundManager.addSoundSource(madaraSource);
+//        SoundSource madaraSource = new SoundSource("madara", true, false);
+//        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+//        madaraSource.setGain(10);
+//        madaraSource.attachToModel(madara_model);
+//        madaraSource.play();
+//        scene.soundManager.addSoundSource(madaraSource);
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
