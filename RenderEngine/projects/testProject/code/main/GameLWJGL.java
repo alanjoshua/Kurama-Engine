@@ -134,7 +134,7 @@ public class GameLWJGL extends Game implements Runnable {
 
 
         var guiSection =
-                new Rectangle(this, null, "gui")
+                new Rectangle(this, rootGuiComponent, "gui")
                         .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
                         .setShouldTriggerOnClick(true)
                         .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
