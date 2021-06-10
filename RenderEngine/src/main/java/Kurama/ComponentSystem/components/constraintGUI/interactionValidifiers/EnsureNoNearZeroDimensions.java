@@ -11,8 +11,7 @@ public class EnsureNoNearZeroDimensions implements InteractionValidifier {
     public EnsureNoNearZeroDimensions(float thresh) {
         this.thresh = thresh;
     }
-    public EnsureNoNearZeroDimensions() {
-    }
+    public EnsureNoNearZeroDimensions() { }
 
 
     @Override
