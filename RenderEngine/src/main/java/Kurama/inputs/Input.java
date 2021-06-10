@@ -111,7 +111,7 @@ public abstract class Input {
 
     Game game;
 
-    public Component isLocked = null;
+    protected Component isClickLocked = null;
 
     public Input(Game game) {
         this.game = game;
@@ -145,7 +145,24 @@ public abstract class Input {
         mouseDx = 0;
         mouseDy = 0;
         pressedChars = new ArrayList<>();
-        isLocked = null;
+
+        if(isClickLocked != null && (!isClickLocked.isClickDragged && !isClickLocked.isClicked)) {
+            isClickLocked = null;
+        }
+
+    }
+
+    public boolean requestClickInputLock(Component comp) {
+        if(isClickLocked != null && isClickLocked != comp) {
+            return false;
+        }
+
+        isClickLocked = comp;
+        return true;
+    }
+
+    public Component isClickLocked() {
+        return isClickLocked;
     }
 
     public void enableCursor() {

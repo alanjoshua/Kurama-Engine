@@ -41,7 +41,7 @@ public class Rectangle extends Component {
     @Override
     public boolean isMouseOverComponent(Input input) {
 
-        if(input != null && input.isLocked != null && input.isLocked != this) {return false;}
+        if(input != null && input.isClickLocked() != null && input.isClickLocked() != this) {return false;}
 
         if(input != null && input.isCursorEnabled) {
             var mp = input.getPos().append(0);

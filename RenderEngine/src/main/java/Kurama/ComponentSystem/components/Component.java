@@ -78,6 +78,11 @@ public abstract class Component {
         this.identifier = identifier;
         this.parent = parent;
         this.game = game;
+//        this.addOnClickDragEndedAction((comp, input, timeDelta) -> {
+//            if(input.isLocked == this) {
+//                input.isLocked = null;
+//            }
+//        });
     }
 
     public Matrix getOrthoProjection() {
@@ -341,7 +346,7 @@ public abstract class Component {
     }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
-        if(input != null && input.isLocked != null && input.isLocked != this) {return false;}
+        if(input != null && input.isClickLocked() != null && input.isClickLocked() != this) {return false;}
 
         if(shouldTriggerOnClick && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
             return isMouseOver;
@@ -460,8 +465,8 @@ public abstract class Component {
                 if(!allowParentComponentsInputAccess && parent != null) {
                     parent.doesChildHaveInputAccess = true;
                 }
-                if(!allowMultipleComponentsClickTriggers) {
-                    input.isLocked = this;
+                if((isClicked || isClickDragged) && !allowMultipleComponentsClickTriggers) {
+                    input.requestClickInputLock(this);
                 }
             }
         }

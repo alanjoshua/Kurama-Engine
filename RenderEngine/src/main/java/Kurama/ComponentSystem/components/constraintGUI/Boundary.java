@@ -40,6 +40,8 @@ public class Boundary extends Rectangle {
     public float updatedWidth;
     public float updatedHeight;
 
+    public boolean shouldUpdateGridCell = false;
+
     public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient) {
         this(game, parent, identifier, orient, null);
     }
@@ -124,7 +126,7 @@ public class Boundary extends Rectangle {
             vd.height = (int) updatedHeight;
         }
 
-        for(var i: preInteractionValidifiers) {
+        for(var i: postInteractionValidifiers) {
             if(!i.isValid(this, info, vd)) {
                 return false;
             }
@@ -166,6 +168,8 @@ public class Boundary extends Rectangle {
         shouldUpdateWidth = false;
         shouldUpdateHeight = false;
         alreadyVisited = false;
+
+        shouldUpdateGridCell = true;
 
         return isValid;
     }
