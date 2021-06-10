@@ -54,120 +54,101 @@ public class StretchSystemInteractor implements Interactor {
 
             // Add check here to see whether it should remain fixed or not
 
-            if(isSecondaryHorizontalBoundMoveValid(boundary, parentBoundary, info.deltaMoveY, relativePos)) {
-                boundary.updatedWidth = boundary.width + (-relativePos * info.deltaMoveX);
-                boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX / 2f, 0, 0));
 
-                boundary.shouldUpdateWidth = true;
-                boundary.shouldUpdatePos = true;
-            }
+            boundary.updatedWidth = boundary.width + (-relativePos * info.deltaMoveX);
+            boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX / 2f, 0, 0));
+
+            boundary.shouldUpdateWidth = true;
+            boundary.shouldUpdatePos = true;
+
+            rectifyMovement_horizontal(boundary, parentBoundary, info.deltaMoveY, relativePos);
+
         }
 
         // most likely being stretched by the stretch system or the rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveY!=0) {
 
             // Add check here to see whether it should remain fixed or not
-            if(isSecondaryVertBoundMoveValid(boundary, parentBoundary, info.deltaMoveY, relativePos)) {
-                boundary.updatedHeight = boundary.height + relativePos * info.deltaMoveY;
-                boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY / 2f, 0));
 
-                boundary.shouldUpdateHeight = true;
-                boundary.shouldUpdatePos = true;
-            }
+            boundary.updatedHeight = boundary.height + relativePos * info.deltaMoveY;
+            boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY / 2f, 0));
+
+            boundary.shouldUpdateHeight = true;
+            boundary.shouldUpdatePos = true;
+
+            rectifyMovement_vertical(boundary, parentBoundary, info.deltaMoveY, relativePos);
         }
 
         return true;
     }
 
-    public boolean isSecondaryVertBoundMoveValid(Boundary boundary, Boundary parentBoundary, float deltaMoveY, int relativePos) {
+    public boolean rectifyMovement_vertical(Boundary boundary, Boundary parentBoundary, float deltaMoveY, int relativePos) {
 
-        var tentativePos = boundary.pos.add(new Vector(0, deltaMoveY/2f, 0));
-        var tentativeHeight = boundary.height + relativePos * deltaMoveY;
-
-        boolean isAnyHBoundLeftHanging = false;
+        float upperBound = Float.POSITIVE_INFINITY;
+        float lowerBound = Float.NEGATIVE_INFINITY;
 
         for(var b: boundary.positiveAttachments) {
-            var bPos = b.shouldUpdatePos?b.updatedPos:b.pos;
 
-            if(deltaMoveY >= 0) { // Moving down
-                if(bPos.geti(1) < tentativePos.geti(1)) {
-                    isAnyHBoundLeftHanging = true;
-                    break;
-                }
-            }
-            else {
-                if(bPos.geti(1) > tentativePos.geti(1)) {
-                    isAnyHBoundLeftHanging = true;
-                    break;
-                }
-            }
-        }
-
-        if(!isAnyHBoundLeftHanging) {
-            for (var b : boundary.negativeAttachments) {
-                var posOfBoundBeingComparedTo = b.shouldUpdatePos ? b.updatedPos : b.pos;
-
-                if (deltaMoveY >= 0) { // Moving down
-                    if (posOfBoundBeingComparedTo.geti(1) < tentativePos.geti(1)) {
-                        isAnyHBoundLeftHanging = true;
-                        break;
-                    }
-                } else {
-                    if (posOfBoundBeingComparedTo.geti(1) > tentativePos.geti(1)) {
-                        isAnyHBoundLeftHanging = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return true;
-
-    }
-
-    public boolean isSecondaryHorizontalBoundMoveValid(Boundary boundary, Boundary parentBoundary, float deltaMoveX, int relativePos) {
-
-        var tentativeWidth = boundary.width + (-relativePos * deltaMoveX);
-        var tentativePos = boundary.pos.add(new Vector(deltaMoveX/2f, 0, 0));
-
-        boolean isAnyHBoundLeftHanging = false;
-
-        for(var b: boundary.positiveAttachments) {
-            if(b == parentBoundary) continue;
             var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
+            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight:b.height)/2f;
 
-            if(deltaMoveX >= 0) { // Moving down
-                if(posOfBoundBeingComparedTo.geti(0) < tentativePos.geti(0)) {
-                    isAnyHBoundLeftHanging = true;
-                    break;
-                }
-            }
-            else {
-                if(posOfBoundBeingComparedTo.geti(0) > tentativePos.geti(0)) {
-                    isAnyHBoundLeftHanging = true;
-                    break;
-                }
-            }
+            var tempUpperBound = posOfBoundBeingComparedTo.get(1) - heightOfBoundBeingComparedTo;
+            var tempLowerBound = posOfBoundBeingComparedTo.get(1) + heightOfBoundBeingComparedTo;
+
+            upperBound = (tempUpperBound < upperBound) ? tempUpperBound:upperBound;
+            lowerBound = (tempLowerBound > lowerBound) ? tempLowerBound:lowerBound;
         }
 
-        if(!isAnyHBoundLeftHanging) {
-            for (var b : boundary.negativeAttachments) {
-                if(b == parentBoundary) continue;
-                var bPos = b.shouldUpdatePos ? b.updatedPos : b.pos;
+        for(var b: boundary.negativeAttachments) {
 
-                if (deltaMoveX >= 0) { // Moving right
-                    if (bPos.geti(0) < tentativePos.geti(0)) {
-                        isAnyHBoundLeftHanging = true;
-                        break;
-                    }
-                } else {
-                    if (bPos.geti(0) > tentativePos.geti(0)) {
-                        isAnyHBoundLeftHanging = true;
-                        break;
-                    }
-                }
-            }
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
+            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight:b.height)/2f;
+
+            var tempUpperBound = posOfBoundBeingComparedTo.get(1) - heightOfBoundBeingComparedTo;
+            var tempLowerBound = posOfBoundBeingComparedTo.get(1) + heightOfBoundBeingComparedTo;
+
+            upperBound = (tempUpperBound < upperBound) ? tempUpperBound:upperBound;
+            lowerBound = (tempLowerBound > lowerBound) ? tempLowerBound:lowerBound;
         }
+
+        boundary.updatedHeight = lowerBound - upperBound;
+        boundary.updatedPos = new Vector(boundary.updatedPos.geti(0), upperBound+(boundary.updatedHeight/2f), boundary.updatedPos.geti(2));
+
+        return true;
+
+    }
+
+    public boolean rectifyMovement_horizontal(Boundary boundary, Boundary parentBoundary, float deltaMoveX, int relativePos) {
+
+        float leftBound = Float.POSITIVE_INFINITY;
+        float rightBound = Float.NEGATIVE_INFINITY;
+
+        for(var b: boundary.positiveAttachments) {
+
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
+            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth:b.width)/2f;
+
+            var tempLeftBound = posOfBoundBeingComparedTo.get(0) - widthOfBoundBeingComparedTo;
+            var tempRightBound = posOfBoundBeingComparedTo.get(0) + widthOfBoundBeingComparedTo;
+
+            leftBound = (tempLeftBound < leftBound) ? tempLeftBound:leftBound;
+            rightBound = (tempRightBound > rightBound) ? tempRightBound:rightBound;
+        }
+
+        for(var b: boundary.negativeAttachments) {
+
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
+            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth:b.width)/2f;
+
+            var tempLeftBound = posOfBoundBeingComparedTo.get(0) - widthOfBoundBeingComparedTo;
+            var tempRightBound = posOfBoundBeingComparedTo.get(0) + widthOfBoundBeingComparedTo;
+
+            leftBound = (tempLeftBound < leftBound) ? tempLeftBound:leftBound;
+            rightBound = (tempRightBound > rightBound) ? tempRightBound:rightBound;
+        }
+
+        boundary.updatedWidth = rightBound - leftBound;
+        boundary.updatedPos = new Vector(leftBound+(boundary.updatedWidth/2f), boundary.updatedPos.geti(1), boundary.updatedPos.geti(2));
 
         return true;
 
