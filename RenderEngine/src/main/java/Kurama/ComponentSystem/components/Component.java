@@ -21,6 +21,11 @@ public abstract class Component {
     public Matrix objectToWorldMatrix = Matrix.getIdentityMatrix(4);
     public Matrix objectToWorldNoScaleMatrix = Matrix.getIdentityMatrix(4);
 
+    protected Vector previousPos;
+    protected Quaternion previousOrient;
+    protected int previousWidth;
+    protected int previousHeight;
+
     public Vector color = new Vector(0,0,0,1);
     public Vector overlayColor = null;
     public Texture texture = null;
@@ -42,6 +47,8 @@ public abstract class Component {
     protected boolean previousIsMouseOver = false;
     public boolean isKeyInputFocused = false;
     protected boolean shouldForceCheckKeyInputFocusUpdate = false;
+
+    public boolean alwaysUpdateTransforms = false;
 
     public Component parent;
     public Game game;
@@ -70,8 +77,8 @@ public abstract class Component {
 
     public List<Animation> animations = new ArrayList<>();
 
-    public List<Kurama.ComponentSystem.automations.Automation> finalAutomationsBeforePosConfirm = new ArrayList<>();
-    public List<Kurama.ComponentSystem.automations.Automation> finalAutomationsAfterPosConfirm = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsBeforeUpdatingTransforms = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterUpdatingTransforms = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> automationsAfterChildTick = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
@@ -250,12 +257,22 @@ public abstract class Component {
         return this;
     }
 
+    public Component setShouldAlwaysUpdateTransforms(boolean should) {
+        this.alwaysUpdateTransforms = should;
+        return this;
+    }
+
     public Component setShouldTickRenderGroup(boolean shouldRender) {
         this.shouldTickRenderGroup = shouldRender;
         return this;
     }
 
     public void setupTransformationMatrices() {
+
+        if(parent==null) {
+            pos = new Vector(new float[]{width/2f, height/2f, 0});
+        }
+
         Matrix rotationMatrix = orientation.getRotationMatrix();
         Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
@@ -274,7 +291,6 @@ public abstract class Component {
         else {
             pos = new Vector(new float[]{width/2f, height/2f, 0});
         }
-
     }
 
     public Matrix getObjectToWorldMatrix() {
@@ -412,6 +428,10 @@ public abstract class Component {
             automation.run(this, input, timeDelta);
         }
 
+//        if((!shouldUpdateSize) && (previousPos.sub(pos).sumSquared() != 0 || width != previousWidth || height != previousHeight)) {
+//            isResizedOrMoved = true;
+//        }
+
         List<Animation> toBeRemoved = new ArrayList<>();
         for(var anim: animations) {
             anim.run(this, input, timeDelta);
@@ -421,9 +441,16 @@ public abstract class Component {
         }
         animations.removeAll(toBeRemoved);
 
-        finalAutomationsBeforePosConfirm.forEach(a -> a.run(this, input, timeDelta));
-        setupTransformationMatrices();  // This finalised transformation matrices, and other positional information. The mouse events should not directly change the positional information in this tick cycle
-        finalAutomationsAfterPosConfirm.forEach(a -> a.run(this, input, timeDelta));
+        automationsBeforeUpdatingTransforms.forEach(a -> a.run(this, input, timeDelta));
+
+        // This finalised transformation matrices, and other positional information. T
+        // he mouse events should not directly change the positional information in this tick cycle
+
+        if(shouldUpdateSize || alwaysUpdateTransforms) {
+            setupTransformationMatrices();
+        }
+
+        automationsAfterUpdatingTransforms.forEach(a -> a.run(this, input, timeDelta));
 
         boolean isChildMouseOver = false, isChildClicked = false;
         for(var child: children) {
@@ -514,7 +541,17 @@ public abstract class Component {
         }
 
         automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
+
+        if((!shouldUpdateSize) && (previousPos.sub(pos).sumSquared() != 0 || width != previousWidth || height != previousHeight
+                || (previousOrient.getCoordinate().sub(orientation.getCoordinate()).sumSquared() != 0))) {
+            isResizedOrMoved = true;
+        }
+
         doesChildHaveInputAccess = false;
+        previousPos = pos;
+        previousHeight = height;
+        previousWidth = width;
+        previousOrient = orientation;
 
     }
 

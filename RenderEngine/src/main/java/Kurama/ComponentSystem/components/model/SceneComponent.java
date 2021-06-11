@@ -29,7 +29,7 @@ public class SceneComponent extends Component {
         this.identifier = identifier;
         this.parent = parent;
         this.game = game;
-        finalAutomationsBeforePosConfirm.add(new DefaultPosVelAccelUpdate());
+        automationsBeforeUpdatingTransforms.add(new DefaultPosVelAccelUpdate());
     }
 
     @Override

@@ -93,10 +93,6 @@ public class GameLWJGL extends Game implements Runnable {
         playerCamera.shouldPerformFrustumCulling = true;
         scene.rootSceneComp.addChild(playerCamera);
 
-//        glfwSetFramebufferSizeCallback(((DisplayLWJGL)display).getWindow(), (window, width, height) -> {
-//            glViewport(0,0,width,height);
-//            display.windowResolution = new Vector(new float[]{width, height});
-//        });
         scene.cameras.add(playerCamera);
 
         try {
@@ -148,6 +144,7 @@ public class GameLWJGL extends Game implements Runnable {
                         .addOnResizeAction(new WidthHeightPercent(1f, 1f))
                         .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
+                        .addOnResizeAction((comp, in, time) -> Logger.log("size: "+comp.width+":"+comp.height))
                         .setKeyInputFocused(true)
                         .addOnClickAction(new GrabKeyboardFocus())
                         .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
