@@ -17,8 +17,8 @@ public class StretchValidifier_Vertical implements InteractionValidifier {
 
         if(boundary.shouldUpdateHeight) {
 
-            dHeight = (int) (boundary.updatedHeight - boundary.height);
-            dy = boundary.updatedPos.geti(1) - boundary.pos.geti(1);
+            dHeight = (int) (boundary.updatedHeight - boundary.getHeight());
+            dy = boundary.updatedPos.geti(1) - boundary.getPos().geti(1);
 
             // Moving downwards while shrinking
             if(dy > 0 && dHeight < 0) {

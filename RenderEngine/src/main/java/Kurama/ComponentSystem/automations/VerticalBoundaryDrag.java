@@ -8,11 +8,11 @@ public class VerticalBoundaryDrag implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
 
-        Vector newPos = current.pos.add(new Vector(input.mouseDx, 0, 0));
+        Vector newPos = current.getPos().add(new Vector(input.mouseDx, 0, 0));
 
         // This method will always return true unless overridden
-        if(current.isValidLocation(newPos, current.width, current.height)) {
-            current.pos.setDataElement(0, newPos.get(0));
+        if(current.isValidLocation(newPos, current.getWidth(), current.getHeight())) {
+            current.getPos().setDataElement(0, newPos.get(0));
         }
 
 //        for(Component attachedComp: ((VerticalBoundary)current).attachedComponents.get(BoundaryType.LEFT)) {

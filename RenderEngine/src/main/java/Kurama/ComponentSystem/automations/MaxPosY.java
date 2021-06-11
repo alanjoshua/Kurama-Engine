@@ -13,8 +13,8 @@ public class MaxPosY implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        if(current.pos.get(1) + current.height/2f> maxPos) {
-            current.pos.setDataElement(1, maxPos - current.height/2f);
+        if(current.getPos().get(1) + current.getHeight() /2f> maxPos) {
+            current.getPos().setDataElement(1, maxPos - current.getHeight() /2f);
         }
     }
 }

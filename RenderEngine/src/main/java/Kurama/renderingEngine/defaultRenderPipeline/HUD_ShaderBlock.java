@@ -45,7 +45,7 @@ public class HUD_ShaderBlock extends RenderPipeline {
     @Override
     public RenderPipelineData render(RenderPipelineData input) {
 
-        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().width, input.game.getMasterWindow().height, 0);
+        Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().getWidth(), input.game.getMasterWindow().getHeight(), 0);
 
         ShaderProgram hudShaderProgram = hud_shader;
         hudShaderProgram.bind();

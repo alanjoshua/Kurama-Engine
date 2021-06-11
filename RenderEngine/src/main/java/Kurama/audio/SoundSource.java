@@ -79,13 +79,13 @@ public class SoundSource {
     public void tick(SoundSourceTickInput input) {
         if(attachedModel != null) {
             if(!isRelative) {
-                setPosition(attachedModel.pos);
+                setPosition(attachedModel.getPos());
                 setSpeed(attachedModel.velocity);
             }
             else {
                 var cam = input.camera;
                 var relSpeed = cam.velocity.sub(attachedModel.velocity);
-                var relPos = cam.getPos().sub(attachedModel.pos);
+                var relPos = cam.getPos().sub(attachedModel.getPos());
                 setPosition(relPos);
                 setSpeed(relSpeed);
             }

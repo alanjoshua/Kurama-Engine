@@ -16,7 +16,7 @@ public class StretchSystemInteractor implements Interactor {
         // vertical being moved either by user
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical && info.deltaMoveX!=0) {
 
-            boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX, 0, 0));
+            boundary.updatedPos = boundary.getPos().add(new Vector(info.deltaMoveX, 0, 0));
             boundary.shouldUpdatePos = true;
 
             var newInfo = new StretchMessage(info);
@@ -34,7 +34,7 @@ public class StretchSystemInteractor implements Interactor {
         // Horizontal being moved either by user or rigid system
         else if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal && info.deltaMoveY!=0) {
 
-            boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY, 0));
+            boundary.updatedPos = boundary.getPos().add(new Vector(0, info.deltaMoveY, 0));
             boundary.shouldUpdatePos = true;
 
             var newInfo = new StretchMessage(info);
@@ -55,8 +55,8 @@ public class StretchSystemInteractor implements Interactor {
             // Add check here to see whether it should remain fixed or not
 
 
-            boundary.updatedWidth = boundary.width + (-relativePos * info.deltaMoveX);
-            boundary.updatedPos = boundary.pos.add(new Vector(info.deltaMoveX / 2f, 0, 0));
+            boundary.updatedWidth = boundary.getWidth() + (-relativePos * info.deltaMoveX);
+            boundary.updatedPos = boundary.getPos().add(new Vector(info.deltaMoveX / 2f, 0, 0));
 
             boundary.shouldUpdateWidth = true;
             boundary.shouldUpdatePos = true;
@@ -70,8 +70,8 @@ public class StretchSystemInteractor implements Interactor {
 
             // Add check here to see whether it should remain fixed or not
 
-            boundary.updatedHeight = boundary.height + relativePos * info.deltaMoveY;
-            boundary.updatedPos = boundary.pos.add(new Vector(0, info.deltaMoveY / 2f, 0));
+            boundary.updatedHeight = boundary.getHeight() + relativePos * info.deltaMoveY;
+            boundary.updatedPos = boundary.getPos().add(new Vector(0, info.deltaMoveY / 2f, 0));
 
             boundary.shouldUpdateHeight = true;
             boundary.shouldUpdatePos = true;
@@ -89,8 +89,8 @@ public class StretchSystemInteractor implements Interactor {
 
         for(var b: boundary.positiveAttachments) {
 
-            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
-            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight:b.height)/2f;
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight: b.getHeight())/2f;
 
             var tempUpperBound = posOfBoundBeingComparedTo.get(1) - heightOfBoundBeingComparedTo;
             var tempLowerBound = posOfBoundBeingComparedTo.get(1) + heightOfBoundBeingComparedTo;
@@ -101,8 +101,8 @@ public class StretchSystemInteractor implements Interactor {
 
         for(var b: boundary.negativeAttachments) {
 
-            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
-            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight:b.height)/2f;
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight: b.getHeight())/2f;
 
             var tempUpperBound = posOfBoundBeingComparedTo.get(1) - heightOfBoundBeingComparedTo;
             var tempLowerBound = posOfBoundBeingComparedTo.get(1) + heightOfBoundBeingComparedTo;
@@ -125,8 +125,8 @@ public class StretchSystemInteractor implements Interactor {
 
         for(var b: boundary.positiveAttachments) {
 
-            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
-            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth:b.width)/2f;
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth: b.getWidth())/2f;
 
             var tempLeftBound = posOfBoundBeingComparedTo.get(0) - widthOfBoundBeingComparedTo;
             var tempRightBound = posOfBoundBeingComparedTo.get(0) + widthOfBoundBeingComparedTo;
@@ -137,8 +137,8 @@ public class StretchSystemInteractor implements Interactor {
 
         for(var b: boundary.negativeAttachments) {
 
-            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos:b.pos;
-            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth:b.width)/2f;
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth: b.getWidth())/2f;
 
             var tempLeftBound = posOfBoundBeingComparedTo.get(0) - widthOfBoundBeingComparedTo;
             var tempRightBound = posOfBoundBeingComparedTo.get(0) + widthOfBoundBeingComparedTo;

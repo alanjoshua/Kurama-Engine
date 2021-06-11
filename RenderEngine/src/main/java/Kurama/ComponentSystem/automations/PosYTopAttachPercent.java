@@ -13,12 +13,12 @@ public class PosYTopAttachPercent implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        float newY = -current.parent.height/2f + current.parent.height*posYPercent + current.height / 2f;
-        current.pos.setDataElement(1, newY);
+        float newY = -current.parent.getHeight() /2f + current.parent.getHeight() *posYPercent + current.getHeight() / 2f;
+        current.getPos().setDataElement(1, newY);
     }
 
     public static float evaluateOnce(Component current, float posYPercent) {
-        return -current.parent.height/2f + current.parent.height*posYPercent + current.height / 2f;
+        return -current.parent.getHeight() /2f + current.parent.getHeight() *posYPercent + current.getHeight() / 2f;
     }
 
 }

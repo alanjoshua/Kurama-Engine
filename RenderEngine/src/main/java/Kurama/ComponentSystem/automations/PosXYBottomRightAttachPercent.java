@@ -1,6 +1,5 @@
 package Kurama.ComponentSystem.automations;
 
-import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.inputs.Input;
 
@@ -16,9 +15,9 @@ public class PosXYBottomRightAttachPercent implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        float newX = current.parent.width/2f - (current.parent.width*posXPercent + current.width / 2f);
-        float newY = current.parent.height/2f - (current.parent.height*posYPercent + current.height / 2f);
-        current.pos.setDataElement(0, newX);
-        current.pos.setDataElement(1, newY);
+        float newX = current.parent.getWidth() /2f - (current.parent.getWidth() *posXPercent + current.getWidth() / 2f);
+        float newY = current.parent.getHeight() /2f - (current.parent.getHeight() *posYPercent + current.getHeight() / 2f);
+        current.getPos().setDataElement(0, newX);
+        current.getPos().setDataElement(1, newY);
     }
 }

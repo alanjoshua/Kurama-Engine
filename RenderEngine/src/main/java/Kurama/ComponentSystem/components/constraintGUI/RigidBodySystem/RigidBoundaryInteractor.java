@@ -30,17 +30,17 @@ public class RigidBoundaryInteractor implements Interactor {
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
 
             if(parentBoundary == null) {
-                boundary.updatedPos = boundary.pos.add(new Vector(newInfo.deltaMoveX,0, 0));
+                boundary.updatedPos = boundary.getPos().add(new Vector(newInfo.deltaMoveX,0, 0));
                 boundary.shouldUpdatePos = true;
                 newInfo.parentMoveDir = 0;
             }
             else {
                 if(newInfo.parentMoveDir == 0) {
-                    boundary.updatedPos = boundary.pos.add(new Vector(newInfo.deltaMoveX,0, 0));
+                    boundary.updatedPos = boundary.getPos().add(new Vector(newInfo.deltaMoveX,0, 0));
                     boundary.shouldUpdatePos = true;
                 }
                 else {
-                    boundary.updatedPos = boundary.pos.add(new Vector(0, newInfo.deltaMoveY, 0));
+                    boundary.updatedPos = boundary.getPos().add(new Vector(0, newInfo.deltaMoveY, 0));
                     boundary.shouldUpdatePos = true;
                 }
             }
@@ -62,17 +62,17 @@ public class RigidBoundaryInteractor implements Interactor {
         else { // Horizontal boundary
 
             if(parentBoundary == null) {
-                boundary.updatedPos = boundary.pos.add(new Vector(0, newInfo.deltaMoveY, 0));
+                boundary.updatedPos = boundary.getPos().add(new Vector(0, newInfo.deltaMoveY, 0));
                 boundary.shouldUpdatePos = true;
                 newInfo.parentMoveDir = 1;
             }
             else {
                 if(newInfo.parentMoveDir == 0) {
-                    boundary.updatedPos = boundary.pos.add(new Vector(newInfo.deltaMoveX,0, 0));
+                    boundary.updatedPos = boundary.getPos().add(new Vector(newInfo.deltaMoveX,0, 0));
                     boundary.shouldUpdatePos = true;
                 }
                 else {
-                    boundary.updatedPos = boundary.pos.add(new Vector(0,  newInfo.deltaMoveY, 0));
+                    boundary.updatedPos = boundary.getPos().add(new Vector(0,  newInfo.deltaMoveY, 0));
                     boundary.shouldUpdatePos = true;
                 }
             }

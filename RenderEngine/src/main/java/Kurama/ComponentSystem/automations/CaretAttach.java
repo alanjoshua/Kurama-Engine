@@ -18,10 +18,10 @@ public class CaretAttach implements Automation {
 
         if(text.children.size() > 0) {
             Component lastChar = text.children.get(text.children.size() - 1);
-            current.pos = lastChar.pos.add(new Vector(lastChar.width, 0, 0));
+            current.setPos(lastChar.getPos().add(new Vector(lastChar.getWidth(), 0, 0)));
         }
         else {
-            current.pos = text.pos.getCopy();
+            current.setPos(text.getPos().getCopy());
         }
 
     }

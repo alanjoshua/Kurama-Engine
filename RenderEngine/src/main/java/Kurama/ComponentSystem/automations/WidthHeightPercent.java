@@ -1,6 +1,5 @@
 package Kurama.ComponentSystem.automations;
 
-import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.inputs.Input;
 
@@ -16,7 +15,7 @@ public class WidthHeightPercent implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        current.width = (int)(current.parent.width * widthPercent);
-        current.height = (int)(current.parent.height * heightPercent);
+        current.setWidth((int)(current.parent.getWidth() * widthPercent));
+        current.setHeight((int)(current.parent.getHeight() * heightPercent));
     }
 }

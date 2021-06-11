@@ -12,6 +12,6 @@ public class AttachComponentPos implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        current.pos = comp.pos;
+        current.setPos(comp.getPos());
     }
 }

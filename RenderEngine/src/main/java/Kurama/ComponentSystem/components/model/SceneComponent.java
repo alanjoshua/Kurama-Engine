@@ -8,7 +8,6 @@ import Kurama.game.Game;
 
 public class SceneComponent extends Component {
 
-   public Vector scale = new Vector(1,1,1);
     public Vector velocity = new Vector(0,0,0);
     public Vector acceleration = new Vector(0,0,0);
    public Matrix worldToObject = Matrix.getIdentityMatrix(4);
@@ -35,14 +34,14 @@ public class SceneComponent extends Component {
     @Override
     public void setupTransformationMatrices() {
 
-        Matrix rotationMatrix = orientation.getRotationMatrix();
-        Matrix scalingMatrix = Matrix.getDiagonalMatrix(scale);
+        Matrix rotationMatrix = getOrientation().getRotationMatrix();
+        Matrix scalingMatrix = Matrix.getDiagonalMatrix(getScale());
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 //
-        objectToWorldMatrix = rotScalMatrix.addColumn(pos).addRow(new Vector(new float[]{0, 0, 0, 1}));
+        objectToWorldMatrix = rotScalMatrix.addColumn(getPos()).addRow(new Vector(new float[]{0, 0, 0, 1}));
 
         // This works different from the equivalent matrix in Component. This one only excludes the current scaling from calculation
-        objectToWorldNoScaleMatrix = rotationMatrix.addColumn(pos).addRow(new Vector(new float[]{0, 0, 0, 1}));
+        objectToWorldNoScaleMatrix = rotationMatrix.addColumn(getPos()).addRow(new Vector(new float[]{0, 0, 0, 1}));
 
         if(parent!=null) {
             objectToWorldNoScaleMatrix = parent.objectToWorldMatrix.matMul(objectToWorldNoScaleMatrix);
@@ -62,6 +61,5 @@ public class SceneComponent extends Component {
     public Matrix getWorldToObject() {
         return worldToObject;
     }
-
 }
 

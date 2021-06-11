@@ -126,7 +126,8 @@ public class GameLWJGL extends Game implements Runnable {
         rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
         rootGuiComponent
                 .setColor(new Vector(1,0,0,0.5f))
-                .setContainerVisibility(false);
+                .setContainerVisibility(false)
+                .addOnResizeAction((comp, in, time) -> Logger.log("resizing to size: "+ comp.getWidth() +":"+ comp.getHeight()));
 
 
         var guiSection =
@@ -144,7 +145,6 @@ public class GameLWJGL extends Game implements Runnable {
                         .addOnResizeAction(new WidthHeightPercent(1f, 1f))
                         .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
-                        .addOnResizeAction((comp, in, time) -> Logger.log("size: "+comp.width+":"+comp.height))
                         .setKeyInputFocused(true)
                         .addOnClickAction(new GrabKeyboardFocus())
                         .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
@@ -333,7 +333,7 @@ public class GameLWJGL extends Game implements Runnable {
 //        directionalLight.pos = new Vector(0, 60, 100);
 //        directionalLight.orientation = new Quaternion(0, 1, 0, 0);
 
-        directionalLight.orientation = Quaternion.getQuaternionFromEuler(0,0,0);
+        directionalLight.setOrientation(Quaternion.getQuaternionFromEuler(0,0,0));
 
         directionalLight.addAutomation((current, input, timeDelta) -> {
             Scene scene = current.game.scene;
@@ -439,7 +439,7 @@ public class GameLWJGL extends Game implements Runnable {
         cubeMesh.materials.set(0, cubeMat);
 
         SceneComponent minecraftWall = new SceneComponent(this, scene.rootSceneComp, "wall");
-        minecraftWall.pos = new Vector(0,25,0);
+        minecraftWall.setPos(new Vector(0,25,0));
         scene.rootSceneComp.addChild(minecraftWall);
 
         for(int i = 0;i < 30;i++) {
@@ -447,7 +447,7 @@ public class GameLWJGL extends Game implements Runnable {
                 Vector pos = new Vector(0,0,0).add(new Vector(new float[]{i*boxScale*2,y*boxScale*2,0}));
                 Model cube = new Model(this,cubeMesh , "cube"+Utils.getUniqueID());
                 minecraftWall.addChild(cube);
-                cube.pos = pos;
+                cube.setPos(pos);
                 cube.setScale(boxScale,boxScale,1);
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }
@@ -532,17 +532,17 @@ public class GameLWJGL extends Game implements Runnable {
 
         Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),
                 5,0.1f, "baseParticle");
-        particle.scale = new Vector(3, 1f);
+        particle.setScale(new Vector(3, 1f));
         particle.shouldTickRenderGroup = false;
 
         var particleGenerator = new FlowParticleGenerator(this, madara_model, particle, 1000, 0.01f, "generator");
-        particleGenerator.pos = new Vector(0,-1,9);
+        particleGenerator.setPos(new Vector(0,-1,9));
         particleGenerator.posRange = new Vector(0.2f, 0f, 0.2f);
         particleGenerator.velRange = new Vector(-0.2f, 1, 1f);
         particleGenerator.accelRange = new Vector(0,0.5f,0.2f);
         particleGenerator.animUpdateRange = 0.1f;
 
-        particleGenerator.orientation = Quaternion.getQuaternionFromEuler(0, 0,90);
+        particleGenerator.setOrientation(Quaternion.getQuaternionFromEuler(0, 0,90));
         particleGenerator.shouldRespectParentScaling = false;
         particle.parent = particleGenerator;
 
@@ -559,9 +559,9 @@ public class GameLWJGL extends Game implements Runnable {
                     houseHints);
             meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
             var model = new Model(this, meshes, "wolf_static");
-            model.pos = new Vector(30, 30, 50);
-            model.scale = new Vector(20,20,20);
-            model.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
+            model.setPos(new Vector(30, 30, 50));
+            model.setScale(new Vector(20,20,20));
+            model.setOrientation(Quaternion.getAxisAsQuat(1,0,0,-90));
             scene.rootSceneComp.addChild(model);
             model.meshes.forEach(m -> m.shouldCull = false);
             scene.addModel(model, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
@@ -577,9 +577,9 @@ public class GameLWJGL extends Game implements Runnable {
             var anim = scene.createAnimatedModelAssimp("res/wolf/Wolf_dae.dae", "res/wolf/textures",
                     "wolf", houseHints, new String[]{DefaultRenderPipeline.sceneShaderBlockID});
             anim.meshes.forEach(m -> scene.renderPipeline.initializeMesh(m));
-            anim.pos = new Vector(30, 30, 30);
-            anim.scale = new Vector(20,20,20);
-            anim.orientation = Quaternion.getAxisAsQuat(1,0,0,-90);
+            anim.setPos(new Vector(30, 30, 30));
+            anim.setScale(new Vector(20,20,20));
+            anim.setOrientation(Quaternion.getAxisAsQuat(1,0,0,-90));
             anim.meshes.forEach(m -> {
                 m.shouldCull = false;
             });

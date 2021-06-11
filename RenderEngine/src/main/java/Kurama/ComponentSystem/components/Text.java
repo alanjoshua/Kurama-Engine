@@ -42,7 +42,7 @@ public class Text extends Component {
         }
 
         int curPos = 0;
-        this.width = 0;
+        this.setWidth(0);
 
         for(char c: text.toCharArray()) {
             var charInfo = fontTexture.charMap.get(c);
@@ -55,24 +55,24 @@ public class Text extends Component {
                 newComp.texBL = charInfo.texBL;
                 newComp.texUR = charInfo.texUR;
                 newComp.texBR = charInfo.texBR;
-                newComp.width = charInfo.width;
-                newComp.height = fontTexture.height;
+                newComp.setWidth(charInfo.width);
+                newComp.setHeight(fontTexture.height);
                 newComp.texture = fontTexture.texture;
 
                 newComp.setOverlayColor(this.overlayColor);
-                curPos += newComp.width;
-                width += newComp.width;
+                curPos += newComp.getWidth();
+                setWidth(getWidth() + newComp.getWidth());
                 children.add(newComp);
             }
             // Check for special characters
             else if((int)c == 32) {
-                newComp.width = fontTexture.charMap.get('O').width;
-                newComp.height = fontTexture.height;
+                newComp.setWidth(fontTexture.charMap.get('O').width);
+                newComp.setHeight(fontTexture.height);
                 newComp.isContainerVisible = false;
 
                 newComp.setOverlayColor(this.overlayColor);
-                curPos += newComp.width;
-                width += newComp.width;
+                curPos += newComp.getWidth();
+                setWidth(getWidth() + newComp.getWidth());
                 children.add(newComp);
             }
 
@@ -84,7 +84,7 @@ public class Text extends Component {
 
         }
 
-        this.height = fontTexture.height;
+        this.setHeight(fontTexture.height);
         shouldUpdate = false;
     }
 

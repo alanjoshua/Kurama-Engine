@@ -56,11 +56,11 @@ public class Boundary extends Rectangle {
 //        this.addAutomation(updateBoundaryAutomation);
 
         if(boundaryOrient == BoundaryOrient.Horizontal) {
-            this.height = 10;
+            this.setHeight(10);
             this.initAutomations.add(new WidthPercent(1));
         }
         else {
-            this.width = 10;
+            this.setWidth(10);
             this.initAutomations.add(new HeightPercent(1));
         }
 
@@ -103,7 +103,7 @@ public class Boundary extends Rectangle {
 
     public boolean isValidInteraction_pre(BoundInteractionMessage info) {
 
-        var vd = new ConstraintVerificationData(pos, width, height);
+        var vd = new ConstraintVerificationData(getPos(), getWidth(), getHeight());
 
         for(var i: preInteractionValidifiers) {
             if(!i.isValid(this, info, vd)) {
@@ -115,7 +115,7 @@ public class Boundary extends Rectangle {
 
     public boolean isValidInteraction_post(BoundInteractionMessage info) {
 
-        var vd = new ConstraintVerificationData(pos, width, height);
+        var vd = new ConstraintVerificationData(getPos(), getWidth(), getHeight());
         if(shouldUpdatePos) {
             vd.pos = updatedPos;
         }
@@ -154,13 +154,13 @@ public class Boundary extends Rectangle {
 
         if(isValid) {
             if (shouldUpdatePos) {
-                pos = updatedPos;
+                setPos(updatedPos);
             }
             if (shouldUpdateWidth) {
-                width = (int) updatedWidth;
+                setWidth((int) updatedWidth);
             }
             if (shouldUpdateHeight) {
-                height = (int) updatedHeight;
+                setHeight((int) updatedHeight);
             }
         }
 

@@ -11,7 +11,7 @@ public class DefaultCameraUpdate implements Automation {
         Camera cam = (Camera)current;
         cam.velocity = cam.velocity.add(cam.acceleration.scalarMul(timeDelta));
         var detlaV = cam.velocity.scalarMul(timeDelta);
-        cam.pos = cam.pos.add(detlaV);
+        cam.setPos(cam.getPos().add(detlaV));
 
         if(cam.shouldUpdateValues) {
             cam.updateValues();

@@ -168,21 +168,18 @@ public class Model extends SceneComponent {
 	}
 
 	public Vector getScale() {
-		return scale;
+		return super.getScale();
 	}
 
-	public void setScale(Vector scale) {
-		this.scale = scale;
-	}
 
 	public void setScale(float v) {
 		Vector scale = new Vector(new float[]{v,v,v});
-		this.scale = scale;
+		super.setScale(scale);
 	}
 
 	public void setScale(float x, float y, float z) {
 		Vector scale = new Vector(new float[]{x,y,z});
-		this.scale = scale;
+		super.setScale(scale);
 	}
 
 	public Quaternion getOrientation() {

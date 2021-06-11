@@ -1,6 +1,5 @@
 package Kurama.ComponentSystem.automations;
 
-import Kurama.ComponentSystem.automations.Automation;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.inputs.Input;
 
@@ -14,8 +13,8 @@ public class MinPosY implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        if(current.pos.get(1) - current.height/2f < minPos) {
-            current.pos.setDataElement(1, minPos + current.height/2f);
+        if(current.getPos().get(1) - current.getHeight() /2f < minPos) {
+            current.getPos().setDataElement(1, minPos + current.getHeight() /2f);
         }
     }
 }

@@ -20,8 +20,8 @@ public class MaxXPos implements InteractionValidifier {
             return true; // Don't check anything if not moving vertically
         }
 
-        float cur = verificationData.pos.get(0) + verificationData.width/2f + boundary.parent.width/2f;
-        float max = boundary.parent.width * maxXPos;
+        float cur = verificationData.pos.get(0) + verificationData.width/2f + boundary.parent.getWidth() /2f;
+        float max = boundary.parent.getWidth() * maxXPos;
 
         if(cur >= max) {
             return false;

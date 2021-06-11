@@ -18,6 +18,6 @@ public class Rotate implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
         Quaternion rot = Quaternion.getAxisAsQuat(dir, speed * timeDelta);
-        current.orientation = rot.multiply(current.orientation);
+        current.setOrientation(rot.multiply(current.getOrientation()));
     }
 }

@@ -192,7 +192,7 @@ public class RectangleShaderBlock extends RenderPipeline {
             if (masterComponent.texture != null) {
                 glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
             }
-            setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.width, masterComponent.height,
+            setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.getWidth(), masterComponent.getHeight(),
                     masterComponent.texture == null ? false : true, masterComponent.color, colorSoFar, alphaMaskSoFar, (Rectangle) masterComponent, buffer);
 
             glDrawMeshTasksNV(0, 1);

@@ -16,11 +16,11 @@ public class Move implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
         if(previousPos == null) {
-            previousPos = current.pos;
+            previousPos = current.getPos();
         }
 
         previousPos = previousPos.add(moveDir.scalarMul(timeDelta));
-        current.pos = previousPos.getCopy();
+        current.setPos(previousPos.getCopy());
 
     }
 }

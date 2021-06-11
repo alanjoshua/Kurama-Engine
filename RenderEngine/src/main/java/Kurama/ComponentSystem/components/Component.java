@@ -14,10 +14,11 @@ import java.util.List;
 
 public abstract class Component {
 
-    public Vector pos = new Vector(new float[]{0,0,0});
-    public Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
-    public int width;
-    public int height;
+    protected Vector pos = new Vector(new float[]{0,0,0});
+    protected Vector scale = new Vector(1,1,1);
+    protected Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
+    protected int width;
+    protected int height;
     public Matrix objectToWorldMatrix = Matrix.getIdentityMatrix(4);
     public Matrix objectToWorldNoScaleMatrix = Matrix.getIdentityMatrix(4);
 
@@ -25,6 +26,7 @@ public abstract class Component {
     protected Quaternion previousOrient;
     protected int previousWidth;
     protected int previousHeight;
+    protected Vector previousScale;
 
     public Vector color = new Vector(0,0,0,1);
     public Vector overlayColor = null;
@@ -85,15 +87,10 @@ public abstract class Component {
         this.identifier = identifier;
         this.parent = parent;
         this.game = game;
-//        this.addOnClickDragEndedAction((comp, input, timeDelta) -> {
-//            if(input.isLocked == this) {
-//                input.isLocked = null;
-//            }
-//        });
     }
 
     public Matrix getOrthoProjection() {
-        return Matrix.buildOrtho2D(0, width, height, 0);
+        return Matrix.buildOrtho2D(0, getWidth(), getHeight(), 0);
     }
 
     public Component findComponent(String id) {
@@ -204,11 +201,13 @@ public abstract class Component {
 
     public Component setWidth(int width) {
         this.width = width;
+//        this.isResizedOrMoved = true;
         return this;
     }
 
     public Component setHeight(int height) {
         this.height = height;
+//        this.isResizedOrMoved = true;
         return this;
     }
 
@@ -224,6 +223,15 @@ public abstract class Component {
 
     public Component setOverlayColor(Vector color) {
         this.overlayColor = color;
+        return this;
+    }
+
+    public Vector getScale() {
+        return scale;
+    }
+
+    public Component setScale(Vector scale) {
+        this.scale = scale;
         return this;
     }
 
@@ -270,17 +278,17 @@ public abstract class Component {
     public void setupTransformationMatrices() {
 
         if(parent==null) {
-            pos = new Vector(new float[]{width/2f, height/2f, 0});
+            setPos(new Vector(new float[]{getWidth() /2f, getHeight() /2f, 0}));
         }
 
-        Matrix rotationMatrix = orientation.getRotationMatrix();
-        Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(width, height, 1));
+        Matrix rotationMatrix = getOrientation().getRotationMatrix();
+        Matrix scalingMatrix = Matrix.getDiagonalMatrix(new Vector(getWidth(), getHeight(), 1));
         Matrix rotScalMatrix = rotationMatrix.matMul(scalingMatrix);
 
-        objectToWorldNoScaleMatrix = rotationMatrix.addColumn(pos);
+        objectToWorldNoScaleMatrix = rotationMatrix.addColumn(getPos());
         objectToWorldNoScaleMatrix = objectToWorldNoScaleMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
-        objectToWorldMatrix = rotScalMatrix.addColumn(pos);
+        objectToWorldMatrix = rotScalMatrix.addColumn(getPos());
         objectToWorldMatrix = objectToWorldMatrix.addRow(new Vector(new float[]{0, 0, 0, 1}));
 
 
@@ -289,7 +297,7 @@ public abstract class Component {
             objectToWorldMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldMatrix);
         }
         else {
-            pos = new Vector(new float[]{width/2f, height/2f, 0});
+            setPos(new Vector(new float[]{getWidth() /2f, getHeight() /2f, 0}));
         }
     }
 
@@ -541,16 +549,18 @@ public abstract class Component {
 
         automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
 
-        if((!shouldUpdateSize) && (previousPos.sub(pos).sumSquared() != 0 || width != previousWidth || height != previousHeight
-                || (previousOrient.getCoordinate().sub(orientation.getCoordinate()).sumSquared() != 0))) {
+        if((!shouldUpdateSize) && (previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight
+                || (previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0)
+                || previousScale.sub(getScale()).sumSquared() != 0)) {
             isResizedOrMoved = true;
         }
 
         doesChildHaveInputAccess = false;
-        previousPos = pos;
-        previousHeight = height;
-        previousWidth = width;
-        previousOrient = orientation;
+        previousPos = getPos();
+        previousHeight = getHeight();
+        previousWidth = getWidth();
+        previousOrient = getOrientation();
+        previousScale = getScale();
 
     }
 
@@ -559,4 +569,29 @@ public abstract class Component {
             return true;
     }
 
+    public Vector getPos() {
+        return pos;
+    }
+
+    public void setPos(Vector pos) {
+        this.pos = pos;
+//        this.isResizedOrMoved = true;
+    }
+
+    public Quaternion getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Quaternion orientation) {
+        this.orientation = orientation;
+//        this.isResizedOrMoved = true;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 }

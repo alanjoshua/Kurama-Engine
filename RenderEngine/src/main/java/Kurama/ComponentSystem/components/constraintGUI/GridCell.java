@@ -45,16 +45,16 @@ public class GridCell extends Component {
             return;
         }
 
-        var topy = top.pos.get(1)-top.height/2f;
-        var bottomy = bottom.pos.get(1)+bottom.height/2f;
-        var rightx = right.pos.get(1)-right.width/2f;
-        var leftx = left.pos.get(1)+left.width/2f;
+        var topy = top.getPos().get(1)- top.getHeight() /2f;
+        var bottomy = bottom.getPos().get(1)+ bottom.getHeight() /2f;
+        var rightx = right.getPos().get(1)- right.getWidth() /2f;
+        var leftx = left.getPos().get(1)+ left.getWidth() /2f;
 
         var newHeight = bottomy - topy;
         var newWidth = rightx - leftx;
-        attachedComp.pos = new Vector(leftx + newWidth/2f, topy + newHeight/2f, 0);
-        attachedComp.width = (int) newWidth;
-        attachedComp.height = (int) newHeight;
+        attachedComp.setPos(new Vector(leftx + newWidth/2f, topy + newHeight/2f, 0));
+        attachedComp.setWidth((int) newWidth);
+        attachedComp.setHeight((int) newHeight);
 
     }
 

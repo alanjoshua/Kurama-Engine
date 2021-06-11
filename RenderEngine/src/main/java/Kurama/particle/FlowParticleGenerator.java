@@ -22,7 +22,7 @@ public class FlowParticleGenerator extends ParticleGenerator {
 
         this.baseParticle = baseParticle;
         this.baseParticle.parent = this;
-        this.baseParticle.pos = new Vector(0,0,0);  // makes sure that the base particle is at the particle generator's position
+        this.baseParticle.setPos(new Vector(0,0,0));  // makes sure that the base particle is at the particle generator's position
 
         this.maxParticles = maxParticles;
         this.creationPeriodSeconds = creationPeriodSeconds;
@@ -72,9 +72,9 @@ public class FlowParticleGenerator extends ParticleGenerator {
         float updateAnimInc = (long)sign *(long)(Math.random() * this.animUpdateRange);
 
         particle.acceleration = particle.acceleration.add(accelInc);
-        particle.pos = particle.pos.add(posInc);
+        particle.setPos(particle.getPos().add(posInc));
         particle.velocity = particle.velocity.add(speedInc);
-        particle.scale = particle.scale.add(scaleInc);
+        super.setScale(super.getScale().add(scaleInc));
         particle.updateTexture += updateAnimInc;
 
         particles.add(particle);

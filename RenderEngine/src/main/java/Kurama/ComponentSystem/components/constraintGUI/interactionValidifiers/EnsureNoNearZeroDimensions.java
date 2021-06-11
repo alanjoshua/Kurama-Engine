@@ -18,7 +18,7 @@ public class EnsureNoNearZeroDimensions implements InteractionValidifier {
     public boolean isValid(Boundary boundary, BoundInteractionMessage info, ConstraintVerificationData verificationData) {
 
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
-            var deltaChange = verificationData.height - boundary.height;
+            var deltaChange = verificationData.height - boundary.getHeight();
 
             if (deltaChange < 0 && verificationData.height < thresh) {
                 return false;
@@ -27,7 +27,7 @@ public class EnsureNoNearZeroDimensions implements InteractionValidifier {
         }
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Horizontal) {
 
-            var deltaChange = verificationData.width - boundary.width;
+            var deltaChange = verificationData.width - boundary.getWidth();
             if(deltaChange < 0 && verificationData.width < thresh) {
                 return false;
             }

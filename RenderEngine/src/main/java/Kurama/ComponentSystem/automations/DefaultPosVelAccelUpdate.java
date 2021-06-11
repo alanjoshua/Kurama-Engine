@@ -10,6 +10,6 @@ public class DefaultPosVelAccelUpdate implements Automation {
         SceneComponent m = (SceneComponent) current;
         m.velocity = m.velocity.add(m.acceleration.scalarMul(timeDelta));
         var detlaV = m.velocity.scalarMul(timeDelta);
-        m.pos = m.pos.add(detlaV);
+        m.setPos(m.getPos().add(detlaV));
     }
 }

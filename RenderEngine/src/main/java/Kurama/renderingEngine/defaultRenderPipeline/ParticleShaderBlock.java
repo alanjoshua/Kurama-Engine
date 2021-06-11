@@ -54,7 +54,7 @@ public class ParticleShaderBlock extends RenderPipeline {
         for(var particle: chunk) {
             Matrix modelView = objectToCam.get(offset+particleCount);
 
-            Matrix billboard = Matrix.getDiagonalMatrix(particle.scale).
+            Matrix billboard = Matrix.getDiagonalMatrix(particle.getScale()).
                     addColumn(modelView.getColumn(3).
                             removeDimensionFromVec(3)).addRow(modelView.getRow(3));
 
@@ -93,7 +93,7 @@ public class ParticleShaderBlock extends RenderPipeline {
             if(p.shouldRender && p.isInsideFrustum) {
 
                 var objectToCam = worldToCam.matMul(p.getObjectToWorldMatrix());
-                var trans = objectToCam.matMul(p.pos.append(1)).toVector();
+                var trans = objectToCam.matMul(p.getPos().append(1)).toVector();
                 float dist = -trans.get(2);
                 var store = new ArrayList();
                 store.add(p);

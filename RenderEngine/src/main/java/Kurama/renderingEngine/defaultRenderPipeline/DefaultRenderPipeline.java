@@ -173,7 +173,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
                 var model = scene.modelID_model_map.get(modelID);
 
                 if(model.shouldRender && model.shouldBeConsideredForFrustumCulling) {
-                    var radius = model.scale.getNorm() * meshBoundingRadius;
+                    var radius = model.getScale().getNorm() * meshBoundingRadius;
 
                     model.isInsideFrustum = frustumIntersection.testSphere(model.getObjectToWorldMatrix().getColumn(3).
                             removeDimensionFromVec(3), radius);
