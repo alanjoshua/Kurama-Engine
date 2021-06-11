@@ -412,7 +412,6 @@ public abstract class Component {
         // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
         if(shouldUpdateSize) {
             this.isResizedOrMoved = false;
-
             for (var automation : onResizeAutomations) {
                 automation.run(this, input, timeDelta);
             }
