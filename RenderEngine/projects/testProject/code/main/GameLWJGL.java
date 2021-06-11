@@ -209,7 +209,8 @@ public class GameLWJGL extends Game implements Runnable {
                 new Text(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 12), FontTexture.defaultCharSet), "save message")
                         .setText("successfully Saved")
                         .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
-                        .addOnResizeAction(new PosYTopAttachPercent(0.58f))
+                        .addOnResizeAction(new PosYTopAttachPercent(0.62f))
+//                        .addOnResizeAction(new PosXLeftAttachPercent(0.25f))
                         .setShouldTickRenderGroup(false);
         guiSection.addChild(saveMessage);
 

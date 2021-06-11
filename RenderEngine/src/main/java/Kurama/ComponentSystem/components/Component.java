@@ -41,6 +41,7 @@ public abstract class Component {
     public boolean shouldTriggerOnMouseLeave = false;
 
     public boolean isResizedOrMoved = true;
+    protected boolean shouldResizeChildren = false;
     public boolean isClicked = false;
     public boolean isClickDragged = false;
     public boolean isClickedOutside = false;
@@ -78,10 +79,7 @@ public abstract class Component {
     public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocusLossInit = new ArrayList<>();
 
     public List<Animation> animations = new ArrayList<>();
-
-    public List<Kurama.ComponentSystem.automations.Automation> automationsBeforeUpdatingTransforms = new ArrayList<>();
-    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterUpdatingTransforms = new ArrayList<>();
-    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterChildTick = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> finalAutomations = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
@@ -189,10 +187,15 @@ public abstract class Component {
         return this;
     }
 
-    public Component addAutomationAfterChildTick(Kurama.ComponentSystem.automations.Automation automation) {
-        this.automationsAfterChildTick.add(automation);
+    public Component addFinalAutomation(Kurama.ComponentSystem.automations.Automation automation) {
+        this.finalAutomations.add(automation);
         return this;
     }
+
+//    public Component addAutomationAfterChildTick(Kurama.ComponentSystem.automations.Automation automation) {
+//        this.automationsAfterChildTick.add(automation);
+//        return this;
+//    }
 
     public Component setColor(Vector color) {
         this.color = color;
@@ -296,9 +299,7 @@ public abstract class Component {
             objectToWorldNoScaleMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldNoScaleMatrix);
             objectToWorldMatrix = parent.objectToWorldNoScaleMatrix.matMul(objectToWorldMatrix);
         }
-        else {
-            setPos(new Vector(new float[]{getWidth() /2f, getHeight() /2f, 0}));
-        }
+
     }
 
     public Matrix getObjectToWorldMatrix() {
@@ -408,36 +409,27 @@ public abstract class Component {
             return;
         }
 
+        isResizedOrMoved = isResizedOrMoved || parentResized;
+
         if(isFirstRun) {
             initAutomations.forEach(a -> a.run(this, input, timeDelta));
-            isFirstRun = false;
-            isResizedOrMoved = true;
-        }
 
-        boolean shouldUpdateSize = isResizedOrMoved || parentResized;
+            onResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
+            if(globalResizeAutomations!=null) globalResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
+            setupTransformationMatrices();
+            shouldResizeChildren = true;
+            isResizedOrMoved = false;
 
-        // Constraints are updated only when components are resized.
-        // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
-        if(shouldUpdateSize) {
-            this.isResizedOrMoved = false;
-            for (var automation : onResizeAutomations) {
-                automation.run(this, input, timeDelta);
-            }
-
-            if (globalResizeAutomations != null) {
-                for (var automation : globalResizeAutomations) {
-                    automation.run(this, input, timeDelta);
-                }
-            }
+            previousPos = getPos();
+            previousHeight = getHeight();
+            previousWidth = getWidth();
+            previousOrient = getOrientation();
+            previousScale = getScale();
         }
 
         for(var automation: automations) {
             automation.run(this, input, timeDelta);
         }
-
-//        if((!shouldUpdateSize) && (previousPos.sub(pos).sumSquared() != 0 || width != previousWidth || height != previousHeight)) {
-//            isResizedOrMoved = true;
-//        }
 
         List<Animation> toBeRemoved = new ArrayList<>();
         for(var anim: animations) {
@@ -447,25 +439,33 @@ public abstract class Component {
             }
         }
         animations.removeAll(toBeRemoved);
+        finalAutomations.forEach(a -> a.run(this, input, timeDelta)); // Mostly intended to be used internally, and not by user
 
-        automationsBeforeUpdatingTransforms.forEach(a -> a.run(this, input, timeDelta));
+        isResizedOrMoved = isResizedOrMoved(isResizedOrMoved);
 
-        // This finalised transformation matrices, and other positional information. T
-        // he mouse events should not directly change the positional information in this tick cycle
+        // Constraints are updated only when components are resized.
+        // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
 
-        if(shouldUpdateSize || alwaysUpdateTransforms) {
+        if(!isFirstRun && isResizedOrMoved) {
+            onResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
+            if (globalResizeAutomations != null) {
+                globalResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
+            }
             setupTransformationMatrices();
-        }
 
-        automationsAfterUpdatingTransforms.forEach(a -> a.run(this, input, timeDelta));
+            this.isResizedOrMoved = false;
+            shouldResizeChildren = true;
+
+        }
 
         boolean isChildMouseOver = false, isChildClicked = false;
         for(var child: children) {
-            child.tick(globalChildrenConstraints, input, timeDelta, shouldUpdateSize);
+            child.tick(globalChildrenConstraints, input, timeDelta, shouldResizeChildren);
             isChildMouseOver = isChildMouseOver || child.isClicked;
             isChildClicked = isChildClicked || child.isMouseOver;
         }
 
+        shouldResizeChildren = false;
         isClicked = false; // Reset before processing inputs for current frame
         isMouseOver = false;
         isMouseLeft = false;
@@ -547,21 +547,28 @@ public abstract class Component {
             shouldForceCheckKeyInputFocusUpdate = false;
         }
 
-        automationsAfterChildTick.forEach(a -> a.run(this, input, timeDelta));
-
-        if((!shouldUpdateSize) && (previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight
-                || (previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0)
-                || previousScale.sub(getScale()).sumSquared() != 0)) {
-            isResizedOrMoved = true;
-        }
-
         doesChildHaveInputAccess = false;
         previousPos = getPos();
         previousHeight = getHeight();
         previousWidth = getWidth();
         previousOrient = getOrientation();
         previousScale = getScale();
+        isFirstRun = false;
 
+    }
+
+    protected boolean isResizedOrMoved(boolean shouldUpdateSize) {
+
+        if(shouldUpdateSize) {
+            return true;
+        }
+
+        if(previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight || previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     // Should probably be overwritten, or more control should be specified

@@ -82,8 +82,7 @@ public class Camera extends SceneComponent {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 
-		automationsBeforeUpdatingTransforms = new ArrayList<>();
-		automationsBeforeUpdatingTransforms.add(new DefaultCameraUpdate());
+		addFinalAutomation(new DefaultCameraUpdate());
 
 		updateValues();
 	}
@@ -113,8 +112,7 @@ public class Camera extends SceneComponent {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 
-		automationsBeforeUpdatingTransforms = new ArrayList<>();
-		automationsBeforeUpdatingTransforms.add(new DefaultCameraUpdate());
+		addFinalAutomation(new DefaultCameraUpdate());
 
 		updateValues();
 	}

@@ -28,7 +28,7 @@ public class SceneComponent extends Component {
         this.identifier = identifier;
         this.parent = parent;
         this.game = game;
-        automationsBeforeUpdatingTransforms.add(new DefaultPosVelAccelUpdate());
+        addFinalAutomation(new DefaultPosVelAccelUpdate());
     }
 
     @Override
@@ -56,6 +56,21 @@ public class SceneComponent extends Component {
 
         worldToObject = objectToWorldMatrix.getInverse();
 
+    }
+
+    @Override
+    protected boolean isResizedOrMoved(boolean shouldUpdateSize) {
+
+        if(shouldUpdateSize) {
+            return true;
+        }
+
+        if(previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight || previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0 || previousScale.sub(getScale()).sumSquared() != 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 //
     public Matrix getWorldToObject() {
