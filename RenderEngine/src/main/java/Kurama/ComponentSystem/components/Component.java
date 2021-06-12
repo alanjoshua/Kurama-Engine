@@ -60,12 +60,12 @@ public abstract class Component {
     // Constraints are updated only when components are resized.
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> onResizeAutomations = new ArrayList<>();
-    public List<Automation> globalChildrenConstraints = new ArrayList<>();
+    public List<Automation> globalResizeAutomations = new ArrayList<>();
     protected boolean doesChildHaveInputAccess = false;
     public boolean allowParentComponentsInputAccess = false;
     public boolean allowMultipleComponentsClickTriggers = false;
 
-    public boolean isFirstRun = true;
+    protected boolean isFirstRun = true;
     public List<Kurama.ComponentSystem.automations.Automation> initAutomations = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> automations = new ArrayList<>();
     public List<Kurama.ComponentSystem.automations.Automation> onClickActions = new ArrayList<>();
@@ -191,11 +191,6 @@ public abstract class Component {
         this.finalAutomations.add(automation);
         return this;
     }
-
-//    public Component addAutomationAfterChildTick(Kurama.ComponentSystem.automations.Automation automation) {
-//        this.automationsAfterChildTick.add(automation);
-//        return this;
-//    }
 
     public Component setColor(Vector color) {
         this.color = color;
@@ -455,7 +450,6 @@ public abstract class Component {
         }
 
         isResizedOrMoved = isResizedOrMoved(isResizedOrMoved);
-
         if(isResizedOrMoved) {
 //            Logger.log("resizing: "+identifier);
 
@@ -468,16 +462,20 @@ public abstract class Component {
                     automation.run(this, input, timeDelta);
                 }
             }
-
             setupTransformationMatrices();
 
             this.isResizedOrMoved = false;
             shouldResizeChildren = true;
         }
+        previousPos = getPos();
+        previousHeight = getHeight();
+        previousWidth = getWidth();
+        previousOrient = getOrientation();
+        previousScale = getScale();
 
         boolean isChildMouseOver = false, isChildClicked = false;
         for(var child: children) {
-            child.tick(globalChildrenConstraints, input, timeDelta, shouldResizeChildren);
+            child.tick(this.globalResizeAutomations, input, timeDelta, shouldResizeChildren);
             isChildMouseOver = isChildMouseOver || child.isClicked;
             isChildClicked = isChildClicked || child.isMouseOver;
         }
@@ -565,11 +563,6 @@ public abstract class Component {
         }
 
         doesChildHaveInputAccess = false;
-        previousPos = getPos();
-        previousHeight = getHeight();
-        previousWidth = getWidth();
-        previousOrient = getOrientation();
-        previousScale = getScale();
         isFirstRun = false;
 
     }

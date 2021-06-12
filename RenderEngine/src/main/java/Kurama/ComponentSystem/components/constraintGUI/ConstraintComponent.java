@@ -16,6 +16,7 @@ public class ConstraintComponent extends Rectangle {
 
     public List<Boundary> boundaries = new ArrayList<>();
     public BoundaryConfigurator configurator = null;
+    public List<GridCell> gridCells = new ArrayList<>(); // GridCells would be considered as children
 
     public ConstraintComponent(Game game, Component parent, Vector radii, String identifier) {
         super(game, parent, radii, identifier);
@@ -33,10 +34,29 @@ public class ConstraintComponent extends Rectangle {
         init(configurator);
     }
 
+    public ConstraintComponent addGridCell(GridCell g) {
+        gridCells.add(g);
+        addChild(g);
+        if(g.attachedComp!=null) {
+            addChild(g.attachedComp);
+        }
+        return this;
+    }
+
     public ConstraintComponent addBoundary(Boundary bound) {
         boundaries.add(bound);
         this.children.add(bound);
         return this;
+    }
+
+    public Boundary getBoundary(String bName) {
+        var o = boundaries.stream().filter(b -> b.identifier.equals(bName)).findFirst();
+        if(o.isPresent()) {
+            return o.get();
+        }
+        else {
+            return null;
+        }
     }
 
     public Boundary createBoundary(Game game, Component parent, String identifier, Boundary.BoundaryOrient orient) {
@@ -66,8 +86,8 @@ public class ConstraintComponent extends Rectangle {
         b.initAutomations.add(new WidthPercent(0.5f));
 
         r.addInitAutomation(new PosXYBottomRightAttachPercent(0.25f, 0.25f));
-        t.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f)).setColor(new Vector(1,0,0,1));
-        l.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f)).setColor(new Vector(0,1,0,1));
+        t.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f));
+        l.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f));
         b.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.75f));
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
@@ -76,6 +96,7 @@ public class ConstraintComponent extends Rectangle {
         l.addConnectedBoundary(b, 1, 1);
         r.addConnectedBoundary(t, 0, 0);
         r.addConnectedBoundary(b, 0, 1);
+
     }
 
 }

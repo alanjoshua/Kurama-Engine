@@ -3,9 +3,11 @@ package editor;
 import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.MasterWindow;
+import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.BoundaryConfigurator;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraintGUI.GridCell;
 import Kurama.ComponentSystem.components.constraintGUI.RigidBodySystem.RigidBodyConfigurator;
 import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
 import Kurama.Math.Vector;
@@ -81,12 +83,32 @@ public class Editor extends Game {
         rr.addConnectedBoundary(tt, 0, 0);
         rr.addConnectedBoundary(bb, 0, 1);
 
-        var right =  ((Boundary)hierarchyWindow.findComponent("rightB"));
+        var right =  hierarchyWindow.getBoundary("rightB");
        right.addConnectedBoundary(tt, 1, 0).addConnectedBoundary(bb, 1, 1);
 
         rr.addInitAutomation(new HeightPercent(0.5f)).addInitAutomation(new PosXRightAttachPercent(0.1f));
         tt.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.25f));
         bb.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.75f));
+
+        GridCell t1 = new GridCell(this, hierarchyWindow, "t1");
+        t1.top = hierarchyWindow.getBoundary("topB");
+        t1.bottom = hierarchyWindow.getBoundary("bottomB");
+        t1.left = hierarchyWindow.getBoundary("leftB");
+        t1.right = hierarchyWindow.getBoundary("rightB");
+        t1.attachedComp = new Rectangle(this, hierarchyWindow, "ge1")
+                            .setColor(new Vector(1,0,0,1));
+
+        hierarchyWindow.addGridCell(t1);
+
+        GridCell t2 = new GridCell(this, hierarchyWindow, "t2");
+        t2.top = hierarchyWindow.getBoundary("tt");
+        t2.bottom = hierarchyWindow.getBoundary("bb");
+        t2.left = hierarchyWindow.getBoundary("rightB");
+        t2.right = hierarchyWindow.getBoundary("rr");
+        t2.attachedComp = new Rectangle(this, hierarchyWindow, "ge2")
+                .setColor(new Vector(0,1,0,1));
+
+        hierarchyWindow.addGridCell(t2);
     }
 
     @Override

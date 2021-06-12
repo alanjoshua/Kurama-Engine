@@ -153,6 +153,7 @@ public class Boundary extends Rectangle {
         }
 
         if(isValid) {
+
             if (shouldUpdatePos) {
                 setPos(updatedPos);
             }
