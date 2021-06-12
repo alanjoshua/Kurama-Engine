@@ -167,7 +167,7 @@ public class GameLWJGL extends Game implements Runnable {
                         .setColor(new Vector(0.05f, 0.05f, 0.05f , 0.5f))
                         .addOnResizeAction(new WidthHeightPercent(0.5f, 0.1f))
                         .addOnResizeAction(new PosYTopAttachPercent(0.1f))
-                        .setParent(gameScreen);
+                        .attachSelfToParent(gameScreen);
 
         gameScreenTitle.text.setOverlayColor(new Vector(1,0,0,0.5f));
 
@@ -182,16 +182,13 @@ public class GameLWJGL extends Game implements Runnable {
                 (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.ITALIC, 20), FontTexture.defaultCharSet), "engineName")
                         .setText("Kurama Engine")
                         .setColor(new Vector(0.05f, 0.05f, 0.05f , 0.5f))
-                        .addOnResizeAction(new PosYTopAttachPercent( 0.98f))
+                        .addOnResizeAction(new PosYBottomAttachPix( 40))
                         .addOnResizeAction(new PosXLeftAttachPix(80))
-                        .addOnResizeAction(new WidthHeightPercent(0.1f, 0.1f))
-                        .setParent(gameScreen);
-
+                        .attachSelfToParent(gameScreen);
 
         var sampleGUITitle =
                 new Text(this, guiSection, new FontTexture(fpsText.fontTexture.font, FontTexture.defaultCharSet), "info text")
                 .setText("Sample Menu")
-                .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
                 .addOnResizeAction(new PosYTopAttachPercent(0.1f));
         guiSection.addChild(sampleGUITitle);
 
@@ -203,14 +200,11 @@ public class GameLWJGL extends Game implements Runnable {
                         .addOnResizeAction(new PosYTopAttachPercent(0.2f));
         guiSection.addChild(enterName);
         enterName.setRadii(new Vector(10,10,10,10));
-//        enterName.text.setOverlayColor(new Vector(0.7f,0.7f,0.7f,1f));
 
         var saveMessage =
                 new Text(this, guiSection, new FontTexture(new Font("Arial", Font.ITALIC, 12), FontTexture.defaultCharSet), "save message")
                         .setText("successfully Saved")
-                        .addOnResizeAction(new WidthHeightPercent(0.75f, 0.1f))
                         .addOnResizeAction(new PosYTopAttachPercent(0.62f))
-//                        .addOnResizeAction(new PosXLeftAttachPercent(0.25f))
                         .setShouldTickRenderGroup(false);
         guiSection.addChild(saveMessage);
 
@@ -244,7 +238,7 @@ public class GameLWJGL extends Game implements Runnable {
                         .addOnClickAction(new ExitGame())
                         .addOnMouseOvertAction(new SetOverlayColor(new Vector(1,0.5f,0.9f,0.4f)))
                         .addOnMouseLeftAction(new RemoveOverlayColor())
-                        .setParent(guiSection);
+                        .attachSelfToParent(guiSection);
 
         var caret =
                 new Rectangle(this, null, "caret")

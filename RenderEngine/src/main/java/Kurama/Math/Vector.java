@@ -118,20 +118,6 @@ public class Vector {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if(o == null) {
-			return false;
-		}
-		Vector v = (Vector)o;
-
-		if(this.getNumberOfDimensions() != v.getNumberOfDimensions()) {
-			return false;
-		}
-
-		return this.sub(v).getNorm() == 0;
-	}
-
-	@Override
 	public int hashCode() {
 
 		String temp = "";
@@ -214,6 +200,21 @@ public class Vector {
 	public float sumAllElements() {
 		Vector temp = new Vector(this.numberOfDimensions,1);
 		return this.dot(temp);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(o == null) {return false;}
+
+		Vector v = (Vector)o;
+		if(this.numberOfDimensions != v.getNumberOfDimensions()) return false;
+
+		for(int i = 0; i < numberOfDimensions; i++) {
+			if(v.get(i) != get(i)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public Vector sub(Vector v) {

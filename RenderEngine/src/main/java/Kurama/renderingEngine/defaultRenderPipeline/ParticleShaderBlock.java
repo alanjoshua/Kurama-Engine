@@ -89,7 +89,8 @@ public class ParticleShaderBlock extends RenderPipeline {
         var baseParticle = generator.baseParticle;
 
         SortedMap<Float, List> sorted = new TreeMap<>(Collections.reverseOrder());
-        generator.particles.stream().forEach(p -> {
+
+        for(var p: generator.particles) {
             if(p.shouldRender && p.isInsideFrustum) {
 
                 var objectToCam = worldToCam.matMul(p.getObjectToWorldMatrix());
@@ -100,13 +101,15 @@ public class ParticleShaderBlock extends RenderPipeline {
                 store.add(objectToCam);
                 sorted.put(dist, store);
             }
-        });
+        }
+
         List<Model> sortedPartices = new ArrayList<>();
         List<Matrix> sorted_objectToCam = new ArrayList<>();
-        sorted.values().forEach( m -> {
+
+        for(var m: sorted.values()) {
             sortedPartices.add((Model)m.get(0));
             sorted_objectToCam.add((Matrix)m.get(1));
-        });
+        }
 
         var sortedParticles_list = new ArrayList<>(sortedPartices);
 

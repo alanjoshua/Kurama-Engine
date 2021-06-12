@@ -60,12 +60,13 @@ public class SceneComponent extends Component {
 
     @Override
     protected boolean isResizedOrMoved(boolean shouldUpdateSize) {
-
         if(shouldUpdateSize) {
             return true;
         }
 
-        if(previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight || previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0 || previousScale.sub(getScale()).sumSquared() != 0) {
+        if(!previousPos.equals(getPos()) || getWidth() != previousWidth || getHeight() != previousHeight
+                || !previousOrient.equals(getOrientation())
+                || !previousScale.equals(scale)) {
             return true;
         }
         else {

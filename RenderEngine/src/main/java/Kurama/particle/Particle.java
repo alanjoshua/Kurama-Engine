@@ -35,7 +35,7 @@ public class Particle extends Model {
 
     public Particle(Particle p) {
 
-        super(p.game, p.meshes, Utils.getUniqueID());
+        super(p.game, p.meshes, p.identifier+": "+Utils.getUniqueID());
         this.pos = new Vector(p.pos);
         this.parent = p.parent;
         this.orientation = new Quaternion(p.orientation);

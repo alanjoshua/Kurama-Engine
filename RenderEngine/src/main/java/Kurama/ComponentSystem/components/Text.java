@@ -8,7 +8,7 @@ import Kurama.utils.Utils;
 
 import java.util.ArrayList;
 
-public class Text extends Component {
+public class Text extends Rectangle {
 
     public String text = "";
     public FontTexture fontTexture;
@@ -43,6 +43,7 @@ public class Text extends Component {
 
         int curPos = 0;
         this.setWidth(0);
+        this.setHeight(fontTexture.height);
 
         for(char c: text.toCharArray()) {
             var charInfo = fontTexture.charMap.get(c);
@@ -74,12 +75,6 @@ public class Text extends Component {
                 curPos += newComp.getWidth();
                 setWidth(getWidth() + newComp.getWidth());
                 children.add(newComp);
-            }
-
-            else {
-//                newComp.width = fontTexture.charMap.get('a').width;
-//                newComp.height = fontTexture.height;
-//                newComp.isContainerVisible = false;
             }
 
         }

@@ -134,11 +134,4 @@ public class Text extends Model {
         return results;
     }
 
-//    public void setText(String text) {
-//        this.text = text;
-//        this.meshes.forEach(m -> m.deleteBuffers());
-//        this.meshes = new ArrayList<>();
-//        this.meshes.add(buildMesh());
-//    }
-
 }

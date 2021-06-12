@@ -214,6 +214,21 @@ public class Quaternion {
 		return axis;
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if(o == null) {return false;}
+
+		Quaternion v = (Quaternion)o;
+		if(this.coordinate.getNumberOfDimensions() != v.coordinate.getNumberOfDimensions()) return false;
+
+		for(int i = 0; i < this.coordinate.getNumberOfDimensions(); i++) {
+			if(v.coordinate.get(i) != this.coordinate.get(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public Vector rotatePoint(Vector p) {
 		var p_ = new Quaternion(new Vector(0, p.get(0), p.get(1), p.get(2)));
 		var res = this.multiply(p_).multiply(this.getInverse());

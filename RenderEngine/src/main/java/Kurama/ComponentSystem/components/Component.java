@@ -360,7 +360,7 @@ public abstract class Component {
         }
     }
 
-    public Component setParent(Component parent) {
+    public Component attachSelfToParent(Component parent) {
         parent.addChild(this);
         return this;
     }
@@ -412,13 +412,22 @@ public abstract class Component {
         isResizedOrMoved = isResizedOrMoved || parentResized;
 
         if(isFirstRun) {
-            initAutomations.forEach(a -> a.run(this, input, timeDelta));
 
-            onResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
-            if(globalResizeAutomations!=null) globalResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
-            setupTransformationMatrices();
-            shouldResizeChildren = true;
-            isResizedOrMoved = false;
+            for(var automation: initAutomations) {
+                automation.run(this, input, timeDelta);
+            }
+
+            for(var automation: onResizeAutomations) {
+                automation.run(this, input, timeDelta);
+            }
+
+            if (globalResizeAutomations != null) {
+                for(var automation: globalResizeAutomations) {
+                    automation.run(this, input, timeDelta);
+                }
+            }
+
+            isResizedOrMoved = true;
 
             previousPos = getPos();
             previousHeight = getHeight();
@@ -439,23 +448,31 @@ public abstract class Component {
             }
         }
         animations.removeAll(toBeRemoved);
-        finalAutomations.forEach(a -> a.run(this, input, timeDelta)); // Mostly intended to be used internally, and not by user
+
+        // Mostly intended to be used internally, and not by user
+        for(var automation: finalAutomations) {
+            automation.run(this, input, timeDelta);
+        }
 
         isResizedOrMoved = isResizedOrMoved(isResizedOrMoved);
 
-        // Constraints are updated only when components are resized.
-        // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
+        if(isResizedOrMoved) {
+//            Logger.log("resizing: "+identifier);
 
-        if(!isFirstRun && isResizedOrMoved) {
-            onResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
-            if (globalResizeAutomations != null) {
-                globalResizeAutomations.forEach(a -> a.run(this, input, timeDelta));
+            for(var automation: onResizeAutomations) {
+                automation.run(this, input, timeDelta);
             }
+
+            if (globalResizeAutomations != null) {
+                for(var automation: globalResizeAutomations) {
+                    automation.run(this, input, timeDelta);
+                }
+            }
+
             setupTransformationMatrices();
 
             this.isResizedOrMoved = false;
             shouldResizeChildren = true;
-
         }
 
         boolean isChildMouseOver = false, isChildClicked = false;
@@ -558,12 +575,12 @@ public abstract class Component {
     }
 
     protected boolean isResizedOrMoved(boolean shouldUpdateSize) {
-
         if(shouldUpdateSize) {
             return true;
         }
 
-        if(previousPos.sub(getPos()).sumSquared() != 0 || getWidth() != previousWidth || getHeight() != previousHeight || previousOrient.getCoordinate().sub(getOrientation().getCoordinate()).sumSquared() != 0) {
+        if(!previousPos.equals(getPos()) || getWidth() != previousWidth || getHeight() != previousHeight
+                || !previousOrient.equals(getOrientation())) {
             return true;
         }
         else {
