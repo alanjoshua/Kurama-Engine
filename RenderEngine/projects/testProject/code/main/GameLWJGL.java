@@ -5,6 +5,8 @@ import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.*;
+import Kurama.ComponentSystem.components.constraintGUI.Boundary;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.ComponentSystem.components.model.SceneComponent;
 import Kurama.Effects.Fog;
@@ -49,10 +51,6 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class GameLWJGL extends Game implements Runnable {
 
-//    protected DisplayLWJGL display;
-//    protected InputLWJGL input;
-//    protected RenderingEngineGL renderingEngine;
-
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
     protected float speed = 15f;
@@ -60,10 +58,6 @@ public class GameLWJGL extends Game implements Runnable {
     protected float speedIncreaseMultiplier = 2;
 
     public boolean isGameRunning = true;  //temp. Replace with game state
-    protected int lookAtIndex = 1;
-    protected boolean prevGameState = false;
-//    protected Vector mouseDelta;
-//    protected Vector mousePos;
 
     public Camera playerCamera;
     public Text fpsText;
@@ -125,51 +119,93 @@ public class GameLWJGL extends Game implements Runnable {
 
         rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
         rootGuiComponent
+                .setConfigurator(new StretchSystemConfigurator())
                 .setColor(new Vector(1,0,0,0.5f))
                 .setContainerVisibility(false)
                 .addOnResizeAction((comp, in, time) -> Logger.log("resizing to size: "+ comp.getWidth() +":"+ comp.getHeight()));
-
 
         var guiSection =
                 new Rectangle(this, rootGuiComponent, "gui")
                         .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
                         .setShouldTriggerOnClick(true)
                         .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
-                        .addOnResizeAction(new WidthHeightPercent(0.2f, 1f))
-                        .addOnResizeAction(new PosXYBottomRightAttachPercent(0,0));;
+                        .attachSelfToParent(rootGuiComponent);
 
         var gameScreen =
                 new Rectangle(this, rootGuiComponent, "gameScreen")
+                        .attachSelfToParent(rootGuiComponent)
                         .setTexture(new Texture(playerCamera.renderBuffer.textureId))
-                        .addChild(guiSection)
-                        .addOnResizeAction(new WidthHeightPercent(1f, 1f))
-                        .addOnResizeAction(new PosXYTopLeftAttachPercent(0,0))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
                         .setKeyInputFocused(true)
                         .addOnClickAction(new GrabKeyboardFocus())
                         .addOnKeyInputFocusedInitAction((Component current, Input input, float timeDelta) -> {
                             rootGuiComponent.input.disableCursor();
                             isGameRunning = true;
-                            guiSection.shouldTickRenderGroup = false;
+
                         })
                         .addOnKeyInputFocusedAction(new SceneInputHandling(this))
                         .addOnKeyInputFocusLossInitAction((Component current, Input input, float timeDelta) -> {
                             rootGuiComponent.input.enableCursor();
                             isGameRunning = false;
-                            guiSection.shouldTickRenderGroup = true;
                         });
-        rootGuiComponent.addChild(gameScreen);
+
+        var divider = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDivider", Boundary.BoundaryOrient.Vertical, true);
+        divider
+                .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
+                .addInitAutomation(new WidthPix(10))
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 0))
+                .addOnResizeAction(new HeightPercent(1f));
+
+        var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
+        divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.5f)).addInitAutomation(new HeightPix(10));
+
+        divider2.addConnectedBoundary(divider, 0, 0);
+        divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 0));
+
+        var guiGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_gui");
+        var gameGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_game");
+
+        var gui2 = new TextBox(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "gui2")
+                .setText("Test GUI segment 2")
+                .setColor(new Vector(0.9f, 0.5f, 0.4f, 0.5f))
+                .attachSelfToParent(rootGuiComponent);
+
+        guiGrid.addInitAutomation(0, (cur, in, timeDelta) -> {
+            guiGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
+            guiGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDiv2");
+            guiGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
+            guiGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            guiGrid.attachedComp = guiSection;
+        });
+
+        gameGrid.addInitAutomation(0, (cur, in, t) -> {
+            gameGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
+            gameGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
+            gameGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            gameGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_right");
+            gameGrid.attachedComp = gameScreen;
+        });
+
+        var gui2Grid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"_gc_gui2");
+
+        gui2Grid.addInitAutomation(0, (cur, in, timeDelta) -> {
+            gui2Grid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDiv2");
+            gui2Grid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
+            gui2Grid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
+            gui2Grid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            gui2Grid.attachedComp = gui2;
+        });
 
         var gameScreenTitle =
                 (TextBox)new TextBox(this, gameScreen, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "gameScreenTitle")
                         .setText("Test scene setup haphazardly, so apologies for the mess")
                         .setRadii(new Vector(10,10,10,10))
                         .setColor(new Vector(0.05f, 0.05f, 0.05f , 0.5f))
-                        .addOnResizeAction(new WidthHeightPercent(0.5f, 0.1f))
                         .addOnResizeAction(new PosYTopAttachPercent(0.1f))
                         .attachSelfToParent(gameScreen);
-
         gameScreenTitle.text.setOverlayColor(new Vector(1,0,0,0.5f));
+        gameScreenTitle.text.addOnResizeAction((cur, in, t) -> gameScreenTitle.setWidth(cur.getWidth()+20).setHeight(cur.getHeight()+20));
 
         fpsText =
                 (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")

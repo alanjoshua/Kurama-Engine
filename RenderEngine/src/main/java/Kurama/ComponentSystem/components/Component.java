@@ -79,7 +79,8 @@ public abstract class Component {
     public List<Kurama.ComponentSystem.automations.Automation> onKeyInputFocusLossInit = new ArrayList<>();
 
     public List<Animation> animations = new ArrayList<>();
-    public List<Kurama.ComponentSystem.automations.Automation> finalAutomations = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsBeforeChildTick = new ArrayList<>();
+    public List<Kurama.ComponentSystem.automations.Automation> automationsAfterChildTick = new ArrayList<>();
 
     public Component(Game game, Component parent, String identifier) {
         this.identifier = identifier;
@@ -176,9 +177,23 @@ public abstract class Component {
         this.onResizeAutomations.add(constraint);
         return this;
     }
+    public Component addOnResizeAction(int index, Automation constraint) {
+        this.onResizeAutomations.add(index, constraint);
+        return this;
+    }
 
     public Component addAutomation(Kurama.ComponentSystem.automations.Automation automation) {
         this.automations.add(automation);
+        return this;
+    }
+
+    public Component addAutomation(int index, Kurama.ComponentSystem.automations.Automation automation) {
+        this.automations.add(index, automation);
+        return this;
+    }
+
+    public Component addInitAutomation(int index, Kurama.ComponentSystem.automations.Automation automation) {
+        this.initAutomations.add(index, automation);
         return this;
     }
 
@@ -187,8 +202,23 @@ public abstract class Component {
         return this;
     }
 
-    public Component addFinalAutomation(Kurama.ComponentSystem.automations.Automation automation) {
-        this.finalAutomations.add(automation);
+    public Component addAutomationBeforeChildTick(Kurama.ComponentSystem.automations.Automation automation) {
+        this.automationsBeforeChildTick.add(automation);
+        return this;
+    }
+
+    public Component addAutomationBeforeChildTick(int index, Kurama.ComponentSystem.automations.Automation automation) {
+        this.automationsBeforeChildTick.add(index, automation);
+        return this;
+    }
+
+    public Component addAutomationAfterChildTick(Kurama.ComponentSystem.automations.Automation automation) {
+        this.automationsBeforeChildTick.add(automation);
+        return this;
+    }
+
+    public Component addAutomationAfterChildTick(int index, Kurama.ComponentSystem.automations.Automation automation) {
+        this.automationsBeforeChildTick.add(index, automation);
         return this;
     }
 
@@ -357,6 +387,7 @@ public abstract class Component {
 
     public Component attachSelfToParent(Component parent) {
         parent.addChild(this);
+        this.parent = parent;
         return this;
     }
 
@@ -366,6 +397,11 @@ public abstract class Component {
     }
 
     public boolean isClicked(Input input, boolean isMouseOver) {
+
+        if(input == null) {
+            return false;
+        }
+
         if(input != null && input.isClickLocked() != null && input.isClickLocked() != this) {return false;}
 
         if(shouldTriggerOnClick && input.isCursorEnabled && input.isLeftMouseButtonPressed) {
@@ -382,6 +418,10 @@ public abstract class Component {
     }
 
     public boolean isClickedOutside(Input input, boolean isMouseOver) {
+        if(input == null) {
+            return false;
+        }
+
         if(shouldTriggerOnClick && input.isLeftMouseButtonPressed) {
             return !isMouseOver;
         }
@@ -408,10 +448,6 @@ public abstract class Component {
 
         if(isFirstRun) {
 
-            for(var automation: initAutomations) {
-                automation.run(this, input, timeDelta);
-            }
-
             for(var automation: onResizeAutomations) {
                 automation.run(this, input, timeDelta);
             }
@@ -420,6 +456,10 @@ public abstract class Component {
                 for(var automation: globalResizeAutomations) {
                     automation.run(this, input, timeDelta);
                 }
+            }
+
+            for(var automation: initAutomations) {
+                automation.run(this, input, timeDelta);
             }
 
             isResizedOrMoved = true;
@@ -445,7 +485,7 @@ public abstract class Component {
         animations.removeAll(toBeRemoved);
 
         // Mostly intended to be used internally, and not by user
-        for(var automation: finalAutomations) {
+        for(var automation: automationsBeforeChildTick) {
             automation.run(this, input, timeDelta);
         }
 
@@ -478,6 +518,11 @@ public abstract class Component {
             child.tick(this.globalResizeAutomations, input, timeDelta, shouldResizeChildren);
             isChildMouseOver = isChildMouseOver || child.isClicked;
             isChildClicked = isChildClicked || child.isMouseOver;
+        }
+
+        // Mostly intended to be used internally, and not by user
+        for(var automation: automationsAfterChildTick) {
+            automation.run(this, input, timeDelta);
         }
 
         shouldResizeChildren = false;
@@ -544,6 +589,7 @@ public abstract class Component {
         }
 
         if(isClickDragged) {
+
             onClickDragged(input, timeDelta);
         }
 

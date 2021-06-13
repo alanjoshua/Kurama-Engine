@@ -82,7 +82,7 @@ public class Camera extends SceneComponent {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 
-		addFinalAutomation(new DefaultCameraUpdate());
+		addAutomationBeforeChildTick(new DefaultCameraUpdate());
 
 		updateValues();
 	}
@@ -112,7 +112,7 @@ public class Camera extends SceneComponent {
 			this.pos = new Vector(new float[] {0,0,0});
 		}
 
-		addFinalAutomation(new DefaultCameraUpdate());
+		addAutomationBeforeChildTick(new DefaultCameraUpdate());
 
 		updateValues();
 	}

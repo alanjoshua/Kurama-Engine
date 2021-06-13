@@ -1,12 +1,8 @@
 package Kurama.ComponentSystem.components.constraintGUI;
 
-import Kurama.ComponentSystem.automations.HeightPercent;
-import Kurama.ComponentSystem.automations.PosXYBottomRightAttachPercent;
-import Kurama.ComponentSystem.automations.PosXYTopLeftAttachPercent;
-import Kurama.ComponentSystem.automations.WidthPercent;
+import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
-import Kurama.Math.Vector;
 import Kurama.game.Game;
 
 import java.util.ArrayList;
@@ -18,25 +14,32 @@ public class ConstraintComponent extends Rectangle {
     public BoundaryConfigurator configurator = null;
     public List<GridCell> gridCells = new ArrayList<>(); // GridCells would be considered as children
 
-    public ConstraintComponent(Game game, Component parent, Vector radii, String identifier) {
-        super(game, parent, radii, identifier);
-        init(null);
-    }
-
     public ConstraintComponent(Game game, Component parent, String identifier) {
-        super(game, parent, identifier);
-        init(null);
+        this(game, parent, identifier, null);
     }
 
     public ConstraintComponent(Game game, Component parent, String identifier, BoundaryConfigurator configurator) {
         super(game, parent, identifier);
         this.configurator = configurator;
-        init(configurator);
+        addInitAutomation((cur, in, t) -> init());
+
+        addAutomationAfterChildTick((cur, in, t) -> {
+            for(var b: boundaries) {
+                b.shouldUpdateGridCell = false;
+            }
+        });
     }
 
     public ConstraintComponent addGridCell(GridCell g) {
         gridCells.add(g);
-        addChild(g);
+
+        if(children.size() == boundaries.size()) {
+            children.add(g);
+        }
+        else {
+            children.add(boundaries.size(), g);
+        }
+
         if(g.attachedComp!=null) {
             addChild(g.attachedComp);
         }
@@ -45,7 +48,7 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent addBoundary(Boundary bound) {
         boundaries.add(bound);
-        this.children.add(bound);
+        this.children.add(0, bound);
         return this;
     }
 
@@ -59,36 +62,48 @@ public class ConstraintComponent extends Rectangle {
         }
     }
 
-    public Boundary createBoundary(Game game, Component parent, String identifier, Boundary.BoundaryOrient orient) {
-        var b = new Boundary(game, parent, identifier, orient, configurator);
+    public Boundary createBoundary(String identifier, Boundary.BoundaryOrient orient, boolean userInteractable) {
+        var b = new Boundary(game, this, identifier, orient, userInteractable, configurator);
         addBoundary(b);
         return b;
     }
 
-    public Boundary createBoundary(Game game, Component parent, String identifier, Boundary.BoundaryOrient orient, BoundaryConfigurator configurator) {
-        var b = new Boundary(game, parent, identifier, orient, configurator);
-        addBoundary(b);
-        return b;
+    public GridCell createGridCell(String identifier) {
+         var g = new GridCell(game, this, identifier);
+         addGridCell(g);
+         return g;
     }
 
-    public void init(BoundaryConfigurator configurator) {
-        // This is probably kinda temp
+    public ConstraintComponent setConfigurator(BoundaryConfigurator config) {
+        this.configurator = config;
+        return this;
+    }
 
-        var l = new Boundary(this.game, this, "leftB", Boundary.BoundaryOrient.Vertical, configurator);
-        var t = new Boundary(this.game, this, "topB", Boundary.BoundaryOrient.Horizontal, configurator);
+    public ConstraintComponent init() {
 
-        var r = new Boundary(this.game, this, "rightB", Boundary.BoundaryOrient.Vertical, configurator);
-        var b = new Boundary(this.game, this, "bottomB", Boundary.BoundaryOrient.Horizontal, configurator);
+        // These are the default borders around the component.
+        // Width and height (for vertical and horizontal boundaries respectively) are set to 0 by default
 
-        r.initAutomations.add(new HeightPercent(0.5f));
-        l.initAutomations.add(new HeightPercent(0.5f));
-        t.initAutomations.add(new WidthPercent(0.5f));
-        b.initAutomations.add(new WidthPercent(0.5f));
+        var l = new Boundary(this.game, this, identifier+"_left", Boundary.BoundaryOrient.Vertical, false, configurator);
+        var t = new Boundary(this.game, this, identifier+"_top", Boundary.BoundaryOrient.Horizontal, false, configurator);
 
-        r.addInitAutomation(new PosXYBottomRightAttachPercent(0.25f, 0.25f));
-        t.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f));
-        l.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.25f));
-        b.addInitAutomation(new PosXYTopLeftAttachPercent(0.25f, 0.75f));
+        var r = new Boundary(this.game, this, identifier+"_right", Boundary.BoundaryOrient.Vertical, false, configurator);
+        var b = new Boundary(this.game, this, identifier+"_bottom", Boundary.BoundaryOrient.Horizontal, false, configurator);
+
+        r.onResizeAutomations.add(new HeightPercent(1f));
+        l.onResizeAutomations.add(new HeightPercent(1f));
+        t.onResizeAutomations.add(new WidthPercent(1f));
+        b.onResizeAutomations.add(new WidthPercent(1f));
+
+        r.addInitAutomation(new WidthPercent(0f));
+        l.addInitAutomation(new WidthPercent(0f));
+        t.addInitAutomation(new HeightPercent(0f));
+        b.addInitAutomation(new HeightPercent(0f));
+
+        r.addOnResizeAction(new PosXYBottomRightAttachPercent(0f, 0f));
+        t.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
+        l.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
+        b.addOnResizeAction(new PosYBottomAttachPercent(0f)).addOnResizeAction(new PosXLeftAttachPercent(0f));
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
@@ -97,6 +112,7 @@ public class ConstraintComponent extends Rectangle {
         r.addConnectedBoundary(t, 0, 0);
         r.addConnectedBoundary(b, 0, 1);
 
+        return this;
     }
 
 }

@@ -74,16 +74,16 @@ public class Editor extends Game {
                 .setColor(new Vector(0,1,1,0.5f));
         rootGuiComponent.addChild(hierarchyWindow);
 
-        var rr = hierarchyWindow.createBoundary(this, hierarchyWindow, "rr", Boundary.BoundaryOrient.Vertical);
-        var bb = hierarchyWindow.createBoundary(this, hierarchyWindow, "bb", Boundary.BoundaryOrient.Horizontal);
-        var tt = hierarchyWindow.createBoundary(this, hierarchyWindow, "tt", Boundary.BoundaryOrient.Horizontal);
+        var rr = hierarchyWindow.createBoundary("rr", Boundary.BoundaryOrient.Vertical, true);
+        var bb = hierarchyWindow.createBoundary("bb", Boundary.BoundaryOrient.Horizontal, true);
+        var tt = hierarchyWindow.createBoundary("tt", Boundary.BoundaryOrient.Horizontal, true);
 
         bb.setColor(new Vector(0,1,1,1));
 
         rr.addConnectedBoundary(tt, 0, 0);
         rr.addConnectedBoundary(bb, 0, 1);
 
-        var right =  hierarchyWindow.getBoundary("rightB");
+        var right =  hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_right");
        right.addConnectedBoundary(tt, 1, 0).addConnectedBoundary(bb, 1, 1);
 
         rr.addInitAutomation(new HeightPercent(0.5f)).addInitAutomation(new PosXRightAttachPercent(0.1f));
@@ -91,10 +91,10 @@ public class Editor extends Game {
         bb.addInitAutomation(new WidthPercent(0.15f)).addInitAutomation(new PosXYTopLeftAttachPercent(0.75f, 0.75f));
 
         GridCell t1 = new GridCell(this, hierarchyWindow, "t1");
-        t1.top = hierarchyWindow.getBoundary("topB");
-        t1.bottom = hierarchyWindow.getBoundary("bottomB");
-        t1.left = hierarchyWindow.getBoundary("leftB");
-        t1.right = hierarchyWindow.getBoundary("rightB");
+        t1.top = hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_top");
+        t1.bottom = hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_bottom");
+        t1.left = hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_left");
+        t1.right = hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_right");
         t1.attachedComp = new Rectangle(this, hierarchyWindow, "ge1")
                             .setColor(new Vector(1,0,0,1));
 
@@ -103,7 +103,7 @@ public class Editor extends Game {
         GridCell t2 = new GridCell(this, hierarchyWindow, "t2");
         t2.top = hierarchyWindow.getBoundary("tt");
         t2.bottom = hierarchyWindow.getBoundary("bb");
-        t2.left = hierarchyWindow.getBoundary("rightB");
+        t2.left = hierarchyWindow.getBoundary(hierarchyWindow.identifier+"_right");
         t2.right = hierarchyWindow.getBoundary("rr");
         t2.attachedComp = new Rectangle(this, hierarchyWindow, "ge2")
                 .setColor(new Vector(0,1,0,1));

@@ -8,6 +8,7 @@ import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers.InteractionValidifier;
 import Kurama.Math.Vector;
 import Kurama.game.Game;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class Boundary extends Rectangle {
 
     public BoundaryOrient boundaryOrient;
 
-    public List<Boundary> negativeAttachments = new ArrayList<>();
+    public List<Boundary> attachments = new ArrayList<>();
     public List<Boundary> positiveAttachments = new ArrayList<>();
     public List<InteractionValidifier> preInteractionValidifiers = new ArrayList<>();
     public List<InteractionValidifier> postInteractionValidifiers = new ArrayList<>();
@@ -42,17 +43,21 @@ public class Boundary extends Rectangle {
 
     public boolean shouldUpdateGridCell = false;
 
-    public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient) {
-        this(game, parent, identifier, orient, null);
+    public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient, boolean userInteractable) {
+        this(game, parent, identifier, orient,userInteractable,null);
     }
 
-    public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient, BoundaryConfigurator configurator) {
+    public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient, boolean userInteractable, BoundaryConfigurator configurator) {
         super(game, parent, identifier);
 
         this.boundaryOrient = orient;
         this.color = new Vector(1,1,1,1);
 
-        this.addOnClickDraggedAction(new BoundaryInteractable(this)); // This will set delta move, and call relevant methods to move the boundary
+        this.addOnResizeAction((curr, in, t) -> ((Boundary)curr).shouldUpdateGridCell=true);
+
+        if(userInteractable) {
+            this.addOnClickDraggedAction(new BoundaryInteractable(this)); // This will set delta move, and call relevant methods to move the boundary
+        }
 //        this.addAutomation(updateBoundaryAutomation);
 
         if(boundaryOrient == BoundaryOrient.Horizontal) {
@@ -81,7 +86,7 @@ public class Boundary extends Rectangle {
 
     public Component addConnectedBoundary(Boundary connection, int connectionType) {
         if(connectionType == 0) {
-            negativeAttachments.add(connection);
+            attachments.add(connection);
         }
         else {
             positiveAttachments.add(connection);
@@ -92,7 +97,7 @@ public class Boundary extends Rectangle {
     public Boundary addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
 
         if(connectionType == 0) {
-            negativeAttachments.add(connection);
+            attachments.add(connection);
         }
         else {
             positiveAttachments.add(connection);
@@ -164,13 +169,14 @@ public class Boundary extends Rectangle {
                 setHeight((int) updatedHeight);
             }
         }
+        else {
+            Logger.log(identifier + " boundary not valid interaction");
+        }
 
         shouldUpdatePos = false;
         shouldUpdateWidth = false;
         shouldUpdateHeight = false;
         alreadyVisited = false;
-
-        shouldUpdateGridCell = true;
 
         return isValid;
     }

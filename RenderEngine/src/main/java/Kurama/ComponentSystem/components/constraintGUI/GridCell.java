@@ -18,36 +18,10 @@ public class GridCell extends Component {
         this.addInitAutomation((cur, in, timeDelta) -> updateAttachedComponent());
 
         addAutomation((curr, in, timeDelta) -> {
-
-            if(top!=null && top.shouldUpdateGridCell) {
+            if(top!=null && bottom!=null && right!=null && left!=null &&
+                    (top.shouldUpdateGridCell || bottom.shouldUpdateGridCell || right.shouldUpdateGridCell || left.shouldUpdateGridCell)) {
                 updateAttachedComponent();
-                left.shouldUpdateGridCell = false;
-                right.shouldUpdateGridCell = false;
-                top.shouldUpdateGridCell = false;
-                bottom.shouldUpdateGridCell = false;
             }
-            else if(bottom!=null && bottom.shouldUpdateGridCell) {
-                updateAttachedComponent();
-                left.shouldUpdateGridCell = false;
-                right.shouldUpdateGridCell = false;
-                top.shouldUpdateGridCell = false;
-                bottom.shouldUpdateGridCell = false;
-            }
-            else if(right!=null && right.shouldUpdateGridCell) {
-                updateAttachedComponent();
-                left.shouldUpdateGridCell = false;
-                right.shouldUpdateGridCell = false;
-                top.shouldUpdateGridCell = false;
-                bottom.shouldUpdateGridCell = false;
-            }
-            else if(left!=null && left.shouldUpdateGridCell) {
-                updateAttachedComponent();
-                left.shouldUpdateGridCell = false;
-                right.shouldUpdateGridCell = false;
-                top.shouldUpdateGridCell = false;
-                bottom.shouldUpdateGridCell = false;
-            }
-
         });
     }
 
@@ -58,7 +32,14 @@ public class GridCell extends Component {
     public void updateAttachedComponent() {
 
         if(top == null || bottom == null || right == null || left == null || attachedComp == null) {
-            Logger.logError("Boundaries and attached comp cannot be null: "+this.identifier);
+            var suffix = " Nulls: ";
+            if(top == null) suffix+="top, ";
+            if(bottom == null) suffix+="bottom, ";
+            if(right == null) suffix+="right, ";
+            if(left == null) suffix+="left, ";
+            if(attachedComp == null) suffix+="attachedComp";
+
+            Logger.logError("Boundaries and attached comp cannot be null: "+this.identifier + suffix);
             return;
         }
 
@@ -72,6 +53,8 @@ public class GridCell extends Component {
         attachedComp.setPos(new Vector(leftx + newWidth/2f, topy + newHeight/2f, 0));
         attachedComp.setWidth((int) newWidth);
         attachedComp.setHeight((int) newHeight);
+
+        Logger.log("new dims of "+attachedComp.identifier + ": pos: "+attachedComp.getPos()+" width: "+attachedComp.getWidth() + " height: "+attachedComp.getHeight());
 
     }
 

@@ -10,7 +10,8 @@ public class StretchSystemConfigurator implements BoundaryConfigurator {
         boundary.IVRequestPackGenerator = new StretchIVRG();
         boundary.interactor = new StretchSystemInteractor();
 
-        boundary.addPostInteractionValidifier(new EnsureNoNearZeroDimensions(30));
+        boundary.addPostInteractionValidifier(new EnsureNoNearZeroDimensions(0));
         return boundary;
     }
+
 }

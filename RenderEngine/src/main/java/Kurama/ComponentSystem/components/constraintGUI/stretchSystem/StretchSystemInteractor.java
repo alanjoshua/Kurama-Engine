@@ -25,7 +25,7 @@ public class StretchSystemInteractor implements Interactor {
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
-            for(var b: boundary.negativeAttachments) {
+            for(var b: boundary.attachments) {
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -43,7 +43,7 @@ public class StretchSystemInteractor implements Interactor {
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
-            for(var b: boundary.negativeAttachments) {
+            for(var b: boundary.attachments) {
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -84,6 +84,10 @@ public class StretchSystemInteractor implements Interactor {
 
     public boolean rectifyMovement_vertical(Boundary boundary, Boundary parentBoundary, float deltaMoveY, int relativePos) {
 
+        if(boundary.attachments.size() + boundary.positiveAttachments.size() < 2) {
+            return true;
+        }
+
         float upperBound = Float.POSITIVE_INFINITY;
         float lowerBound = Float.NEGATIVE_INFINITY;
 
@@ -99,7 +103,7 @@ public class StretchSystemInteractor implements Interactor {
             lowerBound = (tempLowerBound > lowerBound) ? tempLowerBound:lowerBound;
         }
 
-        for(var b: boundary.negativeAttachments) {
+        for(var b: boundary.attachments) {
 
             var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
             var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight: b.getHeight())/2f;
@@ -135,7 +139,7 @@ public class StretchSystemInteractor implements Interactor {
             rightBound = (tempRightBound > rightBound) ? tempRightBound:rightBound;
         }
 
-        for(var b: boundary.negativeAttachments) {
+        for(var b: boundary.attachments) {
 
             var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
             var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth: b.getWidth())/2f;

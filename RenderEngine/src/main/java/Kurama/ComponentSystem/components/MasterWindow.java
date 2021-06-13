@@ -1,23 +1,22 @@
 package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.automations.DisplayAttach;
-import Kurama.Math.Vector;
+import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
 import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
 
-public class MasterWindow extends Rectangle {
+public class MasterWindow extends ConstraintComponent {
 
     public Display display;
     public Input input;
 
     public MasterWindow(Game game, Display display, Input input, String identifier) {
-        super(game, null, new Vector(0,0,0,0), identifier);
+        super(game, null, identifier);
         this.display = display;
         this.input = input;
         this.onResizeAutomations.add(new DisplayAttach(display));
         display.resizeEvents.add( () -> this.isResizedOrMoved = true);
-
     }
 
     public void cleanUp() {
