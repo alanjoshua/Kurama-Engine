@@ -153,9 +153,9 @@ public class GameLWJGL extends Game implements Runnable {
         divider
                 .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
                 .addInitAutomation(new WidthPix(10))
+                .addInitAutomation(new HeightPercent(1f))
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
-                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 0))
-                .addOnResizeAction(new HeightPercent(1f));
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 0));
 
         var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
         divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.5f)).addInitAutomation(new HeightPix(10));

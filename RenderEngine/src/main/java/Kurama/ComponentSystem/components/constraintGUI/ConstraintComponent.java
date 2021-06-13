@@ -90,20 +90,20 @@ public class ConstraintComponent extends Rectangle {
         var r = new Boundary(this.game, this, identifier+"_right", Boundary.BoundaryOrient.Vertical, false, configurator);
         var b = new Boundary(this.game, this, identifier+"_bottom", Boundary.BoundaryOrient.Horizontal, false, configurator);
 
-        r.onResizeAutomations.add(new HeightPercent(1f));
-        l.onResizeAutomations.add(new HeightPercent(1f));
-        t.onResizeAutomations.add(new WidthPercent(1f));
-        b.onResizeAutomations.add(new WidthPercent(1f));
-
         r.addInitAutomation(new WidthPercent(0f));
         l.addInitAutomation(new WidthPercent(0f));
         t.addInitAutomation(new HeightPercent(0f));
         b.addInitAutomation(new HeightPercent(0f));
 
-        r.addOnResizeAction(new PosXYBottomRightAttachPercent(0f, 0f));
-        t.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
-        l.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
-        b.addOnResizeAction(new PosYBottomAttachPercent(0f)).addOnResizeAction(new PosXLeftAttachPercent(0f));
+        r.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
+        t.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
+        l.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
+        b.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
+
+        r.addInitAutomation(new HeightPercent(1f));
+        l.addInitAutomation(new HeightPercent(1f));
+        t.addInitAutomation(new WidthPercent(1f));
+        b.addInitAutomation(new WidthPercent(1f));
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
