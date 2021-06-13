@@ -90,10 +90,10 @@ public class ConstraintComponent extends Rectangle {
         var r = new Boundary(this.game, this, identifier+"_right", Boundary.BoundaryOrient.Vertical, false, configurator);
         var b = new Boundary(this.game, this, identifier+"_bottom", Boundary.BoundaryOrient.Horizontal, false, configurator);
 
-        r.addInitAutomation(new WidthPercent(0f));
-        l.addInitAutomation(new WidthPercent(0f));
-        t.addInitAutomation(new HeightPercent(0f));
-        b.addInitAutomation(new HeightPercent(0f));
+//        r.addInitAutomation(new WidthPercent(0f));
+//        l.addInitAutomation(new WidthPercent(0f));
+//        t.addInitAutomation(new HeightPercent(0f));
+//        b.addInitAutomation(new HeightPercent(0f));
 
         r.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
         t.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
