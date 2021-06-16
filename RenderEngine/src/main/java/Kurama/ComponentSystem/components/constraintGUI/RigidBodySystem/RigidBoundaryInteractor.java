@@ -45,7 +45,7 @@ public class RigidBoundaryInteractor implements Interactor {
                 }
             }
 
-            for(var b: boundary.attachments) {
+            for(var b: boundary.negativeAttachments) {
                 if(!b.alreadyVisited) {
                     areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                     if(!areChildInteractionsValid) return false;
@@ -77,7 +77,7 @@ public class RigidBoundaryInteractor implements Interactor {
                 }
             }
 
-            for(var b: boundary.attachments) {
+            for(var b: boundary.negativeAttachments) {
                 if(!b.alreadyVisited) {
                     areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                     if(!areChildInteractionsValid) return false;

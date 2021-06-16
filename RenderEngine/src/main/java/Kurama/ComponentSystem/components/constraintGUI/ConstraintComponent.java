@@ -95,15 +95,20 @@ public class ConstraintComponent extends Rectangle {
 //        t.addInitAutomation(new HeightPercent(0f));
 //        b.addInitAutomation(new HeightPercent(0f));
 
+        r.addInitAutomation(new HeightPercent(1f));
+        l.addInitAutomation(new HeightPercent(1f));
+        t.addInitAutomation(new WidthPercent(1f));
+        b.addInitAutomation(new WidthPercent(1f));
+
         r.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
         t.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
         l.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
         b.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
 
-        r.addInitAutomation(new HeightPercent(1f));
-        l.addInitAutomation(new HeightPercent(1f));
-        t.addInitAutomation(new WidthPercent(1f));
-        b.addInitAutomation(new WidthPercent(1f));
+//        t.addPostInteractionValidifier(new EnsureWithinWindow());
+//        b.addPostInteractionValidifier(new EnsureWithinWindow());
+//        r.addPostInteractionValidifier(new EnsureWithinWindow());
+//        l.addPostInteractionValidifier(new EnsureWithinWindow());
 
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 

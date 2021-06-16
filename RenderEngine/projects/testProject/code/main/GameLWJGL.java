@@ -149,19 +149,28 @@ public class GameLWJGL extends Game implements Runnable {
                             isGameRunning = false;
                         });
 
-        var divider = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDivider", Boundary.BoundaryOrient.Vertical, true);
+        var divider = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider", Boundary.BoundaryOrient.Vertical, true);
         divider
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
                 .addInitAutomation(new WidthPix(10))
                 .addInitAutomation(new HeightPercent(1f))
+                .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
-                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 0));
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
 
         var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
         divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.5f)).addInitAutomation(new HeightPix(10));
 
         divider2.addConnectedBoundary(divider, 0, 0);
-        divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 0));
+        divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 1));
+
+        var tempDiv = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv", Boundary.BoundaryOrient.Horizontal, false);
+        tempDiv
+                .setColor(new Vector(1,0,0,0.5f))
+                .addInitAutomation(new WidthPercent(0.6f))
+                .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
+                .addOnResizeAction(new PosYTopAttachPercent(0f))
+                .addInitAutomation((cur, in, t) -> tempDiv.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_right"), 0, 0));
+        tempDiv.addConnectedBoundary(divider, 0, 1);
 
         var guiGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_gui");
         var gameGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_game");
@@ -175,14 +184,14 @@ public class GameLWJGL extends Game implements Runnable {
             guiGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
             guiGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDiv2");
             guiGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
-            guiGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            guiGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
             guiGrid.attachedComp = guiSection;
         });
 
         gameGrid.addInitAutomation(0, (cur, in, t) -> {
             gameGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
             gameGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
-            gameGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            gameGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
             gameGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_right");
             gameGrid.attachedComp = gameScreen;
         });
@@ -193,7 +202,7 @@ public class GameLWJGL extends Game implements Runnable {
             gui2Grid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDiv2");
             gui2Grid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
             gui2Grid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
-            gui2Grid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDivider");
+            gui2Grid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
             gui2Grid.attachedComp = gui2;
         });
 
@@ -209,10 +218,10 @@ public class GameLWJGL extends Game implements Runnable {
 
         fpsText =
                 (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "fps")
+                        .attachSelfToParent(gameScreen)
                         .addOnResizeAction(new PosXYTopLeftAttachPix(40, 20))
                         .addAutomation(new DisplayFPS(this, "FPS: "))
                         .setOverlayColor(new Vector(1,0,0,0.5f));
-        gameScreen.addChild(fpsText);
 
         var engineTitle =
                 (Text)new Text(this, gameScreen, new FontTexture(new Font("Arial", Font.ITALIC, 20), FontTexture.defaultCharSet), "engineName")

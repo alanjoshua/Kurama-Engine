@@ -1,6 +1,7 @@
 package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchMessage;
 import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
@@ -25,11 +26,22 @@ public class MasterWindow extends ConstraintComponent {
             this.setHeight(display.windowResolution.geti(1));
 
             var left = getBoundary(identifier+"_left");
+            var right = getBoundary(identifier+"_right");
+            var top = getBoundary(identifier+"_top");
+            var bottom = getBoundary(identifier+"_bottom");
+
             if(left != null) {
-                left.initialiseInteraction(-(dw / 2f), 0);
-                getBoundary(identifier + "_right").initialiseInteraction(dw / 2f, 0);
-                getBoundary(identifier + "_top").initialiseInteraction(0, -(dh / 2f));
-                getBoundary(identifier + "_bottom").initialiseInteraction(0, dh / 2f);
+
+                left.interact(new StretchMessage(-(dw/2f), 0, null, true), null, -1);
+                right.interact(new StretchMessage((dw/2f), 0, null, true), null, -1);
+                top.interact(new StretchMessage(0, -(dh/2f), null, true), null, -1);
+                bottom.interact(new StretchMessage(0, (dh/2f), null, true), null, -1);
+
+
+//                left.initialiseInteraction(-(dw / 2f), 0);
+//                getBoundary(identifier + "_right").initialiseInteraction(dw / 2f, 0);
+//                getBoundary(identifier + "_top").initialiseInteraction(0, -(dh / 2f));
+//                getBoundary(identifier + "_bottom").initialiseInteraction(0, dh / 2f);
             }
         });
 

@@ -15,15 +15,15 @@ import java.util.List;
 
 public class Boundary extends Rectangle {
 
-    // in a H-Boundary, positive is top and negative is bottom.
-    // in a V-boundary, positive is right and negative is left.
+    // in a H-Boundary, positive is top and 0 is bottom.
+    // in a V-boundary, positive is right and 0 is left.
 
     public enum BoundaryOrient {Vertical, Horizontal};
     public static IVRequestPackGenerator defaultIVRGenerator = (parent, boundary, dx, dy) -> new BoundInteractionMessage(null, dx, dy);
 
     public BoundaryOrient boundaryOrient;
 
-    public List<Boundary> attachments = new ArrayList<>();
+    public List<Boundary> negativeAttachments = new ArrayList<>();
     public List<Boundary> positiveAttachments = new ArrayList<>();
     public List<InteractionValidifier> preInteractionValidifiers = new ArrayList<>();
     public List<InteractionValidifier> postInteractionValidifiers = new ArrayList<>();
@@ -40,6 +40,11 @@ public class Boundary extends Rectangle {
     public Vector updatedPos;
     public float updatedWidth;
     public float updatedHeight;
+
+    public float minWidth = Float.NEGATIVE_INFINITY;
+    public float maxWidth = Float.POSITIVE_INFINITY;
+    public float minHeight = Float.NEGATIVE_INFINITY;
+    public float maxHeight = Float.POSITIVE_INFINITY;
 
     public boolean shouldUpdateGridCell = false;
 
@@ -86,7 +91,7 @@ public class Boundary extends Rectangle {
 
     public Component addConnectedBoundary(Boundary connection, int connectionType) {
         if(connectionType == 0) {
-            attachments.add(connection);
+            negativeAttachments.add(connection);
         }
         else {
             positiveAttachments.add(connection);
@@ -97,7 +102,7 @@ public class Boundary extends Rectangle {
     public Boundary addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
 
         if(connectionType == 0) {
-            attachments.add(connection);
+            negativeAttachments.add(connection);
         }
         else {
             positiveAttachments.add(connection);
@@ -109,6 +114,15 @@ public class Boundary extends Rectangle {
     public boolean isValidInteraction_pre(BoundInteractionMessage info) {
 
         var vd = new ConstraintVerificationData(getPos(), getWidth(), getHeight());
+        if(shouldUpdatePos) {
+            vd.pos = updatedPos;
+        }
+        if(shouldUpdateWidth) {
+            vd.width = (int) updatedWidth;
+        }
+        if(shouldUpdateHeight) {
+            vd.height = (int) updatedHeight;
+        }
 
         for(var i: preInteractionValidifiers) {
             if(!i.isValid(this, info, vd)) {
@@ -139,10 +153,9 @@ public class Boundary extends Rectangle {
         return true;
     }
 
-    // Is intended to be overridden
-    public void initialiseInteraction(float deltaMoveX, float deltaMoveY) {
+    public boolean initialiseInteraction(float deltaMoveX, float deltaMoveY) {
         var data = IVRequestPackGenerator.getValidificationRequestPack(null,this, deltaMoveX, deltaMoveY);
-        interact(data, null, -1);
+        return interact(data, null, -1);
     }
 
     public boolean interact(BoundInteractionMessage info, Boundary parent, int relativePos) {
@@ -170,7 +183,7 @@ public class Boundary extends Rectangle {
             }
         }
         else {
-            Logger.log(identifier + " boundary not valid interaction");
+            Logger.logError(identifier + " boundary not valid interaction");
         }
 
         shouldUpdatePos = false;

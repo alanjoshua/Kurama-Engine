@@ -54,7 +54,7 @@ public class GridCell extends Component {
         attachedComp.setWidth((int) newWidth);
         attachedComp.setHeight((int) newHeight);
 
-        Logger.log("new dims of "+attachedComp.identifier + ": pos: "+attachedComp.getPos()+" width: "+attachedComp.getWidth() + " height: "+attachedComp.getHeight());
+//        Logger.log("new dims of "+attachedComp.identifier + ": pos: "+attachedComp.getPos()+" width: "+attachedComp.getWidth() + " height: "+attachedComp.getHeight());
 
     }
 
