@@ -15,7 +15,7 @@ public class StretchSystemConfigurator implements BoundaryConfigurator {
             boundary.minHeight = 30;
         }
         else {
-            boundary.minWidth = 50;
+            boundary.minWidth = 100;
         }
 
 //        boundary.addPreInteractionValidifier(new EnsureWithinWindow());

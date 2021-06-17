@@ -133,7 +133,7 @@ public class StretchSystemInteractor implements Interactor {
         if(boundary.updatedHeight < boundary.minHeight) {
 //            return false;
             Logger.log(boundary.identifier + " :fixing negative height");
-            fixNegativeHeight_vertical(boundary, parentBoundary, relativePos, message);
+            if(!fixNegativeHeight_vertical(boundary, parentBoundary, relativePos, message)) return false;
         }
         return true;
 
@@ -186,7 +186,7 @@ public class StretchSystemInteractor implements Interactor {
             Logger.logError(boundary.identifier + " width less than min, so trying to move connected bound");
 //            return false;
             Logger.log(boundary.identifier + " :fixing negative width");
-            fixNegativeHeight_horizontal(boundary, parentBoundary, relativePos, message);
+            if(!fixNegativeHeight_horizontal(boundary, parentBoundary, relativePos, message)) return false;
         }
 
         return true;
