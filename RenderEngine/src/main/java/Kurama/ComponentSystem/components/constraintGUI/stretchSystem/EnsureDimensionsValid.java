@@ -1,8 +1,9 @@
-package Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers;
+package Kurama.ComponentSystem.components.constraintGUI.stretchSystem;
 
 import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintVerificationData;
+import Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers.InteractionValidifier;
 import Kurama.utils.Logger;
 
 public class EnsureDimensionsValid implements InteractionValidifier {

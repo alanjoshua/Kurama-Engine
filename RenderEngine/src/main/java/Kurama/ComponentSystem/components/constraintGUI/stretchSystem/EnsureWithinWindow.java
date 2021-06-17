@@ -1,9 +1,9 @@
-package Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers;
+package Kurama.ComponentSystem.components.constraintGUI.stretchSystem;
 
 import Kurama.ComponentSystem.components.constraintGUI.BoundInteractionMessage;
 import Kurama.ComponentSystem.components.constraintGUI.Boundary;
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintVerificationData;
-import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchMessage;
+import Kurama.ComponentSystem.components.constraintGUI.interactionValidifiers.InteractionValidifier;
 import Kurama.utils.Logger;
 
 public class EnsureWithinWindow implements InteractionValidifier {
@@ -16,6 +16,7 @@ public class EnsureWithinWindow implements InteractionValidifier {
         }
 
         if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
+
             if ((verificationData.pos.get(0) - verificationData.width / 2f) < -boundary.parent.getWidth() / 2f) {
 
                 float dx = (verificationData.pos.get(0) - verificationData.width / 2f) +(boundary.parent.getWidth() / 2f);

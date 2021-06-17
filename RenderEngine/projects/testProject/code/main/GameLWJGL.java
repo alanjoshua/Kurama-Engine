@@ -162,6 +162,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         divider2.addConnectedBoundary(divider, 0, 0);
         divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 1));
+        divider2.maxWidth = 500;
 
         var tempDiv = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv", Boundary.BoundaryOrient.Horizontal, false);
         tempDiv

@@ -131,9 +131,12 @@ public class StretchSystemInteractor implements Interactor {
         boundary.updatedPos = new Vector(boundary.updatedPos.geti(0), upperBound+(boundary.updatedHeight/2f), boundary.updatedPos.geti(2));
 
         if(boundary.updatedHeight < boundary.minHeight) {
-//            return false;
-            Logger.log(boundary.identifier + " :fixing negative height");
-            if(!fixNegativeHeight_vertical(boundary, parentBoundary, relativePos, message)) return false;
+            Logger.log(boundary.identifier + " height less than min, so trying to move connected bound");
+            if(!fixHeightLessThanMinimum_vertical(boundary, parentBoundary, relativePos, message, 0)) return false;
+        }
+        else if(boundary.updatedHeight > boundary.maxHeight) {
+            Logger.logError(boundary.identifier + " height more than max, so trying to move connected bound height: "+boundary.updatedHeight + " max: "+boundary.maxHeight);
+            if(!fixHeightLessThanMinimum_vertical(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
         return true;
 
@@ -183,10 +186,12 @@ public class StretchSystemInteractor implements Interactor {
 
 
         if(boundary.updatedWidth < boundary.minWidth) {
-            Logger.logError(boundary.identifier + " width less than min, so trying to move connected bound");
-//            return false;
-            Logger.log(boundary.identifier + " :fixing negative width");
-            if(!fixNegativeHeight_horizontal(boundary, parentBoundary, relativePos, message)) return false;
+            Logger.log(boundary.identifier + " width less than min, so trying to move connected bound");
+            if(!fixWidthLessThanMinimum_horizontal(boundary, parentBoundary, relativePos, message, 0)) return false;
+        }
+        else if(boundary.updatedWidth > boundary.maxWidth) {
+            Logger.logError(boundary.identifier + " width more than max, so trying to move connected bound width: "+boundary.updatedWidth+ " max: "+boundary.maxWidth);
+            if(!fixWidthLessThanMinimum_horizontal(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
 
         return true;
@@ -197,9 +202,17 @@ public class StretchSystemInteractor implements Interactor {
     // Fixes it by stretching the connected boundaries
 
     // if relative pos is positive, then this vertical bound is being moved by a horizontal boundary from the top, so we now need to move a H-bound at the bottom
-    public boolean fixNegativeHeight_vertical(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message) {
 
-        float dy = current.minHeight - current.updatedHeight;
+    // minOrMax : 0=min 1=max
+    public boolean fixHeightLessThanMinimum_vertical(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
+
+        float dy;
+
+        if(minOrMax == 0) {
+            dy = current.minHeight - current.updatedHeight;
+        }else {
+            dy = current.maxHeight - current.updatedHeight;
+        }
 
         for(var b: current.positiveAttachments) {
             if(b == parent) continue;
@@ -241,10 +254,16 @@ public class StretchSystemInteractor implements Interactor {
     // Checks to see whether the width is lower than a certain threshold, or negative (have shrunk and stretched to the other side)
     // Fixes it by stretching the connected boundaries
 
-    public boolean fixNegativeHeight_horizontal(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message) {
+    public boolean fixWidthLessThanMinimum_horizontal(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
 
-        float dx = current.minWidth - current.updatedWidth;
-        Logger.log(current.identifier + ": inside fix negative horizontal dx="+dx);
+        float dx;
+
+        if(minOrMax == 0) {
+            dx = current.minWidth - current.updatedWidth;
+        }
+        else {
+            dx = current.maxWidth - current.updatedWidth;
+        }
 
         for(var b: current.positiveAttachments) {
             if(b == parent) continue;

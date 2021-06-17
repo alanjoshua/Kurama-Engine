@@ -3,6 +3,7 @@ package Kurama.ComponentSystem.components.constraintGUI;
 import Kurama.ComponentSystem.automations.*;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.Rectangle;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.FixToBorder;
 import Kurama.game.Game;
 
 import java.util.ArrayList;
@@ -105,17 +106,22 @@ public class ConstraintComponent extends Rectangle {
         l.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
         b.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
 
-//        t.addPostInteractionValidifier(new EnsureWithinWindow());
-//        b.addPostInteractionValidifier(new EnsureWithinWindow());
-//        r.addPostInteractionValidifier(new EnsureWithinWindow());
-//        l.addPostInteractionValidifier(new EnsureWithinWindow());
-
         addBoundary(l).addBoundary(r).addBoundary(t).addBoundary(b);
 
         l.addConnectedBoundary(t, 1, 0);
         l.addConnectedBoundary(b, 1, 1);
         r.addConnectedBoundary(t, 0, 0);
         r.addConnectedBoundary(b, 0, 1);
+
+        l.addPreInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.left));
+        r.addPreInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.right));
+        t.addPreInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.top));
+        b.addPreInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.bottom));
+
+        l.addPostInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.left));
+        r.addPostInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.right));
+        t.addPostInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.top));
+        b.addPostInteractionValidifier(new FixToBorder(FixToBorder.AttachPoint.bottom));
 
         return this;
     }
