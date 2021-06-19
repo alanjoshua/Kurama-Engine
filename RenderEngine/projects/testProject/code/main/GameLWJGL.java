@@ -158,41 +158,41 @@ public class GameLWJGL extends Game implements Runnable {
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
 
-        var divider3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider3", Boundary.BoundaryOrient.Vertical, true);
-        divider3
-                .setColor(new Vector(0,0.6f,0.7f,0.6f))
-                .addInitAutomation(new WidthPix(10))
-                .addInitAutomation(new HeightPercent(1f))
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0))
-                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
-                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
-
-        var tempDiv2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
-        tempDiv2
-                .setColor(new Vector(1,0,0,0.5f))
-                .addInitAutomation(new WidthPercent(0.2f))
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
-                .addInitAutomation(new PosYTopAttachPercent(0.25f));
-        tempDiv2.addConnectedBoundary(divider, 0, 1);
-        tempDiv2.addConnectedBoundary(divider3, 0, 0);
-
-        var tempDiv3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
-        tempDiv3
-                .setColor(new Vector(1,0,0,0.5f))
-                .addInitAutomation(new WidthPercent(0.2f))
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
-                .addInitAutomation(new PosYTopAttachPercent(0.75f));
-        tempDiv3.addConnectedBoundary(divider, 0, 1);
-        tempDiv3.addConnectedBoundary(divider3, 0, 0);
-
-        var divider4 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider", Boundary.BoundaryOrient.Vertical, false);
-        divider4
+//        var divider3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider3", Boundary.BoundaryOrient.Vertical, true);
+//        divider3
+//                .setColor(new Vector(0,0.6f,0.7f,0.6f))
 //                .addInitAutomation(new WidthPix(10))
 //                .addInitAutomation(new HeightPercent(1f))
-                .addInitAutomation(new PosXYTopLeftAttachPercent(0.5f,0.5f))
-                .addInitAutomation(new HeightPercent(0.5f));
-        divider4.addConnectedBoundary(tempDiv2, 0, 0);
-        divider4.addConnectedBoundary(tempDiv3, 0, 1);
+//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0))
+//                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
+//                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
+//
+//        var tempDiv2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
+//        tempDiv2
+//                .setColor(new Vector(1,0,0,0.5f))
+//                .addInitAutomation(new WidthPercent(0.2f))
+//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
+//                .addInitAutomation(new PosYTopAttachPercent(0.25f));
+//        tempDiv2.addConnectedBoundary(divider, 0, 1);
+//        tempDiv2.addConnectedBoundary(divider3, 0, 0);
+//
+//        var tempDiv3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
+//        tempDiv3
+//                .setColor(new Vector(1,0,0,0.5f))
+//                .addInitAutomation(new WidthPercent(0.2f))
+//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
+//                .addInitAutomation(new PosYTopAttachPercent(0.75f));
+//        tempDiv3.addConnectedBoundary(divider, 0, 1);
+//        tempDiv3.addConnectedBoundary(divider3, 0, 0);
+//
+//        var divider4 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider", Boundary.BoundaryOrient.Vertical, false);
+//        divider4
+////                .addInitAutomation(new WidthPix(10))
+////                .addInitAutomation(new HeightPercent(1f))
+//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.5f,0.5f))
+//                .addInitAutomation(new HeightPercent(0.5f));
+//        divider4.addConnectedBoundary(tempDiv2, 0, 0);
+//        divider4.addConnectedBoundary(tempDiv3, 0, 1);
 
         var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
         divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.4f)).addInitAutomation(new HeightPix(10));
@@ -223,7 +223,7 @@ public class GameLWJGL extends Game implements Runnable {
         gameGrid.addInitAutomation(0, (cur, in, t) -> {
             gameGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
             gameGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
-            gameGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider3");
+            gameGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
             gameGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_right");
             gameGrid.attachedComp = gameScreen;
         });
@@ -367,7 +367,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         HierarchyWindow hierarchyWindow = (HierarchyWindow) new HierarchyWindow(this, guiSection, "hierarchyWindow")
                 .attachSelfToParent(rootGuiComponent)
-                .setColor(new Vector(0.3f,0.3f,0.3f,0.5f));
+                .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f));
 
 //        var gui2 = new TextBox(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "gui2")
 //                .setText("Test GUI segment 2")

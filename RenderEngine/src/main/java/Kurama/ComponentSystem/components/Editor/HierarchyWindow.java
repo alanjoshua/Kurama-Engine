@@ -28,21 +28,13 @@ public class HierarchyWindow extends ConstraintComponent {
 
     DoublyLinkedList<GridCell> contents = new DoublyLinkedList<>();
     public int initOffsetX = 30;
-    public int gridHeight = 30;
+    public int gridHeight = 35;
     public int stepOffset = 40;
-    public FontTexture fontTexture = new FontTexture(new Font("Arial", Font.ITALIC, 14), FontTexture.defaultCharSet);
+    public FontTexture fontTexture = new FontTexture(new Font("Arial", Font.ITALIC, 17), FontTexture.defaultCharSet);
     private boolean alreadyCreated = false;
 
     public HierarchyWindow(Game game, Component parent, String identifier) {
         super(game, parent, identifier);
-
-        addInitAutomation((cur, in, t) -> {
-            left.setColor(new Vector(0,1,0,1));
-            right.setColor(new Vector(0,1,0,1));
-            top.setColor(new Vector(0,1,0,1));
-            bottom.setColor(new Vector(0,1,0,1));
-        });
-
     }
 
     public void createHierarchy(List<Component> roots, int currentStep, boolean isMasterCall) {
@@ -80,7 +72,8 @@ public class HierarchyWindow extends ConstraintComponent {
 
     public Component createEmptyUnit(Component comp, int step, String defaultText) {
         var rec = new Rectangle(game, this, comp.identifier+"_hw")
-                .setColor(new Vector(0.6f,0.3f,0.7f,0.5f));
+                .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.1f))
+                .setContainerVisibility(false);
 
         var text = new Text(game, rec, fontTexture, comp.identifier+"_hw_text");
         text.setText(defaultText);
@@ -94,7 +87,8 @@ public class HierarchyWindow extends ConstraintComponent {
 
     public Component createUnit(Component comp, int step) {
         var rec = new Rectangle(game, this, comp.identifier+"_hw")
-                .setColor(new Vector(0.6f,0.3f,0.7f,0.5f));
+                .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.1f))
+                .setContainerVisibility(false);
 
         var text = new Text(game, rec, fontTexture, comp.identifier+"_hw_text");
         text.setText(comp.identifier);
@@ -120,7 +114,8 @@ public class HierarchyWindow extends ConstraintComponent {
 
         var bottom_bound = new Boundary(game, this, initComp.identifier+"_hw_bottom", Boundary.BoundaryOrient.Horizontal, true, configurator);
         bottom_bound.addInitAutomation((c,i,t) -> c.pos = g.top.pos.add(new Vector(0,gridHeight,0)));
-        bottom_bound.height = 5;
+        bottom_bound.height = 1;
+//        bottom_bound.isContainerVisible = false;
 
         g.bottom = bottom_bound;
 
