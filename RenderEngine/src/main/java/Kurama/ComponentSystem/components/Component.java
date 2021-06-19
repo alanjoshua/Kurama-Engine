@@ -1,5 +1,6 @@
 package Kurama.ComponentSystem.components;
 
+import Kurama.Annotations.Property;
 import Kurama.ComponentSystem.animations.Animation;
 import Kurama.ComponentSystem.automations.Automation;
 import Kurama.Math.Matrix;
@@ -14,23 +15,23 @@ import java.util.List;
 
 public abstract class Component {
 
-    protected Vector pos = new Vector(new float[]{0,0,0});
-    protected Vector scale = new Vector(1,1,1);
-    protected Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
-    protected int width;
-    protected int height;
-    public Matrix objectToWorldMatrix = Matrix.getIdentityMatrix(4);
-    public Matrix objectToWorldNoScaleMatrix = Matrix.getIdentityMatrix(4);
+    public @Property Vector pos = new Vector(new float[]{0,0,0});
+    public @Property Vector scale = new Vector(1,1,1);
+    public @Property Quaternion orientation = Quaternion.getAxisAsQuat(1,0,0,0);
+    public @Property int width;
+    public @Property int height;
+    public @Property Matrix objectToWorldMatrix = Matrix.getIdentityMatrix(4);
+    public @Property Matrix objectToWorldNoScaleMatrix = Matrix.getIdentityMatrix(4);
 
-    protected Vector previousPos;
-    protected Quaternion previousOrient;
-    protected int previousWidth;
-    protected int previousHeight;
-    protected Vector previousScale;
+    protected @Property Vector previousPos;
+    protected @Property Quaternion previousOrient;
+    protected @Property int previousWidth;
+    protected @Property int previousHeight;
+    protected @Property Vector previousScale;
 
-    public Vector color = new Vector(0,0,0,1);
-    public Vector overlayColor = null;
-    public Texture texture = null;
+    public @Property Vector color = new Vector(0,0,0,1);
+    public @Property Vector overlayColor = null;
+    public @Property Texture texture = null;
     public float alphaMask = 1;
 
     public String identifier;

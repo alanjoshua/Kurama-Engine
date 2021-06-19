@@ -5,6 +5,8 @@ import Kurama.Math.Vector;
 import org.lwjgl.BufferUtils;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -13,7 +15,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.lwjgl.BufferUtils.createByteBuffer;
@@ -130,6 +133,28 @@ public class Utils {
 		buffer.flip();
 		newBuffer.put(buffer);
 		return newBuffer;
+	}
+
+
+//	Code adapted from https://www.baeldung.com/java-reflection-class-fields
+
+	public static List<Field> getAllDeclaredFields(Class clazz) {
+		if(clazz == null) return Collections.emptyList();
+
+		List<Field> result = new ArrayList<>(getAllDeclaredFields(clazz.getSuperclass()));
+
+		result.addAll(Arrays.asList(clazz.getDeclaredFields()));
+		return result;
+	}
+
+	public static List<Field> getAllDeclaredFieldsByAnnotation(Class clazz, Class<? extends Annotation> annotation) {
+		if(clazz == null) return Collections.emptyList();
+
+		List<Field> result = new ArrayList<>(getAllDeclaredFieldsByAnnotation(clazz.getSuperclass(), annotation));
+
+		var filtered = Arrays.stream(clazz.getDeclaredFields()).filter(f -> f.isAnnotationPresent(annotation)).collect(Collectors.toList());
+		result.addAll(filtered);
+		return result;
 	}
 
 

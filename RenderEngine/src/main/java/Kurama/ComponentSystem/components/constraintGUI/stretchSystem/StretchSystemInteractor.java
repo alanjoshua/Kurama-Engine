@@ -215,34 +215,38 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: current.positiveAttachments) {
-            if(b == parent) continue;
+            if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
             if(relativeParentPos < 0) {
                 if(b.positiveAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier);
                     if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
                 }
             }
             // original bound being moved up from below
             else {
                 if(b.negativeAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier);
                     if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
                 }
             }
         }
 
         for(var b: current.negativeAttachments) {
-            if(b == parent) continue;
+            if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
             if(relativeParentPos < 0) {
                 if(b.positiveAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier);
                     if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
                 }
             }
             // original bound being moved up from below
             else {
                 if(b.negativeAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier);
                     if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
                 }
             }
@@ -266,7 +270,7 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: current.positiveAttachments) {
-            if(b == parent) continue;
+            if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved left from right
             if(relativeParentPos < 0) {
@@ -286,7 +290,7 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: current.negativeAttachments) {
-            if(b == parent) continue;
+            if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
             if(relativeParentPos < 0) {

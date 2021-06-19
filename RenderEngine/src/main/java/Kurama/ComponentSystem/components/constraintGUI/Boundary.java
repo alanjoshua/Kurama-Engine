@@ -101,12 +101,13 @@ public class Boundary extends Rectangle {
 
     public Boundary addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
 
-        if(connectionType == 0) {
+        if(connectionType < 1) {
             negativeAttachments.add(connection);
         }
         else {
             positiveAttachments.add(connection);
         }
+
         connection.addConnectedBoundary(this, reverseConnectionType);
         return this;
     }
