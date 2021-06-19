@@ -8,9 +8,9 @@ import Kurama.utils.Logger;
 
 public class StretchSystemInteractor implements Interactor {
 
-//    public float minDimThresh = 30;
+    public static int DELTA_OFFSET = 10; // Extra pos to move when indirectly moving boundaries
+
     public StretchSystemInteractor() {}
-//    public StretchSystemInteractor(float minDimThresh) {this.minDimThresh = minDimThresh;}
 
     @Override
     public boolean interact(BoundInteractionMessage info, Boundary boundary, Boundary parentBoundary, int relativePos) {
@@ -28,10 +28,12 @@ public class StretchSystemInteractor implements Interactor {
             var newInfo = new StretchMessage(info, boundary);
 
             for(var b: boundary.positiveAttachments) {
+//                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
+//                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -46,10 +48,12 @@ public class StretchSystemInteractor implements Interactor {
             var newInfo = new StretchMessage(info, boundary);
 
             for(var b: boundary.positiveAttachments) {
+//                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
+//                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -89,7 +93,7 @@ public class StretchSystemInteractor implements Interactor {
 
     public boolean recalculatePosDim_vertBound(Boundary boundary, Boundary parentBoundary, float deltaMoveY, int relativePos, StretchMessage message) {
 
-        if(boundary.negativeAttachments.size() + boundary.positiveAttachments.size() < 2) {
+        if((boundary.negativeAttachments.size() + boundary.positiveAttachments.size() + boundary.neutralAttachments.size()) < 2) {
             return true;
         }
 
@@ -127,6 +131,22 @@ public class StretchSystemInteractor implements Interactor {
 
         }
 
+        for(var b: boundary.neutralAttachments) {
+
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var heightOfBoundBeingComparedTo = (b.shouldUpdateHeight?b.updatedHeight: b.getHeight())/2f;
+
+            if(b.negativeAttachments.contains(boundary)) {
+                var tempUpperBound = posOfBoundBeingComparedTo.get(1) - heightOfBoundBeingComparedTo;
+                upperBound = (tempUpperBound < upperBound) ? tempUpperBound : upperBound;
+            }
+            else {
+                var tempLowerBound = posOfBoundBeingComparedTo.get(1) + heightOfBoundBeingComparedTo;
+                lowerBound = (tempLowerBound > lowerBound) ? tempLowerBound : lowerBound;
+            }
+
+        }
+
         boundary.updatedHeight = lowerBound - upperBound;
         boundary.updatedPos = new Vector(boundary.updatedPos.geti(0), upperBound+(boundary.updatedHeight/2f), boundary.updatedPos.geti(2));
 
@@ -143,6 +163,10 @@ public class StretchSystemInteractor implements Interactor {
     }
 
     public boolean recalculatePosDim_horBound(Boundary boundary, Boundary parentBoundary, float deltaMoveX, int relativePos, StretchMessage message) {
+
+        if((boundary.negativeAttachments.size() + boundary.positiveAttachments.size() + boundary.neutralAttachments.size()) < 2) {
+            return true;
+        }
 
         float leftBound = Float.POSITIVE_INFINITY;
         float rightBound = Float.NEGATIVE_INFINITY;
@@ -164,6 +188,22 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: boundary.negativeAttachments) {
+
+            var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
+            var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth: b.getWidth())/2f;
+
+            if(b.positiveAttachments.contains(boundary)) {
+                var tempLeftBound = posOfBoundBeingComparedTo.get(0) - widthOfBoundBeingComparedTo;
+                leftBound = (tempLeftBound < leftBound) ? tempLeftBound:leftBound;
+            }
+            else {
+                var tempRightBound = posOfBoundBeingComparedTo.get(0) + widthOfBoundBeingComparedTo;
+                rightBound = (tempRightBound > rightBound) ? tempRightBound:rightBound;
+            }
+
+        }
+
+        for(var b: boundary.neutralAttachments) {
 
             var posOfBoundBeingComparedTo = b.shouldUpdatePos?b.updatedPos: b.getPos();
             var widthOfBoundBeingComparedTo = (b.shouldUpdateWidth?b.updatedWidth: b.getWidth())/2f;
@@ -209,9 +249,9 @@ public class StretchSystemInteractor implements Interactor {
         float dy;
 
         if(minOrMax == 0) {
-            dy = current.minHeight - current.updatedHeight;
+            dy = current.minHeight - current.updatedHeight - DELTA_OFFSET;
         }else {
-            dy = current.maxHeight - current.updatedHeight;
+            dy = current.maxHeight - current.updatedHeight + DELTA_OFFSET;
         }
 
         for(var b: current.positiveAttachments) {
@@ -220,15 +260,21 @@ public class StretchSystemInteractor implements Interactor {
             // original bound being moved down from top
             if(relativeParentPos < 0) {
                 if(b.positiveAttachments.contains(current)) {
-                    Logger.logError("Trying to Moving: "+b.identifier);
-                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
                 }
             }
             // original bound being moved up from below
             else {
                 if(b.negativeAttachments.contains(current)) {
-                    Logger.logError("Trying to Moving: "+b.identifier);
-                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
                 }
             }
         }
@@ -239,15 +285,21 @@ public class StretchSystemInteractor implements Interactor {
             // original bound being moved down from top
             if(relativeParentPos < 0) {
                 if(b.positiveAttachments.contains(current)) {
-                    Logger.logError("Trying to Moving: "+b.identifier);
-                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
                 }
             }
             // original bound being moved up from below
             else {
                 if(b.negativeAttachments.contains(current)) {
-                    Logger.logError("Trying to Moving: "+b.identifier);
-                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
                 }
             }
         }
@@ -263,10 +315,10 @@ public class StretchSystemInteractor implements Interactor {
         float dx;
 
         if(minOrMax == 0) {
-            dx = current.minWidth - current.updatedWidth;
+            dx = current.minWidth - current.updatedWidth - DELTA_OFFSET;
         }
         else {
-            dx = current.maxWidth - current.updatedWidth;
+            dx = current.maxWidth - current.updatedWidth + DELTA_OFFSET;
         }
 
         for(var b: current.positiveAttachments) {

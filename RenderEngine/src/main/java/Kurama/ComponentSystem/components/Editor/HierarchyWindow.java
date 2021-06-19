@@ -114,7 +114,8 @@ public class HierarchyWindow extends ConstraintComponent {
 
         var bottom_bound = new Boundary(game, this, initComp.identifier+"_hw_bottom", Boundary.BoundaryOrient.Horizontal, true, configurator);
         bottom_bound.addInitAutomation((c,i,t) -> c.pos = g.top.pos.add(new Vector(0,gridHeight,0)));
-        bottom_bound.height = 1;
+        bottom_bound.height = 5;
+
 //        bottom_bound.isContainerVisible = false;
 
         g.bottom = bottom_bound;
@@ -127,6 +128,7 @@ public class HierarchyWindow extends ConstraintComponent {
         });
         centre_bound.isContainerVisible = false;
         centre_bound.minHeight = 20;
+        centre_bound.maxHeight = 50;
 
         addBoundary(bottom_bound).addBoundary(centre_bound);
 

@@ -25,6 +25,7 @@ public class Boundary extends Rectangle {
 
     public List<Boundary> negativeAttachments = new ArrayList<>();
     public List<Boundary> positiveAttachments = new ArrayList<>();
+    public List<Boundary> neutralAttachments = new ArrayList<>();
     public List<InteractionValidifier> preInteractionValidifiers = new ArrayList<>();
     public List<InteractionValidifier> postInteractionValidifiers = new ArrayList<>();
     public Interactor interactor = new DefaultBoundaryInteractor();
@@ -101,11 +102,14 @@ public class Boundary extends Rectangle {
 
     public Boundary addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
 
-        if(connectionType < 1) {
+        if(connectionType == 0) {
             negativeAttachments.add(connection);
         }
-        else {
+        else if(connectionType == 1) {
             positiveAttachments.add(connection);
+        }
+        else {
+            neutralAttachments.add(connection);
         }
 
         connection.addConnectedBoundary(this, reverseConnectionType);
