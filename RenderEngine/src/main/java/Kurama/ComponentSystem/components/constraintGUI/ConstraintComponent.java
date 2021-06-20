@@ -40,6 +40,7 @@ public class ConstraintComponent extends Rectangle {
             }
         });
 
+        // ISSUE MIGHT BE HERE
         onResizeAutomations.add((cur, in, t) -> {
 
             var dw = this.getWidth() - this.previousWidth;
@@ -49,8 +50,8 @@ public class ConstraintComponent extends Rectangle {
 
                 left.interact(new StretchMessage(-(dw/2f), 0, null, true), null, -1);
                 right.interact(new StretchMessage((dw/2f), 0, null, true), null, -1);
-                top.interact(new StretchMessage(0, -(dh/2f), null, true), null, -1);
-                bottom.interact(new StretchMessage(0, (dh/2f), null, true), null, -1);
+                top.interact(new StretchMessage(0, -(dh/1f), null, true), null, -1);
+//                bottom.interact(new StretchMessage(0, (dh/2f), null, true), null, -1);
             }
 
         });
@@ -126,15 +127,25 @@ public class ConstraintComponent extends Rectangle {
 //        t.addInitAutomation(new HeightPercent(0f));
 //        b.addInitAutomation(new HeightPercent(0f));
 
-        right.addInitAutomation(new HeightPercent(1f));
-        left.addInitAutomation(new HeightPercent(1f));
-        top.addInitAutomation(new WidthPercent(1f));
-        bottom.addInitAutomation(new WidthPercent(1f));
+//        right.addInitAutomation(new HeightPercent(1f));
+//        left.addInitAutomation(new HeightPercent(1f));
+//        top.addInitAutomation(new WidthPercent(1f));
+//        bottom.addInitAutomation(new WidthPercent(1f));
+//
+//        right.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
+//        top.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
+//        left.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
+//        bottom.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
 
-        right.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
-        top.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
-        left.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
-        bottom.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
+        right.addOnResizeAction(new HeightPercent(1f));
+        left.addOnResizeAction(new HeightPercent(1f));
+        top.addOnResizeAction(new WidthPercent(1f));
+        bottom.addOnResizeAction(new WidthPercent(1f));
+
+        right.addOnResizeAction(new PosXYBottomRightAttachPercent(0f, 0f));
+        top.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
+        left.addOnResizeAction(new PosXYTopLeftAttachPercent(0f, 0f));
+        bottom.addOnResizeAction(new PosYBottomAttachPercent(0f)).addOnResizeAction(new PosXLeftAttachPercent(0f));
 
         addBoundary(left).addBoundary(right).addBoundary(top).addBoundary(bottom);
 

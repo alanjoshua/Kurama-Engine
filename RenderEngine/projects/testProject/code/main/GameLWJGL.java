@@ -367,7 +367,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         HierarchyWindow hierarchyWindow = (HierarchyWindow) new HierarchyWindow(this, guiSection, "hierarchyWindow")
                 .attachSelfToParent(rootGuiComponent)
-                .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f));
+                .setColor(new Vector(0.9f, 0.4f, 0.9f, 0.3f));
 
 //        var gui2 = new TextBox(this, rootGuiComponent, new FontTexture(new Font("Arial", Font.PLAIN, 20), FontTexture.defaultCharSet), "gui2")
 //                .setText("Test GUI segment 2")

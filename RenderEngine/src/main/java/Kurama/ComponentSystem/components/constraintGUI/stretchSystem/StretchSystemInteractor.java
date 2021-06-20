@@ -8,7 +8,7 @@ import Kurama.utils.Logger;
 
 public class StretchSystemInteractor implements Interactor {
 
-    public static int DELTA_OFFSET = 10; // Extra pos to move when indirectly moving boundaries
+    public static int DELTA_OFFSET = 0; // Extra pos to move when indirectly moving boundaries
 
     public StretchSystemInteractor() {}
 
@@ -152,11 +152,11 @@ public class StretchSystemInteractor implements Interactor {
 
         if(boundary.updatedHeight < boundary.minHeight) {
             Logger.log(boundary.identifier + " height less than min, so trying to move connected bound");
-            if(!fixHeightLessThanMinimum_vertical(boundary, parentBoundary, relativePos, message, 0)) return false;
+            if(!fixHeight_vertical(boundary, parentBoundary, relativePos, message, 0)) return false;
         }
         else if(boundary.updatedHeight > boundary.maxHeight) {
             Logger.logError(boundary.identifier + " height more than max, so trying to move connected bound height: "+boundary.updatedHeight + " max: "+boundary.maxHeight);
-            if(!fixHeightLessThanMinimum_vertical(boundary, parentBoundary, relativePos, message, 1)) return false;
+            if(!fixHeight_vertical(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
         return true;
 
@@ -227,11 +227,11 @@ public class StretchSystemInteractor implements Interactor {
 
         if(boundary.updatedWidth < boundary.minWidth) {
             Logger.log(boundary.identifier + " width less than min, so trying to move connected bound");
-            if(!fixWidthLessThanMinimum_horizontal(boundary, parentBoundary, relativePos, message, 0)) return false;
+            if(!fixWidth_horizontal(boundary, parentBoundary, relativePos, message, 0)) return false;
         }
         else if(boundary.updatedWidth > boundary.maxWidth) {
             Logger.logError(boundary.identifier + " width more than max, so trying to move connected bound width: "+boundary.updatedWidth+ " max: "+boundary.maxWidth);
-            if(!fixWidthLessThanMinimum_horizontal(boundary, parentBoundary, relativePos, message, 1)) return false;
+            if(!fixWidth_horizontal(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
 
         return true;
@@ -244,14 +244,14 @@ public class StretchSystemInteractor implements Interactor {
     // if relative pos is positive, then this vertical bound is being moved by a horizontal boundary from the top, so we now need to move a H-bound at the bottom
 
     // minOrMax : 0=min 1=max
-    public boolean fixHeightLessThanMinimum_vertical(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
+    public boolean fixHeight_vertical(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
 
         float dy;
 
         if(minOrMax == 0) {
-            dy = current.minHeight - current.updatedHeight - DELTA_OFFSET;
+            dy = current.minHeight - current.updatedHeight;
         }else {
-            dy = current.maxHeight - current.updatedHeight + DELTA_OFFSET;
+            dy = current.maxHeight - current.updatedHeight;
         }
 
         for(var b: current.positiveAttachments) {
@@ -304,13 +304,38 @@ public class StretchSystemInteractor implements Interactor {
             }
         }
 
+        for(var b: current.neutralAttachments) {
+            if(b == parent || b.alreadyVisited) continue;
+
+            // original bound being moved down from top
+            if(relativeParentPos < 0) {
+                if(b.positiveAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
+                }
+            }
+            // original bound being moved up from below
+            else {
+                if(b.negativeAttachments.contains(current)) {
+                    Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                        Logger.logError("Unable to move "+b.identifier);
+                        return false;
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
     // Checks to see whether the width is lower than a certain threshold, or negative (have shrunk and stretched to the other side)
     // Fixes it by stretching the connected boundaries
 
-    public boolean fixWidthLessThanMinimum_horizontal(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
+    public boolean fixWidth_horizontal(Boundary current, Boundary parent, int relativeParentPos, StretchMessage message, int minOrMax) {
 
         float dx;
 
@@ -342,6 +367,25 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: current.negativeAttachments) {
+            if(b == parent || b.alreadyVisited) continue;
+
+            // original bound being moved down from top
+            if(relativeParentPos < 0) {
+                if(b.positiveAttachments.contains(current)) {
+                    Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
+                    if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                }
+            }
+            // original bound being moved up from below
+            else {
+                if(b.negativeAttachments.contains(current)) {
+                    Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
+                    if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                }
+            }
+        }
+
+        for(var b: current.neutralAttachments) {
             if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
