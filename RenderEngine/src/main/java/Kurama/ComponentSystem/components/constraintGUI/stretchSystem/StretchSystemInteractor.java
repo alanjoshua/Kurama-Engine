@@ -28,12 +28,12 @@ public class StretchSystemInteractor implements Interactor {
             var newInfo = new StretchMessage(info, boundary);
 
             for(var b: boundary.positiveAttachments) {
-//                if(b.alreadyVisited) continue;
+                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
-//                if(b.alreadyVisited) continue;
+                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -48,12 +48,12 @@ public class StretchSystemInteractor implements Interactor {
             var newInfo = new StretchMessage(info, boundary);
 
             for(var b: boundary.positiveAttachments) {
-//                if(b.alreadyVisited) continue;
+                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, 1);
                 if(!areChildInteractionsValid) return false;
             }
             for(var b: boundary.negativeAttachments) {
-//                if(b.alreadyVisited) continue;
+                if(b.alreadyVisited) continue;
                 areChildInteractionsValid = b.interact(newInfo, boundary, -1);
                 if(!areChildInteractionsValid) return false;
             }
@@ -248,6 +248,8 @@ public class StretchSystemInteractor implements Interactor {
 
         float dy;
 
+        // -1 relative pos indicates negative attach, 1 is positive. This is different from the values used in the Boundary class
+
         if(minOrMax == 0) {
             dy = current.minHeight - current.updatedHeight;
         }else {
@@ -257,21 +259,23 @@ public class StretchSystemInteractor implements Interactor {
         for(var b: current.positiveAttachments) {
             if(b == parent || b.alreadyVisited) continue;
 
+            Logger.logError(current.identifier+ " INSIDE POSITIVE CHECKING "+b.identifier);
+
             // original bound being moved down from top
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, 1)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, 1)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
@@ -282,21 +286,23 @@ public class StretchSystemInteractor implements Interactor {
         for(var b: current.negativeAttachments) {
             if(b == parent || b.alreadyVisited) continue;
 
+            Logger.logError(current.identifier+ " INSIDE NEGATIVE CHECKING "+b.identifier);
+
             // original bound being moved down from top
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
@@ -305,23 +311,29 @@ public class StretchSystemInteractor implements Interactor {
         }
 
         for(var b: current.neutralAttachments) {
+
             if(b == parent || b.alreadyVisited) continue;
 
+            Logger.logError(current.identifier+ " inside NEUTRAL checking "+b.identifier);
+
             // original bound being moved down from top
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
+
+                Logger.logError(current.identifier+ " NEURAL CHECKING RELATIVE POS -1 "+b.identifier);
+
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, 0)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);
-                    if(!b.interact(new StretchMessage(0, dy, null, message.shouldOverrideWithinWindowCheck), null, -1)) {
+                    if(!b.interact(new StretchMessage(0, -dy, null, message.shouldOverrideWithinWindowCheck), null, 0)) {
                         Logger.logError("Unable to move "+b.identifier);
                         return false;
                     }
@@ -340,28 +352,28 @@ public class StretchSystemInteractor implements Interactor {
         float dx;
 
         if(minOrMax == 0) {
-            dx = current.minWidth - current.updatedWidth - DELTA_OFFSET;
+            dx = current.minWidth - current.updatedWidth;
         }
         else {
-            dx = current.maxWidth - current.updatedWidth + DELTA_OFFSET;
+            dx = current.maxWidth - current.updatedWidth;
         }
 
         for(var b: current.positiveAttachments) {
             if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved left from right
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
-                    if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, 1)) return false;
 
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
-                    if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, 1)) return false;
                 }
             }
         }
@@ -370,14 +382,14 @@ public class StretchSystemInteractor implements Interactor {
             if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
                     if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
                     if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
@@ -389,17 +401,17 @@ public class StretchSystemInteractor implements Interactor {
             if(b == parent || b.alreadyVisited) continue;
 
             // original bound being moved down from top
-            if(relativeParentPos < 0) {
+            if(relativeParentPos == -1) {
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
-                    if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    if(!b.interact(new StretchMessage(-dx, 0, null, message.shouldOverrideWithinWindowCheck), null, 0)) return false;
                 }
             }
             // original bound being moved up from below
-            else {
+            else if(relativeParentPos == 1) {
                 if(b.negativeAttachments.contains(current)) {
                     Logger.logError(current.identifier + " parent=" + parent.identifier + ": fixing hor negative by moving "+ b.identifier);
-                    if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, -1)) return false;
+                    if(!b.interact(new StretchMessage(dx, 0, null, message.shouldOverrideWithinWindowCheck), null, 0)) return false;
                 }
             }
         }

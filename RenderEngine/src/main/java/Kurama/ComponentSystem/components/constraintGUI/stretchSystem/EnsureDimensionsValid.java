@@ -10,10 +10,10 @@ public class EnsureDimensionsValid implements InteractionValidifier {
     @Override
     public boolean isValid(Boundary boundary, BoundInteractionMessage info, ConstraintVerificationData verificationData) {
 
-//        if(info instanceof StretchMessage && ((StretchMessage) info).shouldOverrideWithinWindowCheck) {
-//            Logger.logError(boundary.identifier + " overriding");
-//            return true; // Used when manually resizing
-//        }
+        if(info instanceof StretchMessage && ((StretchMessage) info).shouldOverrideWithinWindowCheck) {
+            Logger.logError(boundary.identifier + " overriding");
+            return true; // Used when manually resizing
+        }
 
         if(verificationData.width < boundary.minWidth) {
             Logger.logError(boundary.identifier + " width too small");

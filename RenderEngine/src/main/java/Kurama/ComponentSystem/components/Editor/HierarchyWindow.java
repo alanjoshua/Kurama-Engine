@@ -28,7 +28,7 @@ public class HierarchyWindow extends ConstraintComponent {
 
     DoublyLinkedList<GridCell> contents = new DoublyLinkedList<>();
     public int initOffsetX = 30;
-    public int gridHeight = 70;
+    public int gridHeight = 100;
     public int stepOffset = 40;
     public FontTexture fontTexture = new FontTexture(new Font("Arial", Font.ITALIC, 17), FontTexture.defaultCharSet);
     private boolean alreadyCreated = false;
@@ -61,7 +61,7 @@ public class HierarchyWindow extends ConstraintComponent {
             addGridCell(grid);
 
             alreadyCreated = true;
-            return;
+//            return;
 
 //            if(currentStep < 2) {
 //                createHierarchy(root.children, currentStep + 1, false);
@@ -75,24 +75,27 @@ public class HierarchyWindow extends ConstraintComponent {
 
         if(isMasterCall) {
             alreadyCreated = true;
+
+            var lastGridCell = contents.peekTail();
+
+            var bottomMostCenter = new Boundary(game, this, identifier+"_hw_bottommostCenter", Boundary.BoundaryOrient.Vertical, false, configurator);
+
+            bottomMostCenter.isContainerVisible = true;
+            bottomMostCenter.minHeight = 30;
+//            bottomMostCenter.maxHeight = 200;
+            bottomMostCenter.width = 6;
+            bottomMostCenter.setColor(new Vector(0,1,0,0.6f));
+
+            bottomMostCenter.addOnResizeAction((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.children.get(0).getPos().geti(0) + 200));
+
+            addBoundary(bottomMostCenter);
+            lastGridCell.bottom.addConnectedBoundary(bottomMostCenter, 0, -1);
+            bottom.addConnectedBoundary(bottomMostCenter, 1, -1);
+
+
         }
 //        return this;
     }
-
-//    public Component createEmptyUnit(Component comp, int step, String defaultText) {
-//        var rec = new Rectangle(game, this, comp.identifier+"_hw")
-//                .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.1f))
-//                .setContainerVisibility(false);
-//
-//        var text = new Text(game, rec, fontTexture, comp.identifier+"_hw_text");
-//        text.setText(defaultText);
-//        text.addOnResizeAction(new PosXLeftAttachPix(initOffsetX + step*stepOffset));
-//        text.attachSelfToParent(rec);
-//
-//        rec.attachSelfToParent(this);
-//
-//        return rec;
-//    }
 
     public Component createUnit(Component comp, int step, String textString) {
         var rec = new Rectangle(game, this, comp.identifier+"_hw")
@@ -114,8 +117,10 @@ public class HierarchyWindow extends ConstraintComponent {
         g.attachedComp = unit;
         g.right = right;
         g.left = left;
+
         if(lastGridCell == null) {
             g.top = top;
+
         }
         else {
             g.top = lastGridCell.bottom;
@@ -137,14 +142,12 @@ public class HierarchyWindow extends ConstraintComponent {
         });
 
         centre_bound.isContainerVisible = true;
-        centre_bound.minHeight = 40;
-        centre_bound.maxHeight = 100;
+        centre_bound.minHeight = 50;
+        centre_bound.maxHeight = 200;
         centre_bound.width = 6;
         centre_bound.setColor(new Vector(1,0,0,0.6f));
 
         centre_bound.addOnResizeAction((c,i,t) -> c.pos.setDataElement(0, g.attachedComp.children.get(0).getPos().geti(0) + 50));
-//        centre_bound.addInitAutomation((cur, i, t) -> new PosXLeftAttachPix(initOffsetX + step*stepOffset));
-
         addBoundary(bottom_bound).addBoundary(centre_bound);
 
         g.top.addConnectedBoundary(centre_bound, 0, -1);

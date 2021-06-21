@@ -48,10 +48,14 @@ public class ConstraintComponent extends Rectangle {
 
             if(left != null) { // To make sure boundaries exist
 
-                left.interact(new StretchMessage(-(dw/2f), 0, null, true), null, -1);
-                right.interact(new StretchMessage((dw/2f), 0, null, true), null, -1);
-                top.interact(new StretchMessage(0, -(dh/1f), null, true), null, -1);
-//                bottom.interact(new StretchMessage(0, (dh/2f), null, true), null, -1);
+                if(dw != 0) {
+                    left.interact(new StretchMessage(-(dw / 2f), 0, null, true), null, -1);
+                    right.interact(new StretchMessage((dw / 2f), 0, null, true), null, -1);
+                }
+                if(dh != 0) {
+                    top.interact(new StretchMessage(0, -(dh / 2f), null, true), null, -1);
+                    bottom.interact(new StretchMessage(0, (dh / 2f), null, true), null, -1);
+                }
             }
 
         });

@@ -94,8 +94,11 @@ public class Boundary extends Rectangle {
         if(connectionType == 0) {
             negativeAttachments.add(connection);
         }
-        else {
+        else if(connectionType == 1) {
             positiveAttachments.add(connection);
+        }
+        else {
+            neutralAttachments.add(connection);
         }
         return this;
     }
