@@ -1,7 +1,6 @@
 package Kurama.ComponentSystem.components;
 
 import Kurama.ComponentSystem.components.constraintGUI.ConstraintComponent;
-import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchMessage;
 import Kurama.display.Display;
 import Kurama.game.Game;
 import Kurama.inputs.Input;
@@ -21,26 +20,7 @@ public class MasterWindow extends ConstraintComponent {
         onResizeAutomations = new ArrayList<>(); // Reset it to remove the default automation set by Constraint Component constructor
 
         onResizeAutomations.add((cur, in, t) -> {
-
-            var dw = display.windowResolution.geti(0) - this.getWidth();
-            var dh = display.windowResolution.geti(1) - this.getHeight();
-
-            // becoming bigger
-            this.setWidth(display.windowResolution.geti(0));
-            this.setHeight(display.windowResolution.geti(1));
-
-            var left = getBoundary(identifier+"_left");
-            var right = getBoundary(identifier+"_right");
-            var top = getBoundary(identifier+"_top");
-            var bottom = getBoundary(identifier+"_bottom");
-
-            if(left != null) {
-                left.interact(new StretchMessage(-(dw/2f), 0, null, true), null, -1);
-                right.interact(new StretchMessage((dw/2f), 0, null, true), null, -1);
-                top.interact(new StretchMessage(0, -(dh/2f), null, true), null, -1);
-                bottom.interact(new StretchMessage(0, (dh/2f), null, true), null, -1);
-            }
-
+            resizeReposition(this.pos, display.windowResolution.geti(0), display.windowResolution.geti(1));
         });
 
         display.resizeEvents.add( () -> this.isResizedOrMoved = true);

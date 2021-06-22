@@ -103,6 +103,30 @@ public class Boundary extends Rectangle {
         return this;
     }
 
+    public void removeConnection(Boundary bound) {
+        positiveAttachments.remove(bound);
+        negativeAttachments.remove(bound);
+        neutralAttachments.remove(bound);
+    }
+
+    public void replaceConnection(Boundary boundToBeReplaced, Boundary newBound) {
+
+        if(positiveAttachments.contains(boundToBeReplaced)) {
+            positiveAttachments.remove(boundToBeReplaced);
+            positiveAttachments.add(newBound);
+        }
+
+        if(negativeAttachments.contains(boundToBeReplaced)) {
+            negativeAttachments.remove(boundToBeReplaced);
+            negativeAttachments.add(newBound);
+        }
+
+        if(neutralAttachments.contains(boundToBeReplaced)) {
+            neutralAttachments.remove(boundToBeReplaced);
+            neutralAttachments.add(newBound);
+        }
+    }
+
     public Boundary addConnectedBoundary(Boundary connection, int connectionType, int reverseConnectionType) {
 
         if(connectionType == 0) {

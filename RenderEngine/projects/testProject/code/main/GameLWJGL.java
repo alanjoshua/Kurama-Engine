@@ -209,20 +209,21 @@ public class GameLWJGL extends Game implements Runnable {
                 .addInitAutomation((cur, in, t) -> tempDiv.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_right"), 0, 0));
         tempDiv.addConnectedBoundary(divider, 0, 1);
 
-        HierarchyWindow hierarchyWindow = (HierarchyWindow) new HierarchyWindow(this, guiSection, "hierarchyWindow")
-                .attachSelfToParent(rootGuiComponent)
-                .setColor(new Vector(0.9f, 0.4f, 0.9f, 0.3f));
-
         var guiGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_gui");
         var gameGrid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"-gc_game");
         var gui2Grid = rootGuiComponent.createGridCell(rootGuiComponent.identifier+"_gc_gui2");
+
+        HierarchyWindow hierarchyWindow = (HierarchyWindow) new HierarchyWindow(this, guiSection, "hierarchyWindow")
+                .attachSelfToParent(rootGuiComponent)
+                .setColor(new Vector(0.9f, 0.4f, 0.9f, 0.3f))
+                .addInitAutomation((c,i,t) -> gui2Grid.integrateBorders());
 
         guiGrid.addInitAutomation(0, (cur, in, timeDelta) -> {
             guiGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");
             guiGrid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_guiDiv2");
             guiGrid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
             guiGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
-            guiGrid.attachedComp = hierarchyWindow;
+            guiGrid.attachedComp = guiSection;
         });
 
         gameGrid.addInitAutomation(0, (cur, in, t) -> {
@@ -238,7 +239,7 @@ public class GameLWJGL extends Game implements Runnable {
             gui2Grid.bottom = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom");
             gui2Grid.left = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left");
             gui2Grid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
-            gui2Grid.attachedComp = guiSection;
+            gui2Grid.attachedComp = hierarchyWindow;
         });
 
         var gameScreenTitle =

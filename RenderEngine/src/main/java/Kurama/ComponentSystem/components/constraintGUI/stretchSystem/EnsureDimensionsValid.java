@@ -16,7 +16,7 @@ public class EnsureDimensionsValid implements InteractionValidifier {
         }
 
         if(verificationData.width < boundary.minWidth) {
-            Logger.logError(boundary.identifier + " width too small");
+            Logger.logError(boundary.identifier + " width too small width="+verificationData.width);
             return false;
         }
 

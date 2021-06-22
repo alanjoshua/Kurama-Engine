@@ -28,7 +28,7 @@ public class HierarchyWindow extends ConstraintComponent {
 
     DoublyLinkedList<GridCell> contents = new DoublyLinkedList<>();
     public int initOffsetX = 30;
-    public int gridHeight = 100;
+    public int gridHeight = 35;
     public int stepOffset = 40;
     public FontTexture fontTexture = new FontTexture(new Font("Arial", Font.ITALIC, 17), FontTexture.defaultCharSet);
     private boolean alreadyCreated = false;
@@ -46,6 +46,11 @@ public class HierarchyWindow extends ConstraintComponent {
     public void createHierarchy(List<Component> roots, int currentStep, boolean isMasterCall) {
 
         if(alreadyCreated) return;
+
+//        Logger.logError("HIERACHY TOP BOUNDARY ID= "+top.identifier);
+//        Logger.logError("HIERACHY BOTTOM BOUNDARY ID= "+bottom.identifier);
+//        Logger.logError("HIERACHY LEFT BOUNDARY ID= "+right.identifier);
+//        Logger.logError("HIERACHY RIGHT BOUNDARY ID= "+left.identifier);
 
         for(var root: roots) {
 
@@ -81,12 +86,12 @@ public class HierarchyWindow extends ConstraintComponent {
             var bottomMostCenter = new Boundary(game, this, identifier+"_hw_bottommostCenter", Boundary.BoundaryOrient.Vertical, false, configurator);
 
             bottomMostCenter.isContainerVisible = true;
-            bottomMostCenter.minHeight = 30;
+            bottomMostCenter.minHeight = 50;
 //            bottomMostCenter.maxHeight = 200;
             bottomMostCenter.width = 6;
             bottomMostCenter.setColor(new Vector(0,1,0,0.6f));
 
-            bottomMostCenter.addOnResizeAction((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.children.get(0).getPos().geti(0) + 200));
+            bottomMostCenter.addInitAutomation((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.children.get(0).getPos().geti(0) + 200));
 
             addBoundary(bottomMostCenter);
             lastGridCell.bottom.addConnectedBoundary(bottomMostCenter, 0, -1);
@@ -142,8 +147,8 @@ public class HierarchyWindow extends ConstraintComponent {
         });
 
         centre_bound.isContainerVisible = true;
-        centre_bound.minHeight = 50;
-        centre_bound.maxHeight = 200;
+        centre_bound.minHeight = 30;
+        centre_bound.maxHeight = 50;
         centre_bound.width = 6;
         centre_bound.setColor(new Vector(1,0,0,0.6f));
 

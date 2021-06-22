@@ -438,6 +438,15 @@ public abstract class Component {
         }
     }
 
+    public boolean resizeReposition(Vector newPos, int newWidth, int newHeight) {
+
+        this.pos = newPos;
+        this.width = newWidth;
+        this.height = newHeight;
+
+        return true;
+    }
+
     public void tick(List<Automation> globalResizeAutomations, Input input, float timeDelta, boolean parentResized) {
 
         if(!shouldTickRenderGroup) {

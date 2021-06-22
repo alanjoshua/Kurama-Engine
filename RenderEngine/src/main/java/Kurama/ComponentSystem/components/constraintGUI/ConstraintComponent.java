@@ -6,7 +6,9 @@ import Kurama.ComponentSystem.components.Rectangle;
 import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.FixToBorder;
 import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchMessage;
 import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
+import Kurama.Math.Vector;
 import Kurama.game.Game;
+import Kurama.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,12 @@ public class ConstraintComponent extends Rectangle {
     public Boundary right;
     public Boundary top;
     public Boundary bottom;
+    public boolean isIntegratedWithParentBoundaries = false;
+
+    protected Boundary left_archive;
+    protected Boundary right_archive;
+    protected Boundary top_archive;
+    protected Boundary bottom_archive;
 
     public ConstraintComponent(Game game, Component parent, String identifier) {
         this(game, parent, identifier, DEFAULT_CONFIGURATOR);
@@ -39,26 +47,37 @@ public class ConstraintComponent extends Rectangle {
                 b.shouldUpdateGridCell = false;
             }
         });
+    }
 
-        // ISSUE MIGHT BE HERE
-        onResizeAutomations.add((cur, in, t) -> {
+    @Override
+    public boolean resizeReposition(Vector newPos, int newWidth, int newHeight) {
 
-            var dw = this.getWidth() - this.previousWidth;
-            var dh = this.getHeight() - this.previousHeight;
+        var dw = newWidth - this.getWidth();
+        var dh = newHeight - this.getHeight();
 
-            if(left != null) { // To make sure boundaries exist
+        if(this.left != null) { // To make sure boundaries exist
 
-                if(dw != 0) {
-                    left.interact(new StretchMessage(-(dw / 2f), 0, null, true), null, -1);
-                    right.interact(new StretchMessage((dw / 2f), 0, null, true), null, -1);
+            this.pos = newPos;
+            this.width = newWidth;
+            this.height = newHeight;
+
+            if(!isIntegratedWithParentBoundaries) {
+                Logger.logError("ARTIFICALLY MOVING BOUNDARIES");
+                if (dw != 0) {
+                    if (!this.left.interact(new StretchMessage(-(dw / 2f), 0, null, true), null, -1)) return false;
+                    if (!this.right.interact(new StretchMessage((dw / 2f), 0, null, true), null, -1)) return false;
                 }
-                if(dh != 0) {
-                    top.interact(new StretchMessage(0, -(dh / 2f), null, true), null, -1);
-                    bottom.interact(new StretchMessage(0, (dh / 2f), null, true), null, -1);
+                if (dh != 0) {
+                    if (!this.top.interact(new StretchMessage(0, -(dh / 2f), null, true), null, -1)) return false;
+                    if (!this.bottom.interact(new StretchMessage(0, (dh / 2f), null, true), null, -1)) return false;
                 }
             }
+        }
+        else {
+            return false;
+        }
 
-        });
+        return true;
     }
 
     public ConstraintComponent addGridCell(GridCell g) {
@@ -71,6 +90,12 @@ public class ConstraintComponent extends Rectangle {
             children.add(boundaries.size(), g);
         }
 
+        return this;
+    }
+
+    public ConstraintComponent removeBoundary(Boundary bound) {
+        boundaries.remove(bound);
+        children.remove(bound);
         return this;
     }
 
