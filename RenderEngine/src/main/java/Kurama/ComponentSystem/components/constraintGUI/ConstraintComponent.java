@@ -25,8 +25,12 @@ public class ConstraintComponent extends Rectangle {
     public Boundary right;
     public Boundary top;
     public Boundary bottom;
-    public boolean isIntegratedWithParentBoundaries = false;
 
+    // Variables required to manage the MasterBoundarySystem Integration
+    public boolean isIntegratedWithParentBoundaries = false;
+    protected ConstraintComponent master;
+    protected List<Boundary> integratedBounds = new ArrayList<>();
+    protected List<GridCell> integratedGridCells = new ArrayList<>();
     protected Boundary left_archive;
     protected Boundary right_archive;
     protected Boundary top_archive;
@@ -47,6 +51,120 @@ public class ConstraintComponent extends Rectangle {
                 b.shouldUpdateGridCell = false;
             }
         });
+    }
+
+    public void integrateWithMasterConstraintSystem(GridCell g, ConstraintComponent master) {
+        this.master = master;
+        this.isIntegratedWithParentBoundaries = true;
+
+        // attaching comp.top's attachments to the parent bound
+        {
+            for (var b : this.top.positiveAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+
+                master.addBoundary(b);
+                g.top.addConnectedBoundary(b, 1);
+                b.replaceConnection(this.top, g.top);
+            }
+            for (var b : this.top.negativeAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.top.addConnectedBoundary(b, 0);
+                b.replaceConnection(this.top, g.top);
+            }
+            for (var b : this.top.neutralAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.top.addConnectedBoundary(b, -1);
+                b.replaceConnection(this.top, g.top);
+            }
+        }
+
+        // attaching comp.bottom's attachments to the parent bound
+        {
+            for (var b : this.bottom.positiveAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.bottom.addConnectedBoundary(b, 1);
+                b.replaceConnection(this.bottom,g. bottom);
+            }
+            for (var b : this.bottom.negativeAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.bottom.addConnectedBoundary(b, 0);
+                b.replaceConnection(this.bottom, g.bottom);
+            }
+            for (var b : this.bottom.neutralAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.bottom.addConnectedBoundary(b, -1);
+                b.replaceConnection(this.bottom, g.bottom);
+            }
+        }
+
+        // attaching comp.right's attachments to the parent bound
+        {
+            for (var b : this.right.positiveAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.right.addConnectedBoundary(b, 1);
+                b.replaceConnection(this.right, g.right);
+            }
+            for (var b : this.right.negativeAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.right.addConnectedBoundary(b, 0);
+                b.replaceConnection(this.right, g.right);
+            }
+            for (var b : this.right.neutralAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.right.addConnectedBoundary(b, -1);
+                b.replaceConnection(this.right, g.right);
+            }
+        }
+
+        // attaching comp.left's attachments to the parent bound
+        {
+            for (var b : this.left.positiveAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.left.addConnectedBoundary(b, 1);
+                b.replaceConnection(this.left, g.left);
+            }
+            for (var b : this.left.negativeAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.left.addConnectedBoundary(b, 0);
+                b.replaceConnection(this.left, g.left);
+            }
+            for (var b : this.left.neutralAttachments) {
+                if(b == this.top || b == this.bottom || b == this.right || b == this.left) continue;
+                master.addBoundary(b);
+                g.left.addConnectedBoundary(b, -1);
+                b.replaceConnection(this.left, g.left);
+            }
+        }
+
+        this.top_archive = this.top;
+        this.bottom_archive = this.bottom;
+        this.right_archive = this.right;
+        this.left_archive = this.left;
+
+        this.top.shouldTickRenderGroup = false;
+        this.bottom.shouldTickRenderGroup = false;
+        this.right.shouldTickRenderGroup = false;
+        this.left.shouldTickRenderGroup = false;
+
+//        this.removeBoundary(this.top)
+//                .removeBoundary(this.bottom)
+//                .removeBoundary(this.right)
+//                .removeBoundary(this.left);
+
+        this.top = g.top;
+        this.bottom = g.bottom;
+        this.right = g.right;
+        this.left = g.left;
     }
 
     @Override
@@ -81,13 +199,20 @@ public class ConstraintComponent extends Rectangle {
     }
 
     public ConstraintComponent addGridCell(GridCell g) {
-        gridCells.add(g);
+        if(!isIntegratedWithParentBoundaries) {
 
-        if(children.size() == boundaries.size()) {
-            children.add(g);
+            g.parent = this;
+            gridCells.add(g);
+
+            if (children.size() == boundaries.size()) {
+                children.add(g);
+            } else {
+                children.add(boundaries.size(), g);
+            }
         }
         else {
-            children.add(boundaries.size(), g);
+            master.addGridCell(g);
+            integratedGridCells.add(g);
         }
 
         return this;
@@ -101,14 +226,22 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent addBoundary(Boundary bound) {
 
-        if(children.size() == boundaries.size()) {
-            children.add(bound);
+        if(!isIntegratedWithParentBoundaries) {
+
+            bound.parent = this;
+
+            if (children.size() == boundaries.size()) {
+                children.add(bound);
+            } else {
+                children.add(boundaries.size(), bound);
+            }
+
+            boundaries.add(bound);
         }
         else {
-            children.add(boundaries.size(), bound);
+            master.addBoundary(bound);
+            integratedBounds.add(bound);
         }
-
-        boundaries.add(bound);
         return this;
     }
 
@@ -118,8 +251,17 @@ public class ConstraintComponent extends Rectangle {
             return o.get();
         }
         else {
+            if(isIntegratedWithParentBoundaries) {
+                return master.getBoundary(bName);
+            }
             return null;
         }
+    }
+
+    public Boundary createBoundary(String identifier, Boundary.BoundaryOrient orient, boolean userInteractable, BoundaryConfigurator configurator) {
+        var b = new Boundary(game, this, identifier, orient, userInteractable, configurator);
+        addBoundary(b);
+        return b;
     }
 
     public Boundary createBoundary(String identifier, Boundary.BoundaryOrient orient, boolean userInteractable) {

@@ -83,7 +83,7 @@ public class HierarchyWindow extends ConstraintComponent {
 
             var lastGridCell = contents.peekTail();
 
-            var bottomMostCenter = new Boundary(game, this, identifier+"_hw_bottommostCenter", Boundary.BoundaryOrient.Vertical, false, configurator);
+            var bottomMostCenter = createBoundary(identifier+"_hw_bottommostCenter", Boundary.BoundaryOrient.Vertical, false, configurator);
 
             bottomMostCenter.isContainerVisible = true;
             bottomMostCenter.minHeight = 50;
@@ -118,7 +118,7 @@ public class HierarchyWindow extends ConstraintComponent {
     }
 
     public GridCell createGridCellForUnit(Component initComp, Component unit, GridCell lastGridCell, int step) {
-        var g = new GridCell(game, this, initComp.identifier+"_hw_gc");
+        var g = createGridCell(initComp.identifier+"_hw_gc");
         g.attachedComp = unit;
         g.right = right;
         g.left = left;

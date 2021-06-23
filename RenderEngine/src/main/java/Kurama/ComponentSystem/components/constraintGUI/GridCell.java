@@ -31,130 +31,13 @@ public class GridCell extends Component {
             return false;
         }
 
-        ConstraintComponent constraintComponent = (ConstraintComponent) attachedComp;
-        constraintComponent.isIntegratedWithParentBoundaries = true;
+        ConstraintComponent comp = ((ConstraintComponent) attachedComp);
 
-        // attaching comp.top's attachments to the parent bound
-        {
-            for (var b : constraintComponent.top.positiveAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                top.addConnectedBoundary(b, 1);
-                constraintComponent.top.removeConnection(b);
-                b.replaceConnection(constraintComponent.top, top);
-            }
-            for (var b : constraintComponent.top.negativeAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                top.addConnectedBoundary(b, 0);
-                constraintComponent.top.removeConnection(b);
-                b.replaceConnection(constraintComponent.top, top);
-            }
-            for (var b : constraintComponent.top.neutralAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                top.addConnectedBoundary(b, -1);
-                constraintComponent.top.removeConnection(b);
-                b.replaceConnection(constraintComponent.top, top);
-            }
+        if(!comp.isIntegratedWithParentBoundaries) {
+            comp.integrateWithMasterConstraintSystem(this, (ConstraintComponent) this.parent);
+            updateAttachedComponent();
+            Logger.logError("Finished Intergrating bounds");
         }
-
-        // attaching comp.bottom's attachments to the parent bound
-        {
-            for (var b : constraintComponent.bottom.positiveAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                bottom.addConnectedBoundary(b, 1);
-                constraintComponent.bottom.removeConnection(b);
-                b.replaceConnection(constraintComponent.bottom, bottom);
-            }
-            for (var b : constraintComponent.bottom.negativeAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                bottom.addConnectedBoundary(b, 0);
-                constraintComponent.bottom.removeConnection(b);
-                b.replaceConnection(constraintComponent.bottom, bottom);
-            }
-            for (var b : constraintComponent.bottom.neutralAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                bottom.addConnectedBoundary(b, -1);
-                constraintComponent.bottom.removeConnection(b);
-                b.replaceConnection(constraintComponent.bottom, bottom);
-            }
-        }
-
-        // attaching comp.right's attachments to the parent bound
-        {
-            for (var b : constraintComponent.right.positiveAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                right.addConnectedBoundary(b, 1);
-                constraintComponent.right.removeConnection(b);
-                b.replaceConnection(constraintComponent.right, right);
-            }
-            for (var b : constraintComponent.right.negativeAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                right.addConnectedBoundary(b, 0);
-                constraintComponent.right.removeConnection(b);
-                b.replaceConnection(constraintComponent.right, right);
-            }
-            for (var b : constraintComponent.right.neutralAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                right.addConnectedBoundary(b, -1);
-                constraintComponent.right.removeConnection(b);
-                b.replaceConnection(constraintComponent.right, right);
-            }
-        }
-
-        // attaching comp.left's attachments to the parent bound
-        {
-            for (var b : constraintComponent.left.positiveAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                left.addConnectedBoundary(b, 1);
-                constraintComponent.left.removeConnection(b);
-                b.replaceConnection(constraintComponent.left, left);
-            }
-            for (var b : constraintComponent.left.negativeAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                left.addConnectedBoundary(b, 0);
-                constraintComponent.left.removeConnection(b);
-                b.replaceConnection(constraintComponent.left, left);
-            }
-            for (var b : constraintComponent.left.neutralAttachments) {
-                if(b == constraintComponent.top || b == constraintComponent.bottom || b == constraintComponent.right || b == constraintComponent.left) continue;
-
-                left.addConnectedBoundary(b, -1);
-                constraintComponent.left.removeConnection(b);
-                b.replaceConnection(constraintComponent.left, left);
-            }
-        }
-
-        constraintComponent.top_archive = constraintComponent.top;
-        constraintComponent.bottom_archive = constraintComponent.bottom;
-        constraintComponent.right_archive = constraintComponent.right;
-        constraintComponent.left_archive = constraintComponent.left;
-
-        constraintComponent.top.shouldTickRenderGroup = false;
-        constraintComponent.bottom.shouldTickRenderGroup = false;
-        constraintComponent.right.shouldTickRenderGroup = false;
-        constraintComponent.left.shouldTickRenderGroup = false;
-
-        constraintComponent.removeBoundary(constraintComponent.top)
-                .removeBoundary(constraintComponent.bottom)
-                .removeBoundary(constraintComponent.right)
-                .removeBoundary(constraintComponent.left);
-
-        constraintComponent.top = top;
-        constraintComponent.bottom = bottom;
-        constraintComponent.right = right;
-        constraintComponent.left = left;
-
-        updateAttachedComponent();
 
 //        constraintComponent.addBoundary(constraintComponent.top)
 //                .addBoundary(constraintComponent.bottom)
