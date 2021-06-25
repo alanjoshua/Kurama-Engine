@@ -126,7 +126,7 @@ public class Editor extends Game {
             programRunning = false;
         }
 
-        scene.rootSceneComp.children.forEach(m -> m.tick(null, input, timeDelta, false));
+        scene.rootSceneComp.getChildrenList().forEach(m -> m.tick(null, input, timeDelta, false));
 //        Logger.log("FPS: "+displayFPS);
         input.reset();
     }

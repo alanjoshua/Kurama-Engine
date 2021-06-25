@@ -125,16 +125,10 @@ public class GameLWJGL extends Game implements Runnable {
                 .setContainerVisibility(false)
                 .addOnResizeAction((comp, in, time) -> Logger.log("resizing to size: "+ comp.getWidth() +":"+ comp.getHeight()));
 
-        var guiSection =
-                new Rectangle(this, rootGuiComponent, "gui")
-                        .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
-                        .setShouldTriggerOnClick(true)
-                        .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
-                        .attachSelfToParent(rootGuiComponent);
-
         var gameScreen =
                 new Rectangle(this, rootGuiComponent, "gameScreen")
                         .attachSelfToParent(rootGuiComponent)
+                        .setContainerVisibility(false)
                         .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
                         .setKeyInputFocused(true)
@@ -150,6 +144,13 @@ public class GameLWJGL extends Game implements Runnable {
                             isGameRunning = false;
                         });
 
+        var guiSection =
+                new Rectangle(this, rootGuiComponent, "gui")
+                        .setRadii(new Vector(0.8f,0.8f,0.8f,0.8f))
+                        .setShouldTriggerOnClick(true)
+                        .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.3f))
+                        .attachSelfToParent(rootGuiComponent);
+
         var divider = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider", Boundary.BoundaryOrient.Vertical, true);
         divider
                 .addInitAutomation(new WidthPix(10))
@@ -158,47 +159,25 @@ public class GameLWJGL extends Game implements Runnable {
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
                 .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
 
-//        var divider3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider3", Boundary.BoundaryOrient.Vertical, true);
-//        divider3
-//                .setColor(new Vector(0,0.6f,0.7f,0.6f))
-//                .addInitAutomation(new WidthPix(10))
-//                .addInitAutomation(new HeightPercent(1f))
-//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0))
-//                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
-//                .addInitAutomation((cur, in, t) -> divider3.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
-//
-//        var tempDiv2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
-//        tempDiv2
-//                .setColor(new Vector(1,0,0,0.5f))
-//                .addInitAutomation(new WidthPercent(0.2f))
-//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
-//                .addInitAutomation(new PosYTopAttachPercent(0.25f));
-//        tempDiv2.addConnectedBoundary(divider, 0, 1);
-//        tempDiv2.addConnectedBoundary(divider3, 0, 0);
-//
-//        var tempDiv3 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv2", Boundary.BoundaryOrient.Horizontal, true);
-//        tempDiv3
-//                .setColor(new Vector(1,0,0,0.5f))
-//                .addInitAutomation(new WidthPercent(0.2f))
-//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.6f,0f))
-//                .addInitAutomation(new PosYTopAttachPercent(0.75f));
-//        tempDiv3.addConnectedBoundary(divider, 0, 1);
-//        tempDiv3.addConnectedBoundary(divider3, 0, 0);
-//
-//        var divider4 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_vertguiDivider", Boundary.BoundaryOrient.Vertical, false);
-//        divider4
-////                .addInitAutomation(new WidthPix(10))
-////                .addInitAutomation(new HeightPercent(1f))
-//                .addInitAutomation(new PosXYTopLeftAttachPercent(0.5f,0.5f))
-//                .addInitAutomation(new HeightPercent(0.5f));
-//        divider4.addConnectedBoundary(tempDiv2, 0, 0);
-//        divider4.addConnectedBoundary(tempDiv3, 0, 1);
 
         var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
         divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.4f)).addInitAutomation(new HeightPix(10));
 
         divider2.addConnectedBoundary(divider, 0, 0);
         divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 1));
+
+        var guiVertCenterDiv = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiCenterPillar", Boundary.BoundaryOrient.Vertical, true);
+        guiVertCenterDiv
+                .addInitAutomation(new WidthPix(10))
+                .addInitAutomation(new HeightPercent(0.5f))
+                .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
+                .addInitAutomation((cur, in, t) -> guiVertCenterDiv.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), -1, 0))
+                .addInitAutomation((cur, in, t) -> guiVertCenterDiv.addConnectedBoundary(divider2, -1, 1))
+                .addOnResizeAction((cur, in, t) -> {
+                    float newX = (rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left").pos.get(0) + divider.pos.get(0))/2f;
+                    cur.pos.setDataElement(0, newX);
+                });
+        guiVertCenterDiv.minHeight = 50;
 
         var tempDiv = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiTempDiv", Boundary.BoundaryOrient.Horizontal, false);
         tempDiv
@@ -570,7 +549,7 @@ public class GameLWJGL extends Game implements Runnable {
             monster.setScale(0.1f);
             monster.setPos(new Vector(10 + (i*10), 5, 10));
             monster.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0, 0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
-            minecraftWall.children.get(0).addChild(monster);
+            minecraftWall.getChild(0).addChild(monster);
 //            SoundSource monsterSource = new SoundSource("monster_"+i, true, false);
 //            monsterSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
 //            monsterSource.setGain(10);

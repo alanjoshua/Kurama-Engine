@@ -56,7 +56,8 @@ public abstract class Component {
 
     public Component parent;
     public Game game;
-    public List<Component> children = new ArrayList<>();
+    private List<Component> children = new ArrayList<>();
+    protected List<Component> updatedChildrenList = null;
 
     // Constraints are updated only when components are resized.
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
@@ -105,6 +106,35 @@ public abstract class Component {
         return null;
     }
 
+    public int getChildrenCount() {
+        if(updatedChildrenList != null) {
+            return updatedChildrenList.size();
+        }
+        return children.size();
+    }
+
+    public Component getChild(int ind) {
+        if(updatedChildrenList != null) {
+            if(ind < updatedChildrenList.size()) {
+                return updatedChildrenList.get(ind);
+            }
+            return null;
+        }
+
+        if(ind < children.size()) {
+            return children.get(ind);
+        }
+        return null;
+    }
+
+    public List<Component> getChildrenList() {
+        return children;
+    }
+
+    public void setChildrenList(List<Component> newList) {
+        this.children = newList;
+    }
+
     public Component getRoot() {
         if(this.parent == null)
             return this;
@@ -119,9 +149,35 @@ public abstract class Component {
     }
 
     public Component addChild(Component child) {
-        children.add(child);
+
+        if(updatedChildrenList == null) {
+            updatedChildrenList = new ArrayList<>();
+            updatedChildrenList.addAll(children);
+        }
+        updatedChildrenList.add(child);
+//        children.add(child);
         child.parent = this;
         return this;
+    }
+
+    public Component addChild(int index, Component child) {
+        if(updatedChildrenList == null) {
+            updatedChildrenList = new ArrayList<>();
+            updatedChildrenList.addAll(children);
+        }
+
+        updatedChildrenList.add(index, child);
+//        children.add(child);
+        child.parent = this;
+        return this;
+    }
+
+    public void removeChild(Component comp) {
+        if(updatedChildrenList == null) {
+            updatedChildrenList = new ArrayList<>();
+            updatedChildrenList.addAll(children);
+        }
+        updatedChildrenList.remove(comp);
     }
 
     public Component addOnClickOutsideAction(Kurama.ComponentSystem.automations.Automation action) {
@@ -447,6 +503,13 @@ public abstract class Component {
         return true;
     }
 
+    protected void checkForNewChildren() {
+        if(updatedChildrenList != null) {
+            children = updatedChildrenList;
+            updatedChildrenList = null;
+        }
+    }
+
     public void tick(List<Automation> globalResizeAutomations, Input input, float timeDelta, boolean parentResized) {
 
         if(!shouldTickRenderGroup) {
@@ -454,6 +517,7 @@ public abstract class Component {
             return;
         }
 
+        checkForNewChildren();
         isResizedOrMoved = isResizedOrMoved || parentResized;
 
         if(isFirstRun) {
@@ -524,6 +588,15 @@ public abstract class Component {
         previousScale = getScale();
 
         boolean isChildMouseOver = false, isChildClicked = false;
+
+        // Using this to prevent loop from crashing when child adds child element to this
+//        for(int i = 0;i < children.size(); i++) {
+//            var child = children.get(i);
+//            child.tick(this.globalResizeAutomations, input, timeDelta, shouldResizeChildren);
+//            isChildMouseOver = isChildMouseOver || child.isClicked;
+//            isChildClicked = isChildClicked || child.isMouseOver;
+//        }
+
         for(var child: children) {
             child.tick(this.globalResizeAutomations, input, timeDelta, shouldResizeChildren);
             isChildMouseOver = isChildMouseOver || child.isClicked;

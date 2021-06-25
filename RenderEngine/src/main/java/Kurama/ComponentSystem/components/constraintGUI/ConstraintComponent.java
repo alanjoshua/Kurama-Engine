@@ -51,6 +51,16 @@ public class ConstraintComponent extends Rectangle {
                 b.shouldUpdateGridCell = false;
             }
         });
+
+        addOnResizeAction((cur, in, t) -> {
+           for(var b: integratedBounds) {
+               Logger.logError("forcefully resizing "+b.identifier);
+               for(var aut: b.onResizeAutomations) {
+                   aut.run(b, in, t);
+               }
+           }
+
+        });
     }
 
     public void integrateWithMasterConstraintSystem(GridCell g, ConstraintComponent master) {
@@ -201,13 +211,12 @@ public class ConstraintComponent extends Rectangle {
     public ConstraintComponent addGridCell(GridCell g) {
         if(!isIntegratedWithParentBoundaries) {
 
-            g.parent = this;
             gridCells.add(g);
 
-            if (children.size() == boundaries.size()) {
-                children.add(g);
+            if (getChildrenCount() == boundaries.size() + gridCells.size()) {
+                addChild(g);
             } else {
-                children.add(boundaries.size(), g);
+                addChild(boundaries.size()+gridCells.size(), g);
             }
         }
         else {
@@ -220,20 +229,17 @@ public class ConstraintComponent extends Rectangle {
 
     public ConstraintComponent removeBoundary(Boundary bound) {
         boundaries.remove(bound);
-        children.remove(bound);
+        removeChild(bound);
         return this;
     }
 
     public ConstraintComponent addBoundary(Boundary bound) {
 
         if(!isIntegratedWithParentBoundaries) {
-
-            bound.parent = this;
-
-            if (children.size() == boundaries.size()) {
-                children.add(bound);
+            if (getChildrenCount() == boundaries.size()) {
+                addChild(bound);
             } else {
-                children.add(boundaries.size(), bound);
+                addChild(boundaries.size(), bound);
             }
 
             boundaries.add(bound);

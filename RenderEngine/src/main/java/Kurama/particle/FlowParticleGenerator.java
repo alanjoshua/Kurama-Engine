@@ -39,14 +39,14 @@ public class FlowParticleGenerator extends ParticleGenerator {
                 var particle = (Particle)it.next();
                 if(particle.updateTimeToLive(timeDelta) < 0) {
                     it.remove();
-                    children.remove(particle);
+                    removeChild(particle);
                 }
                 else {
 //                    particle.tick(timeDelta);d
                 }
             }
 
-            if((now - lastCreationTime)/1000000000.0 >= this.creationPeriodSeconds && children.size() < maxParticles) {
+            if((now - lastCreationTime)/1000000000.0 >= this.creationPeriodSeconds && getChildrenCount() < maxParticles) {
                 createParticle();
                 this.lastCreationTime = now;
             }

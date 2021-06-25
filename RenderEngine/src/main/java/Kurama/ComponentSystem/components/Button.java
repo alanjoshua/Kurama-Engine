@@ -13,6 +13,6 @@ public class Button extends Rectangle {
         buttonText = new Text(game, this, fontTexture, identifier);
         buttonText.setText(buttonTextString);
         buttonText.addOnResizeAction(new Center());
-        children.add(buttonText);
+        addChild(buttonText);
     }
 }

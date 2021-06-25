@@ -17,6 +17,8 @@ public class StretchSystemInteractor implements Interactor {
 
         boolean areChildInteractionsValid = true;
 
+        if(boundary.alreadyVisited) return true;
+
         boundary.alreadyVisited = true;
 
         // vertical being moved either by user

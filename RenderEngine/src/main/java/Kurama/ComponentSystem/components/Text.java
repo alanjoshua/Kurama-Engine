@@ -35,7 +35,7 @@ public class Text extends Rectangle {
 
     public void updateText() {
 
-        children = new ArrayList<>();
+        setChildrenList(new ArrayList<>());
 
         if(text == null || text.length() == 0) {
             return;
@@ -63,7 +63,7 @@ public class Text extends Rectangle {
                 newComp.setOverlayColor(this.overlayColor);
                 curPos += newComp.getWidth();
                 setWidth(getWidth() + newComp.getWidth());
-                children.add(newComp);
+                addChild(newComp);
             }
             // Check for special characters
             else if((int)c == 32) {
@@ -74,7 +74,7 @@ public class Text extends Rectangle {
                 newComp.setOverlayColor(this.overlayColor);
                 curPos += newComp.getWidth();
                 setWidth(getWidth() + newComp.getWidth());
-                children.add(newComp);
+                addChild(newComp);
             }
 
         }

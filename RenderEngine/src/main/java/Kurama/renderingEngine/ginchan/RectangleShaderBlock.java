@@ -169,7 +169,7 @@ public class RectangleShaderBlock extends RenderPipeline {
             currentNumGUIComps++;
         }
 
-        for(var child: masterComponent.children) {
+        for(var child: masterComponent.getChildrenList()) {
             countNumCompsToRender(child);
         }
     }
@@ -201,7 +201,7 @@ public class RectangleShaderBlock extends RenderPipeline {
 //        var local = masterComponent.getObjectToWorldNoScale();
 //        var nextParent = parentTrans.matMul(local);
 
-        for(var child: masterComponent.children) {
+        for(var child: masterComponent.getChildrenList()) {
             recursiveRenderSetup(child, ortho, colorSoFar, alphaMaskSoFar, buffer);
         }
 

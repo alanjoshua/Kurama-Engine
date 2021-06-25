@@ -28,7 +28,7 @@ public class HierarchyWindow extends ConstraintComponent {
 
     DoublyLinkedList<GridCell> contents = new DoublyLinkedList<>();
     public int initOffsetX = 30;
-    public int gridHeight = 35;
+    public int gridHeight = 25;
     public int stepOffset = 40;
     public FontTexture fontTexture = new FontTexture(new Font("Arial", Font.ITALIC, 17), FontTexture.defaultCharSet);
     private boolean alreadyCreated = false;
@@ -63,19 +63,17 @@ public class HierarchyWindow extends ConstraintComponent {
 
             var grid = createGridCellForUnit(root, createUnit(root, currentStep, root.identifier), lastGridCell, currentStep);
             contents.pushTail(grid);
-            addGridCell(grid);
 
-            alreadyCreated = true;
-//            return;
+//            alreadyCreated = true;
+//            break;
 
-//            if(currentStep < 2) {
-//                createHierarchy(root.children, currentStep + 1, false);
-//            }
-//            else {
-//                grid = createGridCellForUnit(root, createUnit(root, currentStep + 1, "..."), grid, currentStep + 1);
-//                contents.pushTail(grid);
-//                addGridCell(grid);
-//            }
+            if(currentStep < 2) {
+                createHierarchy(root.getChildrenList(), currentStep + 1, false);
+            }
+            else {
+                grid = createGridCellForUnit(root, createUnit(root, currentStep + 1, "..."), grid, currentStep + 1);
+                contents.pushTail(grid);
+            }
         }
 
         if(isMasterCall) {
@@ -91,21 +89,23 @@ public class HierarchyWindow extends ConstraintComponent {
             bottomMostCenter.width = 6;
             bottomMostCenter.setColor(new Vector(0,1,0,0.6f));
 
-            bottomMostCenter.addInitAutomation((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.children.get(0).getPos().geti(0) + 200));
+            bottomMostCenter.addInitAutomation((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.getChild(0).getPos().geti(0) + 200));
 
-            addBoundary(bottomMostCenter);
+            bottomMostCenter.addOnResizeAction((c,i,t) -> {
+                float newX = (lastGridCell.left.pos.get(0) + lastGridCell.right.pos.get(0))/2f;
+                bottomMostCenter.pos.setDataElement(0, newX);
+            });
+
             lastGridCell.bottom.addConnectedBoundary(bottomMostCenter, 0, -1);
             bottom.addConnectedBoundary(bottomMostCenter, 1, -1);
-
-
         }
-//        return this;
+
     }
 
     public Component createUnit(Component comp, int step, String textString) {
         var rec = new Rectangle(game, this, comp.identifier+"_hw")
                 .setColor(new Vector(0.5f, 0.4f, 0.9f, 0.1f))
-                .setContainerVisibility(false);
+                .setContainerVisibility(true);
 
         var text = new Text(game, rec, fontTexture, comp.identifier+"_hw_text");
         text.setText(textString);
@@ -119,6 +119,7 @@ public class HierarchyWindow extends ConstraintComponent {
 
     public GridCell createGridCellForUnit(Component initComp, Component unit, GridCell lastGridCell, int step) {
         var g = createGridCell(initComp.identifier+"_hw_gc");
+        addGridCell(g);
         g.attachedComp = unit;
         g.right = right;
         g.left = left;
@@ -147,13 +148,17 @@ public class HierarchyWindow extends ConstraintComponent {
         });
 
         centre_bound.isContainerVisible = true;
-        centre_bound.minHeight = 30;
-        centre_bound.maxHeight = 50;
+        centre_bound.minHeight = 15;
+        centre_bound.maxHeight = 35;
         centre_bound.width = 6;
         centre_bound.setColor(new Vector(1,0,0,0.6f));
 
-        centre_bound.addOnResizeAction((c,i,t) -> c.pos.setDataElement(0, g.attachedComp.children.get(0).getPos().geti(0) + 50));
-        addBoundary(bottom_bound).addBoundary(centre_bound);
+        centre_bound.addOnResizeAction((c,i,t) -> {
+            float newX = (g.left.pos.get(0) + g.right.pos.get(0))/2f;
+            centre_bound.pos.setDataElement(0, newX);
+        });
+        addBoundary(bottom_bound).
+                addBoundary(centre_bound);
 
         g.top.addConnectedBoundary(centre_bound, 0, -1);
         g.bottom.addConnectedBoundary(centre_bound, 1, -1);

@@ -16,7 +16,7 @@ public class TextBox extends Rectangle {
     public TextBox(Game game, Component parent, FontTexture fontTexture, String identifier) {
         super(game, parent, identifier);
         text = new Text(game, this, fontTexture, Utils.getUniqueID());
-        children.add(text);
+        addChild(text);
         text.addOnResizeAction(new Center());
         addOnClickAction(new GrabKeyboardFocus());
         addOnClickOutsideAction(new LoseKeyboardFocus());
@@ -33,7 +33,7 @@ public class TextBox extends Rectangle {
     public TextBox(Game game, Component parent, FontTexture fontTexture, Component caret, String identifier) {
         super(game, parent, identifier);
         text = new Text(game, this, fontTexture, Utils.getUniqueID());
-        children.add(text);
+        addChild(text);
         text.addOnResizeAction(new Center());
         addOnClickAction(new GrabKeyboardFocus());
         addOnClickOutsideAction(new LoseKeyboardFocus());
@@ -41,7 +41,7 @@ public class TextBox extends Rectangle {
         this.caret = caret;
         this.caret.parent = this;
         this.caret.addAutomation(new CaretAttach(text));
-        children.add(caret);
+        addChild(caret);
     }
 
     public TextBox setText(String t) {

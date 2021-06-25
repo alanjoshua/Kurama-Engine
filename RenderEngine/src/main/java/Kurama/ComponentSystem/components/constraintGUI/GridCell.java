@@ -5,6 +5,9 @@ import Kurama.Math.Vector;
 import Kurama.game.Game;
 import Kurama.utils.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GridCell extends Component {
 
     public Component attachedComp;
@@ -79,6 +82,24 @@ public class GridCell extends Component {
         var newHeight = bottomy - topy;
         var newWidth = rightx - leftx;
         var newPos = new Vector(leftx + newWidth/2f, topy + newHeight/2f, 0);
+
+        // Since pos is relative to parent, if the component is integrated, then the pos would be wrong
+        // This assumes gridcells are properly arranged in hierarchical order.
+        // This also assumes all boundaries are in the same hierarchy level
+
+        if(top.parent != attachedComp.parent) {
+            List<Component> parentChain = new ArrayList<>();
+            var curParent = attachedComp.parent;
+
+            while(curParent != top.parent) {
+                parentChain.add(curParent);
+                curParent = curParent.parent;
+            }
+
+            for(var curParent2: parentChain) {
+                newPos = newPos.sub(curParent2.pos);
+            }
+        }
 
         return attachedComp.resizeReposition(newPos, (int)newWidth, (int)newHeight);
 

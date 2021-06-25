@@ -16,8 +16,8 @@ public class CaretAttach implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
 
-        if(text.children.size() > 0) {
-            Component lastChar = text.children.get(text.children.size() - 1);
+        if(text.getChildrenCount() > 0) {
+            Component lastChar = text.getChild(text.getChildrenCount() - 1);
             current.setPos(lastChar.getPos().add(new Vector(lastChar.getWidth(), 0, 0)));
         }
         else {
