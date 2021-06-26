@@ -16,6 +16,7 @@ public class BoundaryInteractable implements Automation {
     @Override
     public void run(Component current, Input input, float timeDelta) {
         attachedBoundary.initialiseInteraction(input.mouseDx, input.mouseDy);
+        attachedBoundary.recursiveAlreadyVisitedTurnOff();
     }
 
 }

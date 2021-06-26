@@ -42,17 +42,6 @@ public class GridCell extends Component {
             Logger.logError("Finished Intergrating bounds");
         }
 
-//        constraintComponent.addBoundary(constraintComponent.top)
-//                .addBoundary(constraintComponent.bottom)
-//                .addBoundary(constraintComponent.right)
-//                .addBoundary(constraintComponent.left);
-
-//        this.left.interact(new StretchMessage(0, 0, null, false), null, -1);
-//        this.right.interact(new StretchMessage(0, 0, null, false), null, -1);
-//        this.top.interact(new StretchMessage(0, 0, null, false), null, -1);
-//        this.bottom.interact(new StretchMessage(0, 0, null, false), null, -1);
-
-
         return true;
     }
 
@@ -99,8 +88,10 @@ public class GridCell extends Component {
             for(var curParent2: parentChain) {
                 newPos = newPos.sub(curParent2.pos);
             }
+
         }
 
+        this.resizeReposition(newPos, (int)newWidth, (int)newHeight);
         return attachedComp.resizeReposition(newPos, (int)newWidth, (int)newHeight);
 
 //        attachedComp.setPos(newPos);

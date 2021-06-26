@@ -48,6 +48,7 @@ public class Boundary extends Rectangle {
     public float maxHeight = Float.POSITIVE_INFINITY;
 
     public boolean shouldUpdateGridCell = false;
+    protected boolean isUserInteractable = false;
 
     public Boundary(Game game, Component parent, String identifier, BoundaryOrient orient, boolean userInteractable) {
         this(game, parent, identifier, orient,userInteractable,null);
@@ -62,7 +63,7 @@ public class Boundary extends Rectangle {
         this.addOnResizeAction((curr, in, t) -> ((Boundary)curr).shouldUpdateGridCell=true);
 
         if(userInteractable) {
-            this.addOnClickDraggedAction(new BoundaryInteractable(this)); // This will set delta move, and call relevant methods to move the boundary
+            makeInteractable();
         }
 //        this.addAutomation(updateBoundaryAutomation);
 
@@ -78,6 +79,13 @@ public class Boundary extends Rectangle {
         if(configurator != null) {
             configurator.configure(this);
         }
+    }
+
+    public void makeInteractable() {
+        if(isUserInteractable) return;
+
+        this.addOnClickDraggedAction(new BoundaryInteractable(this)); // This will set delta move, and call relevant methods to move the boundary
+        isUserInteractable = true;
     }
 
     public Boundary addPreInteractionValidifier(InteractionValidifier i) {
@@ -185,6 +193,22 @@ public class Boundary extends Rectangle {
         return true;
     }
 
+    public void recursiveAlreadyVisitedTurnOff() {
+        if(alreadyVisited == false) return;
+
+        this.alreadyVisited = false;
+
+        for(var b: positiveAttachments) {
+            b.recursiveAlreadyVisitedTurnOff();
+        }
+        for(var b: negativeAttachments) {
+            b.recursiveAlreadyVisitedTurnOff();
+        }
+        for(var b: neutralAttachments) {
+            b.recursiveAlreadyVisitedTurnOff();
+        }
+    }
+
     public boolean initialiseInteraction(float deltaMoveX, float deltaMoveY) {
         var data = IVRequestPackGenerator.getValidificationRequestPack(null,this, deltaMoveX, deltaMoveY);
         return interact(data, null, -1);
@@ -221,7 +245,7 @@ public class Boundary extends Rectangle {
         shouldUpdatePos = false;
         shouldUpdateWidth = false;
         shouldUpdateHeight = false;
-        alreadyVisited = false;
+//        alreadyVisited = false;
 
         return isValid;
     }

@@ -15,9 +15,9 @@ public class StretchSystemInteractor implements Interactor {
     @Override
     public boolean interact(BoundInteractionMessage info, Boundary boundary, Boundary parentBoundary, int relativePos) {
 
-        boolean areChildInteractionsValid = true;
+        boolean areChildInteractionsValid;
 
-        if(boundary.alreadyVisited) return true;
+//        if(boundary.alreadyVisited) return true;
 
         boundary.alreadyVisited = true;
 
@@ -153,10 +153,12 @@ public class StretchSystemInteractor implements Interactor {
         boundary.updatedPos = new Vector(boundary.updatedPos.geti(0), upperBound+(boundary.updatedHeight/2f), boundary.updatedPos.geti(2));
 
         if(boundary.updatedHeight < boundary.minHeight) {
+            boundary.alreadyVisited = false;
             Logger.log(boundary.identifier + " height less than min, so trying to move connected bound");
             if(!fixHeight_vertical(boundary, parentBoundary, relativePos, message, 0)) return false;
         }
         else if(boundary.updatedHeight > boundary.maxHeight) {
+            boundary.alreadyVisited = false;
             Logger.logError(boundary.identifier + " height more than max, so trying to move connected bound height: "+boundary.updatedHeight + " max: "+boundary.maxHeight);
             if(!fixHeight_vertical(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
@@ -228,10 +230,12 @@ public class StretchSystemInteractor implements Interactor {
 
 
         if(boundary.updatedWidth < boundary.minWidth) {
+            boundary.alreadyVisited = false;
             Logger.log(boundary.identifier + " width less than min, so trying to move connected bound");
             if(!fixWidth_horizontal(boundary, parentBoundary, relativePos, message, 0)) return false;
         }
         else if(boundary.updatedWidth > boundary.maxWidth) {
+            boundary.alreadyVisited = false;
             Logger.logError(boundary.identifier + " width more than max, so trying to move connected bound width: "+boundary.updatedWidth+ " max: "+boundary.maxWidth);
             if(!fixWidth_horizontal(boundary, parentBoundary, relativePos, message, 1)) return false;
         }
@@ -321,7 +325,7 @@ public class StretchSystemInteractor implements Interactor {
             // original bound being moved down from top
             if(relativeParentPos == -1) {
 
-                Logger.logError(current.identifier+ " NEURAL CHECKING RELATIVE POS -1 "+b.identifier);
+                Logger.logError(current.identifier+ " NEURAL CHECKING ORIGINAL BOUND BEING MOVED DOWN FROM TOP "+b.identifier);
 
                 if(b.positiveAttachments.contains(current)) {
                     Logger.logError("Trying to Moving: "+b.identifier + " by "+ current.identifier);

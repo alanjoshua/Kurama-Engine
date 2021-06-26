@@ -128,7 +128,6 @@ public class GameLWJGL extends Game implements Runnable {
         var gameScreen =
                 new Rectangle(this, rootGuiComponent, "gameScreen")
                         .attachSelfToParent(rootGuiComponent)
-                        .setContainerVisibility(false)
                         .setTexture(new Texture(playerCamera.renderBuffer.textureId))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
                         .setKeyInputFocused(true)
@@ -156,23 +155,23 @@ public class GameLWJGL extends Game implements Runnable {
                 .addInitAutomation(new WidthPix(10))
                 .addInitAutomation(new HeightPercent(1f))
                 .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
-                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), 0, 0))
-                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), 0, 1));
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), -1, 0))
+                .addInitAutomation((cur, in, t) -> divider.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_bottom"), -1, 1));
 
 
         var divider2 = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiDiv2", Boundary.BoundaryOrient.Horizontal, true);
         divider2.addInitAutomation(new PosXYTopLeftAttachPercent(0, 0.4f)).addInitAutomation(new HeightPix(10));
 
         divider2.addConnectedBoundary(divider, 0, 0);
-        divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), 0, 1));
+        divider2.addInitAutomation((cur, in, t) -> divider2.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left"), -1, 1));
 
         var guiVertCenterDiv = rootGuiComponent.createBoundary(rootGuiComponent.identifier+"_guiCenterPillar", Boundary.BoundaryOrient.Vertical, true);
         guiVertCenterDiv
                 .addInitAutomation(new WidthPix(10))
                 .addInitAutomation(new HeightPercent(0.5f))
                 .addInitAutomation(new PosXYTopLeftAttachPercent(0.4f,0))
-                .addInitAutomation((cur, in, t) -> guiVertCenterDiv.addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), -1, 0))
-                .addInitAutomation((cur, in, t) -> guiVertCenterDiv.addConnectedBoundary(divider2, -1, 1))
+                .addInitAutomation((cur, in, t) -> ((Boundary)cur).addConnectedBoundary(rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top"), -1, 0))
+                .addInitAutomation((cur, in, t) -> ((Boundary)cur).addConnectedBoundary(divider2, -1, 1))
                 .addOnResizeAction((cur, in, t) -> {
                     float newX = (rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_left").pos.get(0) + divider.pos.get(0))/2f;
                     cur.pos.setDataElement(0, newX);
@@ -204,6 +203,7 @@ public class GameLWJGL extends Game implements Runnable {
             guiGrid.right = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_vertguiDivider");
             guiGrid.attachedComp = guiSection;
         });
+        gui2Grid.addOnResizeAction((c,in,t) -> guiVertCenterDiv.isResizedOrMoved = true);
 
         gameGrid.addInitAutomation(0, (cur, in, t) -> {
             gameGrid.top = rootGuiComponent.getBoundary(rootGuiComponent.identifier+"_top");

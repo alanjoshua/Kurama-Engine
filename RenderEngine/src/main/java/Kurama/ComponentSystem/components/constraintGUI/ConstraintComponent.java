@@ -54,12 +54,11 @@ public class ConstraintComponent extends Rectangle {
 
         addOnResizeAction((cur, in, t) -> {
            for(var b: integratedBounds) {
-               Logger.logError("forcefully resizing "+b.identifier);
-               for(var aut: b.onResizeAutomations) {
-                   aut.run(b, in, t);
-               }
+               b.isResizedOrMoved = true;
+//               for(var aut: b.onResizeAutomations) {
+//                   aut.run(b, in, t);
+//               }
            }
-
         });
     }
 
@@ -193,11 +192,17 @@ public class ConstraintComponent extends Rectangle {
                 Logger.logError("ARTIFICALLY MOVING BOUNDARIES");
                 if (dw != 0) {
                     if (!this.left.interact(new StretchMessage(-(dw / 2f), 0, null, true), null, -1)) return false;
+                    left.recursiveAlreadyVisitedTurnOff();
+
                     if (!this.right.interact(new StretchMessage((dw / 2f), 0, null, true), null, -1)) return false;
+                    right.recursiveAlreadyVisitedTurnOff();
                 }
                 if (dh != 0) {
                     if (!this.top.interact(new StretchMessage(0, -(dh / 2f), null, true), null, -1)) return false;
+                    top.recursiveAlreadyVisitedTurnOff();
+
                     if (!this.bottom.interact(new StretchMessage(0, (dh / 2f), null, true), null, -1)) return false;
+                    bottom.recursiveAlreadyVisitedTurnOff();
                 }
             }
         }
@@ -209,20 +214,19 @@ public class ConstraintComponent extends Rectangle {
     }
 
     public ConstraintComponent addGridCell(GridCell g) {
-        if(!isIntegratedWithParentBoundaries) {
 
-            gridCells.add(g);
+        if(gridCells.contains(g)) return this;
+        if(getChildrenList().contains(g)) return this;
 
-            if (getChildrenCount() == boundaries.size() + gridCells.size()) {
-                addChild(g);
-            } else {
-                addChild(boundaries.size()+gridCells.size(), g);
-            }
+        gridCells.add(g);
+
+        if (getChildrenCount() <= boundaries.size() + gridCells.size()) {
+            addChild(g);
+        } else {
+            addChild(boundaries.size()+gridCells.size(), g);
         }
-        else {
-            master.addGridCell(g);
-            integratedGridCells.add(g);
-        }
+
+        integratedGridCells.add(g);
 
         return this;
     }
@@ -234,6 +238,10 @@ public class ConstraintComponent extends Rectangle {
     }
 
     public ConstraintComponent addBoundary(Boundary bound) {
+
+        if(boundaries.contains(bound)) return this;
+        if(getChildrenList().contains(bound)) return this;
+
 
         if(!isIntegratedWithParentBoundaries) {
             if (getChildrenCount() == boundaries.size()) {
@@ -298,21 +306,6 @@ public class ConstraintComponent extends Rectangle {
 
         right = new Boundary(this.game, this, identifier+"_right", Boundary.BoundaryOrient.Vertical, false, configurator);
         bottom = new Boundary(this.game, this, identifier+"_bottom", Boundary.BoundaryOrient.Horizontal, false, configurator);
-
-//        r.addInitAutomation(new WidthPercent(0f));
-//        l.addInitAutomation(new WidthPercent(0f));
-//        t.addInitAutomation(new HeightPercent(0f));
-//        b.addInitAutomation(new HeightPercent(0f));
-
-//        right.addInitAutomation(new HeightPercent(1f));
-//        left.addInitAutomation(new HeightPercent(1f));
-//        top.addInitAutomation(new WidthPercent(1f));
-//        bottom.addInitAutomation(new WidthPercent(1f));
-//
-//        right.addInitAutomation(new PosXYBottomRightAttachPercent(0f, 0f));
-//        top.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
-//        left.addInitAutomation(new PosXYTopLeftAttachPercent(0f, 0f));
-//        bottom.addInitAutomation(new PosYBottomAttachPercent(0f)).addInitAutomation(new PosXLeftAttachPercent(0f));
 
         right.addOnResizeAction(new HeightPercent(1f));
         left.addOnResizeAction(new HeightPercent(1f));
