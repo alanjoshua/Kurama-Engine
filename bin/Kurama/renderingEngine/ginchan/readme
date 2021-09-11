@@ -1,0 +1,6 @@
+author: Alan Aneeth Jegaraj
+email: aneethaj@mail.uc.edu
+
+This is the global GUI and window rendering system. This could be used to also render in-game HUD.
+
+This is also ultimately responsible for rendering the final scene texture to the screen.
