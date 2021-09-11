@@ -40,5 +40,16 @@
 ## Test Program
 * Download the demo from the releases tab. https://github.com/alanjoshua/RenderingEngine/releases  (Very outdated)
 
+<br>
+<br>
+
+## IntelliJ IDE setup
+* Ensure pom.xml is marked as a Maven file. If you don't see an 'M" symbol next to it, right click the file and select the option to mark it as a Maven file
+* Ensure the JDK in project settings is Java 13. There are several places in the settings where you can set the JDK so ensure everything is Java 13. For some reason Java 13+ doesn't seem to work.
+* In the Run configuration, ensure that RenderEngine (The inner Renderengine folder that contains the src, projects folder) is set as the working directory
+* Mark the Editor folder as a source folder
+* Mark the "java" folder in src/main as a source folder
+* Mark the "code" folder inside all your projects inside the "projects" folder as a source folder
+
 
 
