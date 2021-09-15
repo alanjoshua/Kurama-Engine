@@ -165,7 +165,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
     public void frustumCullModels(Map<String, HashMap<String, Model>> mesh_model_map, Scene scene) {
 
-        if(mesh_model_map.size() == 0) {return;}
+        if(mesh_model_map == null) {return;}
 
         for ( var meshID: mesh_model_map.keySet()) {
             var mesh = scene.meshID_mesh_map.get(meshID);
