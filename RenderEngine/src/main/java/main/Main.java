@@ -12,7 +12,7 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new GameLWJGL("OpenGL Renderer");
+		game = new MindPalace("Mind Palace");
 //		game = new Editor("Editor");
 		game.start();
 
