@@ -4,6 +4,7 @@ import Kurama.Mesh.Mesh;
 import Kurama.game.Game;
 import Kurama.renderingEngine.*;
 import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
+import Kurama.utils.Logger;
 
 import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
 import static org.lwjgl.opengl.GL11.glClear;
@@ -34,6 +35,11 @@ public class Gintoki extends RenderPipeline {
 
     @Override
     public RenderPipelineData render(RenderPipelineData input) {
+
+        if(game.getMasterWindow() == null) {
+            Logger.logError("RootGUIComponent is null. Please initialise it...");
+            return null;
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0,0, game.getMasterWindow().getWidth(), game.getMasterWindow().getHeight());
