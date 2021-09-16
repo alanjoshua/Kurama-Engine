@@ -83,9 +83,9 @@ public class MindPalace extends Game {
 
     @Override
     public void cleanUp() {
-        rootGuiComponent.cleanUp();
-        renderingEngine.cleanUp();
-        scene.cleanUp();
+        if(rootGuiComponent != null)rootGuiComponent.cleanUp();
+        if(renderingEngine != null) renderingEngine.cleanUp();
+        if(scene != null) scene.cleanUp();
     }
 
     @Override
