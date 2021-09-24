@@ -1,5 +1,9 @@
 package main;
 
+import Kurama.ComponentSystem.components.MasterWindow;
+import Kurama.ComponentSystem.components.constraintGUI.Boundary;
+import Kurama.ComponentSystem.components.constraintGUI.BoundaryConfigurator;
+import Kurama.ComponentSystem.components.constraintGUI.stretchSystem.StretchSystemConfigurator;
 import Kurama.Math.Vector;
 import Kurama.audio.SoundBuffer;
 import Kurama.audio.SoundManager;
@@ -70,10 +74,32 @@ public class MindPalace extends Game {
         for(var mat: scene.materialLibrary) {
             Logger.log(mat.matName);
         }
-        Logger.log("");
+
     }
 
     public void initGUI() {
+        rootGuiComponent = new MasterWindow(this, display, input,"masterWindow");
+        var masterWindowConfig = new BoundaryConfigurator() {
+            BoundaryConfigurator pre_config = new StretchSystemConfigurator();
+            @Override
+            public Boundary configure(Boundary boundary) {
+                pre_config.configure(boundary);
+                boundary.setContainerVisibility(false);
+                if(boundary.boundaryOrient == Boundary.BoundaryOrient.Vertical) {
+                    boundary.width = 0;
+                }
+                else {
+                    boundary.height = 0;
+                }
+                return null;
+            }
+        };
+
+        rootGuiComponent
+                .setConfigurator(masterWindowConfig)
+                .setColor(new Vector(1,0,0,0.5f))
+                .setContainerVisibility(false);
+
 
     }
 
