@@ -158,6 +158,7 @@ public class Scene {
                     m.instanceChunkSize = hints.numInstances;
                 });
             }
+
             model.identifier = ID;
             addModel(model, Arrays.asList(shaderIds));
             return model;
