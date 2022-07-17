@@ -167,45 +167,45 @@ import static org.lwjgl.vulkan.VK10.*;
         }
 
         private static final Vertex[] VERTICES = {
-                new Vertex(new Vector2f(0.0f, -0.5f), new Vector3f(1.0f, 1.0f, 0.0f)),
-                new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 1.0f, 0.5f)),
-                new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(0.7f, 0.5f, 1.0f))
+                new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f)),
+                new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f)),
+                new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f)),
+                new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f))
+        };
+
+        private static final /*uint16_t*/ short[] INDICES = {
+                0, 1, 2, 2, 3, 0
         };
 
         // ======= FIELDS ======= //
 
         private long window;
-
         private VkInstance instance;
         private long debugMessenger;
         private long surface;
-
         private VkPhysicalDevice physicalDevice;
         private VkDevice device;
         private long vertexBuffer;
         private long vertexBufferMemory;
-
+        private long indexBuffer;
+        private long indexBufferMemory;
         private VkQueue graphicsQueue;
         private VkQueue presentQueue;
-
         private long swapChain;
         private List<Long> swapChainImages;
         private int swapChainImageFormat;
         private VkExtent2D swapChainExtent;
         private List<Long> swapChainImageViews;
         private List<Long> swapChainFramebuffers;
-
         private long renderPass;
         private long pipelineLayout;
         private long graphicsPipeline;
-
         private long commandPool;
         private List<VkCommandBuffer> commandBuffers;
 
         private List<Frame> inFlightFrames;
         private Map<Integer, Frame> imagesInFlight;
         private int currentFrame;
-
         boolean framebufferResize;
 
         // ======= METHODS ======= //
@@ -255,6 +255,7 @@ import static org.lwjgl.vulkan.VK10.*;
             createLogicalDevice();
             createCommandPool();
             createVertexBuffer();
+            createIndexBuffer();
             createSwapChainObjects();
             createSyncObjects();
         }
@@ -293,6 +294,9 @@ import static org.lwjgl.vulkan.VK10.*;
 
             vkDestroyBuffer(device, vertexBuffer, null);
             vkFreeMemory(device, vertexBufferMemory, null);
+
+            vkDestroyBuffer(device, indexBuffer, null);
+            vkFreeMemory(device, indexBufferMemory, null);
 
             inFlightFrames.forEach(frame -> {
 
@@ -866,48 +870,106 @@ import static org.lwjgl.vulkan.VK10.*;
             }
         }
 
-        private void createVertexBuffer() {
-
+        private void createBuffer(long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
             try(MemoryStack stack = stackPush()) {
 
                 VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.callocStack(stack);
                 bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
-                bufferInfo.size(Vertex.SIZEOF * VERTICES.length);
-                bufferInfo.usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+                bufferInfo.size(size);
+                bufferInfo.usage(usage);
                 bufferInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
 
-                LongBuffer pVertexBuffer = stack.mallocLong(1);
-
-                if(vkCreateBuffer(device, bufferInfo, null, pVertexBuffer) != VK_SUCCESS) {
+                if(vkCreateBuffer(device, bufferInfo, null, pBuffer) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to create vertex buffer");
                 }
-                vertexBuffer = pVertexBuffer.get(0);
 
                 VkMemoryRequirements memRequirements = VkMemoryRequirements.mallocStack(stack);
-                vkGetBufferMemoryRequirements(device, vertexBuffer, memRequirements);
+                vkGetBufferMemoryRequirements(device, pBuffer.get(0), memRequirements);
 
                 VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.callocStack(stack);
                 allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
                 allocInfo.allocationSize(memRequirements.size());
-                allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(),
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+                allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), properties));
 
-                LongBuffer pVertexBufferMemory = stack.mallocLong(1);
-
-                if(vkAllocateMemory(device, allocInfo, null, pVertexBufferMemory) != VK_SUCCESS) {
+                if(vkAllocateMemory(device, allocInfo, null, pBufferMemory) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to allocate vertex buffer memory");
                 }
-                vertexBufferMemory = pVertexBufferMemory.get(0);
 
-                vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+                vkBindBufferMemory(device, pBuffer.get(0), pBufferMemory.get(0), 0);
+            }
+        }
 
-                PointerBuffer data = stack.mallocPointer(1);
+        private void createIndexBuffer() {
+            try (var stack = stackPush()) {
+                long bufferSize = Short.SIZE * INDICES.length;
 
-                vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size(), 0, data);
+                var pBuffer = stack.mallocLong(1);
+                var pBufferMemory = stack.mallocLong(1);
+                createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        pBuffer, pBufferMemory);
+
+                long stagingBuffer = pBuffer.get(0);
+                long stagingBufferMemory = pBufferMemory.get(0);
+
+                var data = stack.mallocPointer(1);
+
+                vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
                 {
-                    memcpy(data.getByteBuffer(0, (int) bufferInfo.size()), VERTICES);
+                    memcpy(data.getByteBuffer(0, (int) bufferSize), INDICES);
                 }
-                vkUnmapMemory(device, vertexBufferMemory);
+                vkUnmapMemory(device, stagingBufferMemory);
+
+                createBuffer(bufferSize,
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                        VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
+                        pBuffer,
+                        pBufferMemory);
+
+                indexBuffer = pBuffer.get(0);
+                indexBufferMemory = pBufferMemory.get(0);
+
+                copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+                vkDestroyBuffer(device, stagingBuffer, null);
+                vkFreeMemory(device, stagingBufferMemory, null);
+            }
+        }
+
+        private void createVertexBuffer() {
+            try (var stack = stackPush()) {
+                long bufferSize = Vertex.SIZEOF * VERTICES.length;
+
+                var pBuffer = stack.mallocLong(1);
+                var pBufferMemory = stack.mallocLong(1);
+                createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        pBuffer, pBufferMemory);
+
+                long stagingBuffer = pBuffer.get(0);
+                long stagingBufferMemory = pBufferMemory.get(0);
+
+                var data = stack.mallocPointer(1);
+
+                vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
+                {
+                    memcpy(data.getByteBuffer(0, (int) bufferSize), VERTICES);
+                }
+                vkUnmapMemory(device, stagingBufferMemory);
+
+                createBuffer(bufferSize,
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                        VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
+                        pBuffer,
+                        pBufferMemory);
+
+                vertexBuffer = pBuffer.get(0);
+                vertexBufferMemory = pBufferMemory.get(0);
+
+                copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+                vkDestroyBuffer(device, stagingBuffer, null);
+                vkFreeMemory(device, stagingBufferMemory, null);
             }
         }
 
@@ -919,6 +981,52 @@ import static org.lwjgl.vulkan.VK10.*;
                 buffer.putFloat(vertex.color.x());
                 buffer.putFloat(vertex.color.y());
                 buffer.putFloat(vertex.color.z());
+            }
+        }
+
+        private void memcpy(ByteBuffer buffer, short[] indices) {
+            for(short index : indices) {
+                buffer.putShort(index);
+            }
+            buffer.rewind();
+        }
+
+        private void copyBuffer(long srcBuffer, long dstBuffer, long size) {
+            try(MemoryStack stack = stackPush()) {
+
+                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.callocStack(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandPool(commandPool);
+                allocInfo.commandBufferCount(1);
+
+                PointerBuffer pCommandBuffer = stack.mallocPointer(1);
+                vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
+                VkCommandBuffer commandBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
+
+                VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.callocStack(stack);
+                beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+                beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+                vkBeginCommandBuffer(commandBuffer, beginInfo);
+                {
+                    VkBufferCopy.Buffer copyRegion = VkBufferCopy.callocStack(1, stack);
+                    copyRegion.size(size);
+                    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, copyRegion);
+                }
+                vkEndCommandBuffer(commandBuffer);
+
+                VkSubmitInfo submitInfo = VkSubmitInfo.callocStack(stack);
+                submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+                submitInfo.pCommandBuffers(pCommandBuffer);
+
+                if(vkQueueSubmit(graphicsQueue, submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to submit copy command buffer");
+                }
+
+                vkQueueWaitIdle(graphicsQueue);
+
+                vkFreeCommandBuffers(device, commandPool, pCommandBuffer);
             }
         }
 
@@ -994,8 +1102,9 @@ import static org.lwjgl.vulkan.VK10.*;
                         LongBuffer vertexBuffers = stack.longs(vertexBuffer);
                         LongBuffer offsets = stack.longs(0);
                         vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+                        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-                        vkCmdDraw(commandBuffer, VERTICES.length, 1, 0, 0);
+                        vkCmdDrawIndexed(commandBuffer, INDICES.length, 1, 0, 0, 0);
                     }
                     vkCmdEndRenderPass(commandBuffer);
 
