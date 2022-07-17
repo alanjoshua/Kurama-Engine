@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="KuramaEngine" target="13" />
+      <module name="KuramaEngine" target="19" />
     </bytecodeTargetLevel>
   </component>
 </project>

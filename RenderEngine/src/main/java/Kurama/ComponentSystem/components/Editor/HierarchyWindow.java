@@ -91,11 +91,11 @@ public class HierarchyWindow extends ConstraintComponent {
 
             var bottomMostCenter = createBoundary(identifier+"_hw_bottommostCenter", Boundary.BoundaryOrient.Vertical, false, configurator);
 
-            bottomMostCenter.isContainerVisible = false;
+            bottomMostCenter.isContainerVisible = true;
 //            bottomMostCenter.minHeight = 50;
 //            bottomMostCenter.maxHeight = 200;
             bottomMostCenter.width = 6;
-            bottomMostCenter.setColor(new Vector(0,1,0,0.6f));
+            bottomMostCenter.setColor(new Vector(1,1,1,0.6f));
 
             bottomMostCenter.addInitAutomation((c,i,t) -> c.pos.setDataElement(0, lastGridCell.attachedComp.getChild(0).getPos().geti(0) + 200));
 
@@ -203,7 +203,7 @@ public class HierarchyWindow extends ConstraintComponent {
             c.pos = new Vector(0 ,(g.top.pos.get(1)+g.top.height/2f) + c.height/2f, 0);
         });
 
-        centre_bound.isContainerVisible = false;
+        centre_bound.isContainerVisible = true;
         centre_bound.minHeight = gridHeight;
         centre_bound.maxHeight = gridHeight;
         centre_bound.width = 6;

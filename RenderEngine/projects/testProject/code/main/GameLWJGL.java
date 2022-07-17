@@ -20,6 +20,7 @@ import Kurama.Mesh.Texture;
 import Kurama.Terrain.Terrain;
 import Kurama.audio.SoundBuffer;
 import Kurama.audio.SoundManager;
+import Kurama.audio.SoundSource;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -572,12 +573,12 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
         scene.rootSceneComp.addChild(madara_model);
 
-//        SoundSource madaraSource = new SoundSource("madara", true, false);
-//        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
-//        madaraSource.setGain(10);
-//        madaraSource.attachToModel(madara_model);
-//        madaraSource.play();
-//        scene.soundManager.addSoundSource(madaraSource);
+        SoundSource madaraSource = new SoundSource("madara", true, false);
+        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+        madaraSource.setGain(10);
+        madaraSource.attachToModel(madara_model);
+        madaraSource.play();
+        scene.soundManager.addSoundSource(madaraSource);
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
