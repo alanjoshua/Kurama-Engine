@@ -2,6 +2,7 @@ package main;
 
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils.SPIRV;
+import Kurama.Vulkan.Vulkan;
 import org.joml.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
+import static Kurama.Vulkan.Vulkan.querySwapChainSupport;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
@@ -60,7 +62,7 @@ import static org.lwjgl.vulkan.VK10.*;
 
 
 
-        private static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
+        static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
 
             VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
 
@@ -85,97 +87,6 @@ import static org.lwjgl.vulkan.VK10.*;
                 vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, allocationCallbacks);
             }
 
-        }
-
-        private class QueueFamilyIndices {
-
-            // We use Integer to use null as the empty value
-            private Integer graphicsFamily;
-            private Integer presentFamily;
-
-            private boolean isComplete() {
-                return graphicsFamily != null && presentFamily != null;
-            }
-
-            public int[] unique() {
-                return IntStream.of(graphicsFamily, presentFamily).distinct().toArray();
-            }
-
-            public int[] array() {
-                return new int[] {graphicsFamily, presentFamily};
-            }
-        }
-
-        private class SwapChainSupportDetails {
-
-            private VkSurfaceCapabilitiesKHR capabilities;
-            private VkSurfaceFormatKHR.Buffer formats;
-            private IntBuffer presentModes;
-
-        }
-
-        private static class Vertex {
-
-            private static final int SIZEOF = (2 + 3) * Float.BYTES;
-            private static final int OFFSETOF_POS = 0;
-            private static final int OFFSETOF_COLOR = 2 * Float.BYTES;
-
-            private Vector2fc pos;
-            private Vector3fc color;
-
-            public Vertex(Vector2fc pos, Vector3fc color) {
-                this.pos = pos;
-                this.color = color;
-            }
-
-            private static VkVertexInputBindingDescription.Buffer getBindingDescription() {
-
-                VkVertexInputBindingDescription.Buffer bindingDescription =
-                        VkVertexInputBindingDescription.callocStack(1);
-
-                bindingDescription.binding(0);
-                bindingDescription.stride(Vertex.SIZEOF);
-                bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
-
-                return bindingDescription;
-            }
-
-            private static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
-
-                VkVertexInputAttributeDescription.Buffer attributeDescriptions =
-                        VkVertexInputAttributeDescription.callocStack(2);
-
-                // Position
-                VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
-                posDescription.binding(0);
-                posDescription.location(0);
-                posDescription.format(VK_FORMAT_R32G32_SFLOAT);
-                posDescription.offset(OFFSETOF_POS);
-
-                // Color
-                VkVertexInputAttributeDescription colorDescription = attributeDescriptions.get(1);
-                colorDescription.binding(0);
-                colorDescription.location(1);
-                colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-                colorDescription.offset(OFFSETOF_COLOR);
-
-                return attributeDescriptions.rewind();
-            }
-        }
-
-        private static class UniformBufferObject {
-
-            private static final int SIZEOF = 3 * 16 * Float.BYTES;
-
-            private Matrix4f model;
-            private Matrix4f view;
-            private Matrix4f proj;
-
-            public UniformBufferObject() {
-                model = new Matrix4f();
-                view = new Matrix4f();
-                proj = new Matrix4f();
-            }
         }
 
         private static final Vertex[] VERTICES = {
@@ -506,7 +417,12 @@ import static org.lwjgl.vulkan.VK10.*;
         }
 
         private void createSwapChainObjects() {
-
+            createSwapChain();
+            createImageViews();
+            createRenderPass();
+            createGraphicsPipeline();
+            createFramebuffers();
+            createCommandBuffers();
         }
 
         private void createInstance() {
@@ -683,16 +599,16 @@ import static org.lwjgl.vulkan.VK10.*;
 
             try(MemoryStack stack = stackPush()) {
 
-                SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, stack);
+                Vulkan.SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface, stack);
 
-                VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-                int presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-                VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+                VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats());
+                int presentMode = chooseSwapPresentMode(swapChainSupport.presentModes());
+                VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities());
 
-                IntBuffer imageCount = stack.ints(swapChainSupport.capabilities.minImageCount() + 1);
+                IntBuffer imageCount = stack.ints(swapChainSupport.capabilities().minImageCount() + 1);
 
-                if(swapChainSupport.capabilities.maxImageCount() > 0 && imageCount.get(0) > swapChainSupport.capabilities.maxImageCount()) {
-                    imageCount.put(0, swapChainSupport.capabilities.maxImageCount());
+                if(swapChainSupport.capabilities().maxImageCount() > 0 && imageCount.get(0) > swapChainSupport.capabilities().maxImageCount()) {
+                    imageCount.put(0, swapChainSupport.capabilities().maxImageCount());
                 }
 
                 VkSwapchainCreateInfoKHR createInfo = VkSwapchainCreateInfoKHR.callocStack(stack);
@@ -717,7 +633,7 @@ import static org.lwjgl.vulkan.VK10.*;
                     createInfo.imageSharingMode(VK_SHARING_MODE_EXCLUSIVE);
                 }
 
-                createInfo.preTransform(swapChainSupport.capabilities.currentTransform());
+                createInfo.preTransform(swapChainSupport.capabilities().currentTransform());
                 createInfo.compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
                 createInfo.presentMode(presentMode);
                 createInfo.clipped(true);
@@ -1465,8 +1381,8 @@ import static org.lwjgl.vulkan.VK10.*;
 
             if(extensionsSupported) {
                 try(MemoryStack stack = stackPush()) {
-                    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, stack);
-                    swapChainAdequate = swapChainSupport.formats.hasRemaining() && swapChainSupport.presentModes.hasRemaining();
+                    Vulkan.SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface, stack);
+                    swapChainAdequate = swapChainSupport.formats().hasRemaining() && swapChainSupport.presentModes().hasRemaining();
                 }
             }
 
@@ -1490,32 +1406,6 @@ import static org.lwjgl.vulkan.VK10.*;
                         .collect(toSet())
                         .containsAll(DEVICE_EXTENSIONS);
             }
-        }
-
-        private SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, MemoryStack stack) {
-
-            SwapChainSupportDetails details = new SwapChainSupportDetails();
-
-            details.capabilities = VkSurfaceCapabilitiesKHR.mallocStack(stack);
-            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, details.capabilities);
-
-            IntBuffer count = stack.ints(0);
-
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, count, null);
-
-            if(count.get(0) != 0) {
-                details.formats = VkSurfaceFormatKHR.mallocStack(count.get(0), stack);
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, count, details.formats);
-            }
-
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device,surface, count, null);
-
-            if(count.get(0) != 0) {
-                details.presentModes = stack.mallocInt(count.get(0));
-                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, count, details.presentModes);
-            }
-
-            return details;
         }
 
         private QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
