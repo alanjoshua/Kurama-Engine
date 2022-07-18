@@ -2,15 +2,13 @@ package main;
 
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils.SPIRV;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Pointer;
 import org.lwjgl.vulkan.*;
 
+import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -163,7 +161,21 @@ import static org.lwjgl.vulkan.VK10.*;
 
                 return attributeDescriptions.rewind();
             }
+        }
 
+        private static class UniformBufferObject {
+
+            private static final int SIZEOF = 3 * 16 * Float.BYTES;
+
+            private Matrix4f model;
+            private Matrix4f view;
+            private Matrix4f proj;
+
+            public UniformBufferObject() {
+                model = new Matrix4f();
+                view = new Matrix4f();
+                proj = new Matrix4f();
+            }
         }
 
         private static final Vertex[] VERTICES = {
@@ -198,6 +210,9 @@ import static org.lwjgl.vulkan.VK10.*;
         private List<Long> swapChainImageViews;
         private List<Long> swapChainFramebuffers;
         private long renderPass;
+        private long descriptorPool;
+        private long descriptorSetLayout;
+        private List<Long> descriptorSets;
         private long pipelineLayout;
         private long graphicsPipeline;
         private long commandPool;
@@ -207,6 +222,8 @@ import static org.lwjgl.vulkan.VK10.*;
         private Map<Integer, Frame> imagesInFlight;
         private int currentFrame;
         boolean framebufferResize;
+        private List<Long> uniformBuffers;
+        private List<Long> uniformBuffersMemory;
 
         // ======= METHODS ======= //
 
@@ -256,8 +273,147 @@ import static org.lwjgl.vulkan.VK10.*;
             createCommandPool();
             createVertexBuffer();
             createIndexBuffer();
-            createSwapChainObjects();
+            createDescriptorSetLayout();
+
+            createSwapChain();
+            createImageViews();
+            createRenderPass();
+            createGraphicsPipeline();
+            createFramebuffers();
+            createUniformBuffers();
+            createDescriptorPool();
+            createDescriptorSets();
+            createCommandBuffers();
+
             createSyncObjects();
+        }
+
+        private void createDescriptorSetLayout() {
+            try (var stack = stackPush()) {
+                VkDescriptorSetLayoutBinding.Buffer uboLayoutBinding = VkDescriptorSetLayoutBinding.callocStack(1, stack);
+                uboLayoutBinding.binding(0);
+                uboLayoutBinding.descriptorCount(1);
+                uboLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                uboLayoutBinding.pImmutableSamplers(null);
+                uboLayoutBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+
+                VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.callocStack(stack);
+                layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
+                layoutInfo.pBindings(uboLayoutBinding);
+
+                LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
+
+                if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create descriptor set layout");
+                }
+                descriptorSetLayout = pDescriptorSetLayout.get(0);
+            }
+        }
+
+        private void createUniformBuffers() {
+            try (var stack = stackPush()) {
+                uniformBuffers = new ArrayList<>(swapChainImages.size());
+                uniformBuffersMemory = new ArrayList<>(swapChainImages.size());
+
+                LongBuffer pBuffer = stack.mallocLong(1);
+                LongBuffer pBufferMemory = stack.mallocLong(1);
+
+                for(int i = 0;i < swapChainImages.size(); i++) {
+                    createBuffer(UniformBufferObject.SIZEOF,
+                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            pBuffer,
+                            pBufferMemory);
+                    uniformBuffers.add(pBuffer.get(0));
+                    uniformBuffersMemory.add(pBufferMemory.get(0));
+                }
+            }
+        }
+
+        private void createDescriptorSets() {
+            try (var stack = stackPush()) {
+                LongBuffer layouts = stack.mallocLong(swapChainImages.size());
+                for(int i = 0;i < layouts.capacity();i++) {
+                    layouts.put(i, descriptorSetLayout);
+                }
+
+                VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.callocStack(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
+                allocInfo.descriptorPool(descriptorPool);
+                allocInfo.pSetLayouts(layouts);
+
+                LongBuffer pDescriptorSets = stack.mallocLong(swapChainImages.size());
+
+                if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSets) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate descriptor sets");
+                }
+
+                descriptorSets = new ArrayList<>(pDescriptorSets.capacity());
+
+                VkDescriptorBufferInfo.Buffer bufferInfo =VkDescriptorBufferInfo.callocStack(1, stack);
+                bufferInfo.offset(0);
+                bufferInfo.range(UniformBufferObject.SIZEOF);
+
+                VkWriteDescriptorSet.Buffer descriptorWrite = VkWriteDescriptorSet.callocStack(1, stack);
+                descriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+                descriptorWrite.dstBinding(0);
+                descriptorWrite.dstArrayElement(0);
+                descriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                descriptorWrite.descriptorCount(1);
+                descriptorWrite.pBufferInfo(bufferInfo);
+
+                for(int i = 0;i < pDescriptorSets.capacity();i++) {
+                    long descriptorSet = pDescriptorSets.get(i);
+                    bufferInfo.buffer(uniformBuffers.get(i));
+                    descriptorWrite.dstSet(descriptorSet);
+
+                    vkUpdateDescriptorSets(device, descriptorWrite, null);
+                    descriptorSets.add(descriptorSet);
+                }
+            }
+        }
+
+        private void createDescriptorPool() {
+            try (var stack = stackPush()) {
+
+                VkDescriptorPoolSize.Buffer poolSize = VkDescriptorPoolSize.callocStack(1, stack);
+                poolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                poolSize.descriptorCount(swapChainImages.size());
+
+                VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.callocStack(stack);
+                poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
+                poolInfo.pPoolSizes(poolSize);
+                poolInfo.maxSets(swapChainImages.size());
+
+                LongBuffer pDescriptorPool = stack.mallocLong(1);
+
+                if(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create descriptor pool");
+                }
+
+                descriptorPool = pDescriptorPool.get(0);
+
+            }
+        }
+
+        private void updateUniformBuffer(int currentImage) {
+            try(MemoryStack stack = stackPush()) {
+
+                UniformBufferObject ubo = new UniformBufferObject();
+
+                ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
+                ubo.view.lookAt(2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                ubo.proj.perspective((float) Math.toRadians(45),
+                        (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
+                ubo.proj.m11(ubo.proj.m11() * -1);
+
+                PointerBuffer data = stack.mallocPointer(1);
+                vkMapMemory(device, uniformBuffersMemory.get(currentImage), 0, UniformBufferObject.SIZEOF, 0, data);
+                {
+                    memcpy(data.getByteBuffer(0, UniformBufferObject.SIZEOF), ubo);
+                }
+                vkUnmapMemory(device, uniformBuffersMemory.get(currentImage));
+            }
         }
 
         private void mainLoop() {
@@ -292,11 +448,17 @@ import static org.lwjgl.vulkan.VK10.*;
 
             cleanupSwapChain();
 
+            vkDestroyDescriptorSetLayout(device, descriptorSetLayout, null);
             vkDestroyBuffer(device, vertexBuffer, null);
             vkFreeMemory(device, vertexBufferMemory, null);
 
             vkDestroyBuffer(device, indexBuffer, null);
             vkFreeMemory(device, indexBufferMemory, null);
+
+            for(int i = 0; i < uniformBuffers.size(); i++) {
+                vkDestroyBuffer(device, uniformBuffers.get(i), null);
+                vkFreeMemory(device, uniformBuffersMemory.get(i), null);
+            }
 
             inFlightFrames.forEach(frame -> {
 
@@ -344,12 +506,7 @@ import static org.lwjgl.vulkan.VK10.*;
         }
 
         private void createSwapChainObjects() {
-            createSwapChain();
-            createImageViews();
-            createRenderPass();
-            createGraphicsPipeline();
-            createFramebuffers();
-            createCommandBuffers();
+
         }
 
         private void createInstance() {
@@ -749,7 +906,7 @@ import static org.lwjgl.vulkan.VK10.*;
                 rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
                 rasterizer.lineWidth(1.0f);
                 rasterizer.cullMode(VK_CULL_MODE_BACK_BIT);
-                rasterizer.frontFace(VK_FRONT_FACE_CLOCKWISE);
+                rasterizer.frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE);
                 rasterizer.depthBiasEnable(false);
 
                 // ===> MULTISAMPLING <===
@@ -776,6 +933,7 @@ import static org.lwjgl.vulkan.VK10.*;
 
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.callocStack(stack);
                 pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+                pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayout));
 
                 LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
 
@@ -991,6 +1149,15 @@ import static org.lwjgl.vulkan.VK10.*;
             buffer.rewind();
         }
 
+        private void memcpy(ByteBuffer buffer, UniformBufferObject ubo) {
+
+            final int mat4Size = 16 * Float.BYTES;
+
+            ubo.model.get(0, buffer);
+            ubo.view.get(mat4Size, buffer);
+            ubo.proj.get(mat4Size * 2, buffer);
+        }
+
         private void copyBuffer(long srcBuffer, long dstBuffer, long size) {
             try(MemoryStack stack = stackPush()) {
 
@@ -1104,6 +1271,9 @@ import static org.lwjgl.vulkan.VK10.*;
                         vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
                         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout, 0, stack.longs(descriptorSets.get(i)), null);
+
                         vkCmdDrawIndexed(commandBuffer, INDICES.length, 1, 0, 0, 0);
                     }
                     vkCmdEndRenderPass(commandBuffer);
@@ -1172,6 +1342,8 @@ import static org.lwjgl.vulkan.VK10.*;
                 }
 
                 final int imageIndex = pImageIndex.get(0);
+
+                updateUniformBuffer(imageIndex);
 
                 if(imagesInFlight.containsKey(imageIndex)) {
                     vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
