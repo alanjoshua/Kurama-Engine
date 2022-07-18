@@ -4,6 +4,7 @@ import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
 import Kurama.display.DisplayLWJGL;
+import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -37,9 +38,6 @@ import static org.lwjgl.vulkan.VK10.vkDestroyInstance;
 
 public class GameVulkan extends Game {
 
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
-
     private static final int MAX_FRAMES_IN_FLIGHT = 2;
 
     private static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
@@ -58,7 +56,6 @@ public class GameVulkan extends Game {
     private static final Set<String> DEVICE_EXTENSIONS = Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
             .collect(toSet());
 
-    private long window;
     private VkInstance instance;
     private long debugMessenger;
     private long surface;
@@ -92,6 +89,8 @@ public class GameVulkan extends Game {
     private List<Long> uniformBuffers;
     private List<Long> uniformBuffersMemory;
 
+    public DisplayVulkan display;
+
     private static final Vertex[] VERTICES = {
             new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f)),
             new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f)),
@@ -109,7 +108,8 @@ public class GameVulkan extends Game {
 
     @Override
     public void init() {
-        initWindow();
+        display = new DisplayVulkan(this);
+        display.resizeEvents.add(() -> {this.framebufferResize = true;});
         initVulkan();
     }
 
@@ -117,9 +117,9 @@ public class GameVulkan extends Game {
     public void tick() {
         glfwPollEvents();
 
-//        System.out.println(displayFPS);
+        System.out.println(displayFPS);
 
-        if(glfwWindowShouldClose(window)) {
+        if(glfwWindowShouldClose(display.window)) {
             programRunning = false;
         }
     }
@@ -203,6 +203,7 @@ public class GameVulkan extends Game {
     @Override
     public void cleanUp() {
         // Wait for the device to complete all operations before release resources
+        display.cleanUp();
         vkDeviceWaitIdle(device);
 
         cleanupSwapChain();
@@ -241,42 +242,18 @@ public class GameVulkan extends Game {
 
         vkDestroyInstance(instance, null);
 
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(display.window);
 
         glfwTerminate();
 
         System.out.println("cleanup Finished calling ");
     }
 
-    private void initWindow() {
-
-        if(!glfwInit()) {
-            throw new RuntimeException("Cannot initialize GLFW");
-        }
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", NULL, NULL);
-
-        if(window == NULL) {
-            throw new RuntimeException("Cannot create window");
-        }
-
-        // In Java, we don't really need a user pointer here, because
-        // we can simply pass an instance method reference to glfwSetFramebufferSizeCallback
-        // However, I will show you how can you pass a user pointer to glfw in Java just for learning purposes:
-        // long userPointer = JNINativeInterface.NewGlobalRef(this);
-        // glfwSetWindowUserPointer(window, userPointer);
-        // Please notice that the reference must be freed manually with JNINativeInterface.nDeleteGlobalRef
-        glfwSetFramebufferSizeCallback(window, this::framebufferResizeCallback);
-    }
-
     private void initVulkan() {
         createInstance();
         setupDebugMessenger();
 
-        surface = createSurface(instance, window);
+        surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
         createLogicalDevice();
         createCommandPool();
@@ -342,12 +319,6 @@ public class GameVulkan extends Game {
             instance = new VkInstance(instancePtr.get(0), createInfo);
         }
     }
-
-    private void framebufferResizeCallback(long window, int width, int height) {
-        // HelloTriangleApplication app = MemoryUtil.memGlobalRefToObject(glfwGetWindowUserPointer(window));
-        // app.framebufferResize = true;
-        framebufferResize = true;
-    }
     private void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo) {
         debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
         debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
@@ -363,7 +334,7 @@ public class GameVulkan extends Game {
             IntBuffer height = stack.ints(0);
 
             while(width.get(0) == 0 && height.get(0) == 0) {
-                glfwGetFramebufferSize(window, width, height);
+                glfwGetFramebufferSize(display.window, width, height);
                 glfwWaitEvents();
             }
         }
@@ -409,7 +380,7 @@ public class GameVulkan extends Game {
 
             VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats());
             int presentMode = chooseSwapPresentMode(swapChainSupport.presentModes());
-            VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities(), window);
+            VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities(), display.window);
 
             IntBuffer imageCount = stack.ints(swapChainSupport.capabilities().minImageCount() + 1);
 
