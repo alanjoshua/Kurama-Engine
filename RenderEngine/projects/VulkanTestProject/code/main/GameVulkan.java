@@ -3,7 +3,6 @@ package main;
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
-import Kurama.display.DisplayLWJGL;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import Kurama.utils.Logger;
@@ -25,9 +24,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
 import static org.lwjgl.system.Configuration.DEBUG;
-import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
@@ -36,7 +33,6 @@ import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.vkDestroyInstance;
-import static org.lwjgl.vulkan.VK12.VK_API_VERSION_1_2;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class GameVulkan extends Game {
@@ -94,6 +90,8 @@ public class GameVulkan extends Game {
 
     public DisplayVulkan display;
 
+    public UniformBufferObject currentUbo;
+
     private static final Vertex[] VERTICES = {
             new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f)),
             new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f)),
@@ -121,6 +119,7 @@ public class GameVulkan extends Game {
     @Override
     public void tick() {
         glfwPollEvents();
+        rotateRectangle();
 
         if(glfwWindowShouldClose(display.window)) {
             programRunning = false;
@@ -154,7 +153,7 @@ public class GameVulkan extends Game {
 
             final int imageIndex = pImageIndex.get(0);
 
-            updateUniformBuffer(imageIndex);
+            updateUbo(imageIndex);
 
             if(imagesInFlight.containsKey(imageIndex)) {
                 vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
@@ -1004,21 +1003,25 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void updateUniformBuffer(int currentImage) {
+    public void rotateRectangle() {
+        UniformBufferObject ubo = new UniformBufferObject();
+
+        ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
+        ubo.view.lookAt(2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        ubo.proj.perspective((float) Math.toRadians(45),
+                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
+        ubo.proj.m11(ubo.proj.m11() * -1);
+
+        this.currentUbo = ubo;
+    }
+
+    private void updateUbo(int currentImage) {
         try(MemoryStack stack = stackPush()) {
-
-            UniformBufferObject ubo = new UniformBufferObject();
-
-            ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
-            ubo.view.lookAt(2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            ubo.proj.perspective((float) Math.toRadians(45),
-                    (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-            ubo.proj.m11(ubo.proj.m11() * -1);
 
             PointerBuffer data = stack.mallocPointer(1);
             vkMapMemory(device, uniformBuffersMemory.get(currentImage), 0, UniformBufferObject.SIZEOF, 0, data);
             {
-                memcpy(data.getByteBuffer(0, UniformBufferObject.SIZEOF), ubo);
+                memcpy(data.getByteBuffer(0, UniformBufferObject.SIZEOF), currentUbo);
             }
             vkUnmapMemory(device, uniformBuffersMemory.get(currentImage));
         }
