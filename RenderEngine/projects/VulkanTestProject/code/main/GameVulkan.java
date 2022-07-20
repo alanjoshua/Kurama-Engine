@@ -797,10 +797,6 @@ public class GameVulkan extends Game {
 
             createInfo.pEnabledFeatures(deviceFeatures);
 
-            for(var ext: DEVICE_EXTENSIONS) {
-                System.out.println(ext);
-            }
-
             createInfo.ppEnabledExtensionNames(Vulkan.asPointerBuffer(DEVICE_EXTENSIONS));
 
             if(ENABLE_VALIDATION_LAYERS) {
@@ -809,13 +805,10 @@ public class GameVulkan extends Game {
 
             PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
 
-            System.out.println("fgfdgfdfffffffffffff");
-
             if(vkCreateDevice(physicalDevice, createInfo, null, pDevice) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create logical device");
             }
 
-            System.out.println("ehreee");
             device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
 
             PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
@@ -825,7 +818,6 @@ public class GameVulkan extends Game {
 
             vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
             presentQueue = new VkQueue(pQueue.get(0), device);
-            System.out.println("kfdjgklfdjglfg");
         }
     }
 
