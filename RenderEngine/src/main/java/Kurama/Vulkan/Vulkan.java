@@ -80,7 +80,7 @@ public class Vulkan {
 
         glfwGetFramebufferSize(window, width, height);
 
-        VkExtent2D actualExtent = VkExtent2D.mallocStack().set(width.get(0), height.get(0));
+        VkExtent2D actualExtent = VkExtent2D.malloc().set(width.get(0), height.get(0));
 
         VkExtent2D minExtent = capabilities.minImageExtent();
         VkExtent2D maxExtent = capabilities.maxImageExtent();
@@ -115,7 +115,7 @@ public class Vulkan {
     public static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
         try(MemoryStack stack = stackPush()) {
 
-            VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.callocStack(stack);
+            VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
             bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
             bufferInfo.size(size);
             bufferInfo.usage(usage);
@@ -125,10 +125,10 @@ public class Vulkan {
                 throw new RuntimeException("Failed to create vertex buffer");
             }
 
-            VkMemoryRequirements memRequirements = VkMemoryRequirements.mallocStack(stack);
+            VkMemoryRequirements memRequirements = VkMemoryRequirements.malloc(stack);
             vkGetBufferMemoryRequirements(device, pBuffer.get(0), memRequirements);
 
-            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.callocStack(stack);
+            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
             allocInfo.allocationSize(memRequirements.size());
             allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), properties, physicalDevice));
@@ -143,7 +143,7 @@ public class Vulkan {
 
     public static int findMemoryType(int typeFilter, int properties, VkPhysicalDevice physicalDevice) {
 
-        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.mallocStack();
+        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.malloc();
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties);
 
         for(int i = 0;i < memProperties.memoryTypeCount();i++) {
@@ -217,7 +217,7 @@ public class Vulkan {
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, count, null);
 
         if(count.get(0) != 0) {
-            formats = VkSurfaceFormatKHR.mallocStack(count.get(0), stack);
+            formats = VkSurfaceFormatKHR.malloc(count.get(0), stack);
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, count, formats);
         }
 
@@ -255,7 +255,7 @@ public class Vulkan {
 
             vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyCount, null);
 
-            VkQueueFamilyProperties.Buffer queueFamilies = VkQueueFamilyProperties.mallocStack(queueFamilyCount.get(0), stack);
+            VkQueueFamilyProperties.Buffer queueFamilies = VkQueueFamilyProperties.malloc(queueFamilyCount.get(0), stack);
 
             vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyCount, queueFamilies);
 

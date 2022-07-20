@@ -5,7 +5,6 @@ import Kurama.game.Game;
 import Kurama.utils.Logger;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 
 import java.awt.*;
@@ -19,7 +18,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class DisplayVulkan extends Display {
 
     public long window;
-    private GLCapabilities capabilities;
 
     public DisplayVulkan(int defaultWindowedWidth, int defaultWindowedHeight, Game game) {
         super(defaultWindowedWidth,defaultWindowedHeight,game);
@@ -43,7 +41,7 @@ public class DisplayVulkan extends Display {
     public void initWindow() {
         System.out.println("initing window");
         // Configure GLFW
-        glfwDefaultWindowHints(); // optional, the current window hints are already the default
+        //glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
@@ -55,9 +53,6 @@ public class DisplayVulkan extends Display {
         if(glfwRawMouseMotionSupported()) {
             glfwSetInputMode(window,GLFW_RAW_MOUSE_MOTION,GLFW_TRUE);
         }
-
-        // Enable v-sync
-//        glfwSwapInterval(1);
     }
 
     public long getWindow() {

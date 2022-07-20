@@ -6,6 +6,7 @@ import Kurama.Vulkan.Vulkan;
 import Kurama.display.DisplayLWJGL;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
+import Kurama.utils.Logger;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
@@ -35,6 +36,8 @@ import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.vkDestroyInstance;
+import static org.lwjgl.vulkan.VK12.VK_API_VERSION_1_2;
+import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class GameVulkan extends Game {
 
@@ -111,13 +114,13 @@ public class GameVulkan extends Game {
         display = new DisplayVulkan(this);
         display.resizeEvents.add(() -> {this.framebufferResize = true;});
         initVulkan();
+        this.setTargetFPS(Integer.MAX_VALUE);
+        this.shouldDisplayFPS = true;
     }
 
     @Override
     public void tick() {
         glfwPollEvents();
-
-        System.out.println(displayFPS);
 
         if(glfwWindowShouldClose(display.window)) {
             programRunning = false;
@@ -159,7 +162,7 @@ public class GameVulkan extends Game {
 
             imagesInFlight.put(imageIndex, thisFrame);
 
-            VkSubmitInfo submitInfo = VkSubmitInfo.callocStack(stack);
+            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
             submitInfo.waitSemaphoreCount(1);
@@ -177,7 +180,7 @@ public class GameVulkan extends Game {
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
-            VkPresentInfoKHR presentInfo = VkPresentInfoKHR.callocStack(stack);
+            VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
             presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
 
             presentInfo.pWaitSemaphores(thisFrame.pRenderFinishedSemaphore());
@@ -208,17 +211,17 @@ public class GameVulkan extends Game {
 
         cleanupSwapChain();
 
+        vkDestroyDescriptorPool(device, descriptorPool, null);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, null);
+
         vkDestroyBuffer(device, vertexBuffer, null);
         vkFreeMemory(device, vertexBufferMemory, null);
 
         vkDestroyBuffer(device, indexBuffer, null);
         vkFreeMemory(device, indexBufferMemory, null);
 
-        for(int i = 0; i < uniformBuffers.size(); i++) {
-            vkDestroyBuffer(device, uniformBuffers.get(i), null);
-            vkFreeMemory(device, uniformBuffersMemory.get(i), null);
-        }
+        uniformBuffers.forEach(ubo -> vkDestroyBuffer(device, ubo, null));
+        uniformBuffersMemory.forEach(uboMemory -> vkFreeMemory(device, uboMemory, null));
 
         inFlightFrames.forEach(frame -> {
 
@@ -246,7 +249,7 @@ public class GameVulkan extends Game {
 
         glfwTerminate();
 
-        System.out.println("cleanup Finished calling ");
+        Logger.log("cleanup Finished calling ");
     }
 
     private void initVulkan() {
@@ -255,13 +258,16 @@ public class GameVulkan extends Game {
 
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
+
         createLogicalDevice();
+
         createCommandPool();
         createVertexBuffer();
         createIndexBuffer();
         createDescriptorSetLayout();
 
         createSwapChain();
+
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
@@ -291,9 +297,9 @@ public class GameVulkan extends Game {
             appInfo.applicationVersion(VK_MAKE_VERSION(1, 0, 0));
             appInfo.pEngineName(stack.UTF8Safe("No Engine"));
             appInfo.engineVersion(VK_MAKE_VERSION(1, 0, 0));
-            appInfo.apiVersion(VK_API_VERSION_1_0);
+            appInfo.apiVersion(VK_API_VERSION_1_3);
 
-            VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.callocStack(stack);
+            VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO);
             createInfo.pApplicationInfo(appInfo);
@@ -304,7 +310,7 @@ public class GameVulkan extends Game {
 
                 createInfo.ppEnabledLayerNames(asPointerBuffer(VALIDATION_LAYERS));
 
-                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.callocStack(stack);
+                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
                 populateDebugMessengerCreateInfo(debugCreateInfo);
                 createInfo.pNext(debugCreateInfo.address());
             }
@@ -323,7 +329,7 @@ public class GameVulkan extends Game {
         debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
         debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
         debugCreateInfo.messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
-        debugCreateInfo.pfnUserCallback(VulkanGame::debugCallback);
+        debugCreateInfo.pfnUserCallback(GameVulkan::debugCallback);
     }
 
     private void recreateSwapChain() {
@@ -376,6 +382,19 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
+//            var phyiscalProperties = VkFormatProperties.malloc();
+//            vkGetPhysicalDeviceFormatProperties(physicalDevice, VK_FORMAT_B8G8R8A8_SRGB, phyiscalProperties);
+//
+//            var properties = VkImageFormatProperties.malloc(stack);
+//            vkGetPhysicalDeviceImageFormatProperties(
+//                    physicalDevice,
+//                    VK_FORMAT_B8G8R8A8_SRGB,
+//                    VK_IMAGE_TYPE_2D,
+//                    VK_IMAGE_TILING_OPTIMAL,
+//                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+//                    0,
+//                    properties);
+
             SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface, stack);
 
             VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats());
@@ -388,11 +407,10 @@ public class GameVulkan extends Game {
                 imageCount.put(0, swapChainSupport.capabilities().maxImageCount());
             }
 
-            VkSwapchainCreateInfoKHR createInfo = VkSwapchainCreateInfoKHR.callocStack(stack);
+            VkSwapchainCreateInfoKHR createInfo = VkSwapchainCreateInfoKHR.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
             createInfo.surface(surface);
-
             // Image settings
             createInfo.minImageCount(imageCount.get(0));
             createInfo.imageFormat(surfaceFormat.format());
@@ -450,7 +468,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkDebugUtilsMessengerCreateInfoEXT createInfo = VkDebugUtilsMessengerCreateInfoEXT.callocStack(stack);
+            VkDebugUtilsMessengerCreateInfoEXT createInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
 
             populateDebugMessengerCreateInfo(createInfo);
 
@@ -484,7 +502,7 @@ public class GameVulkan extends Game {
 
             for(long swapChainImage : swapChainImages) {
 
-                VkImageViewCreateInfo createInfo = VkImageViewCreateInfo.callocStack(stack);
+                VkImageViewCreateInfo createInfo = VkImageViewCreateInfo.calloc(stack);
 
                 createInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
                 createInfo.image(swapChainImage);
@@ -516,7 +534,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkAttachmentDescription.Buffer colorAttachment = VkAttachmentDescription.callocStack(1, stack);
+            VkAttachmentDescription.Buffer colorAttachment = VkAttachmentDescription.calloc(1, stack);
             colorAttachment.format(swapChainImageFormat);
             colorAttachment.samples(VK_SAMPLE_COUNT_1_BIT);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
@@ -526,16 +544,16 @@ public class GameVulkan extends Game {
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
             colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-            VkAttachmentReference.Buffer colorAttachmentRef = VkAttachmentReference.callocStack(1, stack);
+            VkAttachmentReference.Buffer colorAttachmentRef = VkAttachmentReference.calloc(1, stack);
             colorAttachmentRef.attachment(0);
             colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-            VkSubpassDescription.Buffer subpass = VkSubpassDescription.callocStack(1, stack);
+            VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
             subpass.colorAttachmentCount(1);
             subpass.pColorAttachments(colorAttachmentRef);
 
-            VkSubpassDependency.Buffer dependency = VkSubpassDependency.callocStack(1, stack);
+            VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
             dependency.dstSubpass(0);
             dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -543,7 +561,7 @@ public class GameVulkan extends Game {
             dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
             dependency.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
 
-            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.callocStack(stack);
+            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
             renderPassInfo.pAttachments(colorAttachment);
             renderPassInfo.pSubpasses(subpass);
@@ -573,7 +591,7 @@ public class GameVulkan extends Game {
 
             ByteBuffer entryPoint = stack.UTF8("main");
 
-            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.callocStack(2, stack);
+            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
 
             VkPipelineShaderStageCreateInfo vertShaderStageInfo = shaderStages.get(0);
 
@@ -591,21 +609,21 @@ public class GameVulkan extends Game {
 
             // ===> VERTEX STAGE <===
 
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.callocStack(stack);
+            VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
             vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
             vertexInputInfo.pVertexBindingDescriptions(Vertex.getBindingDescription());
             vertexInputInfo.pVertexAttributeDescriptions(Vertex.getAttributeDescriptions());
 
             // ===> ASSEMBLY STAGE <===
 
-            VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.callocStack(stack);
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
             inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
             inputAssembly.topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
             inputAssembly.primitiveRestartEnable(false);
 
             // ===> VIEWPORT & SCISSOR
 
-            VkViewport.Buffer viewport = VkViewport.callocStack(1, stack);
+            VkViewport.Buffer viewport = VkViewport.calloc(1, stack);
             viewport.x(0.0f);
             viewport.y(0.0f);
             viewport.width(swapChainExtent.width());
@@ -613,18 +631,18 @@ public class GameVulkan extends Game {
             viewport.minDepth(0.0f);
             viewport.maxDepth(1.0f);
 
-            VkRect2D.Buffer scissor = VkRect2D.callocStack(1, stack);
+            VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
             scissor.offset(VkOffset2D.callocStack(stack).set(0, 0));
             scissor.extent(swapChainExtent);
 
-            VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.callocStack(stack);
+            VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
             viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
             viewportState.pViewports(viewport);
             viewportState.pScissors(scissor);
 
             // ===> RASTERIZATION STAGE <===
 
-            VkPipelineRasterizationStateCreateInfo rasterizer = VkPipelineRasterizationStateCreateInfo.callocStack(stack);
+            VkPipelineRasterizationStateCreateInfo rasterizer = VkPipelineRasterizationStateCreateInfo.calloc(stack);
             rasterizer.sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
             rasterizer.depthClampEnable(false);
             rasterizer.rasterizerDiscardEnable(false);
@@ -636,18 +654,18 @@ public class GameVulkan extends Game {
 
             // ===> MULTISAMPLING <===
 
-            VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.callocStack(stack);
+            VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
             multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
             multisampling.sampleShadingEnable(false);
             multisampling.rasterizationSamples(VK_SAMPLE_COUNT_1_BIT);
 
             // ===> COLOR BLENDING <===
 
-            VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = VkPipelineColorBlendAttachmentState.callocStack(1, stack);
+            VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = VkPipelineColorBlendAttachmentState.calloc(1, stack);
             colorBlendAttachment.colorWriteMask(VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
             colorBlendAttachment.blendEnable(false);
 
-            VkPipelineColorBlendStateCreateInfo colorBlending = VkPipelineColorBlendStateCreateInfo.callocStack(stack);
+            VkPipelineColorBlendStateCreateInfo colorBlending = VkPipelineColorBlendStateCreateInfo.calloc(stack);
             colorBlending.sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
             colorBlending.logicOpEnable(false);
             colorBlending.logicOp(VK_LOGIC_OP_COPY);
@@ -656,7 +674,7 @@ public class GameVulkan extends Game {
 
             // ===> PIPELINE LAYOUT CREATION <===
 
-            VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.callocStack(stack);
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
             pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayout));
 
@@ -668,7 +686,7 @@ public class GameVulkan extends Game {
 
             pipelineLayout = pPipelineLayout.get(0);
 
-            VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.callocStack(1, stack);
+            VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
             pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             pipelineInfo.pStages(shaderStages);
             pipelineInfo.pVertexInputState(vertexInputInfo);
@@ -711,7 +729,7 @@ public class GameVulkan extends Game {
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
-            VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.callocStack(stack);
+            VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
             framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
             framebufferInfo.renderPass(renderPass);
             framebufferInfo.width(swapChainExtent.width());
@@ -739,7 +757,7 @@ public class GameVulkan extends Game {
 
             QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
-            VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.callocStack(stack);
+            VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
 
@@ -754,14 +772,13 @@ public class GameVulkan extends Game {
     }
 
     private void createLogicalDevice() {
-
         try(MemoryStack stack = stackPush()) {
 
             QueueFamilyIndices indices = Vulkan.findQueueFamilies(physicalDevice, surface);
 
             int[] uniqueQueueFamilies = indices.unique();
 
-            VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.callocStack(uniqueQueueFamilies.length, stack);
+            VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
 
             for(int i = 0;i < uniqueQueueFamilies.length;i++) {
                 VkDeviceQueueCreateInfo queueCreateInfo = queueCreateInfos.get(i);
@@ -770,15 +787,19 @@ public class GameVulkan extends Game {
                 queueCreateInfo.pQueuePriorities(stack.floats(1.0f));
             }
 
-            VkPhysicalDeviceFeatures deviceFeatures = VkPhysicalDeviceFeatures.callocStack(stack);
+            VkPhysicalDeviceFeatures deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
 
-            VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.callocStack(stack);
+            VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
             createInfo.pQueueCreateInfos(queueCreateInfos);
             // queueCreateInfoCount is automatically set
 
             createInfo.pEnabledFeatures(deviceFeatures);
+
+            for(var ext: DEVICE_EXTENSIONS) {
+                System.out.println(ext);
+            }
 
             createInfo.ppEnabledExtensionNames(Vulkan.asPointerBuffer(DEVICE_EXTENSIONS));
 
@@ -788,10 +809,13 @@ public class GameVulkan extends Game {
 
             PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
 
+            System.out.println("fgfdgfdfffffffffffff");
+
             if(vkCreateDevice(physicalDevice, createInfo, null, pDevice) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create logical device");
             }
 
+            System.out.println("ehreee");
             device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
 
             PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
@@ -801,19 +825,20 @@ public class GameVulkan extends Game {
 
             vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
             presentQueue = new VkQueue(pQueue.get(0), device);
+            System.out.println("kfdjgklfdjglfg");
         }
     }
 
     private void createDescriptorSetLayout() {
         try (var stack = stackPush()) {
-            VkDescriptorSetLayoutBinding.Buffer uboLayoutBinding = VkDescriptorSetLayoutBinding.callocStack(1, stack);
+            VkDescriptorSetLayoutBinding.Buffer uboLayoutBinding = VkDescriptorSetLayoutBinding.calloc(1, stack);
             uboLayoutBinding.binding(0);
             uboLayoutBinding.descriptorCount(1);
             uboLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
             uboLayoutBinding.pImmutableSamplers(null);
             uboLayoutBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
 
-            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.callocStack(stack);
+            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
             layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
             layoutInfo.pBindings(uboLayoutBinding);
 
@@ -928,7 +953,7 @@ public class GameVulkan extends Game {
                 layouts.put(i, descriptorSetLayout);
             }
 
-            VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.callocStack(stack);
+            VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
             allocInfo.descriptorPool(descriptorPool);
             allocInfo.pSetLayouts(layouts);
@@ -941,11 +966,11 @@ public class GameVulkan extends Game {
 
             descriptorSets = new ArrayList<>(pDescriptorSets.capacity());
 
-            VkDescriptorBufferInfo.Buffer bufferInfo =VkDescriptorBufferInfo.callocStack(1, stack);
+            VkDescriptorBufferInfo.Buffer bufferInfo =VkDescriptorBufferInfo.calloc(1, stack);
             bufferInfo.offset(0);
             bufferInfo.range(UniformBufferObject.SIZEOF);
 
-            VkWriteDescriptorSet.Buffer descriptorWrite = VkWriteDescriptorSet.callocStack(1, stack);
+            VkWriteDescriptorSet.Buffer descriptorWrite = VkWriteDescriptorSet.calloc(1, stack);
             descriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
             descriptorWrite.dstBinding(0);
             descriptorWrite.dstArrayElement(0);
@@ -967,11 +992,11 @@ public class GameVulkan extends Game {
     private void createDescriptorPool() {
         try (var stack = stackPush()) {
 
-            VkDescriptorPoolSize.Buffer poolSize = VkDescriptorPoolSize.callocStack(1, stack);
+            VkDescriptorPoolSize.Buffer poolSize = VkDescriptorPoolSize.calloc(1, stack);
             poolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
             poolSize.descriptorCount(swapChainImages.size());
 
-            VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.callocStack(stack);
+            VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
             poolInfo.pPoolSizes(poolSize);
             poolInfo.maxSets(swapChainImages.size());
@@ -1004,18 +1029,6 @@ public class GameVulkan extends Game {
                 memcpy(data.getByteBuffer(0, UniformBufferObject.SIZEOF), ubo);
             }
             vkUnmapMemory(device, uniformBuffersMemory.get(currentImage));
-        }
-    }
-
-    private VkDebugUtilsMessengerCreateInfoEXT createDebugSetupInfo() {
-        try(MemoryStack stack = stackPush()) {
-            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.callocStack(stack);
-            debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
-            debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
-            debugCreateInfo.messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
-            debugCreateInfo.pfnUserCallback(GameVulkan::debugCallback);
-
-            return debugCreateInfo;
         }
     }
 
@@ -1055,7 +1068,7 @@ public class GameVulkan extends Game {
     private void copyBuffer(long srcBuffer, long dstBuffer, long size) {
         try(MemoryStack stack = stackPush()) {
 
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.callocStack(stack);
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
             allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
             allocInfo.commandPool(commandPool);
@@ -1065,13 +1078,13 @@ public class GameVulkan extends Game {
             vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
             VkCommandBuffer commandBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
 
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.callocStack(stack);
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
             beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
             vkBeginCommandBuffer(commandBuffer, beginInfo);
             {
-                VkBufferCopy.Buffer copyRegion = VkBufferCopy.callocStack(1, stack);
+                VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
                 copyRegion.size(size);
                 vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, copyRegion);
             }
@@ -1093,7 +1106,7 @@ public class GameVulkan extends Game {
 
     private int findMemoryType(int typeFilter, int properties) {
 
-        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.mallocStack();
+        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.malloc();
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties);
 
         for(int i = 0;i < memProperties.memoryTypeCount();i++) {
@@ -1113,7 +1126,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.callocStack(stack);
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
             allocInfo.commandPool(commandPool);
             allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -1129,10 +1142,10 @@ public class GameVulkan extends Game {
                 commandBuffers.add(new VkCommandBuffer(pCommandBuffers.get(i), device));
             }
 
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.callocStack(stack);
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 
-            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.callocStack(stack);
+            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
 
             renderPassInfo.renderPass(renderPass);
@@ -1142,7 +1155,7 @@ public class GameVulkan extends Game {
             renderArea.extent(swapChainExtent);
             renderPassInfo.renderArea(renderArea);
 
-            VkClearValue.Buffer clearValues = VkClearValue.callocStack(1, stack);
+            VkClearValue.Buffer clearValues = VkClearValue.calloc(1, stack);
             clearValues.color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
             renderPassInfo.pClearValues(clearValues);
 
@@ -1189,10 +1202,10 @@ public class GameVulkan extends Game {
 
         try (MemoryStack stack = stackPush()) {
 
-            VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.callocStack(stack);
+            VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
 
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.callocStack(stack);
+            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
             fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
             fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
 
