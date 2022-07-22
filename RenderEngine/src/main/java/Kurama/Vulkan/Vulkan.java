@@ -91,6 +91,21 @@ public class Vulkan {
         return actualExtent;
     }
 
+    public static void copyBuffer(VkDevice device, long commandPool, VkQueue queue, long srcBuffer, long dstBuffer, long size) {
+
+        try(MemoryStack stack = stackPush()) {
+
+            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
+
+            VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
+            copyRegion.size(size);
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, copyRegion);
+
+            endSingleTimeCommands(device, commandPool, commandBuffer, queue);
+        }
+    }
+
     public static int clamp(int min, int max, int value) {
         return Math.max(min, Math.min(max, value));
     }
@@ -138,6 +153,47 @@ public class Vulkan {
             }
 
             vkBindBufferMemory(device, pBuffer.get(0), pBufferMemory.get(0), 0);
+        }
+    }
+
+    public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
+
+        try(MemoryStack stack = stackPush()) {
+
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.callocStack(stack);
+            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+            allocInfo.commandPool(commandPool);
+            allocInfo.commandBufferCount(1);
+
+            PointerBuffer pCommandBuffer = stack.mallocPointer(1);
+            vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
+            VkCommandBuffer commandBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
+
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.callocStack(stack);
+            beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+            beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+            vkBeginCommandBuffer(commandBuffer, beginInfo);
+
+            return commandBuffer;
+        }
+    }
+
+    public static void endSingleTimeCommands(VkDevice device, long commandPool, VkCommandBuffer commandBuffer, VkQueue queue) {
+
+        try(MemoryStack stack = stackPush()) {
+
+            vkEndCommandBuffer(commandBuffer);
+
+            VkSubmitInfo.Buffer submitInfo = VkSubmitInfo.callocStack(1, stack);
+            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+            submitInfo.pCommandBuffers(stack.pointers(commandBuffer));
+
+            vkQueueSubmit(queue, submitInfo, VK_NULL_HANDLE);
+            vkQueueWaitIdle(queue);
+
+            vkFreeCommandBuffers(device, commandPool, commandBuffer);
         }
     }
 
