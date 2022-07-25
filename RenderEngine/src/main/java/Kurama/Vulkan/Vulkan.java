@@ -1,6 +1,8 @@
 package Kurama.Vulkan;
 
 import main.QueueFamilyIndices;
+import main.UniformBufferObject;
+import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Pointer;
@@ -52,7 +54,7 @@ public class Vulkan {
 
     public static VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkSurfaceFormatKHR.Buffer availableFormats) {
         return availableFormats.stream()
-                .filter(availableFormat -> availableFormat.format() == VK_FORMAT_B8G8R8_UNORM)
+                .filter(availableFormat -> availableFormat.format() == VK_FORMAT_B8G8R8_SRGB)
                 .filter(availableFormat -> availableFormat.colorSpace() == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
                 .findAny()
                 .orElse(availableFormats.get(0));
@@ -116,15 +118,19 @@ public class Vulkan {
 
         boolean extensionsSupported = checkDeviceExtensionSupport(device, deviceExtensions);
         boolean swapChainAdequate = false;
+        boolean anisotropySupported = false;
 
         if(extensionsSupported) {
             try(MemoryStack stack = stackPush()) {
                 SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface, stack);
                 swapChainAdequate = swapChainSupport.formats.hasRemaining() && swapChainSupport.presentModes.hasRemaining();
+                VkPhysicalDeviceFeatures supportedFeatures = VkPhysicalDeviceFeatures.malloc(stack);
+                vkGetPhysicalDeviceFeatures(device, supportedFeatures);
+                anisotropySupported = supportedFeatures.samplerAnisotropy();
             }
         }
 
-        return indices.isComplete() && extensionsSupported && swapChainAdequate;
+        return indices.isComplete() && extensionsSupported && swapChainAdequate && anisotropySupported;
     }
 
     public static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
@@ -160,7 +166,7 @@ public class Vulkan {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.callocStack(stack);
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
             allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
             allocInfo.commandPool(commandPool);
@@ -170,7 +176,7 @@ public class Vulkan {
             vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
             VkCommandBuffer commandBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
 
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.callocStack(stack);
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
             beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
@@ -186,7 +192,7 @@ public class Vulkan {
 
             vkEndCommandBuffer(commandBuffer);
 
-            VkSubmitInfo.Buffer submitInfo = VkSubmitInfo.callocStack(1, stack);
+            VkSubmitInfo.Buffer submitInfo = VkSubmitInfo.calloc(1, stack);
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
             submitInfo.pCommandBuffers(stack.pointers(commandBuffer));
 
@@ -197,18 +203,63 @@ public class Vulkan {
         }
     }
 
-    public static int findMemoryType(int typeFilter, int properties, VkPhysicalDevice physicalDevice) {
+    public static long createImageView(long image, int format, VkDevice device) {
+        try (var stack = stackPush()) {
+            VkImageViewCreateInfo viewInfo = VkImageViewCreateInfo.calloc(stack);
+            viewInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
+            viewInfo.image(image);
+            viewInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
+            viewInfo.format(format);
+            viewInfo.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+            viewInfo.subresourceRange().baseMipLevel(0);
+            viewInfo.subresourceRange().levelCount(1);
+            viewInfo.subresourceRange().baseArrayLayer(0);
+            viewInfo.subresourceRange().layerCount(1);
 
-        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.malloc();
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties);
+            LongBuffer pImageView = stack.mallocLong(1);
 
-        for(int i = 0;i < memProperties.memoryTypeCount();i++) {
-            if((typeFilter & (1 << i)) != 0 && (memProperties.memoryTypes(i).propertyFlags() & properties) == properties) {
-                return i;
+            if(vkCreateImageView(device, viewInfo, null, pImageView) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create texture image view");
             }
-        }
 
-        throw new RuntimeException("Failed to find suitable memory type");
+            return pImageView.get(0);
+        }
+    }
+
+    public static void memcpy(ByteBuffer buffer, short[] indices) {
+        for(short index : indices) {
+            buffer.putShort(index);
+        }
+        buffer.rewind();
+    }
+
+    public static void memcpy(ByteBuffer dst, ByteBuffer src, long size) {
+        src.limit((int)size);
+        dst.put(src);
+        src.limit(src.capacity()).rewind();
+    }
+
+    public static void memcpy(ByteBuffer buffer, UniformBufferObject ubo) {
+
+        final int mat4Size = 16 * Float.BYTES;
+
+        ubo.model.get(0, buffer);
+        ubo.view.get(mat4Size, buffer);
+        ubo.proj.get(mat4Size * 2, buffer);
+    }
+
+    public static void memcpy(ByteBuffer buffer, Vertex[] vertices) {
+        for(Vertex vertex : vertices) {
+            buffer.putFloat(vertex.pos.x());
+            buffer.putFloat(vertex.pos.y());
+
+            buffer.putFloat(vertex.color.x());
+            buffer.putFloat(vertex.color.y());
+            buffer.putFloat(vertex.color.z());
+
+            buffer.putFloat(vertex.texCoord.x());
+            buffer.putFloat(vertex.texCoord.y());
+        }
     }
 
     public static VkPhysicalDevice pickPhysicalDevice(VkInstance instance, long surface, Set<String> deviceExtensions) {
@@ -239,6 +290,20 @@ public class Vulkan {
         }
     }
 
+    public static int findMemoryType(int typeFilter, int properties, VkPhysicalDevice physicalDevice) {
+
+        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.malloc();
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties);
+
+        for(int i = 0;i < memProperties.memoryTypeCount();i++) {
+            if((typeFilter & (1 << i)) != 0 && (memProperties.memoryTypes(i).propertyFlags() & properties) == properties) {
+                return i;
+            }
+        }
+
+        throw new RuntimeException("Failed to find suitable memory type");
+    }
+
     public static boolean checkDeviceExtensionSupport(VkPhysicalDevice device, Set<String> deviceExtensions) {
 
         try(MemoryStack stack = stackPush()) {
@@ -247,7 +312,7 @@ public class Vulkan {
 
             vkEnumerateDeviceExtensionProperties(device, (String)null, extensionCount, null);
 
-            VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.mallocStack(extensionCount.get(0), stack);
+            VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.malloc(extensionCount.get(0), stack);
 
             vkEnumerateDeviceExtensionProperties(device, (String)null, extensionCount, availableExtensions);
 
@@ -262,7 +327,7 @@ public class Vulkan {
 
     public static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, long surface, MemoryStack stack) {
 
-        var capabilities = VkSurfaceCapabilitiesKHR.mallocStack(stack);
+        var capabilities = VkSurfaceCapabilitiesKHR.malloc(stack);
         VkSurfaceFormatKHR.Buffer formats = null;
         IntBuffer presentModes = null;
 
@@ -390,7 +455,7 @@ public class Vulkan {
 
             vkEnumerateInstanceLayerProperties(layerCount, null);
 
-            VkLayerProperties.Buffer availableLayers = VkLayerProperties.mallocStack(layerCount.get(0), stack);
+            VkLayerProperties.Buffer availableLayers = VkLayerProperties.malloc(layerCount.get(0), stack);
 
             vkEnumerateInstanceLayerProperties(layerCount, availableLayers);
 

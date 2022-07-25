@@ -9,22 +9,25 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class Vertex {
 
-    public static final int SIZEOF = (2 + 3) * Float.BYTES;
+    public static final int SIZEOF = (2 + 3 + 2) * Float.BYTES;
     public static final int OFFSETOF_POS = 0;
     public static final int OFFSETOF_COLOR = 2 * Float.BYTES;
+    public static final int OFFSETOF_TEXCOORDS = 5 * Float.BYTES;
 
     public Vector2fc pos;
     public Vector3fc color;
+    public Vector2fc texCoord;
 
-    public Vertex(Vector2fc pos, Vector3fc color) {
+    public Vertex(Vector2fc pos, Vector3fc color, Vector2fc texCoord) {
         this.pos = pos;
         this.color = color;
+        this.texCoord = texCoord;
     }
 
     public static VkVertexInputBindingDescription.Buffer getBindingDescription() {
 
         VkVertexInputBindingDescription.Buffer bindingDescription =
-                VkVertexInputBindingDescription.callocStack(1);
+                VkVertexInputBindingDescription.calloc(1);
 
         bindingDescription.binding(0);
         bindingDescription.stride(Vertex.SIZEOF);
@@ -36,7 +39,7 @@ public class Vertex {
     public static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
 
         VkVertexInputAttributeDescription.Buffer attributeDescriptions =
-                VkVertexInputAttributeDescription.callocStack(2);
+                VkVertexInputAttributeDescription.calloc(3);
 
         // Position
         VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
@@ -51,6 +54,12 @@ public class Vertex {
         colorDescription.location(1);
         colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
         colorDescription.offset(OFFSETOF_COLOR);
+
+        var texDescription = attributeDescriptions.get(2);
+        texDescription.binding(0);
+        texDescription.location(2);
+        texDescription.format(VK_FORMAT_R32G32_SFLOAT);
+        texDescription.offset(OFFSETOF_TEXCOORDS);
 
         return attributeDescriptions.rewind();
     }

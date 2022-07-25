@@ -22,6 +22,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
+import static Kurama.utils.Logger.log;
 import static java.lang.ClassLoader.getSystemClassLoader;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
@@ -68,6 +69,8 @@ public class GameVulkan extends Game {
     private long indexBufferMemory;
     private long textureImage;
     private long textureImageMemory;
+
+    private long textureSampler;
     private VkQueue graphicsQueue;
     private VkQueue presentQueue;
     private long swapChain;
@@ -75,6 +78,7 @@ public class GameVulkan extends Game {
     private int swapChainImageFormat;
     private VkExtent2D swapChainExtent;
     private List<Long> swapChainImageViews;
+    private long textureImageView;
     private List<Long> swapChainFramebuffers;
     private long renderPass;
     private long descriptorPool;
@@ -97,11 +101,25 @@ public class GameVulkan extends Game {
     public UniformBufferObject currentUbo;
 
     private static final Vertex[] VERTICES = {
-            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f)),
-            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f)),
-            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f)),
-            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f))
+            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
+            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
+            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(0.0f, 1.0f)),
+            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f))
     };
+
+//    private static final Vertex[] VERTICES = {
+//            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
+//            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 0.0f)),
+//            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
+//            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector2f(0.0f, 1.0f))
+//    };
+
+//    private static final Vertex[] VERTICES = {
+//            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
+//            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
+//            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
+//            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(0.0f, 1.0f))
+//    };
 
     private static final /*uint16_t*/ short[] INDICES = {
             0, 1, 2, 2, 3, 0
@@ -122,8 +140,8 @@ public class GameVulkan extends Game {
 
     @Override
     public void tick() {
-        glfwPollEvents();
         rotateRectangle();
+        glfwPollEvents();
 
         if(glfwWindowShouldClose(display.window)) {
             programRunning = false;
@@ -214,6 +232,11 @@ public class GameVulkan extends Game {
 
         cleanupSwapChain();
 
+        vkDestroyImageView(device, textureImageView, null);
+        vkDestroySampler(device, textureSampler, null);
+        vkDestroyImage(device, textureImage, null);
+        vkFreeMemory(device, textureImageMemory, null);
+
         vkDestroyDescriptorPool(device, descriptorPool, null);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, null);
 
@@ -223,14 +246,10 @@ public class GameVulkan extends Game {
         vkDestroyBuffer(device, indexBuffer, null);
         vkFreeMemory(device, indexBufferMemory, null);
 
-        vkDestroyImage(device, textureImage, null);
-        vkFreeMemory(device, textureImageMemory, null);
-
         uniformBuffers.forEach(ubo -> vkDestroyBuffer(device, ubo, null));
         uniformBuffersMemory.forEach(uboMemory -> vkFreeMemory(device, uboMemory, null));
 
         inFlightFrames.forEach(frame -> {
-
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
             vkDestroySemaphore(device, frame.imageAvailableSemaphore(), null);
             vkDestroyFence(device, frame.fence(), null);
@@ -255,7 +274,7 @@ public class GameVulkan extends Game {
 
         glfwTerminate();
 
-        Logger.log("cleanup Finished calling ");
+        log("cleanup Finished calling ");
     }
 
     private void initVulkan() {
@@ -268,7 +287,11 @@ public class GameVulkan extends Game {
         createLogicalDevice();
 
         createCommandPool();
+
         createTextureImage();
+        createTextureImageView();
+        createTextureSampler();
+
         createVertexBuffer();
         createIndexBuffer();
         createDescriptorSetLayout();
@@ -296,8 +319,7 @@ public class GameVulkan extends Game {
         try(MemoryStack stack = stackPush()) {
 
             // Use calloc to initialize the structs with 0s. Otherwise, the program can crash due to random values
-
-            VkApplicationInfo appInfo = VkApplicationInfo.callocStack(stack);
+            VkApplicationInfo appInfo = VkApplicationInfo.calloc(stack);
 
             appInfo.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
             appInfo.pApplicationName(stack.UTF8Safe("Hello Triangle"));
@@ -450,6 +472,7 @@ public class GameVulkan extends Game {
             }
 
             swapChainImageFormat = surfaceFormat.format();
+            log("swapchain format: "+ swapChainImageFormat);
             swapChainExtent = VkExtent2D.create().set(extent);
         }
     }
@@ -487,40 +510,9 @@ public class GameVulkan extends Game {
     }
 
     private void createImageViews() {
-
         swapChainImageViews = new ArrayList<>(swapChainImages.size());
-
-        try(MemoryStack stack = stackPush()) {
-
-            LongBuffer pImageView = stack.mallocLong(1);
-
-            for(long swapChainImage : swapChainImages) {
-
-                VkImageViewCreateInfo createInfo = VkImageViewCreateInfo.calloc(stack);
-
-                createInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
-                createInfo.image(swapChainImage);
-                createInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
-                createInfo.format(swapChainImageFormat);
-
-                createInfo.components().r(VK_COMPONENT_SWIZZLE_IDENTITY);
-                createInfo.components().g(VK_COMPONENT_SWIZZLE_IDENTITY);
-                createInfo.components().b(VK_COMPONENT_SWIZZLE_IDENTITY);
-                createInfo.components().a(VK_COMPONENT_SWIZZLE_IDENTITY);
-
-                createInfo.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                createInfo.subresourceRange().baseMipLevel(0);
-                createInfo.subresourceRange().levelCount(1);
-                createInfo.subresourceRange().baseArrayLayer(0);
-                createInfo.subresourceRange().layerCount(1);
-
-                if (vkCreateImageView(device, createInfo, null, pImageView) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create image views");
-                }
-
-                swapChainImageViews.add(pImageView.get(0));
-            }
-
+        for(long swapChainImage : swapChainImages) {
+            swapChainImageViews.add(createImageView(swapChainImage, swapChainImageFormat, device));
         }
     }
 
@@ -626,7 +618,7 @@ public class GameVulkan extends Game {
             viewport.maxDepth(1.0f);
 
             VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
-            scissor.offset(VkOffset2D.callocStack(stack).set(0, 0));
+            scissor.offset(VkOffset2D.calloc(stack).set(0, 0));
             scissor.extent(swapChainExtent);
 
             VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
@@ -782,6 +774,7 @@ public class GameVulkan extends Game {
             }
 
             VkPhysicalDeviceFeatures deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
+            deviceFeatures.samplerAnisotropy(true);
 
             VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
@@ -817,16 +810,25 @@ public class GameVulkan extends Game {
 
     private void createDescriptorSetLayout() {
         try (var stack = stackPush()) {
-            VkDescriptorSetLayoutBinding.Buffer uboLayoutBinding = VkDescriptorSetLayoutBinding.calloc(1, stack);
+            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(2, stack);
+
+            VkDescriptorSetLayoutBinding uboLayoutBinding = bindings.get(0);
             uboLayoutBinding.binding(0);
             uboLayoutBinding.descriptorCount(1);
             uboLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
             uboLayoutBinding.pImmutableSamplers(null);
             uboLayoutBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
 
+            VkDescriptorSetLayoutBinding samplerLayoutBinding = bindings.get(1);
+            samplerLayoutBinding.binding(1);
+            samplerLayoutBinding.descriptorCount(1);
+            samplerLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            samplerLayoutBinding.pImmutableSamplers(null);
+            samplerLayoutBinding.stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
+
             VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
             layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
-            layoutInfo.pBindings(uboLayoutBinding);
+            layoutInfo.pBindings(bindings);
 
             LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
 
@@ -935,7 +937,7 @@ public class GameVulkan extends Game {
     private void createTextureImage() {
         try(var stack = stackPush()) {
 
-            var filename = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/texture.png";
+            var filename = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/texture.jpg";
 
             IntBuffer pWidth = stack.mallocInt(1);
             IntBuffer pHeight = stack.mallocInt(1);
@@ -943,7 +945,7 @@ public class GameVulkan extends Game {
 
             ByteBuffer pixels = stbi_load(filename, pWidth, pHeight, pChannels, STBI_rgb_alpha);
 
-            long imageSize = pWidth.get(0) * pHeight.get(0) * /*always 4 due to STBI_rgb_alpha*/pChannels.get(0);
+            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
 
             if(pixels == null) {
                 throw new RuntimeException("Failed to load texture image " + filename);
@@ -998,9 +1000,42 @@ public class GameVulkan extends Game {
         }
     }
 
+    private void createTextureImageView() {
+        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, device);
+    }
+
+    private void createTextureSampler() {
+        try(MemoryStack stack = stackPush()) {
+
+            VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo.calloc(stack);
+            samplerInfo.sType(VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
+            samplerInfo.magFilter(VK_FILTER_LINEAR);
+            samplerInfo.minFilter(VK_FILTER_LINEAR);
+            samplerInfo.addressModeU(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+            samplerInfo.addressModeV(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+            samplerInfo.addressModeW(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+            samplerInfo.anisotropyEnable(true);
+            samplerInfo.maxAnisotropy(16.0f);
+            samplerInfo.borderColor(VK_BORDER_COLOR_INT_OPAQUE_BLACK);
+            samplerInfo.unnormalizedCoordinates(false);
+            samplerInfo.compareEnable(false);
+            samplerInfo.compareOp(VK_COMPARE_OP_ALWAYS);
+            samplerInfo.mipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
+
+            LongBuffer pTextureSampler = stack.mallocLong(1);
+
+            if(vkCreateSampler(device, samplerInfo, null, pTextureSampler) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create texture sampler");
+            }
+
+            textureSampler = pTextureSampler.get(0);
+        }
+    }
+
+
     private void transitionImageLayout(long image, int format, int oldLayout, int newLayout) {
         try(MemoryStack stack = stackPush()) {
-            VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.callocStack(1, stack);
+            VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
             barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
             barrier.oldLayout(oldLayout);
             barrier.newLayout(newLayout);
@@ -1055,7 +1090,7 @@ public class GameVulkan extends Game {
 
             VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
 
-            VkBufferImageCopy.Buffer region = VkBufferImageCopy.callocStack(1, stack);
+            VkBufferImageCopy.Buffer region = VkBufferImageCopy.calloc(1, stack);
             region.bufferOffset(0);
             region.bufferRowLength(0);   // Tightly packed
             region.bufferImageHeight(0);  // Tightly packed
@@ -1064,7 +1099,7 @@ public class GameVulkan extends Game {
             region.imageSubresource().baseArrayLayer(0);
             region.imageSubresource().layerCount(1);
             region.imageOffset().set(0, 0, 0);
-            region.imageExtent(VkExtent3D.callocStack(stack).set(width, height, 1));
+            region.imageExtent(VkExtent3D.calloc(stack).set(width, height, 1));
 
             vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
 
@@ -1077,7 +1112,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkImageCreateInfo imageInfo = VkImageCreateInfo.callocStack(stack);
+            VkImageCreateInfo imageInfo = VkImageCreateInfo.calloc(stack);
             imageInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
             imageInfo.imageType(VK_IMAGE_TYPE_2D);
             imageInfo.extent().width(width);
@@ -1096,13 +1131,13 @@ public class GameVulkan extends Game {
                 throw new RuntimeException("Failed to create image");
             }
 
-            VkMemoryRequirements memRequirements = VkMemoryRequirements.mallocStack(stack);
+            VkMemoryRequirements memRequirements = VkMemoryRequirements.malloc(stack);
             vkGetImageMemoryRequirements(device, pTextureImage.get(0), memRequirements);
 
-            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.callocStack(stack);
+            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
             allocInfo.allocationSize(memRequirements.size());
-            allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), memProperties));
+            allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), memProperties, physicalDevice));
 
             if(vkAllocateMemory(device, allocInfo, null, pTextureImageMemory) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to allocate image memory");
@@ -1136,20 +1171,37 @@ public class GameVulkan extends Game {
             bufferInfo.offset(0);
             bufferInfo.range(UniformBufferObject.SIZEOF);
 
-            VkWriteDescriptorSet.Buffer descriptorWrite = VkWriteDescriptorSet.calloc(1, stack);
-            descriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-            descriptorWrite.dstBinding(0);
-            descriptorWrite.dstArrayElement(0);
-            descriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            descriptorWrite.descriptorCount(1);
-            descriptorWrite.pBufferInfo(bufferInfo);
+            VkDescriptorImageInfo.Buffer imageInfo = VkDescriptorImageInfo.calloc(1, stack);
+            imageInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            imageInfo.imageView(textureImageView);
+            imageInfo.sampler(textureSampler);
+
+            VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
+
+            VkWriteDescriptorSet uboDescriptorWrite  = descriptorWrites.get(0);
+            uboDescriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+            uboDescriptorWrite.dstBinding(0);
+            uboDescriptorWrite.dstArrayElement(0);
+            uboDescriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+            uboDescriptorWrite.descriptorCount(1);
+            uboDescriptorWrite.pBufferInfo(bufferInfo);
+
+            VkWriteDescriptorSet samplerDescriptorWrite = descriptorWrites.get(1);
+            samplerDescriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+            samplerDescriptorWrite.dstBinding(1);
+            samplerDescriptorWrite.dstArrayElement(0);
+            samplerDescriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            samplerDescriptorWrite.descriptorCount(1);
+            samplerDescriptorWrite.pImageInfo(imageInfo);
 
             for(int i = 0;i < pDescriptorSets.capacity();i++) {
                 long descriptorSet = pDescriptorSets.get(i);
-                bufferInfo.buffer(uniformBuffers.get(i));
-                descriptorWrite.dstSet(descriptorSet);
 
-                vkUpdateDescriptorSets(device, descriptorWrite, null);
+                bufferInfo.buffer(uniformBuffers.get(i));
+                uboDescriptorWrite.dstSet(descriptorSet);
+                samplerDescriptorWrite.dstSet(descriptorSet);
+
+                vkUpdateDescriptorSets(device, descriptorWrites, null);
                 descriptorSets.add(descriptorSet);
             }
         }
@@ -1158,13 +1210,20 @@ public class GameVulkan extends Game {
     private void createDescriptorPool() {
         try (var stack = stackPush()) {
 
-            VkDescriptorPoolSize.Buffer poolSize = VkDescriptorPoolSize.calloc(1, stack);
-            poolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            poolSize.descriptorCount(swapChainImages.size());
+            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(2, stack);
+
+            VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
+            uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+            uniformBufferPoolSize.descriptorCount(swapChainImages.size());
+
+            VkDescriptorPoolSize textureSamplerPoolSize = poolSizes.get(1);
+            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            textureSamplerPoolSize.descriptorCount(swapChainImages.size());
+
 
             VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
-            poolInfo.pPoolSizes(poolSize);
+            poolInfo.pPoolSizes(poolSizes);
             poolInfo.maxSets(swapChainImages.size());
 
             LongBuffer pDescriptorPool = stack.mallocLong(1);
@@ -1182,7 +1241,7 @@ public class GameVulkan extends Game {
         UniformBufferObject ubo = new UniformBufferObject();
 
         ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
-        ubo.view.lookAt(2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        ubo.view.lookAt(0f, -2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         ubo.proj.perspective((float) Math.toRadians(45),
                 (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
         ubo.proj.m11(ubo.proj.m11() * -1);
@@ -1206,53 +1265,6 @@ public class GameVulkan extends Game {
         VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
         System.err.println("Validation layer: " + callbackData.pMessageString());
         return VK_FALSE;
-    }
-
-    private void memcpy(ByteBuffer buffer, Vertex[] vertices) {
-        for(Vertex vertex : vertices) {
-            buffer.putFloat(vertex.pos.x());
-            buffer.putFloat(vertex.pos.y());
-
-            buffer.putFloat(vertex.color.x());
-            buffer.putFloat(vertex.color.y());
-            buffer.putFloat(vertex.color.z());
-        }
-    }
-
-    private void memcpy(ByteBuffer buffer, short[] indices) {
-        for(short index : indices) {
-            buffer.putShort(index);
-        }
-        buffer.rewind();
-    }
-
-    private void memcpy(ByteBuffer dst, ByteBuffer src, long size) {
-        src.limit((int)size);
-        dst.put(src);
-        src.limit(src.capacity()).rewind();
-    }
-
-    private void memcpy(ByteBuffer buffer, UniformBufferObject ubo) {
-
-        final int mat4Size = 16 * Float.BYTES;
-
-        ubo.model.get(0, buffer);
-        ubo.view.get(mat4Size, buffer);
-        ubo.proj.get(mat4Size * 2, buffer);
-    }
-
-    private int findMemoryType(int typeFilter, int properties) {
-
-        VkPhysicalDeviceMemoryProperties memProperties = VkPhysicalDeviceMemoryProperties.malloc();
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties);
-
-        for(int i = 0;i < memProperties.memoryTypeCount();i++) {
-            if((typeFilter & (1 << i)) != 0 && (memProperties.memoryTypes(i).propertyFlags() & properties) == properties) {
-                return i;
-            }
-        }
-
-        throw new RuntimeException("Failed to find suitable memory type");
     }
 
     private void createCommandBuffers() {
@@ -1287,8 +1299,8 @@ public class GameVulkan extends Game {
 
             renderPassInfo.renderPass(renderPass);
 
-            VkRect2D renderArea = VkRect2D.callocStack(stack);
-            renderArea.offset(VkOffset2D.callocStack(stack).set(0, 0));
+            VkRect2D renderArea = VkRect2D.calloc(stack);
+            renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
             renderArea.extent(swapChainExtent);
             renderPassInfo.renderArea(renderArea);
 
