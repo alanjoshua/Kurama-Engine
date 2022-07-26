@@ -203,14 +203,14 @@ public class Vulkan {
         }
     }
 
-    public static long createImageView(long image, int format, VkDevice device) {
+    public static long createImageView(long image, int format, int aspectFlags, VkDevice device) {
         try (var stack = stackPush()) {
             VkImageViewCreateInfo viewInfo = VkImageViewCreateInfo.calloc(stack);
             viewInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
             viewInfo.image(image);
             viewInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
             viewInfo.format(format);
-            viewInfo.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+            viewInfo.subresourceRange().aspectMask(aspectFlags);
             viewInfo.subresourceRange().baseMipLevel(0);
             viewInfo.subresourceRange().levelCount(1);
             viewInfo.subresourceRange().baseArrayLayer(0);
@@ -225,6 +225,35 @@ public class Vulkan {
             return pImageView.get(0);
         }
     }
+
+    public static int findSupportedFormat(VkPhysicalDevice physicalDevice, IntBuffer formatCandidates, int tiling, int features) {
+
+        try(MemoryStack stack = stackPush()) {
+
+            VkFormatProperties props = VkFormatProperties.callocStack(stack);
+
+            for(int i = 0; i < formatCandidates.capacity(); ++i) {
+
+                int format = formatCandidates.get(i);
+
+                vkGetPhysicalDeviceFormatProperties(physicalDevice, format, props);
+
+                if(tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures() & features) == features) {
+                    return format;
+                } else if(tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures() & features) == features) {
+                    return format;
+                }
+
+            }
+        }
+
+        throw new RuntimeException("Failed to find supported format");
+    }
+
+    public static boolean hasStencilComponent(long format) {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
 
     public static void memcpy(ByteBuffer buffer, short[] indices) {
         for(short index : indices) {
@@ -252,6 +281,7 @@ public class Vulkan {
         for(Vertex vertex : vertices) {
             buffer.putFloat(vertex.pos.x());
             buffer.putFloat(vertex.pos.y());
+            buffer.putFloat(vertex.pos.z());
 
             buffer.putFloat(vertex.color.x());
             buffer.putFloat(vertex.color.y());

@@ -9,16 +9,16 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class Vertex {
 
-    public static final int SIZEOF = (2 + 3 + 2) * Float.BYTES;
+    public static final int SIZEOF = (3 + 3 + 2) * Float.BYTES;
     public static final int OFFSETOF_POS = 0;
-    public static final int OFFSETOF_COLOR = 2 * Float.BYTES;
-    public static final int OFFSETOF_TEXCOORDS = 5 * Float.BYTES;
+    public static final int OFFSETOF_COLOR = 3 * Float.BYTES;
+    public static final int OFFSETOF_TEXCOORDS = 6 * Float.BYTES;
 
-    public Vector2fc pos;
+    public Vector3fc pos;
     public Vector3fc color;
     public Vector2fc texCoord;
 
-    public Vertex(Vector2fc pos, Vector3fc color, Vector2fc texCoord) {
+    public Vertex(Vector3fc pos, Vector3fc color, Vector2fc texCoord) {
         this.pos = pos;
         this.color = color;
         this.texCoord = texCoord;
@@ -45,7 +45,7 @@ public class Vertex {
         VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
         posDescription.binding(0);
         posDescription.location(0);
-        posDescription.format(VK_FORMAT_R32G32_SFLOAT);
+        posDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
         posDescription.offset(OFFSETOF_POS);
 
         // Color

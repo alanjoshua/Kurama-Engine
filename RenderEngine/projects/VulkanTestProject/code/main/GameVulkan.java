@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.Configuration.DEBUG;
+import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
@@ -79,6 +80,10 @@ public class GameVulkan extends Game {
     private VkExtent2D swapChainExtent;
     private List<Long> swapChainImageViews;
     private long textureImageView;
+
+    long depthImage;
+    long depthImageMemory;
+    long depthImageView;
     private List<Long> swapChainFramebuffers;
     private long renderPass;
     private long descriptorPool;
@@ -97,32 +102,23 @@ public class GameVulkan extends Game {
     private List<Long> uniformBuffersMemory;
 
     public DisplayVulkan display;
-
     public UniformBufferObject currentUbo;
 
     private static final Vertex[] VERTICES = {
-            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
-            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
-            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(0.0f, 1.0f)),
-            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f))
+            new Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
+            new Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
+            new Vertex(new Vector3f(0.5f, 0.5f, 0f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(0.0f, 1.0f)),
+            new Vertex(new Vector3f(-0.5f, 0.5f, 0f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
+
+            new Vertex(new Vector3f(-0.5f, -0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
+            new Vertex(new Vector3f(0.5f, -0.5f, -0.5f ), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
+            new Vertex(new Vector3f(0.5f, 0.5f, -0.5f  ), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
+            new Vertex(new Vector3f(-0.5f, 0.5f, -0.5f ), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(0.0f, 1.0f))
     };
 
-//    private static final Vertex[] VERTICES = {
-//            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
-//            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 0.0f)),
-//            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
-//            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 0.0f), new Vector2f(0.0f, 1.0f))
-//    };
-
-//    private static final Vertex[] VERTICES = {
-//            new Vertex(new Vector2f(-0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
-//            new Vertex(new Vector2f(0.5f, -0.5f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
-//            new Vertex(new Vector2f(0.5f, 0.5f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
-//            new Vertex(new Vector2f(-0.5f, 0.5f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(0.0f, 1.0f))
-//    };
-
     private static final /*uint16_t*/ short[] INDICES = {
-            0, 1, 2, 2, 3, 0
+            0, 1, 2, 2, 3, 0,
+            4, 5, 6, 6, 7, 4
     };
 
     public GameVulkan(String threadName) {
@@ -136,11 +132,12 @@ public class GameVulkan extends Game {
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
         this.shouldDisplayFPS = true;
+
+        rotateRectangle();
     }
 
     @Override
     public void tick() {
-        rotateRectangle();
         glfwPollEvents();
 
         if(glfwWindowShouldClose(display.window)) {
@@ -301,6 +298,7 @@ public class GameVulkan extends Game {
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createDepthResources();
         createFramebuffers();
         createUniformBuffers();
         createDescriptorPool();
@@ -386,6 +384,7 @@ public class GameVulkan extends Game {
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createDepthResources();
         createFramebuffers();
         createCommandBuffers();
     }
@@ -404,7 +403,40 @@ public class GameVulkan extends Game {
 
         swapChainImageViews.forEach(imageView -> vkDestroyImageView(device, imageView, null));
 
+        vkDestroyImageView(device, depthImageView, null);
+        vkDestroyImage(device, depthImage, null);
+        vkFreeMemory(device, depthImageMemory, null);
+
         vkDestroySwapchainKHR(device, swapChain, null);
+    }
+
+    private void createDepthResources() {
+        try(MemoryStack stack = stackPush()) {
+
+            int depthFormat = findDepthFormat();
+
+            LongBuffer pDepthImage = stack.mallocLong(1);
+            LongBuffer pDepthImageMemory = stack.mallocLong(1);
+
+            createImage(swapChainExtent.width(), swapChainExtent.height(), depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pDepthImage, pDepthImageMemory);
+
+            depthImage = pDepthImage.get(0);
+            depthImageMemory = pDepthImageMemory.get(0);
+
+            depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, device);
+            // Explicitly transitioning the depth image
+            transitionImageLayout(depthImage, depthFormat,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+        }
+    }
+
+    private int findDepthFormat() {
+        return findSupportedFormat(
+                physicalDevice,
+                stackGet().ints(VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT),
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     private void createSwapChain() {
@@ -512,7 +544,7 @@ public class GameVulkan extends Game {
     private void createImageViews() {
         swapChainImageViews = new ArrayList<>(swapChainImages.size());
         for(long swapChainImage : swapChainImages) {
-            swapChainImageViews.add(createImageView(swapChainImage, swapChainImageFormat, device));
+            swapChainImageViews.add(createImageView(swapChainImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, device));
         }
     }
 
@@ -520,7 +552,11 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkAttachmentDescription.Buffer colorAttachment = VkAttachmentDescription.calloc(1, stack);
+            var attachments  = VkAttachmentDescription.calloc(2, stack);
+            var attachmentRefs = VkAttachmentReference.calloc(2, stack);
+
+            // Color attachments
+            var colorAttachment = attachments .get(0);
             colorAttachment.format(swapChainImageFormat);
             colorAttachment.samples(VK_SAMPLE_COUNT_1_BIT);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
@@ -530,26 +566,42 @@ public class GameVulkan extends Game {
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
             colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-            VkAttachmentReference.Buffer colorAttachmentRef = VkAttachmentReference.calloc(1, stack);
+           var colorAttachmentRef = attachmentRefs.get(0);
             colorAttachmentRef.attachment(0);
             colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            // Depth-Stencil attachments
+            VkAttachmentDescription depthAttachment = attachments.get(1);
+            depthAttachment.format(findDepthFormat());
+            depthAttachment.samples(VK_SAMPLE_COUNT_1_BIT);
+            depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            depthAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+            depthAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            depthAttachment.finalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+            VkAttachmentReference depthAttachmentRef = attachmentRefs.get(1);
+            depthAttachmentRef.attachment(1);
+            depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
             VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
             subpass.colorAttachmentCount(1);
-            subpass.pColorAttachments(colorAttachmentRef);
+            subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
+            subpass.pDepthStencilAttachment(depthAttachmentRef);
 
             VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
             dependency.dstSubpass(0);
-            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
             dependency.srcAccessMask(0);
-            dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-            dependency.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+            dependency.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
             VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-            renderPassInfo.pAttachments(colorAttachment);
+            renderPassInfo.pAttachments(attachments);
             renderPassInfo.pSubpasses(subpass);
             renderPassInfo.pDependencies(dependency);
 
@@ -638,6 +690,18 @@ public class GameVulkan extends Game {
             rasterizer.frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE);
             rasterizer.depthBiasEnable(false);
 
+            VkPipelineDepthStencilStateCreateInfo depthStencil = VkPipelineDepthStencilStateCreateInfo.calloc(stack);
+            depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+            depthStencil.depthTestEnable(true);
+            depthStencil.depthWriteEnable(true);
+            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS);
+            depthStencil.depthBoundsTestEnable(false);
+            depthStencil.minDepthBounds(0.0f); // Optional
+            depthStencil.maxDepthBounds(1.0f); // Optional
+            depthStencil.stencilTestEnable(false);
+            depthStencil.front();
+            depthStencil.back();
+
             // ===> MULTISAMPLING <===
 
             VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
@@ -686,6 +750,7 @@ public class GameVulkan extends Game {
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
             pipelineInfo.basePipelineIndex(-1);
+            pipelineInfo.pDepthStencilState(depthStencil);
 
             LongBuffer pGraphicsPipeline = stack.mallocLong(1);
 
@@ -711,7 +776,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            LongBuffer attachments = stack.mallocLong(1);
+            LongBuffer attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
@@ -1001,7 +1066,7 @@ public class GameVulkan extends Game {
     }
 
     private void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, device);
+        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, device);
     }
 
     private void createTextureSampler() {
@@ -1048,6 +1113,19 @@ public class GameVulkan extends Game {
             barrier.subresourceRange().baseArrayLayer(0);
             barrier.subresourceRange().layerCount(1);
 
+            if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+
+                barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+                if(hasStencilComponent(format)) {
+                    barrier.subresourceRange().aspectMask(
+                            barrier.subresourceRange().aspectMask() | VK_IMAGE_ASPECT_STENCIL_BIT);
+                }
+
+            } else {
+                barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+            }
+
             int sourceStage;
             int destinationStage;
 
@@ -1067,7 +1145,14 @@ public class GameVulkan extends Game {
                 sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
                 destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
-            } else {
+            } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+                barrier.srcAccessMask(0);
+                barrier.dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+
+                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            }
+            else {
                 throw new IllegalArgumentException("Unsupported layout transition");
             }
 
@@ -1304,8 +1389,10 @@ public class GameVulkan extends Game {
             renderArea.extent(swapChainExtent);
             renderPassInfo.renderArea(renderArea);
 
-            VkClearValue.Buffer clearValues = VkClearValue.calloc(1, stack);
-            clearValues.color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
+            VkClearValue.Buffer clearValues = VkClearValue.calloc(2, stack);
+            clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
+            clearValues.get(1).depthStencil().set(1.0f, 0);
+
             renderPassInfo.pClearValues(clearValues);
 
             for(int i = 0;i < commandBuffersCount;i++) {
