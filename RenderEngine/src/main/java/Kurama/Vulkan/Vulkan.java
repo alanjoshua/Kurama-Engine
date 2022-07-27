@@ -255,9 +255,9 @@ public class Vulkan {
     }
 
 
-    public static void memcpy(ByteBuffer buffer, short[] indices) {
-        for(short index : indices) {
-            buffer.putShort(index);
+    public static void memcpy(ByteBuffer buffer, int[] indices) {
+        for(int index : indices) {
+            buffer.putInt(index);
         }
         buffer.rewind();
     }

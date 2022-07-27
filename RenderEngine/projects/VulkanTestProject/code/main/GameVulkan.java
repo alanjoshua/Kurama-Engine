@@ -1,6 +1,7 @@
 package main;
 
 import Kurama.Vulkan.Frame;
+import Kurama.Vulkan.ModelLoader;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
 import Kurama.display.DisplayVulkan;
@@ -8,10 +9,12 @@ import Kurama.game.Game;
 import Kurama.utils.Logger;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -25,6 +28,8 @@ import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.utils.Logger.log;
 import static java.lang.ClassLoader.getSystemClassLoader;
 import static java.util.stream.Collectors.toSet;
+import static org.lwjgl.assimp.Assimp.aiProcess_DropNormals;
+import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.Configuration.DEBUG;
@@ -93,7 +98,6 @@ public class GameVulkan extends Game {
     private long graphicsPipeline;
     private long commandPool;
     private List<VkCommandBuffer> commandBuffers;
-
     private List<Frame> inFlightFrames;
     private Map<Integer, Frame> imagesInFlight;
     private int currentFrame;
@@ -104,22 +108,9 @@ public class GameVulkan extends Game {
     public DisplayVulkan display;
     public UniformBufferObject currentUbo;
 
-    private static final Vertex[] VERTICES = {
-            new Vertex(new Vector3f(-0.5f, -0.5f, 0f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
-            new Vertex(new Vector3f(0.5f, -0.5f, 0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
-            new Vertex(new Vector3f(0.5f, 0.5f, 0f), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(0.0f, 1.0f)),
-            new Vertex(new Vector3f(-0.5f, 0.5f, 0f), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
-
-            new Vertex(new Vector3f(-0.5f, -0.5f, -0.5f), new Vector3f(1.0f, 0.0f, 0.0f), new Vector2f(0.0f, 0.0f)),
-            new Vertex(new Vector3f(0.5f, -0.5f, -0.5f ), new Vector3f(0.0f, 1.0f, 0.0f), new Vector2f(1.0f, 0.0f)),
-            new Vertex(new Vector3f(0.5f, 0.5f, -0.5f  ), new Vector3f(0.0f, 0.0f, 1.0f), new Vector2f(1.0f, 1.0f)),
-            new Vertex(new Vector3f(-0.5f, 0.5f, -0.5f ), new Vector3f(1.0f, 1.0f, 1.0f), new Vector2f(0.0f, 1.0f))
-    };
-
-    private static final /*uint16_t*/ short[] INDICES = {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4
-    };
+    public Vertex[] vertices;
+    public int[] indices;
+    public String modelTextureLoc = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/viking_room.png";;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -132,12 +123,11 @@ public class GameVulkan extends Game {
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
         this.shouldDisplayFPS = true;
-
-        rotateRectangle();
     }
 
     @Override
     public void tick() {
+        rotateRectangle();
         glfwPollEvents();
 
         if(glfwWindowShouldClose(display.window)) {
@@ -289,6 +279,8 @@ public class GameVulkan extends Game {
         createTextureImageView();
         createTextureSampler();
 
+        loadModel();
+
         createVertexBuffer();
         createIndexBuffer();
         createDescriptorSetLayout();
@@ -408,6 +400,27 @@ public class GameVulkan extends Game {
         vkFreeMemory(device, depthImageMemory, null);
 
         vkDestroySwapchainKHR(device, swapChain, null);
+    }
+
+    public void loadModel() {
+        var modelFile = new File("C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/models/viking_room.obj");
+        var model = ModelLoader.loadModel(modelFile, aiProcess_FlipUVs | aiProcess_DropNormals);
+        final int vertexCount = model.positions.size();
+        vertices = new Vertex[vertexCount];
+        final Vector3fc color = new Vector3f(1.0f, 1.0f, 1.0f);
+
+        for(int i = 0;i < vertexCount;i++) {
+            vertices[i] = new Vertex(
+                    model.positions.get(i),
+                    color,
+                    model.texCoords.get(i));
+        }
+
+        indices = new int[model.indices.size()];
+
+        for(int i = 0;i < indices.length;i++) {
+            indices[i] = model.indices.get(i);
+        }
     }
 
     private void createDepthResources() {
@@ -927,7 +940,7 @@ public class GameVulkan extends Game {
 
     private void createIndexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Short.SIZE * INDICES.length;
+            long bufferSize = Short.SIZE * indices.length;
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -942,7 +955,7 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpy(data.getByteBuffer(0, (int) bufferSize), INDICES);
+                memcpy(data.getByteBuffer(0, (int) bufferSize), indices);
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -964,7 +977,7 @@ public class GameVulkan extends Game {
 
     private void createVertexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Vertex.SIZEOF * VERTICES.length;
+            long bufferSize = Vertex.SIZEOF * vertices.length;
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -979,7 +992,7 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpy(data.getByteBuffer(0, (int) bufferSize), VERTICES);
+                memcpy(data.getByteBuffer(0, (int) bufferSize), vertices);
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1002,7 +1015,7 @@ public class GameVulkan extends Game {
     private void createTextureImage() {
         try(var stack = stackPush()) {
 
-            var filename = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/texture.jpg";
+            var filename = modelTextureLoc;
 
             IntBuffer pWidth = stack.mallocInt(1);
             IntBuffer pHeight = stack.mallocInt(1);
@@ -1326,7 +1339,7 @@ public class GameVulkan extends Game {
         UniformBufferObject ubo = new UniformBufferObject();
 
         ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
-        ubo.view.lookAt(0f, -2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         ubo.proj.perspective((float) Math.toRadians(45),
                 (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
         ubo.proj.m11(ubo.proj.m11() * -1);
@@ -1412,12 +1425,12 @@ public class GameVulkan extends Game {
                     LongBuffer vertexBuffers = stack.longs(vertexBuffer);
                     LongBuffer offsets = stack.longs(0);
                     vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+                    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout, 0, stack.longs(descriptorSets.get(i)), null);
 
-                    vkCmdDrawIndexed(commandBuffer, INDICES.length, 1, 0, 0, 0);
+                    vkCmdDrawIndexed(commandBuffer, indices.length, 1, 0, 0, 0);
                 }
                 vkCmdEndRenderPass(commandBuffer);
 
