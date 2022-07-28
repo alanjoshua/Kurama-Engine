@@ -68,6 +68,7 @@ public class GameVulkan extends Game {
     private long debugMessenger;
     private long surface;
     private VkPhysicalDevice physicalDevice;
+    private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     private VkDevice device;
     private long vertexBuffer;
     private long vertexBufferMemory;
@@ -90,6 +91,10 @@ public class GameVulkan extends Game {
     long depthImage;
     long depthImageMemory;
     long depthImageView;
+
+    long colorImage;
+    long colorImageMemory;
+    long colorImageView;
     private List<Long> swapChainFramebuffers;
     private long renderPass;
     private long descriptorPool;
@@ -273,6 +278,7 @@ public class GameVulkan extends Game {
 
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
+        msaaSamples = getMaxUsableSampleCount(physicalDevice);
 
         createLogicalDevice();
 
@@ -293,6 +299,7 @@ public class GameVulkan extends Game {
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createColorResources();
         createDepthResources();
         createFramebuffers();
         createUniformBuffers();
@@ -379,6 +386,7 @@ public class GameVulkan extends Game {
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createColorResources();
         createDepthResources();
         createFramebuffers();
         createCommandBuffers();
@@ -401,6 +409,10 @@ public class GameVulkan extends Game {
         vkDestroyImageView(device, depthImageView, null);
         vkDestroyImage(device, depthImage, null);
         vkFreeMemory(device, depthImageMemory, null);
+
+        vkDestroyImageView(device, colorImageView, null);
+        vkDestroyImage(device, colorImage, null);
+        vkFreeMemory(device, colorImageMemory, null);
 
         vkDestroySwapchainKHR(device, swapChain, null);
     }
@@ -434,7 +446,14 @@ public class GameVulkan extends Game {
             LongBuffer pDepthImage = stack.mallocLong(1);
             LongBuffer pDepthImageMemory = stack.mallocLong(1);
 
-            createImage(swapChainExtent.width(), swapChainExtent.height(), depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 1, pDepthImage, pDepthImageMemory);
+            createImage(swapChainExtent.width(), swapChainExtent.height(),
+                    depthFormat,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    1,
+                    msaaSamples,
+                    pDepthImage, pDepthImageMemory);
 
             depthImage = pDepthImage.get(0);
             depthImageMemory = pDepthImageMemory.get(0);
@@ -567,28 +586,43 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            var attachments  = VkAttachmentDescription.calloc(2, stack);
-            var attachmentRefs = VkAttachmentReference.calloc(2, stack);
+            var attachments  = VkAttachmentDescription.calloc(3, stack);
+            var attachmentRefs = VkAttachmentReference.calloc(3, stack);
 
-            // Color attachments
+            // MSA image
             var colorAttachment = attachments .get(0);
             colorAttachment.format(swapChainImageFormat);
-            colorAttachment.samples(VK_SAMPLE_COUNT_1_BIT);
+            colorAttachment.samples(msaaSamples);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
             colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
            var colorAttachmentRef = attachmentRefs.get(0);
             colorAttachmentRef.attachment(0);
             colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
+            // Present image attachment
+            var colorAttachmentResolve = attachments.get(2);
+            colorAttachmentResolve.format(swapChainImageFormat);
+            colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
+            colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+            var colorAttachmentResolveRef = attachmentRefs.get(2);
+            colorAttachmentResolveRef.attachment(2);
+            colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
             // Depth-Stencil attachments
             VkAttachmentDescription depthAttachment = attachments.get(1);
             depthAttachment.format(findDepthFormat());
-            depthAttachment.samples(VK_SAMPLE_COUNT_1_BIT);
+            depthAttachment.samples(msaaSamples);
             depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
@@ -603,6 +637,7 @@ public class GameVulkan extends Game {
             VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
             subpass.colorAttachmentCount(1);
+            subpass.pResolveAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentResolveRef));
             subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
             subpass.pDepthStencilAttachment(depthAttachmentRef);
 
@@ -722,7 +757,9 @@ public class GameVulkan extends Game {
             VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
             multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
             multisampling.sampleShadingEnable(false);
-            multisampling.rasterizationSamples(VK_SAMPLE_COUNT_1_BIT);
+            multisampling.rasterizationSamples(msaaSamples);
+            multisampling.sampleShadingEnable(true);
+            multisampling.minSampleShading(1f);
 
             // ===> COLOR BLENDING <===
 
@@ -791,7 +828,7 @@ public class GameVulkan extends Game {
 
         try(MemoryStack stack = stackPush()) {
 
-            LongBuffer attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
+            LongBuffer attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
@@ -804,7 +841,7 @@ public class GameVulkan extends Game {
 
             for(long imageView : swapChainImageViews) {
 
-                attachments.put(0, imageView);
+                attachments.put(2, imageView);
 
                 framebufferInfo.pAttachments(attachments);
 
@@ -855,6 +892,7 @@ public class GameVulkan extends Game {
 
             VkPhysicalDeviceFeatures deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
             deviceFeatures.samplerAnisotropy(true);
+            deviceFeatures.sampleRateShading(true);
 
             VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
@@ -1058,6 +1096,7 @@ public class GameVulkan extends Game {
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     mipLevels,
+                    VK_SAMPLE_COUNT_1_BIT,
                     pTextureImage,
                     pTextureImageMemory);
 
@@ -1077,6 +1116,31 @@ public class GameVulkan extends Game {
             vkDestroyBuffer(device, pStagingBuffer.get(0), null);
             vkFreeMemory(device, pStagingBufferMemory.get(0), null);
 
+        }
+    }
+
+    private void createColorResources() {
+        try(var stack = stackPush()) {
+
+            LongBuffer pColorImage = stack.mallocLong(1);
+            LongBuffer pColorImageMemory = stack.mallocLong(1);
+
+            createImage(swapChainExtent.width(), swapChainExtent.height(),
+                    swapChainImageFormat,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    1,
+                    msaaSamples,
+                    pColorImage,
+                    pColorImageMemory);
+
+            colorImage = pColorImage.get(0);
+            colorImageMemory = pColorImageMemory.get(0);
+
+            colorImageView = createImageView(colorImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, device);
+
+            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
         }
     }
 
@@ -1215,7 +1279,7 @@ public class GameVulkan extends Game {
             barrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
             barrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
             barrier.image(image);
-            barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+
             barrier.subresourceRange().baseMipLevel(0);
             barrier.subresourceRange().levelCount(mipLevels);
             barrier.subresourceRange().baseArrayLayer(0);
@@ -1259,6 +1323,15 @@ public class GameVulkan extends Game {
 
                 sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+            } else if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+
+                barrier.srcAccessMask(0);
+                barrier.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+
+                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
             }
             else {
                 throw new IllegalArgumentException("Unsupported layout transition");
@@ -1301,7 +1374,7 @@ public class GameVulkan extends Game {
     }
 
     private void createImage(int width, int height, int format, int tiling, int usage, int memProperties, int mipLevels,
-                             LongBuffer pTextureImage, LongBuffer pTextureImageMemory) {
+                             int numSamples, LongBuffer pTextureImage, LongBuffer pTextureImageMemory) {
 
         try(MemoryStack stack = stackPush()) {
 
@@ -1319,6 +1392,7 @@ public class GameVulkan extends Game {
             imageInfo.usage(usage);
             imageInfo.samples(VK_SAMPLE_COUNT_1_BIT);
             imageInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+            imageInfo.samples(numSamples);
 
             if(vkCreateImage(device, imageInfo, null, pTextureImage) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create image");

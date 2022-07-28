@@ -226,6 +226,37 @@ public class Vulkan {
         }
     }
 
+    public static int getMaxUsableSampleCount(VkPhysicalDevice physicalDevice) {
+        try (var stack = stackPush()) {
+            var physicalDeviceProperties = VkPhysicalDeviceProperties.calloc(stack);
+            vkGetPhysicalDeviceProperties(physicalDevice, physicalDeviceProperties);
+
+            int sampleCountFlags = physicalDeviceProperties.limits().framebufferColorSampleCounts()
+                    & physicalDeviceProperties.limits().framebufferDepthSampleCounts();
+
+            if((sampleCountFlags & VK_SAMPLE_COUNT_64_BIT) != 0) {
+                return VK_SAMPLE_COUNT_64_BIT;
+            }
+            if((sampleCountFlags & VK_SAMPLE_COUNT_32_BIT) != 0) {
+                return VK_SAMPLE_COUNT_32_BIT;
+            }
+            if((sampleCountFlags & VK_SAMPLE_COUNT_16_BIT) != 0) {
+                return VK_SAMPLE_COUNT_16_BIT;
+            }
+            if((sampleCountFlags & VK_SAMPLE_COUNT_8_BIT) != 0) {
+                return VK_SAMPLE_COUNT_8_BIT;
+            }
+            if((sampleCountFlags & VK_SAMPLE_COUNT_4_BIT) != 0) {
+                return VK_SAMPLE_COUNT_4_BIT;
+            }
+            if((sampleCountFlags & VK_SAMPLE_COUNT_2_BIT) != 0) {
+                return VK_SAMPLE_COUNT_2_BIT;
+            }
+
+            return VK_SAMPLE_COUNT_1_BIT;
+        }
+    }
+
     public static int findSupportedFormat(VkPhysicalDevice physicalDevice, IntBuffer formatCandidates, int tiling, int features) {
 
         try(MemoryStack stack = stackPush()) {
