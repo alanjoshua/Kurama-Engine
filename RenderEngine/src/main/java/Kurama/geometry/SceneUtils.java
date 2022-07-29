@@ -299,7 +299,7 @@ public class SceneUtils {
                                 break;
                         }
                     }
-                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight, Kurama.utils.Utils.getUniqueID()));
+                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight, true, Kurama.utils.Utils.getUniqueID()));
                 }
 
                 if(isLoadingPointLights) {

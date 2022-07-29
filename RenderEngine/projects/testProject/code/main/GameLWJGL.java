@@ -85,7 +85,7 @@ public class GameLWJGL extends Game implements Runnable {
         renderingEngine.init(scene);
 
         playerCamera = new Camera(this,scene.rootSceneComp, null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                Display.defaultWindowedWidth, Display.defaultWindowedHeight, "playerCam");
+                Display.defaultWindowedWidth, Display.defaultWindowedHeight, true,"playerCam");
         playerCamera.shouldPerformFrustumCulling = true;
         scene.rootSceneComp.addChild(playerCamera);
 

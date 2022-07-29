@@ -15,6 +15,8 @@ import Kurama.renderingEngine.RenderingEngine.ProjectionMode;
 
 import java.util.ArrayList;
 
+import static Kurama.utils.Logger.log;
+
 public class Camera extends SceneComponent {
 
 	private Game game;
@@ -56,9 +58,10 @@ public class Camera extends SceneComponent {
 
 	public Vector renderResolution = new Vector(new float[]{Display.defaultWindowedWidth, Display.defaultWindowedHeight});
 
+	public boolean shouldUseRenderBuffer = true;
 
 	public Camera(Game game, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
-				  int imageWidth, int imageHeight, String identifier) {
+				  int imageWidth, int imageHeight, boolean shouldUseRenderBuffer, String identifier) {
 		super(game, null, identifier);
 		this.game = game;
 		this.filmApertureWidth = 0;
@@ -72,7 +75,11 @@ public class Camera extends SceneComponent {
 		canvasHeight = 0;
 		this.orientation = quaternion;
 		this.renderResolution = new Vector(new float[]{imageWidth, imageHeight});
-		renderBuffer = new RenderBuffer(renderResolution);
+		this.shouldUseRenderBuffer = shouldUseRenderBuffer;
+
+		if(shouldUseRenderBuffer) {
+			renderBuffer = new RenderBuffer(renderResolution);
+		}
 		
 		if(quaternion == null) {
 			this.setOrientation(new Quaternion(new Vector(new float[] {1,0, 0, 0})));
@@ -88,7 +95,7 @@ public class Camera extends SceneComponent {
 	}
 
 	public Camera(Game game, Component parent, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane,
-				  int imageWidth, int imageHeight, String identifier) {
+				  int imageWidth, int imageHeight, boolean shouldUseRenderBuffer, String identifier) {
 		super(game, parent, identifier);
 		this.game = game;
 		this.filmApertureWidth = 0;
@@ -102,7 +109,11 @@ public class Camera extends SceneComponent {
 		canvasHeight = 0;
 		this.orientation = quaternion;
 		this.renderResolution = new Vector(new float[]{imageWidth, imageHeight});
-		renderBuffer = new RenderBuffer(renderResolution);
+		this.shouldUseRenderBuffer = shouldUseRenderBuffer;
+
+		if(shouldUseRenderBuffer) {
+			renderBuffer = new RenderBuffer(renderResolution);
+		}
 
 		if(quaternion == null) {
 			this.setOrientation(new Quaternion(new Vector(new float[] {1,0, 0, 0})));
@@ -125,7 +136,9 @@ public class Camera extends SceneComponent {
 		 	int imageHeight = renderResolution.geti(1);
 			 imageAspectRatio = imageWidth / (float) imageHeight;
 
-			 renderBuffer.resizeTexture(renderResolution);
+			 if(shouldUseRenderBuffer) {
+				 renderBuffer.resizeTexture(renderResolution);
+			 }
 
 			if (game.renderingEngine.projectionMode == ProjectionMode.PERSPECTIVE) {
 				this.perspectiveProjectionMatrix = Matrix.buildPerspectiveMatrix(fovX, imageAspectRatio, nearClippingPlane, farClippingPlane, 1, 1);

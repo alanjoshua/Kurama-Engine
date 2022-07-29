@@ -1,13 +1,28 @@
 package main;
 
+import Kurama.ComponentSystem.automations.ExternalAutomation;
+import Kurama.ComponentSystem.automations.ResizeCameraRenderResolution;
+import Kurama.ComponentSystem.components.Component;
+import Kurama.ComponentSystem.components.model.AnimatedModel;
+import Kurama.Math.Matrix;
+import Kurama.Math.Quaternion;
+import Kurama.Math.Vector;
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ModelLoader;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
+import Kurama.camera.Camera;
+import Kurama.display.Display;
+import Kurama.display.DisplayLWJGL;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
+import Kurama.inputs.Input;
+import Kurama.inputs.InputLWJGL;
+import Kurama.renderingEngine.RenderingEngine;
+import Kurama.renderingEngine.RenderingEngineSR;
+import Kurama.scene.Scene;
 import Kurama.utils.Logger;
-import org.joml.Vector2f;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.lwjgl.PointerBuffer;
@@ -26,7 +41,6 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.utils.Logger.log;
-import static java.lang.ClassLoader.getSystemClassLoader;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.assimp.Assimp.aiProcess_DropNormals;
 import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
@@ -118,28 +132,195 @@ public class GameVulkan extends Game {
     public int[] indices;
     public String modelTextureLoc = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/viking_room.png";;
 
+    public Camera playerCamera;
+
+    protected float mouseXSensitivity = 20f;
+    protected float mouseYSensitivity = 20f;
+    protected float speed = 15f;
+    protected float speedMultiplier = 1;
+    protected float speedIncreaseMultiplier = 2;
+
+    public boolean isGameRunning = true;
+
     public GameVulkan(String threadName) {
         super(threadName);
     }
 
     @Override
     public void init() {
+
+        Game game = this;
+        renderingEngine = new RenderingEngineVulkan(this);
         display = new DisplayVulkan(this);
-        display.resizeEvents.add(() -> {this.framebufferResize = true;});
+        display.resizeEvents.add(() -> this.framebufferResize = true);
+
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
-        this.shouldDisplayFPS = true;
+        this.shouldDisplayFPS = false;
 
-        setModelAngle();
+        this.input = new InputLWJGL(this, display);
+
+        playerCamera = new Camera(this,null, null, new Vector(new float[] {2,2,2}),45, 0.1f, 10.0f,
+                swapChainExtent.width(), swapChainExtent.height(), false, "playerCam");
+        log("after cam");
+        display.resizeEvents.add(() -> {
+            playerCamera.renderResolution = display.windowResolution;
+            playerCamera.setShouldUpdateValues(true);
+        });
+        this.currentUbo = new UniformBufferObject();
+        display.disableCursor();
+//        setModelAngle();
     }
 
     @Override
     public void tick() {
 //        rotateRectangle();
         glfwPollEvents();
+        input.poll();
+
+        cameraUpdates(this.timeDelta);
+
+        if(isGameRunning) {
+            Camera cam = playerCamera;
+            cam.velocity = cam.velocity.add(cam.acceleration.scalarMul(timeDelta));
+            var detlaV = cam.velocity.scalarMul(timeDelta);
+            cam.setPos(cam.getPos().add(detlaV));
+
+            if (cam.shouldUpdateValues) {
+                cam.updateValues();
+                cam.setShouldUpdateValues(false);
+                this.currentUbo.proj = cam.getPerspectiveProjectionMatrix();
+                currentUbo.proj.getData()[1][1] *= -1;
+            }
+
+            playerCamera.setupTransformationMatrices();
+//            this.currentUbo.model = Matrix.getIdentityMatrix(4);
+            this.currentUbo.view = cam.getWorldToObject();
+        }
 
         if(glfwWindowShouldClose(display.window)) {
             programRunning = false;
+            isGameRunning = false;
+        }
+        input.reset();
+    }
+
+    public void cameraUpdates(float timeDelta) {
+        Vector velocity = new Vector(3,0);
+
+        if(input.keyDown(input.W)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector x = rotationMatrix[0];
+            Vector y = new Vector(new float[] {0,1,0});
+            Vector z = x.cross(y);
+            velocity = velocity.add((z.scalarMul(-cameraSpeed)));
+        }
+
+        if(input.keyDownOnce(input.ESCAPE)) {
+            if(isGameRunning) {
+                isGameRunning = false;
+                display.enableCursor();
+            }
+            else {
+                isGameRunning = true;
+                display.disableCursor();
+            }
+        }
+
+        if (input.keyDownOnce(input.F)) {
+            if (this.targetFPS == this.rootGuiComponent.getRefreshRate()) {
+                this.targetFPS = 10000;
+            } else {
+                this.targetFPS = this.rootGuiComponent.getRefreshRate();
+            }
+            Logger.log("Changed target resolution" + this.targetFPS);
+        }
+
+        if(input.keyDown(input.S)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector x = rotationMatrix[0];
+            Vector y = new Vector(new float[] {0,1,0});
+            Vector z = x.cross(y);
+            velocity = velocity.add(z.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDown(input.A)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector v = rotationMatrix[0];
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDown(input.D)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector v = rotationMatrix[0];
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDown(input.SPACE)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+
+            Vector v = new Vector(new float[] {0,1,0});
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
+//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDown(input.LEFT_SHIFT)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+
+            Vector v = new Vector(new float[] {0,1,0});
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
+        }
+
+        if(input.keyDownOnce(input.LEFT_CONTROL)) {
+            if(this.speedMultiplier == 1) this.speedMultiplier = this.speedIncreaseMultiplier;
+            else this.speedMultiplier = 1;
+        }
+
+
+//        Vector newPos = scene.camera.getPos().add(posDelta);
+//        scene.camera.setPos(newPos);
+        this.playerCamera.velocity = velocity;
+
+        calculate3DCamMovement();
+
+    }
+
+    private void calculate3DCamMovement() {
+        if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
+
+            float yawIncrease   = this.mouseXSensitivity * this.timeDelta * -this.input.getDelta().get(0);
+            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * -this.input.getDelta().get(1);
+
+            Vector currentAngle = this.playerCamera.getOrientation().getPitchYawRoll();
+            float currentPitch = currentAngle.get(0) + pitchIncrease;
+
+            if(currentPitch >= 0 && currentPitch > 60) {
+                pitchIncrease = 0;
+            }
+            else if(currentPitch < 0 && currentPitch < -60) {
+                pitchIncrease = 0;
+            }
+
+            Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
+            Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
+
+            Quaternion q = this.playerCamera.getOrientation();
+
+            q = q.multiply(pitch);
+            q = yaw.multiply(q);
+            this.playerCamera.setOrientation(q);
         }
     }
 
@@ -1506,26 +1687,60 @@ public class GameVulkan extends Game {
 
     public void setModelAngle() {
         UniformBufferObject ubo = new UniformBufferObject();
+        ubo.model = Matrix.getIdentityMatrix(4);
 
-        ubo.model.rotate((float) Math.toRadians(-45), 0.0f, 0.0f, 1.0f);
-        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-        ubo.proj.perspective((float) Math.toRadians(45),
+        ubo.proj = Matrix.buildPerspectiveMatrix(45,
+                (float)swapChainExtent.width() / (float)swapChainExtent.height(),
+                0.1f, 10.0f,
+                1,1);
+
+        ubo.proj.getData()[1][1] *= -1;
+
+        ubo.view = Matrix.getIdentityMatrix(4);
+
+        var temp = new Matrix4f().lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        System.out.println("glm view matrix");
+        for(int i = 0;i < 4; i++) {
+            for(int j = 0; j < 4; j++) {
+                System.out.print(temp.get(i, j) + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("Custom view matrix: ");
+        ubo.view.display();
+
+        System.out.println("glm pers: ");
+        var temp2 =  new Matrix4f().perspective((float) Math.toRadians(45),
                 (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-        ubo.proj.m11(ubo.proj.m11() * -1);
+        for(int i = 0;i < 4; i++) {
+            for(int j = 0; j < 4; j++) {
+                System.out.print(temp2.get(i, j) + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("vcustom pers:");
+        ubo.proj.display();
+
+//        ubo.view = new Camera();
+//        ubo.model.rotate((float) Math.toRadians(-45), 0.0f, 0.0f, 1.0f);
+//        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+//        ubo.proj.perspective((float) Math.toRadians(45),
+//                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
 
         this.currentUbo = ubo;
+//        this.scene.cameras.get(0).
     }
 
     public void rotateRectangle() {
-        UniformBufferObject ubo = new UniformBufferObject();
-
-        ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
-        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-        ubo.proj.perspective((float) Math.toRadians(45),
-                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-        ubo.proj.m11(ubo.proj.m11() * -1);
-
-        this.currentUbo = ubo;
+//        UniformBufferObject ubo = new UniformBufferObject();
+//
+//        ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
+//        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+//        ubo.proj.perspective((float) Math.toRadians(45),
+//                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
+//        ubo.proj.m11(ubo.proj.m11() * -1);
+//
+//        this.currentUbo = ubo;
     }
 
     private void updateUbo(int currentImage) {

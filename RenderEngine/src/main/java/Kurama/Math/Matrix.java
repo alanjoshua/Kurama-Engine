@@ -1131,6 +1131,14 @@ public class Matrix {
 		}
 	}
 
+	public void setValuesToBufferRowMajor(ByteBuffer bb) {
+		for(Vector r:this.convertToRowVectorList()) {
+			for(float val: r.getData()) {
+				bb.putFloat(val);
+			}
+		}
+	}
+
 	public float getNorm() {
 		float res = 0;
 		for(float[] r: this.getData()) {

@@ -1,6 +1,7 @@
 package Kurama.inputs;
 
 import Kurama.display.DisplayLWJGL;
+import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import org.lwjgl.glfw.GLFWCharCallback;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
@@ -16,6 +17,12 @@ public class InputLWJGL extends Input {
     private long window;
 
     public InputLWJGL(Game game, DisplayLWJGL display) {
+        super(game);
+        this.window = display.getWindow();
+        init();
+    }
+
+    public InputLWJGL(Game game, DisplayVulkan display) {
         super(game);
         this.window = display.getWindow();
         init();
