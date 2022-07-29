@@ -160,7 +160,7 @@ public class GameVulkan extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new Camera(this,null, null, new Vector(new float[] {2,2,2}),45, 0.1f, 10.0f,
+        playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.1f, 10.0f,
                 swapChainExtent.width(), swapChainExtent.height(), false, "playerCam");
         log("after cam");
         display.resizeEvents.add(() -> {
@@ -168,34 +168,33 @@ public class GameVulkan extends Game {
             playerCamera.setShouldUpdateValues(true);
         });
         this.currentUbo = new UniformBufferObject();
+        this.currentUbo.proj = playerCamera.getPerspectiveProjectionMatrix();
+        currentUbo.proj.getData()[1][1] *= -1;
+
         display.disableCursor();
-//        setModelAngle();
     }
 
     @Override
     public void tick() {
-//        rotateRectangle();
         glfwPollEvents();
         input.poll();
 
         cameraUpdates(this.timeDelta);
 
         if(isGameRunning) {
-            Camera cam = playerCamera;
-            cam.velocity = cam.velocity.add(cam.acceleration.scalarMul(timeDelta));
-            var detlaV = cam.velocity.scalarMul(timeDelta);
-            cam.setPos(cam.getPos().add(detlaV));
 
-            if (cam.shouldUpdateValues) {
-                cam.updateValues();
-                cam.setShouldUpdateValues(false);
-                this.currentUbo.proj = cam.getPerspectiveProjectionMatrix();
+            playerCamera.velocity = playerCamera.velocity.add(playerCamera.acceleration.scalarMul(timeDelta));
+            var detlaV = playerCamera.velocity.scalarMul(timeDelta);
+            playerCamera.setPos(playerCamera.getPos().add(detlaV));
+
+            if (playerCamera.shouldUpdateValues) {
+                playerCamera.updateValues();
+                playerCamera.setShouldUpdateValues(false);
+                this.currentUbo.proj = playerCamera.getPerspectiveProjectionMatrix();
                 currentUbo.proj.getData()[1][1] *= -1;
             }
-
             playerCamera.setupTransformationMatrices();
-//            this.currentUbo.model = Matrix.getIdentityMatrix(4);
-            this.currentUbo.view = cam.getWorldToObject();
+            this.currentUbo.view = playerCamera.getWorldToObject();
         }
 
         if(glfwWindowShouldClose(display.window)) {

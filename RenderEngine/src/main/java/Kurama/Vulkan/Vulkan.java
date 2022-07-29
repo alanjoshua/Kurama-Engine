@@ -307,9 +307,9 @@ public class Vulkan {
 //        ubo.view.get(mat4Size, buffer);
 //        ubo.proj.get(mat4Size * 2, buffer);
 
-        ubo.model.setValuesToBufferRowMajor(buffer);
-        ubo.view.setValuesToBufferRowMajor(buffer);
-        ubo.proj.setValuesToBufferRowMajor(buffer);
+        ubo.model.setValuesToBuffer(buffer);
+        ubo.view.setValuesToBuffer(buffer);
+        ubo.proj.setValuesToBuffer(buffer);
     }
 
     public static void memcpy(ByteBuffer buffer, Vertex[] vertices) {
