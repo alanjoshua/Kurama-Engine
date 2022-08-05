@@ -1,6 +1,7 @@
 package Kurama.Mesh;
 
 import Kurama.buffers.RenderBuffer;
+import Kurama.game.Game;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -65,54 +66,69 @@ public class Texture {
     }
 
     public Texture(String fileName) {
-        ByteBuffer buff;
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer w = stack.mallocInt(1);
-            IntBuffer h = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
+        if(Game.GRAPHICS_API == Game.GraphicsApi.OPENGL) {
+            ByteBuffer buff;
 
-            buff = stbi_load
-                    (fileName,w,h,channels,4);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer w = stack.mallocInt(1);
+                IntBuffer h = stack.mallocInt(1);
+                IntBuffer channels = stack.mallocInt(1);
 
-            if(buff == null) {
-                throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+                buff = stbi_load
+                        (fileName, w, h, channels, 4);
+
+                if (buff == null) {
+                    throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+                }
+
+                width = w.get();
+                height = h.get();
             }
-
-            width = w.get();
-            height = h.get();
+            this.id = createTextureGL(buff);
         }
-       this.id = createTexture(buff);
+        else {
+            width = 0;
+            height = 0;
+        }
        this.fileName = fileName;
     }
 
     public Texture(String fileName, float multiplier) {
-        ByteBuffer buff;
+        // Similar code must be added for Vulkan too
+        if(Game.GRAPHICS_API == Game.GraphicsApi.OPENGL) {
+            ByteBuffer buff;
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer w = stack.mallocInt(1);
-            IntBuffer h = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer w = stack.mallocInt(1);
+                IntBuffer h = stack.mallocInt(1);
+                IntBuffer channels = stack.mallocInt(1);
 
-            buff = stbi_load
-                    (fileName,w,h,channels,4);
+                buff = stbi_load
+                        (fileName, w, h, channels, 4);
 
-            if(buff == null) {
-                throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
-            }
+                if (buff == null) {
+                    throw new RuntimeException("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
+                }
 
-            FloatBuffer floatBuf = buff.asFloatBuffer();
-            floatBuf.rewind();
-            for(int i = 0;i < floatBuf.remaining(); i++) {
-                float curVal = floatBuf.get(i);
-                floatBuf.put(i, curVal*multiplier);
-            }
+                FloatBuffer floatBuf = buff.asFloatBuffer();
+                floatBuf.rewind();
+                for (int i = 0; i < floatBuf.remaining(); i++) {
+                    float curVal = floatBuf.get(i);
+                    floatBuf.put(i, curVal * multiplier);
+                }
 //            floatBuf.rewind();
 
-            width = w.get();
-            height = h.get();
+                width = w.get();
+                height = h.get();
+            }
+            this.id = createTextureGL(buff);
         }
-        this.id = createTexture(buff);
+
+        else {
+            width = 0;
+            height = 0;
+        }
         this.fileName = fileName;
     }
 
@@ -133,7 +149,7 @@ public class Texture {
             height = h.get();
         }
 
-        this.id = createTexture(buf);
+        this.id = createTextureGL(buf);
 
         stbi_image_free(buf);
     }
@@ -152,7 +168,7 @@ public class Texture {
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     }
 
-    private int createTexture(ByteBuffer buf) {
+    private int createTextureGL(ByteBuffer buf) {
         // Create a new OpenGL texture
         int textureId = glGenTextures();
         // Bind the texture

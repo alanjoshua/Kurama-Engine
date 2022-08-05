@@ -131,7 +131,7 @@ public class Scene {
     }
 
     public List<Mesh> loadMeshesAssimp(String location, String textureDir, MeshBuilderHints hints) {
-        List<Mesh> meshes= null;
+        List<Mesh> meshes;
         try {
             meshes = AssimpStaticLoader.load(location, textureDir, AssimpStaticLoader.getFlags(hints));
             if(hints != null && hints.isInstanced) {

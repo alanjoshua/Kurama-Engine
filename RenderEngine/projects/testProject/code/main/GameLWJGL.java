@@ -66,6 +66,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public GameLWJGL(String threadName) {
         super(threadName);
+        GRAPHICS_API = GraphicsApi.OPENGL;
     }
 
     public void init() {

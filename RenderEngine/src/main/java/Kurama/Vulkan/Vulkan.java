@@ -1,5 +1,6 @@
 package Kurama.Vulkan;
 
+import Kurama.Mesh.Mesh;
 import main.QueueFamilyIndices;
 import main.UniformBufferObject;
 import main.Vertex;
@@ -286,7 +287,7 @@ public class Vulkan {
     }
 
 
-    public static void memcpy(ByteBuffer buffer, int[] indices) {
+    public static void memcpyInt(ByteBuffer buffer, List<Integer> indices) {
         for(int index : indices) {
             buffer.putInt(index);
         }
@@ -312,7 +313,7 @@ public class Vulkan {
         ubo.proj.setValuesToBuffer(buffer);
     }
 
-    public static void memcpy(ByteBuffer buffer, Vertex[] vertices) {
+    public static void memcpy(ByteBuffer buffer, List<Vertex> vertices) {
         for(Vertex vertex : vertices) {
             buffer.putFloat(vertex.pos.x());
             buffer.putFloat(vertex.pos.y());
@@ -324,6 +325,22 @@ public class Vulkan {
 
             buffer.putFloat(vertex.texCoord.x());
             buffer.putFloat(vertex.texCoord.y());
+        }
+    }
+
+    public static void memcpy(ByteBuffer buffer, Mesh mesh) {
+
+        for(int i = 0; i < mesh.getVertices().size(); i++) {
+            buffer.putFloat(mesh.getVertices().get(i).get(0));
+            buffer.putFloat(mesh.getVertices().get(i).get(1));
+            buffer.putFloat(mesh.getVertices().get(i).get(2));
+
+            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(2));
+
+            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
         }
     }
 

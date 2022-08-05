@@ -1,30 +1,21 @@
 package main;
 
-import Kurama.ComponentSystem.automations.ExternalAutomation;
-import Kurama.ComponentSystem.automations.ResizeCameraRenderResolution;
-import Kurama.ComponentSystem.components.Component;
-import Kurama.ComponentSystem.components.model.AnimatedModel;
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
+import Kurama.Mesh.Mesh;
+import Kurama.Mesh.Texture;
 import Kurama.Vulkan.Frame;
-import Kurama.Vulkan.ModelLoader;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
 import Kurama.camera.Camera;
-import Kurama.display.Display;
-import Kurama.display.DisplayLWJGL;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
-import Kurama.inputs.Input;
+import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
-import Kurama.renderingEngine.RenderingEngine;
-import Kurama.renderingEngine.RenderingEngineSR;
-import Kurama.scene.Scene;
 import Kurama.utils.Logger;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -41,6 +32,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.assimp.Assimp.aiProcess_DropNormals;
 import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
@@ -55,7 +47,6 @@ import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.vkDestroyInstance;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class GameVulkan extends Game {
@@ -127,36 +118,32 @@ public class GameVulkan extends Game {
 
     public DisplayVulkan display;
     public UniformBufferObject currentUbo;
-
-    public Vertex[] vertices;
-    public int[] indices;
-    public String modelTextureLoc = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/viking_room.png";;
-
+//    public String modelTextureLoc = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/viking_room.png";;
     public Camera playerCamera;
-
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
     protected float speed = 15f;
     protected float speedMultiplier = 1;
     protected float speedIncreaseMultiplier = 2;
-
     public boolean isGameRunning = true;
+
+    public Model model;
 
     public GameVulkan(String threadName) {
         super(threadName);
+        GRAPHICS_API = GraphicsApi.VULKAN;
     }
 
     @Override
     public void init() {
 
-        Game game = this;
         renderingEngine = new RenderingEngineVulkan(this);
         display = new DisplayVulkan(this);
         display.resizeEvents.add(() -> this.framebufferResize = true);
 
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
-        this.shouldDisplayFPS = false;
+        this.shouldDisplayFPS = true;
 
         this.input = new InputLWJGL(this, display);
 
@@ -464,11 +451,11 @@ public class GameVulkan extends Game {
 
         createCommandPool();
 
+        loadModel();
+
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-
-        loadModel();
 
         createVertexBuffer();
         createIndexBuffer();
@@ -598,24 +585,29 @@ public class GameVulkan extends Game {
     }
 
     public void loadModel() {
-        var modelFile = new File("C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/models/viking_room.obj");
-        var model = ModelLoader.loadModel(modelFile, aiProcess_FlipUVs | aiProcess_DropNormals);
-        final int vertexCount = model.positions.size();
-        vertices = new Vertex[vertexCount];
-        final Vector3fc color = new Vector3f(1.0f, 1.0f, 1.0f);
+        var location = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/models/viking_room.obj";
+        var textureDir = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/";
+        List<Mesh> meshes = null;
 
-        for(int i = 0;i < vertexCount;i++) {
-            vertices[i] = new Vertex(
-                    model.positions.get(i),
-                    color,
-                    model.texCoords.get(i));
+        try {
+            meshes = AssimpStaticLoader.load(location, textureDir, aiProcess_FlipUVs | aiProcess_DropNormals);
+            log("successfuly loaded meshes");
+        }
+        catch (Exception e) {
+            logError("Failed to load mesh");
         }
 
-        indices = new int[model.indices.size()];
+        //Add texture loc
+        meshes.get(0).materials.get(0).texture = new Texture(textureDir + "viking_room.png");
 
-        for(int i = 0;i < indices.length;i++) {
-            indices[i] = model.indices.get(i);
-        }
+        //add color just for the sake of consistency with vulkan tutorial
+        var colors = new ArrayList<Vector>();
+        meshes.get(0).getVertices().forEach(v -> {
+            colors.add(new Vector(new float[]{1f,1f,1f}));
+        });
+        meshes.get(0).setAttribute(colors, Mesh.COLOR);
+
+        model = new Model(this, meshes, "windmill");
     }
 
     private void createDepthResources() {
@@ -1160,7 +1152,7 @@ public class GameVulkan extends Game {
 
     private void createIndexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Short.SIZE * indices.length;
+            long bufferSize = Short.SIZE * model.meshes.get(0).indices.size();
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -1175,7 +1167,7 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpy(data.getByteBuffer(0, (int) bufferSize), indices);
+                memcpyInt(data.getByteBuffer(0, (int) bufferSize), model.meshes.get(0).indices);
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1197,7 +1189,7 @@ public class GameVulkan extends Game {
 
     private void createVertexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Vertex.SIZEOF * vertices.length;
+            long bufferSize = Vertex.SIZEOF * model.meshes.get(0).getVertices().size();
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -1212,7 +1204,7 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpy(data.getByteBuffer(0, (int) bufferSize), vertices);
+                memcpy(data.getByteBuffer(0, (int) bufferSize), model.meshes.get(0));
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1235,19 +1227,17 @@ public class GameVulkan extends Game {
     private void createTextureImage() {
         try(var stack = stackPush()) {
 
-            var filename = modelTextureLoc;
-
             IntBuffer pWidth = stack.mallocInt(1);
             IntBuffer pHeight = stack.mallocInt(1);
             IntBuffer pChannels = stack.mallocInt(1);
 
-            ByteBuffer pixels = stbi_load(filename, pWidth, pHeight, pChannels, STBI_rgb_alpha);
+            ByteBuffer pixels = stbi_load(model.meshes.get(0).materials.get(0).texture.fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
 
             long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
             mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
 
             if(pixels == null) {
-                throw new RuntimeException("Failed to load texture image " + filename);
+                throw new RuntimeException("Failed to load texture image ");
             }
 
             LongBuffer pStagingBuffer = stack.mallocLong(1);
@@ -1825,7 +1815,7 @@ public class GameVulkan extends Game {
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout, 0, stack.longs(descriptorSets.get(i)), null);
 
-                    vkCmdDrawIndexed(commandBuffer, indices.length, 1, 0, 0, 0);
+                    vkCmdDrawIndexed(commandBuffer, model.meshes.get(0).indices.size(), 1, 0, 0, 0);
                 }
                 vkCmdEndRenderPass(commandBuffer);
 

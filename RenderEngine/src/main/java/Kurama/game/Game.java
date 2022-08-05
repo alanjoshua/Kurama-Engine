@@ -37,7 +37,12 @@ public abstract class Game implements Runnable {
     public Display display;
     public Input input;
 
+    public static GraphicsApi GRAPHICS_API;
+
+    public enum GraphicsApi {CPU, OPENGL, VULKAN}
+
     public Game(String threadName) {
+        gameLoopThread = new Thread(this,threadName);
     }
 
     public Game(String threadName, boolean shouldBenchMark) {
