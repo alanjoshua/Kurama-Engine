@@ -5,6 +5,8 @@ import Kurama.Math.Vector;
 import Kurama.camera.Camera;
 import Kurama.inputs.Input;
 
+import static Kurama.utils.Logger.log;
+
 public class ResizeCameraRenderResolution implements Automation {
 
     Camera cam;
@@ -15,7 +17,7 @@ public class ResizeCameraRenderResolution implements Automation {
 
     @Override
     public void run(Component current, Input input, float timeDelta) {
-        var newRes = new Vector(new float[]{current.getWidth(), current.getHeight()});
+        cam.renderResolution = new Vector(new float[]{current.getWidth(), current.getHeight()});
         cam.setShouldUpdateValues(true);
 
     }
