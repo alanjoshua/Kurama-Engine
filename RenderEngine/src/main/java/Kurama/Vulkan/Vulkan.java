@@ -1,6 +1,7 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
+import main.GameVulkan;
 import main.QueueFamilyIndices;
 import main.UniformBufferObject;
 import main.Vertex;
@@ -13,26 +14,137 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
+import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.vulkan.EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
-import static org.lwjgl.vulkan.EXTDebugUtils.vkCreateDebugUtilsMessengerEXT;
+import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
+import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.vkEnumerateInstanceLayerProperties;
+import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class Vulkan {
 
     public static final int UINT32_MAX = 0xFFFFFFFF;
     public static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
+    public static VkDevice device;
+    public static VkPhysicalDevice physicalDevice;
+    public static VkInstance instance;
+    public static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
+    public static long debugMessenger;
+
+    public static final Set<String> VALIDATION_LAYERS;
+    static {
+        if(ENABLE_VALIDATION_LAYERS) {
+            VALIDATION_LAYERS = new HashSet<>();
+            VALIDATION_LAYERS.add("VK_LAYER_KHRONOS_validation");
+        } else {
+            // We are not going to use it, so we don't create it
+            VALIDATION_LAYERS = null;
+        }
+    }
+
+    public static void setupDebugMessenger() {
+
+        if(!ENABLE_VALIDATION_LAYERS) {
+            return;
+        }
+
+        try(MemoryStack stack = stackPush()) {
+
+            VkDebugUtilsMessengerCreateInfoEXT createInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
+
+            populateDebugMessengerCreateInfo(createInfo);
+
+            LongBuffer pDebugMessenger = stack.longs(VK_NULL_HANDLE);
+
+            if(createDebugUtilsMessengerEXT(instance, createInfo, null, pDebugMessenger) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to set up debug messenger");
+            }
+
+            debugMessenger = pDebugMessenger.get(0);
+        }
+    }
+
+    private static int createDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerCreateInfoEXT createInfo,
+                                                    VkAllocationCallbacks allocationCallbacks, LongBuffer pDebugMessenger) {
+
+        if(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT") != NULL) {
+            return vkCreateDebugUtilsMessengerEXT(instance, createInfo, allocationCallbacks, pDebugMessenger);
+        }
+
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+    public static final Set<String> DEVICE_EXTENSIONS = Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+            .collect(toSet());
+
+    public static void createInstance(String applicationName, String engineName) {
+
+        if(ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport(VALIDATION_LAYERS)) {
+            throw new RuntimeException("Validation requested but not supported");
+        }
+
+        try(MemoryStack stack = stackPush()) {
+
+            // Use calloc to initialize the structs with 0s. Otherwise, the program can crash due to random values
+            VkApplicationInfo appInfo = VkApplicationInfo.calloc(stack);
+
+            appInfo.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
+            appInfo.pApplicationName(stack.UTF8Safe(applicationName));
+            appInfo.applicationVersion(VK_MAKE_VERSION(1, 0, 0));
+            appInfo.pEngineName(stack.UTF8Safe(engineName));
+            appInfo.engineVersion(VK_MAKE_VERSION(1, 0, 0));
+            appInfo.apiVersion(VK_API_VERSION_1_3);
+
+            VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.calloc(stack);
+
+            createInfo.sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO);
+            createInfo.pApplicationInfo(appInfo);
+            // enabledExtensionCount is implicitly set when you call ppEnabledExtensionNames
+            createInfo.ppEnabledExtensionNames(getRequiredExtensions(ENABLE_VALIDATION_LAYERS));
+
+            if(ENABLE_VALIDATION_LAYERS) {
+                createInfo.ppEnabledLayerNames(asPointerBuffer(VALIDATION_LAYERS));
+                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
+                Vulkan.populateDebugMessengerCreateInfo(debugCreateInfo);
+                createInfo.pNext(debugCreateInfo.address());
+            }
+
+            // We need to retrieve the pointer of the created instance
+            PointerBuffer instancePtr = stack.mallocPointer(1);
+
+            if(vkCreateInstance(createInfo, null, instancePtr) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create instance");
+            }
+
+            instance = new VkInstance(instancePtr.get(0), createInfo);
+        }
+    }
+
+    private static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo) {
+        debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
+        debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
+        debugCreateInfo.messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
+        debugCreateInfo.pfnUserCallback(Vulkan::debugCallback);
+    }
+
+    private static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
+        VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
+        System.err.println("Validation layer: " + callbackData.pMessageString());
+        return VK_FALSE;
+    }
 
     public static long createShaderModule(ByteBuffer spirvCode, VkDevice device) {
 

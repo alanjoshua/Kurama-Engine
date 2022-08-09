@@ -52,27 +52,7 @@ import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 public class GameVulkan extends Game {
 
     private static final int MAX_FRAMES_IN_FLIGHT = 2;
-
-    private static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
-
-    private static final Set<String> VALIDATION_LAYERS;
-    static {
-        if(ENABLE_VALIDATION_LAYERS) {
-            VALIDATION_LAYERS = new HashSet<>();
-            VALIDATION_LAYERS.add("VK_LAYER_KHRONOS_validation");
-        } else {
-            // We are not going to use it, so we don't create it
-            VALIDATION_LAYERS = null;
-        }
-    }
-
-    private static final Set<String> DEVICE_EXTENSIONS = Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
-            .collect(toSet());
-
-    private VkInstance instance;
-    private long debugMessenger;
     private long surface;
-    private VkPhysicalDevice physicalDevice;
     private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     private VkDevice device;
     private long vertexBuffer;
@@ -143,7 +123,7 @@ public class GameVulkan extends Game {
 
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
-        this.shouldDisplayFPS = true;
+        this.shouldDisplayFPS = false;
 
         this.input = new InputLWJGL(this, display);
 
@@ -440,8 +420,8 @@ public class GameVulkan extends Game {
     }
 
     private void initVulkan() {
-        createInstance();
-        setupDebugMessenger();
+        Vulkan.createInstance("Vulkan game", "Kurama Engine");
+        Vulkan.setupDebugMessenger();
 
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
@@ -475,57 +455,6 @@ public class GameVulkan extends Game {
         createCommandBuffers();
 
         createSyncObjects();
-    }
-
-    private void createInstance() {
-
-        if(ENABLE_VALIDATION_LAYERS && !checkValidationLayerSupport(VALIDATION_LAYERS)) {
-            throw new RuntimeException("Validation requested but not supported");
-        }
-
-        try(MemoryStack stack = stackPush()) {
-
-            // Use calloc to initialize the structs with 0s. Otherwise, the program can crash due to random values
-            VkApplicationInfo appInfo = VkApplicationInfo.calloc(stack);
-
-            appInfo.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
-            appInfo.pApplicationName(stack.UTF8Safe("Hello Triangle"));
-            appInfo.applicationVersion(VK_MAKE_VERSION(1, 0, 0));
-            appInfo.pEngineName(stack.UTF8Safe("No Engine"));
-            appInfo.engineVersion(VK_MAKE_VERSION(1, 0, 0));
-            appInfo.apiVersion(VK_API_VERSION_1_3);
-
-            VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.calloc(stack);
-
-            createInfo.sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO);
-            createInfo.pApplicationInfo(appInfo);
-            // enabledExtensionCount is implicitly set when you call ppEnabledExtensionNames
-            createInfo.ppEnabledExtensionNames(getRequiredExtensions(ENABLE_VALIDATION_LAYERS));
-
-            if(ENABLE_VALIDATION_LAYERS) {
-
-                createInfo.ppEnabledLayerNames(asPointerBuffer(VALIDATION_LAYERS));
-
-                VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
-                populateDebugMessengerCreateInfo(debugCreateInfo);
-                createInfo.pNext(debugCreateInfo.address());
-            }
-
-            // We need to retrieve the pointer of the created instance
-            PointerBuffer instancePtr = stack.mallocPointer(1);
-
-            if(vkCreateInstance(createInfo, null, instancePtr) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create instance");
-            }
-
-            instance = new VkInstance(instancePtr.get(0), createInfo);
-        }
-    }
-    private void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo) {
-        debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
-        debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
-        debugCreateInfo.messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
-        debugCreateInfo.pfnUserCallback(GameVulkan::debugCallback);
     }
 
     private void recreateSwapChain() {
@@ -602,9 +531,7 @@ public class GameVulkan extends Game {
 
         //add color just for the sake of consistency with vulkan tutorial
         var colors = new ArrayList<Vector>();
-        meshes.get(0).getVertices().forEach(v -> {
-            colors.add(new Vector(new float[]{1f,1f,1f}));
-        });
+        meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{1f,1f,1f})));
         meshes.get(0).setAttribute(colors, Mesh.COLOR);
 
         model = new Model(this, meshes, "windmill");
@@ -713,38 +640,6 @@ public class GameVulkan extends Game {
             swapChainImageFormat = surfaceFormat.format();
             swapChainExtent = VkExtent2D.create().set(extent);
         }
-    }
-
-    private void setupDebugMessenger() {
-
-        if(!ENABLE_VALIDATION_LAYERS) {
-            return;
-        }
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkDebugUtilsMessengerCreateInfoEXT createInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
-
-            populateDebugMessengerCreateInfo(createInfo);
-
-            LongBuffer pDebugMessenger = stack.longs(VK_NULL_HANDLE);
-
-            if(createDebugUtilsMessengerEXT(instance, createInfo, null, pDebugMessenger) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to set up debug messenger");
-            }
-
-            debugMessenger = pDebugMessenger.get(0);
-        }
-    }
-
-    private static int createDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerCreateInfoEXT createInfo,
-                                                    VkAllocationCallbacks allocationCallbacks, LongBuffer pDebugMessenger) {
-
-        if(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT") != NULL) {
-            return vkCreateDebugUtilsMessengerEXT(instance, createInfo, allocationCallbacks, pDebugMessenger);
-        }
-
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     private void createImageViews() {
@@ -1225,6 +1120,7 @@ public class GameVulkan extends Game {
     }
 
     private void createTextureImage() {
+
         try(var stack = stackPush()) {
 
             IntBuffer pWidth = stack.mallocInt(1);
@@ -1285,8 +1181,8 @@ public class GameVulkan extends Game {
 
             vkDestroyBuffer(device, pStagingBuffer.get(0), null);
             vkFreeMemory(device, pStagingBufferMemory.get(0), null);
-
         }
+
     }
 
     private void createColorResources() {
@@ -1339,7 +1235,7 @@ public class GameVulkan extends Game {
 
             int mipWidth = texWidth;
             int mipHeight = texHeight;
-
+            log("mipmap levels: "+mipLevels);
             for(int i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange().baseMipLevel(i-1);
                 barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -1389,9 +1285,8 @@ public class GameVulkan extends Game {
                     mipHeight /= 2;
                 }
             }
-
             barrier.subresourceRange().baseMipLevel(mipLevels - 1);
-            barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             barrier.newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             barrier.srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
             barrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
@@ -1684,52 +1579,12 @@ public class GameVulkan extends Game {
                 1,1);
 
         ubo.proj.getData()[1][1] *= -1;
-
         ubo.view = Matrix.getIdentityMatrix(4);
 
         var temp = new Matrix4f().lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-        System.out.println("glm view matrix");
-        for(int i = 0;i < 4; i++) {
-            for(int j = 0; j < 4; j++) {
-                System.out.print(temp.get(i, j) + " ");
-            }
-            System.out.println();
-        }
-        System.out.println("Custom view matrix: ");
-        ubo.view.display();
-
-        System.out.println("glm pers: ");
         var temp2 =  new Matrix4f().perspective((float) Math.toRadians(45),
                 (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-        for(int i = 0;i < 4; i++) {
-            for(int j = 0; j < 4; j++) {
-                System.out.print(temp2.get(i, j) + " ");
-            }
-            System.out.println();
-        }
-        System.out.println("vcustom pers:");
-        ubo.proj.display();
-
-//        ubo.view = new Camera();
-//        ubo.model.rotate((float) Math.toRadians(-45), 0.0f, 0.0f, 1.0f);
-//        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-//        ubo.proj.perspective((float) Math.toRadians(45),
-//                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-
         this.currentUbo = ubo;
-//        this.scene.cameras.get(0).
-    }
-
-    public void rotateRectangle() {
-//        UniformBufferObject ubo = new UniformBufferObject();
-//
-//        ubo.model.rotate((float) (glfwGetTime() * Math.toRadians(90)), 0.0f, 0.0f, 1.0f);
-//        ubo.view.lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-//        ubo.proj.perspective((float) Math.toRadians(45),
-//                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-//        ubo.proj.m11(ubo.proj.m11() * -1);
-//
-//        this.currentUbo = ubo;
     }
 
     private void updateUbo(int currentImage) {
@@ -1742,12 +1597,6 @@ public class GameVulkan extends Game {
             }
             vkUnmapMemory(device, uniformBuffersMemory.get(currentImage));
         }
-    }
-
-    private static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
-        VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
-        System.err.println("Validation layer: " + callbackData.pMessageString());
-        return VK_FALSE;
     }
 
     private void createCommandBuffers() {
