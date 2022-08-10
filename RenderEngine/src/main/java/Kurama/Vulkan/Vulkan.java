@@ -150,7 +150,7 @@ public class Vulkan {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkShaderModuleCreateInfo createInfo = VkShaderModuleCreateInfo.callocStack(stack);
+            VkShaderModuleCreateInfo createInfo = VkShaderModuleCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO);
             createInfo.pCode(spirvCode);
@@ -374,7 +374,7 @@ public class Vulkan {
 
         try(MemoryStack stack = stackPush()) {
 
-            VkFormatProperties props = VkFormatProperties.callocStack(stack);
+            VkFormatProperties props = VkFormatProperties.calloc(stack);
 
             for(int i = 0; i < formatCandidates.capacity(); ++i) {
 

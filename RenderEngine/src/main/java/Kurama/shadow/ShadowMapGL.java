@@ -1,25 +1,26 @@
 package Kurama.shadow;
 
 import Kurama.Mesh.Texture;
+import Kurama.OpenGL.TextureGL;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 
-public class ShadowMap {
+public class ShadowMapGL {
     public static int DEFAULT_SHADOWMAP_WIDTH = 1024;
     public static int DEFAULT_SHADOWMAP_HEIGHT = 1024;
 
     public int shadowMapWidth = DEFAULT_SHADOWMAP_WIDTH;
     public int shadowMapHeight = DEFAULT_SHADOWMAP_HEIGHT;
     public final int depthMapFBO;
-    public final Texture depthMap;
+    public final TextureGL depthMap;
 
-    public ShadowMap(int width, int height) {
+    public ShadowMapGL(int width, int height) {
         this.shadowMapWidth = width;
         this.shadowMapHeight = height;
 
         depthMapFBO = glGenFramebuffers();
-        depthMap = new Texture(shadowMapWidth,shadowMapHeight,GL_DEPTH_COMPONENT);
+        depthMap = new TextureGL(shadowMapWidth,shadowMapHeight,GL_DEPTH_COMPONENT);
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,depthMap.getId(),0);

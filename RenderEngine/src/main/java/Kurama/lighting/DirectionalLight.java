@@ -1,7 +1,7 @@
 package Kurama.lighting;
 
 import Kurama.Mesh.Mesh;
-import Kurama.shadow.ShadowMap;
+import Kurama.shadow.ShadowMapGL;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -15,11 +15,11 @@ public class DirectionalLight extends Model {
     public Vector color;
     public float intensity;
     public Vector direction_Vector;
-    public ShadowMap shadowMap;
+    public ShadowMapGL shadowMap;
     public Matrix shadowProjectionMatrix;
     public boolean doesProduceShadow = false;
 
-    public DirectionalLight(Game game,Vector color, Quaternion orientation, float intensity, ShadowMap shadowMap,
+    public DirectionalLight(Game game,Vector color, Quaternion orientation, float intensity, ShadowMapGL shadowMap,
                             Mesh mesh,  Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, mesh, identifier);
@@ -30,7 +30,7 @@ public class DirectionalLight extends Model {
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
-    public DirectionalLight(Game game, Vector color, Quaternion orientation, float intensity, ShadowMap shadowMap,
+    public DirectionalLight(Game game, Vector color, Quaternion orientation, float intensity, ShadowMapGL shadowMap,
                             List<Mesh> meshes, Matrix shadowProjectionMatrix, String identifier) {
 
         super(game, meshes, identifier);

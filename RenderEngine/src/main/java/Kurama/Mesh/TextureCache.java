@@ -26,7 +26,7 @@ public class TextureCache {
         Texture texture = texturesMap.get(path);
         if ( texture == null ) {
             try {
-                texture = new Texture(path);
+                texture = Texture.createTexture(path);
                 texturesMap.put(path, texture);
             }catch (Exception e) {
                 return null;

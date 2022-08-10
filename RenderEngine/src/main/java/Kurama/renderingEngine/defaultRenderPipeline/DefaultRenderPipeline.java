@@ -216,22 +216,22 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         for(Material material:mesh.materials) {
             if (material.texture != null) {
                 glActiveTexture(offset+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.texture.getId());
             }
 
             if (material.normalMap != null) {
                 glActiveTexture(offset+1+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.normalMap.getId());
             }
 
             if (material.diffuseMap != null) {
                 glActiveTexture(offset+2+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.diffuseMap.getId());
             }
 
             if (material.specularMap != null) {
                 glActiveTexture(offset+3+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.specularMap.getId());
             }
             offset+=4;
         }
@@ -263,22 +263,22 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
         for(Material material:mesh.materials) {
             if (material.texture != null) {
                 glActiveTexture(offset+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.texture.getId());
             }
 
             if (material.normalMap != null) {
                 glActiveTexture(offset+1+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.normalMap.getId());
             }
 
             if (material.diffuseMap != null) {
                 glActiveTexture(offset+2+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.diffuseMap.getId());
             }
 
             if (material.specularMap != null) {
                 glActiveTexture(offset+3+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.specularMap.getId());
             }
             offset+=4;
         }

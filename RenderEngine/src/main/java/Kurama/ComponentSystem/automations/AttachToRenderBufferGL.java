@@ -2,14 +2,15 @@ package Kurama.ComponentSystem.automations;
 
 import Kurama.ComponentSystem.components.Component;
 import Kurama.Mesh.Texture;
+import Kurama.OpenGL.TextureGL;
 import Kurama.buffers.RenderBuffer;
 import Kurama.inputs.Input;
 
-public class AttachToRenderBuffer implements Automation {
+public class AttachToRenderBufferGL implements Automation {
 
     public RenderBuffer renderBuffer;
 
-    public AttachToRenderBuffer(RenderBuffer renderBuffer) {
+    public AttachToRenderBufferGL(RenderBuffer renderBuffer) {
         this.renderBuffer = renderBuffer;
     }
 
@@ -19,10 +20,10 @@ public class AttachToRenderBuffer implements Automation {
         current.setHeight(renderBuffer.renderResolution.geti(1));
 
         if(current.texture == null) {
-            current.texture = new Texture(renderBuffer.textureId);
+            current.texture = new TextureGL(renderBuffer.textureId);
         }
         else {
-            current.texture.id = renderBuffer.textureId;
+            ((TextureGL)current.texture).id = renderBuffer.textureId;
         }
 
     }

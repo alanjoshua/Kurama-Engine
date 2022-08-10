@@ -4,6 +4,7 @@ import Kurama.Effects.Fog;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Material;
+import Kurama.OpenGL.TextureGL;
 import Kurama.lighting.DirectionalLight;
 import Kurama.lighting.PointLight;
 import Kurama.lighting.SpotLight;
@@ -22,7 +23,7 @@ import static org.lwjgl.opengl.NVMeshShader.GL_MESH_SHADER_NV;
 
 // This base of this class was taken from lwjglgamedev gitbook
 
-public class ShaderProgram {
+public class ShaderProgramGL {
 
     private final int programID;
     private int vertexShaderID;
@@ -35,7 +36,7 @@ public class ShaderProgram {
 //    public String vertexShaderLocation = null;
 //    public String fragmentShaderLocation = null;
 
-    public ShaderProgram(String shaderIdentifier) {
+    public ShaderProgramGL(String shaderIdentifier) {
         this.shaderIdentifier = shaderIdentifier;
         programID = glCreateProgram();
         if(programID == 0) {
@@ -198,22 +199,22 @@ public class ShaderProgram {
             var material = materials.get(i);
             if (material.texture != null) {
                 glActiveTexture(offset+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.texture.getId());
             }
 
             if (material.normalMap != null) {
                 glActiveTexture(offset+1+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.normalMap.getId());
             }
 
             if (material.diffuseMap != null) {
                 glActiveTexture(offset+2+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.diffuseMap.getId());
             }
 
             if (material.specularMap != null) {
                 glActiveTexture(offset+3+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.specularMap.getId());
             }
 
             offset = setUniform(uniformName+"["+i+"]",textureName+"["+i+"]",normalName+"["+i+"]",
@@ -226,7 +227,7 @@ public class ShaderProgram {
         for(int i = 0;i < lights.size();i++) {
             if(lights.get(i).shadowMap != null) {
                 glActiveTexture(off + i + GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, lights.get(i).shadowMap.depthMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) lights.get(i).shadowMap.depthMap.getId());
                 setUniform(uniformName + "[" + i + "]", off + i);
             }
         }
@@ -236,7 +237,7 @@ public class ShaderProgram {
         for(int i = 0;i < spotlights.size();i++) {
             if(spotlights.get(i).shadowMap != null) {
                 glActiveTexture(off + i + GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, spotlights.get(i).shadowMap.depthMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) spotlights.get(i).shadowMap.depthMap.getId());
                 setUniform(uniformName + "[" + i + "]", off + i);
             }
         }

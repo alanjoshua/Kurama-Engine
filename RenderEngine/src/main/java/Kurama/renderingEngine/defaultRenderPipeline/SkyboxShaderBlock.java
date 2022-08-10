@@ -4,12 +4,12 @@ import Kurama.Math.Matrix;
 import Kurama.game.Game;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.*;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 
 public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
     private static String skyboxShaderID = "skyboxshader";
-    private ShaderProgram skyboxShader;
+    private ShaderProgramGL skyboxShader;
 
     public SkyboxShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
         super(game, parentPipeline, pipelineID);
@@ -18,7 +18,7 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
     @Override
     public void setup(RenderPipelineData input) {
         try {
-            skyboxShader = new ShaderProgram(skyboxShaderID);
+            skyboxShader = new ShaderProgramGL(skyboxShaderID);
 
             skyboxShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SkyBoxVertexShader.glsl");
             skyboxShader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/SkyBoxFragmentShader.glsl");
@@ -48,24 +48,24 @@ public class SkyboxShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         CurrentCameraBlockData inp = (CurrentCameraBlockData) input;
         var camera = inp.camera;
 
-        ShaderProgram skyBoxShaderProgram = skyboxShader;
-        skyBoxShaderProgram.bind();
+        ShaderProgramGL skyBoxShaderProgramGL = skyboxShader;
+        skyBoxShaderProgramGL.bind();
 
         if (input.scene.skybox.shouldRender) {
 
             // Update projection Matrix
             Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
-            skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
+            skyBoxShaderProgramGL.setUniform("projectionMatrix", projectionMatrix);
 
             Model skyBox = input.scene.skybox;
             skyBox.setPos(camera.getPos());
             Matrix modelViewMatrix = camera.getWorldToObject().matMul(input.scene.skybox.getObjectToWorldMatrix());
-            skyBoxShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
-            skyBoxShaderProgram.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
+            skyBoxShaderProgramGL.setUniform("modelViewMatrix", modelViewMatrix);
+            skyBoxShaderProgramGL.setUniform("ambientLight", skyBox.meshes.get(0).materials.get(0).ambientColor);
 
             ((DefaultRenderPipeline)parentPipeline).initToEndFullRender(input.scene.skybox.meshes.get(0), 0);
         }
-        skyBoxShaderProgram.unbind();
+        skyBoxShaderProgramGL.unbind();
         return input;
     }
 

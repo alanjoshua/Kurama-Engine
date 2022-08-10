@@ -527,7 +527,7 @@ public class GameVulkan extends Game {
         }
 
         //Add texture loc
-        meshes.get(0).materials.get(0).texture = new Texture(textureDir + "viking_room.png");
+        meshes.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "viking_room.png");
 
         //add color just for the sake of consistency with vulkan tutorial
         var colors = new ArrayList<Vector>();

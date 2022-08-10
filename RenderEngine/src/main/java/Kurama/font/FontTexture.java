@@ -105,7 +105,7 @@ public class FontTexture {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        texture = new Texture(buf);
+        texture = Texture.createTexture(buf);
 
     }
 

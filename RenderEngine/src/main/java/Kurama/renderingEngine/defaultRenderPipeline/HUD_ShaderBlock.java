@@ -6,12 +6,12 @@ import Kurama.game.Game;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 
 public class HUD_ShaderBlock extends RenderPipeline {
 
     private String hud_shader_id = "hud_shader";
-    private ShaderProgram hud_shader;
+    private ShaderProgramGL hud_shader;
 
     public HUD_ShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
         super(game, parentPipeline, pipelineID);
@@ -22,7 +22,7 @@ public class HUD_ShaderBlock extends RenderPipeline {
 
         try {
 
-            hud_shader = new ShaderProgram(hud_shader_id);
+            hud_shader = new ShaderProgramGL(hud_shader_id);
 
             hud_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/HUDVertexShader.glsl");
             hud_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/HUDFragmentShader.glsl");
@@ -47,8 +47,8 @@ public class HUD_ShaderBlock extends RenderPipeline {
 
         Matrix ortho = Matrix.buildOrtho2D(0, input.game.getMasterWindow().getWidth(), input.game.getMasterWindow().getHeight(), 0);
 
-        ShaderProgram hudShaderProgram = hud_shader;
-        hudShaderProgram.bind();
+        ShaderProgramGL hudShaderProgramGL = hud_shader;
+        hudShaderProgramGL.bind();
 
         for(String meshId :input.scene.shaderblock_mesh_model_map.get(pipelineID).keySet()) {
             Mesh mesh = input.scene.meshID_mesh_map.get(meshId);
@@ -59,15 +59,15 @@ public class HUD_ShaderBlock extends RenderPipeline {
                 if (m.shouldRender) {
                     // Set orthographic and model matrix for this HUD item
                     Matrix projModelMatrix = ortho.matMul((m.getObjectToWorldMatrix()));
-                    hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-                    hudShaderProgram.setUniform("color", mesh.materials.get(0).ambientColor);
+                    hudShaderProgramGL.setUniform("projModelMatrix", projModelMatrix);
+                    hudShaderProgramGL.setUniform("color", mesh.materials.get(0).ambientColor);
 
                     ((DefaultRenderPipeline)parentPipeline).initToEndFullRender(mesh, 0);
                 }
             }
         }
 
-        hudShaderProgram.unbind();
+        hudShaderProgramGL.unbind();
         return input;
     }
 

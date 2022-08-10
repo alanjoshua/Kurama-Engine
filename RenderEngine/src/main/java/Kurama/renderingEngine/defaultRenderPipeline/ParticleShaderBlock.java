@@ -9,7 +9,7 @@ import Kurama.particle.ParticleGenerator;
 import Kurama.renderingEngine.CurrentCameraBlockData;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 
 import java.util.*;
 
@@ -18,7 +18,7 @@ import static org.lwjgl.opengl.GL15.*;
 public class ParticleShaderBlock extends RenderPipeline {
 
     private static String particleShaderID = "particleShader";
-    private ShaderProgram particleShader;
+    private ShaderProgramGL particleShader;
 
     public ParticleShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
         super(game, parentPipeline, pipelineID);
@@ -26,7 +26,7 @@ public class ParticleShaderBlock extends RenderPipeline {
 
     @Override
     public void setup(RenderPipelineData input) {
-        particleShader = new ShaderProgram(particleShaderID);
+        particleShader = new ShaderProgramGL(particleShaderID);
 
         try {
             particleShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/ParticleVertexShader.glsl");
@@ -139,7 +139,7 @@ public class ParticleShaderBlock extends RenderPipeline {
 
             if (inst_mesh.materials.get(0).texture != null) {
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, inst_mesh.materials.get(0).texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) inst_mesh.materials.get(0).texture.getId());
             }
 
             particleShader.setUniform("numCols", inst_mesh.materials.get(0).texture.numCols);
