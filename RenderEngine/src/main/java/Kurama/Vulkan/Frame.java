@@ -1,5 +1,8 @@
 package Kurama.Vulkan;
 
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
+
 import java.nio.LongBuffer;
 
 import static org.lwjgl.system.MemoryStack.stackGet;
@@ -11,17 +14,23 @@ import static org.lwjgl.system.MemoryStack.stackGet;
  * */
 public class Frame {
 
-    private final long imageAvailableSemaphore;
-    private final long renderFinishedSemaphore;
-    private final long fence;
+    public final long imageAvailableSemaphore;
+    public final long renderFinishedSemaphore;
+    public final long fence;
 
-    public Frame(long imageAvailableSemaphore, long renderFinishedSemaphore, long fence) {
+    public long commandPool;
+
+    public VkCommandBuffer commandBuffer;
+
+    public Frame(long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
         this.imageAvailableSemaphore = imageAvailableSemaphore;
         this.renderFinishedSemaphore = renderFinishedSemaphore;
         this.fence = fence;
+        this.commandBuffer = commandBuffer;
+        this.commandPool = commandPool;
     }
 
-    public long imageAvailableSemaphore() {
+    public long presentSemaphore() {
         return imageAvailableSemaphore;
     }
 

@@ -1,13 +1,13 @@
 package main;
 
 import Kurama.ComponentSystem.components.model.Model;
-import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils;
+import Kurama.Vulkan.TextureVK;
 import Kurama.Vulkan.Vulkan;
 import Kurama.camera.Camera;
 import Kurama.display.DisplayVulkan;
@@ -15,17 +15,17 @@ import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
 import Kurama.utils.Logger;
-import org.joml.Matrix4f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
@@ -33,37 +33,27 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
-import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.assimp.Assimp.aiProcess_DropNormals;
 import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.stb.STBImage.*;
-import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.vulkan.EXTDebugUtils.*;
+import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class GameVulkan extends Game {
 
     private static final int MAX_FRAMES_IN_FLIGHT = 2;
     private long surface;
     private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-    private VkDevice device;
     private long vertexBuffer;
     private long vertexBufferMemory;
     private long indexBuffer;
     private long indexBufferMemory;
-    private long textureImage;
-    public int mipLevels;
-    private long textureImageMemory;
-
-    private long textureSampler;
     private VkQueue graphicsQueue;
     private VkQueue presentQueue;
     private long swapChain;
@@ -71,12 +61,9 @@ public class GameVulkan extends Game {
     private int swapChainImageFormat;
     private VkExtent2D swapChainExtent;
     private List<Long> swapChainImageViews;
-    private long textureImageView;
-
     long depthImage;
     long depthImageMemory;
     long depthImageView;
-
     long colorImage;
     long colorImageMemory;
     long colorImageView;
@@ -87,8 +74,8 @@ public class GameVulkan extends Game {
     private List<Long> descriptorSets;
     private long pipelineLayout;
     private long graphicsPipeline;
-    private long commandPool;
-    private List<VkCommandBuffer> commandBuffers;
+    private long TEMP_commonCommandPool;
+    VkCommandBuffer TEMP_commonCommandBuffer;
     private List<Frame> inFlightFrames;
     private Map<Integer, Frame> imagesInFlight;
     private int currentFrame;
@@ -98,7 +85,6 @@ public class GameVulkan extends Game {
 
     public DisplayVulkan display;
     public UniformBufferObject currentUbo;
-//    public String modelTextureLoc = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/viking_room.png";;
     public Camera playerCamera;
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
@@ -107,7 +93,7 @@ public class GameVulkan extends Game {
     protected float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
 
-    public Model model;
+    public List<Model> models = new ArrayList<>();
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -123,7 +109,7 @@ public class GameVulkan extends Game {
 
         initVulkan();
         this.setTargetFPS(Integer.MAX_VALUE);
-        this.shouldDisplayFPS = false;
+        this.shouldDisplayFPS = true;
 
         this.input = new InputLWJGL(this, display);
 
@@ -295,6 +281,62 @@ public class GameVulkan extends Game {
         drawFrame();
     }
 
+    public void recordCommandBuffer(VkCommandBuffer commandBuffer, long swapChainFrameBuffer, long descriptorSet) {
+        try (var stack = stackPush()) {
+
+            if(vkResetCommandBuffer(commandBuffer, 0) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to begin recording command buffer");
+            }
+
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
+            beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+
+            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
+            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
+
+            renderPassInfo.renderPass(renderPass);
+
+            VkRect2D renderArea = VkRect2D.calloc(stack);
+            renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
+            renderArea.extent(swapChainExtent);
+            renderPassInfo.renderArea(renderArea);
+
+            VkClearValue.Buffer clearValues = VkClearValue.calloc(2, stack);
+            clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
+            clearValues.get(1).depthStencil().set(1.0f, 0);
+
+            renderPassInfo.pClearValues(clearValues);
+
+            if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to begin recording command buffer");
+            }
+
+            renderPassInfo.framebuffer(swapChainFrameBuffer);
+
+            vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            {
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+                LongBuffer vertexBuffers = stack.longs(vertexBuffer);
+                LongBuffer offsets = stack.longs(0);
+                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        pipelineLayout, 0, stack.longs(descriptorSet), null);
+
+                vkCmdDrawIndexed(commandBuffer, models.get(0).meshes.get(0).indices.size(), 1, 0, 0, 0);
+            }
+            vkCmdEndRenderPass(commandBuffer);
+
+
+            if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to record command buffer");
+            }
+        }
+
+    }
+
     private void drawFrame() {
 
         try(MemoryStack stack = stackPush()) {
@@ -306,7 +348,7 @@ public class GameVulkan extends Game {
             IntBuffer pImageIndex = stack.mallocInt(1);
 
             int vkResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-                    thisFrame.imageAvailableSemaphore(), VK_NULL_HANDLE, pImageIndex);
+                    thisFrame.presentSemaphore(), VK_NULL_HANDLE, pImageIndex);
 
             if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
                 recreateSwapChain();
@@ -318,13 +360,15 @@ public class GameVulkan extends Game {
             final int imageIndex = pImageIndex.get(0);
 
             updateUbo(imageIndex);
+            recordCommandBuffer(thisFrame.commandBuffer,swapChainFramebuffers.get(imageIndex), descriptorSets.get(imageIndex));
 
             if(imagesInFlight.containsKey(imageIndex)) {
                 vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
             }
-
             imagesInFlight.put(imageIndex, thisFrame);
+            vkResetFences(device, thisFrame.pFence());
 
+            // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
@@ -333,24 +377,19 @@ public class GameVulkan extends Game {
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
 
             submitInfo.pSignalSemaphores(thisFrame.pRenderFinishedSemaphore());
-
-            submitInfo.pCommandBuffers(stack.pointers(commandBuffers.get(imageIndex)));
-
-            vkResetFences(device, thisFrame.pFence());
+            submitInfo.pCommandBuffers(stack.pointers(thisFrame.commandBuffer));
 
             if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, thisFrame.fence())) != VK_SUCCESS) {
                 vkResetFences(device, thisFrame.pFence());
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
+            // Display rendered image to screen
             VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
             presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-
             presentInfo.pWaitSemaphores(thisFrame.pRenderFinishedSemaphore());
-
             presentInfo.swapchainCount(1);
             presentInfo.pSwapchains(stack.longs(swapChain));
-
             presentInfo.pImageIndices(pImageIndex);
 
             vkResult = vkQueuePresentKHR(presentQueue, presentInfo);
@@ -366,6 +405,24 @@ public class GameVulkan extends Game {
         }
     }
 
+    public void createTEMPCommandBuffer() {
+
+        try (var stack = stackPush()) {
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+            allocInfo.commandPool(TEMP_commonCommandPool);
+            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+            allocInfo.commandBufferCount(1);
+
+            PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+            if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to allocate command buffers");
+            }
+
+            TEMP_commonCommandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+        }
+    }
+
     @Override
     public void cleanUp() {
         // Wait for the device to complete all operations before release resources
@@ -374,10 +431,7 @@ public class GameVulkan extends Game {
 
         cleanupSwapChain();
 
-        vkDestroyImageView(device, textureImageView, null);
-        vkDestroySampler(device, textureSampler, null);
-        vkDestroyImage(device, textureImage, null);
-        vkFreeMemory(device, textureImageMemory, null);
+        models.forEach(model -> model.meshes.get(0).materials.get(0).texture.cleanUp());
 
         vkDestroyDescriptorPool(device, descriptorPool, null);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, null);
@@ -393,12 +447,12 @@ public class GameVulkan extends Game {
 
         inFlightFrames.forEach(frame -> {
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
-            vkDestroySemaphore(device, frame.imageAvailableSemaphore(), null);
+            vkDestroySemaphore(device, frame.presentSemaphore(), null);
             vkDestroyFence(device, frame.fence(), null);
         });
         inFlightFrames.clear();
 
-        vkDestroyCommandPool(device, commandPool, null);
+        vkDestroyCommandPool(device, TEMP_commonCommandPool, null);
 
         vkDestroyDevice(device, null);
 
@@ -430,12 +484,15 @@ public class GameVulkan extends Game {
         createLogicalDevice();
 
         createCommandPool();
+        createTEMPCommandBuffer();
 
-        loadModel();
+        loadModels();
 
-        createTextureImage();
-        createTextureImageView();
-        createTextureSampler();
+        models.forEach(model -> {
+            ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureImage(TEMP_commonCommandPool, graphicsQueue);
+            ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureImageView();
+            ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureSampler();
+        });
 
         createVertexBuffer();
         createIndexBuffer();
@@ -452,7 +509,7 @@ public class GameVulkan extends Game {
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
-        createCommandBuffers();
+//        createCommandBuffers();
 
         createSyncObjects();
     }
@@ -485,14 +542,17 @@ public class GameVulkan extends Game {
         createColorResources();
         createDepthResources();
         createFramebuffers();
-        createCommandBuffers();
+
+        createTEMPCommandBuffer();
+        recreateFrameCommandBuffers();
     }
 
     private void cleanupSwapChain() {
 
         swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
 
-        vkFreeCommandBuffers(device, commandPool, Vulkan.asPointerBuffer(commandBuffers));
+        vkFreeCommandBuffers(device, TEMP_commonCommandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{TEMP_commonCommandBuffer})));
+        inFlightFrames.forEach(f -> vkFreeCommandBuffers(device, f.commandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{f.commandBuffer}))));
 
         vkDestroyPipeline(device, graphicsPipeline, null);
 
@@ -513,7 +573,7 @@ public class GameVulkan extends Game {
         vkDestroySwapchainKHR(device, swapChain, null);
     }
 
-    public void loadModel() {
+    public void loadModels() {
         var location = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/models/viking_room.obj";
         var textureDir = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/";
         List<Mesh> meshes = null;
@@ -534,7 +594,7 @@ public class GameVulkan extends Game {
         meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{1f,1f,1f})));
         meshes.get(0).setAttribute(colors, Mesh.COLOR);
 
-        model = new Model(this, meshes, "windmill");
+        models.add(new Model(this, meshes, "windmill"));
     }
 
     private void createDepthResources() {
@@ -560,7 +620,7 @@ public class GameVulkan extends Game {
             depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, device);
             // Explicitly transitioning the depth image
             transitionImageLayout(depthImage, depthFormat,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, TEMP_commonCommandPool, graphicsQueue);
 
         }
     }
@@ -930,6 +990,7 @@ public class GameVulkan extends Game {
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
             LongBuffer pCommandPool = stack.mallocLong(1);
 
@@ -937,7 +998,8 @@ public class GameVulkan extends Game {
                 throw new RuntimeException("Failed to create command pool");
             }
 
-            commandPool = pCommandPool.get(0);
+            TEMP_commonCommandPool = pCommandPool.get(0);
+
         }
     }
 
@@ -1047,7 +1109,12 @@ public class GameVulkan extends Game {
 
     private void createIndexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Short.SIZE * model.meshes.get(0).indices.size();
+            long bufferSize = 0;
+            for(var model: models) {
+                for(var mesh: model.meshes) {
+                    bufferSize += Short.SIZE * mesh.indices.size();
+                }
+            }
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -1062,7 +1129,11 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize), model.meshes.get(0).indices);
+                for(var model: models) {
+                    for(var mesh: model.meshes) {
+                        memcpyInt(data.getByteBuffer(0, (int) bufferSize),mesh.indices);
+                    }
+                }
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1075,7 +1146,7 @@ public class GameVulkan extends Game {
             indexBuffer = pBuffer.get(0);
             indexBufferMemory = pBufferMemory.get(0);
 
-            copyBuffer(device, commandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
+            copyBuffer(device, TEMP_commonCommandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
 
             vkDestroyBuffer(device, stagingBuffer, null);
             vkFreeMemory(device, stagingBufferMemory, null);
@@ -1084,7 +1155,12 @@ public class GameVulkan extends Game {
 
     private void createVertexBuffer() {
         try (var stack = stackPush()) {
-            long bufferSize = Vertex.SIZEOF * model.meshes.get(0).getVertices().size();
+            long bufferSize = 0;
+            for(var model: models) {
+                for(var mesh: model.meshes) {
+                    bufferSize += Vertex.SIZEOF * mesh.getVertices().size();
+                }
+            }
 
             var pBuffer = stack.mallocLong(1);
             var pBufferMemory = stack.mallocLong(1);
@@ -1099,7 +1175,11 @@ public class GameVulkan extends Game {
 
             vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
             {
-                memcpy(data.getByteBuffer(0, (int) bufferSize), model.meshes.get(0));
+                for(var model: models) {
+                    for(var mesh: model.meshes) {
+                        memcpy(data.getByteBuffer(0, (int) bufferSize), mesh);
+                    }
+                }
             }
             vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1112,77 +1192,11 @@ public class GameVulkan extends Game {
             vertexBuffer = pBuffer.get(0);
             vertexBufferMemory = pBufferMemory.get(0);
 
-            copyBuffer(device, commandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
+            copyBuffer(device, TEMP_commonCommandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
 
             vkDestroyBuffer(device, stagingBuffer, null);
             vkFreeMemory(device, stagingBufferMemory, null);
         }
-    }
-
-    private void createTextureImage() {
-
-        try(var stack = stackPush()) {
-
-            IntBuffer pWidth = stack.mallocInt(1);
-            IntBuffer pHeight = stack.mallocInt(1);
-            IntBuffer pChannels = stack.mallocInt(1);
-
-            ByteBuffer pixels = stbi_load(model.meshes.get(0).materials.get(0).texture.fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
-
-            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
-            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
-
-            if(pixels == null) {
-                throw new RuntimeException("Failed to load texture image ");
-            }
-
-            LongBuffer pStagingBuffer = stack.mallocLong(1);
-            LongBuffer pStagingBufferMemory = stack.mallocLong(1);
-
-            createBuffer(device, physicalDevice,
-                    imageSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    pStagingBuffer,
-                    pStagingBufferMemory);
-
-            PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, pStagingBufferMemory.get(0), 0, imageSize, 0, data);
-            {
-                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
-            }
-            vkUnmapMemory(device, pStagingBufferMemory.get(0));
-
-            stbi_image_free(pixels);
-
-            LongBuffer pTextureImage = stack.mallocLong(1);
-            LongBuffer pTextureImageMemory = stack.mallocLong(1);
-            createImage(pWidth.get(0), pHeight.get(0),
-                    VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    mipLevels,
-                    VK_SAMPLE_COUNT_1_BIT,
-                    pTextureImage,
-                    pTextureImageMemory);
-
-            textureImage = pTextureImage.get(0);
-            textureImageMemory = pTextureImageMemory.get(0);
-
-            transitionImageLayout(textureImage,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_IMAGE_LAYOUT_UNDEFINED,
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    mipLevels);
-
-            copyBufferToImage(pStagingBuffer.get(0), textureImage, pWidth.get(0), pHeight.get(0));
-
-            generateMipMaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, pWidth.get(0), pHeight.get(0), mipLevels);
-
-            vkDestroyBuffer(device, pStagingBuffer.get(0), null);
-            vkFreeMemory(device, pStagingBufferMemory.get(0), null);
-        }
-
     }
 
     private void createColorResources() {
@@ -1206,279 +1220,9 @@ public class GameVulkan extends Game {
 
             colorImageView = createImageView(colorImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, device);
 
-            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, TEMP_commonCommandPool, graphicsQueue);
         }
     }
-
-    private void generateMipMaps(long image, int imageFormat, int texWidth, int texHeight, int mipLevels) {
-        try (var stack = stackPush()) {
-
-            // Check if image format supports linear blitting
-            var formatProperties = VkFormatProperties.malloc(stack);
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, formatProperties);
-
-            if((formatProperties.optimalTilingFeatures() & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0) {
-                throw new RuntimeException("Texture image format does not support linear blitting");
-            }
-
-            var commandBuffer = beginSingleTimeCommands(device, commandPool);
-
-            VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
-            barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-            barrier.image(image);
-            barrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-            barrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-            barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-            barrier.subresourceRange().baseArrayLayer(0);
-            barrier.subresourceRange().layerCount(1);
-            barrier.subresourceRange().levelCount(1);
-
-            int mipWidth = texWidth;
-            int mipHeight = texHeight;
-            log("mipmap levels: "+mipLevels);
-            for(int i = 1; i < mipLevels; i++) {
-                barrier.subresourceRange().baseMipLevel(i-1);
-                barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-                barrier.newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-                barrier.srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
-                barrier.dstAccessMask(VK_ACCESS_TRANSFER_READ_BIT);
-
-                vkCmdPipelineBarrier(commandBuffer,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                        null,
-                        null,
-                        barrier);
-
-                VkImageBlit.Buffer blit = VkImageBlit.calloc(1, stack);
-                blit.srcOffsets(0).set(0,0,0);
-                blit.srcOffsets(1).set(mipWidth, mipHeight, 1);
-                blit.srcSubresource().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                blit.srcSubresource().mipLevel(i-1);
-                blit.srcSubresource().baseArrayLayer(0);
-                blit.srcSubresource().layerCount(1);
-                blit.dstOffsets(0).set(0,0,0);
-                blit.dstOffsets(1).set(mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1);
-                blit.dstSubresource().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                blit.dstSubresource().mipLevel(i);
-                blit.dstSubresource().baseArrayLayer(0);
-                blit.dstSubresource().layerCount(1);
-
-                vkCmdBlitImage(commandBuffer,
-                        image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        blit, VK_FILTER_LINEAR);
-
-                barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-                barrier.newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                barrier.srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
-                barrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
-
-                vkCmdPipelineBarrier(commandBuffer,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                        null,null, barrier);
-
-                if(mipWidth > 1) {
-                    mipWidth /= 2;
-                }
-
-                if(mipHeight > 1) {
-                    mipHeight /= 2;
-                }
-            }
-            barrier.subresourceRange().baseMipLevel(mipLevels - 1);
-            barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            barrier.newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            barrier.srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
-            barrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
-
-            vkCmdPipelineBarrier(commandBuffer,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                    null,null, barrier);
-
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
-        }
-    }
-
-    private void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, device);
-    }
-
-    private void createTextureSampler() {
-        try(MemoryStack stack = stackPush()) {
-
-            VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo.calloc(stack);
-            samplerInfo.sType(VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
-            samplerInfo.magFilter(VK_FILTER_LINEAR);
-            samplerInfo.minFilter(VK_FILTER_LINEAR);
-            samplerInfo.addressModeU(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-            samplerInfo.addressModeV(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-            samplerInfo.addressModeW(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-            samplerInfo.anisotropyEnable(true);
-            samplerInfo.maxAnisotropy(16.0f);
-            samplerInfo.borderColor(VK_BORDER_COLOR_INT_OPAQUE_BLACK);
-            samplerInfo.unnormalizedCoordinates(false);
-            samplerInfo.compareEnable(false);
-            samplerInfo.compareOp(VK_COMPARE_OP_ALWAYS);
-            samplerInfo.mipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
-            samplerInfo.minLod(0);
-            samplerInfo.maxLod(mipLevels);
-            samplerInfo.mipLodBias(0);
-
-            LongBuffer pTextureSampler = stack.mallocLong(1);
-
-            if(vkCreateSampler(device, samplerInfo, null, pTextureSampler) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create texture sampler");
-            }
-
-            textureSampler = pTextureSampler.get(0);
-        }
-    }
-
-
-    private void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels) {
-        try(MemoryStack stack = stackPush()) {
-            VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
-            barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-            barrier.oldLayout(oldLayout);
-            barrier.newLayout(newLayout);
-            barrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-            barrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-            barrier.image(image);
-
-            barrier.subresourceRange().baseMipLevel(0);
-            barrier.subresourceRange().levelCount(mipLevels);
-            barrier.subresourceRange().baseArrayLayer(0);
-            barrier.subresourceRange().layerCount(1);
-
-            if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-
-                barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT);
-
-                if(hasStencilComponent(format)) {
-                    barrier.subresourceRange().aspectMask(
-                            barrier.subresourceRange().aspectMask() | VK_IMAGE_ASPECT_STENCIL_BIT);
-                }
-
-            } else {
-                barrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-            }
-
-            int sourceStage;
-            int destinationStage;
-
-            if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-
-                barrier.srcAccessMask(0);
-                barrier.dstAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-            } else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-
-                barrier.srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT);
-                barrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
-
-                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-            } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-                barrier.srcAccessMask(0);
-                barrier.dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-
-            } else if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-
-                barrier.srcAccessMask(0);
-                barrier.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-            }
-            else {
-                throw new IllegalArgumentException("Unsupported layout transition");
-            }
-
-            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
-
-            vkCmdPipelineBarrier(commandBuffer,
-                    sourceStage, destinationStage,
-                    0,
-                    null,
-                    null,
-                    barrier);
-
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
-        }
-    }
-
-    private void copyBufferToImage(long buffer, long image, int width, int height) {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
-
-            VkBufferImageCopy.Buffer region = VkBufferImageCopy.calloc(1, stack);
-            region.bufferOffset(0);
-            region.bufferRowLength(0);   // Tightly packed
-            region.bufferImageHeight(0);  // Tightly packed
-            region.imageSubresource().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-            region.imageSubresource().mipLevel(0);
-            region.imageSubresource().baseArrayLayer(0);
-            region.imageSubresource().layerCount(1);
-            region.imageOffset().set(0, 0, 0);
-            region.imageExtent(VkExtent3D.calloc(stack).set(width, height, 1));
-
-            vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
-
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
-        }
-    }
-
-    private void createImage(int width, int height, int format, int tiling, int usage, int memProperties, int mipLevels,
-                             int numSamples, LongBuffer pTextureImage, LongBuffer pTextureImageMemory) {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkImageCreateInfo imageInfo = VkImageCreateInfo.calloc(stack);
-            imageInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
-            imageInfo.imageType(VK_IMAGE_TYPE_2D);
-            imageInfo.extent().width(width);
-            imageInfo.extent().height(height);
-            imageInfo.extent().depth(1);
-            imageInfo.mipLevels(mipLevels);
-            imageInfo.arrayLayers(1);
-            imageInfo.format(format);
-            imageInfo.tiling(tiling);
-            imageInfo.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            imageInfo.usage(usage);
-            imageInfo.samples(VK_SAMPLE_COUNT_1_BIT);
-            imageInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
-            imageInfo.samples(numSamples);
-
-            if(vkCreateImage(device, imageInfo, null, pTextureImage) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create image");
-            }
-
-            VkMemoryRequirements memRequirements = VkMemoryRequirements.malloc(stack);
-            vkGetImageMemoryRequirements(device, pTextureImage.get(0), memRequirements);
-
-            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
-            allocInfo.allocationSize(memRequirements.size());
-            allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), memProperties, physicalDevice));
-
-            if(vkAllocateMemory(device, allocInfo, null, pTextureImageMemory) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate image memory");
-            }
-
-            vkBindImageMemory(device, pTextureImage.get(0), pTextureImageMemory.get(0), 0);
-        }
-    }
-
     private void createDescriptorSets() {
         try (var stack = stackPush()) {
             LongBuffer layouts = stack.mallocLong(swapChainImages.size());
@@ -1505,8 +1249,8 @@ public class GameVulkan extends Game {
 
             VkDescriptorImageInfo.Buffer imageInfo = VkDescriptorImageInfo.calloc(1, stack);
             imageInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            imageInfo.imageView(textureImageView);
-            imageInfo.sampler(textureSampler);
+            imageInfo.imageView(((TextureVK)models.get(0).meshes.get(0).materials.get(0).texture).textureImageView);
+            imageInfo.sampler(((TextureVK)models.get(0).meshes.get(0).materials.get(0).texture).textureSampler);
 
             VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
 
@@ -1569,24 +1313,6 @@ public class GameVulkan extends Game {
         }
     }
 
-    public void setModelAngle() {
-        UniformBufferObject ubo = new UniformBufferObject();
-        ubo.model = Matrix.getIdentityMatrix(4);
-
-        ubo.proj = Matrix.buildPerspectiveMatrix(45,
-                (float)swapChainExtent.width() / (float)swapChainExtent.height(),
-                0.1f, 10.0f,
-                1,1);
-
-        ubo.proj.getData()[1][1] *= -1;
-        ubo.view = Matrix.getIdentityMatrix(4);
-
-        var temp = new Matrix4f().lookAt(2f, 2.0f, 2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-        var temp2 =  new Matrix4f().perspective((float) Math.toRadians(45),
-                (float)swapChainExtent.width() / (float)swapChainExtent.height(), 0.1f, 10.0f);
-        this.currentUbo = ubo;
-    }
-
     private void updateUbo(int currentImage) {
         try(MemoryStack stack = stackPush()) {
 
@@ -1599,82 +1325,24 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createCommandBuffers() {
+    public void recreateFrameCommandBuffers() {
+        try (MemoryStack stack = stackPush()) {
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                // Create command buffer
+                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(TEMP_commonCommandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
 
-        final int commandBuffersCount = swapChainFramebuffers.size();
-
-        commandBuffers = new ArrayList<>(commandBuffersCount);
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-            allocInfo.commandPool(commandPool);
-            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-            allocInfo.commandBufferCount(commandBuffersCount);
-
-            PointerBuffer pCommandBuffers = stack.mallocPointer(commandBuffersCount);
-
-            if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate command buffers");
-            }
-
-            for(int i = 0;i < commandBuffersCount;i++) {
-                commandBuffers.add(new VkCommandBuffer(pCommandBuffers.get(i), device));
-            }
-
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
-            beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-
-            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
-            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
-
-            renderPassInfo.renderPass(renderPass);
-
-            VkRect2D renderArea = VkRect2D.calloc(stack);
-            renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
-            renderArea.extent(swapChainExtent);
-            renderPassInfo.renderArea(renderArea);
-
-            VkClearValue.Buffer clearValues = VkClearValue.calloc(2, stack);
-            clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
-            clearValues.get(1).depthStencil().set(1.0f, 0);
-
-            renderPassInfo.pClearValues(clearValues);
-
-            for(int i = 0;i < commandBuffersCount;i++) {
-
-                VkCommandBuffer commandBuffer = commandBuffers.get(i);
-
-                if(vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to begin recording command buffer");
+                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate command buffers");
                 }
 
-                renderPassInfo.framebuffer(swapChainFramebuffers.get(i));
-
-                vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                {
-                    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-                    LongBuffer vertexBuffers = stack.longs(vertexBuffer);
-                    LongBuffer offsets = stack.longs(0);
-                    vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout, 0, stack.longs(descriptorSets.get(i)), null);
-
-                    vkCmdDrawIndexed(commandBuffer, model.meshes.get(0).indices.size(), 1, 0, 0, 0);
-                }
-                vkCmdEndRenderPass(commandBuffer);
-
-
-                if(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to record command buffer");
-                }
-
+                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+                inFlightFrames.get(i).commandBuffer = commandBuffer;
             }
-
         }
     }
 
@@ -1705,7 +1373,37 @@ public class GameVulkan extends Game {
                     throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
                 }
 
-                inFlightFrames.add(new Frame(pImageAvailableSemaphore.get(0), pRenderFinishedSemaphore.get(0), pFence.get(0)));
+                // Create command pool
+                QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+
+                VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
+                poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
+                poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+                LongBuffer pCommandPool = stack.mallocLong(1);
+
+                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create command pool");
+                }
+
+                var commandPool = pCommandPool.get(0);
+
+                // Create command buffer
+                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(TEMP_commonCommandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
+
+                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate command buffers");
+                }
+
+                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+
+                inFlightFrames.add(new Frame(pImageAvailableSemaphore.get(0), pRenderFinishedSemaphore.get(0), pFence.get(0),commandPool,commandBuffer));
             }
 
         }

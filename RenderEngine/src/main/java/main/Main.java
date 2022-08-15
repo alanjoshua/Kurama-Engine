@@ -12,10 +12,10 @@ public class Main {
 	}
 	
 	public void start() {
-		game = new GameLWJGL("OpenGL Renderer");
+//		game = new GameLWJGL("OpenGL Renderer");
 //		game = new Editor("Editor");
 
-//		game = new GameVulkan("Vulkan");
+		game = new GameVulkan("Vulkan");
 		game.start();
 //		var app = new VulkanGame();
 //		app.run();
