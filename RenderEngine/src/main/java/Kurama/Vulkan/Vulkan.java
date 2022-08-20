@@ -1,13 +1,13 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
-import main.GameVulkan;
 import main.QueueFamilyIndices;
 import main.UniformBufferObject;
 import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Pointer;
+import org.lwjgl.util.vma.VmaAllocatorCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
@@ -27,11 +28,11 @@ import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.util.vma.Vma.vmaCreateAllocator;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.vkEnumerateInstanceLayerProperties;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public class Vulkan {
@@ -395,6 +396,31 @@ public class Vulkan {
             vkBindBufferMemory(device, pBuffer.get(0), pBufferMemory.get(0), 0);
         }
     }
+
+//    public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
+//
+//        try (var stack = stackPush()) {
+//
+//            var vulkFunctions =
+//
+//            VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc(stack);
+//            allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
+////            allocatorInfo.flags(VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT);
+//            allocatorInfo.physicalDevice(physicalDevice);
+//            allocatorInfo.device(device);
+//            allocatorInfo.instance(instance);
+//
+//            allocatorInfo.pVulkanFunctions().set(instance, device);
+//            log("");
+//
+//            PointerBuffer allocator = stack.mallocPointer(1);
+//            if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
+//                throw new RuntimeException("Failed to create VMA allocator") ;
+//            }
+//
+//            return allocator;
+//        }
+//    }
 
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
 

@@ -17,6 +17,7 @@ import Kurama.inputs.InputLWJGL;
 import Kurama.utils.Logger;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.vma.VmaAllocatorCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -39,6 +40,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.util.vma.Vma.vmaCreateAllocator;
 import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
@@ -94,6 +96,8 @@ public class GameVulkan extends Game {
     public boolean isGameRunning = true;
 
     public List<Model> models = new ArrayList<>();
+
+//    PointerBuffer allocator;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -179,15 +183,6 @@ public class GameVulkan extends Game {
                 isGameRunning = true;
                 display.disableCursor();
             }
-        }
-
-        if (input.keyDownOnce(input.F)) {
-            if (this.targetFPS == this.rootGuiComponent.getRefreshRate()) {
-                this.targetFPS = 10000;
-            } else {
-                this.targetFPS = this.rootGuiComponent.getRefreshRate();
-            }
-            Logger.log("Changed target resolution" + this.targetFPS);
         }
 
         if(input.keyDown(input.S)) {
@@ -449,6 +444,7 @@ public class GameVulkan extends Game {
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
             vkDestroySemaphore(device, frame.presentSemaphore(), null);
             vkDestroyFence(device, frame.fence(), null);
+            vkDestroyCommandPool(device, frame.commandPool, null);
         });
         inFlightFrames.clear();
 
@@ -482,6 +478,8 @@ public class GameVulkan extends Game {
         msaaSamples = getMaxUsableSampleCount(physicalDevice);
 
         createLogicalDevice();
+
+//        allocator = createAllocator(physicalDevice, device, instance);
 
         createCommandPool();
         createTEMPCommandBuffer();
@@ -552,7 +550,7 @@ public class GameVulkan extends Game {
         swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
 
         vkFreeCommandBuffers(device, TEMP_commonCommandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{TEMP_commonCommandBuffer})));
-        inFlightFrames.forEach(f -> vkFreeCommandBuffers(device, f.commandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{f.commandBuffer}))));
+//        inFlightFrames.forEach(f -> vkFreeCommandBuffers(device, f.commandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{f.commandBuffer}))));
 
         vkDestroyPipeline(device, graphicsPipeline, null);
 

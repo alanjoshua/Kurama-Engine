@@ -17,7 +17,6 @@ public class Frame {
     public final long imageAvailableSemaphore;
     public final long renderFinishedSemaphore;
     public final long fence;
-
     public long commandPool;
 
     public VkCommandBuffer commandBuffer;
