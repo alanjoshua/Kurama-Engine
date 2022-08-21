@@ -94,7 +94,7 @@ public class GameVulkan extends Game {
 
     public List<Model> models = new ArrayList<>();
 
-//    PointerBuffer allocator;
+    PointerBuffer allocator;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -476,7 +476,7 @@ public class GameVulkan extends Game {
 
         createLogicalDevice();
 
-//        allocator = createAllocator(physicalDevice, device, instance);
+        allocator = createAllocator(physicalDevice, device, instance);
 
         createCommandPool();
         createTEMPCommandBuffer();

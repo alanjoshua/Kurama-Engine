@@ -28,6 +28,7 @@ import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.util.vma.Vma.VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT;
 import static org.lwjgl.util.vma.Vma.vmaCreateAllocator;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
@@ -397,30 +398,25 @@ public class Vulkan {
         }
     }
 
-//    public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
-//
-//        try (var stack = stackPush()) {
-//
-//            var vulkFunctions =
-//
-//            VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc(stack);
-//            allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
-////            allocatorInfo.flags(VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT);
-//            allocatorInfo.physicalDevice(physicalDevice);
-//            allocatorInfo.device(device);
-//            allocatorInfo.instance(instance);
-//
-//            allocatorInfo.pVulkanFunctions().set(instance, device);
-//            log("");
-//
-//            PointerBuffer allocator = stack.mallocPointer(1);
-//            if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
-//                throw new RuntimeException("Failed to create VMA allocator") ;
-//            }
-//
-//            return allocator;
-//        }
-//    }
+    public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
+
+        try (var stack = stackPush()) {
+
+            VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc(stack);
+            allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
+            allocatorInfo.flags(VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT);
+            allocatorInfo.physicalDevice(physicalDevice);
+            allocatorInfo.device(device);
+            allocatorInfo.instance(instance);
+
+            PointerBuffer allocator = stack.mallocPointer(1);
+            if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create VMA allocator") ;
+            }
+
+            return allocator;
+        }
+    }
 
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
 
