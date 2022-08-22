@@ -569,9 +569,11 @@ public class GameVulkan extends Game {
     }
 
     public void loadModels() {
-        var location = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/models/viking_room.obj";
-        var textureDir = "C:/Users/alanj/git/Kurama-Engine/RenderEngine/projects/VulkanTestProject/code/textures/";
-        List<Mesh> meshes = null;
+
+        var location = "projects/VulkanTestProject/models/meshes/viking_room.obj";
+        var textureDir = "projects/VulkanTestProject/models/textures/";
+
+        List<Mesh> meshes;
 
         try {
             meshes = AssimpStaticLoader.load(location, textureDir, aiProcess_FlipUVs | aiProcess_DropNormals);
@@ -579,6 +581,7 @@ public class GameVulkan extends Game {
         }
         catch (Exception e) {
             logError("Failed to load mesh");
+            throw new IllegalArgumentException("Could not load mesh");
         }
 
         //Add texture loc
