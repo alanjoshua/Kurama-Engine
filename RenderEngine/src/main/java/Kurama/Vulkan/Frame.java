@@ -14,12 +14,14 @@ import static org.lwjgl.system.MemoryStack.stackGet;
  * */
 public class Frame {
 
-    public final long imageAvailableSemaphore;
-    public final long renderFinishedSemaphore;
-    public final long fence;
+    public long imageAvailableSemaphore;
+    public long renderFinishedSemaphore;
+    public long fence;
     public long commandPool;
-
     public VkCommandBuffer commandBuffer;
+
+    public long cameraBuffer;
+    public long cameraBufferMemory;
 
     public Frame(long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
         this.imageAvailableSemaphore = imageAvailableSemaphore;
@@ -27,6 +29,10 @@ public class Frame {
         this.fence = fence;
         this.commandBuffer = commandBuffer;
         this.commandPool = commandPool;
+    }
+
+    public Frame() {
+
     }
 
     public long presentSemaphore() {

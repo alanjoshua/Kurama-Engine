@@ -2,7 +2,7 @@ package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
 import main.QueueFamilyIndices;
-import main.UniformBufferObject;
+import main.GPUCameraData;
 import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -371,7 +371,6 @@ public class Vulkan {
 
     public static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
         try(MemoryStack stack = stackPush()) {
-
             VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
             bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
             bufferInfo.size(size);
@@ -399,29 +398,25 @@ public class Vulkan {
     }
 
     public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
-
         try (var stack = stackPush()) {
-
             VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc(stack);
             allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
             allocatorInfo.flags(VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT);
+
             allocatorInfo.physicalDevice(physicalDevice);
             allocatorInfo.device(device);
             allocatorInfo.instance(instance);
 
             PointerBuffer allocator = stack.mallocPointer(1);
             if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create VMA allocator") ;
+                throw new RuntimeException("Failed to create VMA allocator");
             }
-
             return allocator;
         }
     }
 
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
-
         try(MemoryStack stack = stackPush()) {
-
             VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
             allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -555,15 +550,8 @@ public class Vulkan {
         src.limit(src.capacity()).rewind();
     }
 
-    public static void memcpy(ByteBuffer buffer, UniformBufferObject ubo) {
-
-        final int mat4Size = 16 * Float.BYTES;
-
-//        ubo.model.get(0, buffer);
-//        ubo.view.get(mat4Size, buffer);
-//        ubo.proj.get(mat4Size * 2, buffer);
-
-        ubo.model.setValuesToBuffer(buffer);
+    public static void memcpy(ByteBuffer buffer, GPUCameraData ubo) {
+        ubo.viewproj.setValuesToBuffer(buffer);
         ubo.view.setValuesToBuffer(buffer);
         ubo.proj.setValuesToBuffer(buffer);
     }

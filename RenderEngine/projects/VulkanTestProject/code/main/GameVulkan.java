@@ -45,7 +45,6 @@ import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class GameVulkan extends Game {
-
     private static final int MAX_FRAMES_IN_FLIGHT = 2;
     private long surface;
     private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -73,17 +72,15 @@ public class GameVulkan extends Game {
     private List<Long> descriptorSets;
     private long pipelineLayout;
     private long graphicsPipeline;
-    private long TEMP_commonCommandPool;
-    VkCommandBuffer TEMP_commonCommandBuffer;
+    public long globalCommandPool;
+    public VkCommandBuffer globalCommandBuffer;
     private List<Frame> inFlightFrames;
     private Map<Integer, Frame> imagesInFlight;
     private int currentFrame;
     boolean framebufferResize;
-    private List<Long> uniformBuffers;
-    private List<Long> uniformBuffersMemory;
 
     public DisplayVulkan display;
-    public UniformBufferObject currentUbo;
+    public GPUCameraData gpuCameraData;
     public Camera playerCamera;
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
@@ -93,8 +90,6 @@ public class GameVulkan extends Game {
     public boolean isGameRunning = true;
 
     public List<Model> models = new ArrayList<>();
-
-    PointerBuffer allocator;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -116,14 +111,16 @@ public class GameVulkan extends Game {
 
         playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.1f, 10.0f,
                 swapChainExtent.width(), swapChainExtent.height(), false, "playerCam");
-        log("after cam");
+
+        playerCamera.shouldUpdateValues = true;
+
         display.resizeEvents.add(() -> {
             playerCamera.renderResolution = display.windowResolution;
             playerCamera.setShouldUpdateValues(true);
         });
-        this.currentUbo = new UniformBufferObject();
-        this.currentUbo.proj = playerCamera.getPerspectiveProjectionMatrix();
-        currentUbo.proj.getData()[1][1] *= -1;
+        this.gpuCameraData = new GPUCameraData();
+        this.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
+        gpuCameraData.proj.getData()[1][1] *= -1;
 
         display.disableCursor();
     }
@@ -144,11 +141,15 @@ public class GameVulkan extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
-                this.currentUbo.proj = playerCamera.getPerspectiveProjectionMatrix();
-                currentUbo.proj.getData()[1][1] *= -1;
+                this.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
+                gpuCameraData.proj.getData()[1][1] *= -1;
+
+                playerCamera.setupTransformationMatrices();
+                this.gpuCameraData.view = playerCamera.getWorldToObject();
             }
+
             playerCamera.setupTransformationMatrices();
-            this.currentUbo.view = playerCamera.getWorldToObject();
+            this.gpuCameraData.view = playerCamera.getWorldToObject();
         }
 
         if(glfwWindowShouldClose(display.window)) {
@@ -190,7 +191,6 @@ public class GameVulkan extends Game {
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
             velocity = velocity.add(z.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.A)) {
@@ -199,7 +199,6 @@ public class GameVulkan extends Game {
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(-cameraSpeed));
-//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.D)) {
@@ -208,7 +207,6 @@ public class GameVulkan extends Game {
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.SPACE)) {
@@ -216,7 +214,6 @@ public class GameVulkan extends Game {
 
             Vector v = new Vector(new float[] {0,1,0});
             velocity = velocity.add(v.scalarMul(cameraSpeed));
-//            cam.setPos(cam.getPos().add(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDown(input.LEFT_SHIFT)) {
@@ -224,7 +221,6 @@ public class GameVulkan extends Game {
 
             Vector v = new Vector(new float[] {0,1,0});
             velocity = velocity.add(v.scalarMul(-cameraSpeed));
-//            cam.setPos(cam.getPos().sub(v.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(input.LEFT_CONTROL)) {
@@ -232,13 +228,8 @@ public class GameVulkan extends Game {
             else this.speedMultiplier = 1;
         }
 
-
-//        Vector newPos = scene.camera.getPos().add(posDelta);
-//        scene.camera.setPos(newPos);
         this.playerCamera.velocity = velocity;
-
         calculate3DCamMovement();
-
     }
 
     private void calculate3DCamMovement() {
@@ -317,6 +308,15 @@ public class GameVulkan extends Game {
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         pipelineLayout, 0, stack.longs(descriptorSet), null);
 
+                MeshPushConstants pushConstant = new MeshPushConstants();
+                pushConstant.renderMatrix = models.get(0).objectToWorldMatrix;
+
+                vkCmdPushConstants(commandBuffer,
+                        pipelineLayout,
+                        VK_SHADER_STAGE_VERTEX_BIT,
+                        0,
+                        pushConstant.getAsFloatBuffer());
+
                 vkCmdDrawIndexed(commandBuffer, models.get(0).meshes.get(0).indices.size(), 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
@@ -351,8 +351,8 @@ public class GameVulkan extends Game {
 
             final int imageIndex = pImageIndex.get(0);
 
-            updateUbo(imageIndex);
-            recordCommandBuffer(thisFrame.commandBuffer,swapChainFramebuffers.get(imageIndex), descriptorSets.get(imageIndex));
+            updateUbo(currentFrame);
+            recordCommandBuffer(thisFrame.commandBuffer,swapChainFramebuffers.get(imageIndex), descriptorSets.get(currentFrame));
 
             if(imagesInFlight.containsKey(imageIndex)) {
                 vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
@@ -402,7 +402,7 @@ public class GameVulkan extends Game {
         try (var stack = stackPush()) {
             VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
             allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-            allocInfo.commandPool(TEMP_commonCommandPool);
+            allocInfo.commandPool(globalCommandPool);
             allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
             allocInfo.commandBufferCount(1);
 
@@ -411,7 +411,7 @@ public class GameVulkan extends Game {
                 throw new RuntimeException("Failed to allocate command buffers");
             }
 
-            TEMP_commonCommandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+            globalCommandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
         }
     }
 
@@ -434,18 +434,17 @@ public class GameVulkan extends Game {
         vkDestroyBuffer(device, indexBuffer, null);
         vkFreeMemory(device, indexBufferMemory, null);
 
-        uniformBuffers.forEach(ubo -> vkDestroyBuffer(device, ubo, null));
-        uniformBuffersMemory.forEach(uboMemory -> vkFreeMemory(device, uboMemory, null));
-
         inFlightFrames.forEach(frame -> {
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
             vkDestroySemaphore(device, frame.presentSemaphore(), null);
             vkDestroyFence(device, frame.fence(), null);
             vkDestroyCommandPool(device, frame.commandPool, null);
+            vkDestroyBuffer(device, frame.cameraBuffer, null);
+            vkFreeMemory(device, frame.cameraBufferMemory, null);
         });
         inFlightFrames.clear();
 
-        vkDestroyCommandPool(device, TEMP_commonCommandPool, null);
+        vkDestroyCommandPool(device, globalCommandPool, null);
 
         vkDestroyDevice(device, null);
 
@@ -476,15 +475,17 @@ public class GameVulkan extends Game {
 
         createLogicalDevice();
 
-        allocator = createAllocator(physicalDevice, device, instance);
+//      allocator = createAllocator(physicalDevice, device, instance);
+        initializeFrames();
+        createFrameCommandPoolsAndBuffers();
 
-        createCommandPool();
+        createTEMPCommandPool();
         createTEMPCommandBuffer();
 
         loadModels();
 
         models.forEach(model -> {
-            ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureImage(TEMP_commonCommandPool, graphicsQueue);
+            ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureImage(globalCommandPool, graphicsQueue);
             ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureImageView();
             ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureSampler();
         });
@@ -501,12 +502,12 @@ public class GameVulkan extends Game {
         createColorResources();
         createDepthResources();
         createFramebuffers();
+
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
-//        createCommandBuffers();
 
-        createSyncObjects();
+        createSemaphoresAndFences();
     }
 
     private void recreateSwapChain() {
@@ -546,8 +547,7 @@ public class GameVulkan extends Game {
 
         swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
 
-        vkFreeCommandBuffers(device, TEMP_commonCommandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{TEMP_commonCommandBuffer})));
-//        inFlightFrames.forEach(f -> vkFreeCommandBuffers(device, f.commandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{f.commandBuffer}))));
+        vkFreeCommandBuffers(device, globalCommandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{globalCommandBuffer})));
 
         vkDestroyPipeline(device, graphicsPipeline, null);
 
@@ -618,7 +618,7 @@ public class GameVulkan extends Game {
             depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, device);
             // Explicitly transitioning the depth image
             transitionImageLayout(depthImage, depthFormat,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, TEMP_commonCommandPool, graphicsQueue);
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
 
         }
     }
@@ -899,11 +899,19 @@ public class GameVulkan extends Game {
             colorBlending.pAttachments(colorBlendAttachment);
             colorBlending.blendConstants(stack.floats(0.0f, 0.0f, 0.0f, 0.0f));
 
-            // ===> PIPELINE LAYOUT CREATION <===
-
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
             pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayout));
+
+            // Set push constants
+            VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
+            pushConstant.offset(0);
+            pushConstant.size(MeshPushConstants.SIZEOF);
+            pushConstant.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+
+            pipelineLayoutInfo.pPushConstantRanges(pushConstant);
+
+            // ===> PIPELINE LAYOUT CREATION <===
 
             LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
 
@@ -979,7 +987,7 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createCommandPool() {
+    private void createTEMPCommandPool() {
 
         try(MemoryStack stack = stackPush()) {
 
@@ -996,7 +1004,7 @@ public class GameVulkan extends Game {
                 throw new RuntimeException("Failed to create command pool");
             }
 
-            TEMP_commonCommandPool = pCommandPool.get(0);
+            globalCommandPool = pCommandPool.get(0);
 
         }
     }
@@ -1053,22 +1061,20 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createDescriptorSetLayout() {
+    public void createDescriptorSetLayout() {
         try (var stack = stackPush()) {
             VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(2, stack);
 
-            VkDescriptorSetLayoutBinding uboLayoutBinding = bindings.get(0);
-            uboLayoutBinding.binding(0);
-            uboLayoutBinding.descriptorCount(1);
-            uboLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            uboLayoutBinding.pImmutableSamplers(null);
-            uboLayoutBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+            VkDescriptorSetLayoutBinding cameraBufferBinding = bindings.get(0);
+            cameraBufferBinding.binding(0);
+            cameraBufferBinding.descriptorCount(1);
+            cameraBufferBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+            cameraBufferBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
 
             VkDescriptorSetLayoutBinding samplerLayoutBinding = bindings.get(1);
             samplerLayoutBinding.binding(1);
             samplerLayoutBinding.descriptorCount(1);
             samplerLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            samplerLayoutBinding.pImmutableSamplers(null);
             samplerLayoutBinding.stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
 
             VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
@@ -1086,21 +1092,19 @@ public class GameVulkan extends Game {
 
     private void createUniformBuffers() {
         try (var stack = stackPush()) {
-            uniformBuffers = new ArrayList<>(swapChainImages.size());
-            uniformBuffersMemory = new ArrayList<>(swapChainImages.size());
 
             LongBuffer pBuffer = stack.mallocLong(1);
             LongBuffer pBufferMemory = stack.mallocLong(1);
 
-            for(int i = 0;i < swapChainImages.size(); i++) {
+            for(int i = 0;i < inFlightFrames.size(); i++) {
                 createBuffer(device, physicalDevice,
-                        UniformBufferObject.SIZEOF,
+                        GPUCameraData.SIZEOF,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                         pBuffer,
                         pBufferMemory);
-                uniformBuffers.add(pBuffer.get(0));
-                uniformBuffersMemory.add(pBufferMemory.get(0));
+                inFlightFrames.get(i).cameraBuffer = pBuffer.get(0);
+                inFlightFrames.get(i).cameraBufferMemory = pBufferMemory.get(0);
             }
         }
     }
@@ -1144,7 +1148,7 @@ public class GameVulkan extends Game {
             indexBuffer = pBuffer.get(0);
             indexBufferMemory = pBufferMemory.get(0);
 
-            copyBuffer(device, TEMP_commonCommandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
+            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
 
             vkDestroyBuffer(device, stagingBuffer, null);
             vkFreeMemory(device, stagingBufferMemory, null);
@@ -1190,7 +1194,7 @@ public class GameVulkan extends Game {
             vertexBuffer = pBuffer.get(0);
             vertexBufferMemory = pBufferMemory.get(0);
 
-            copyBuffer(device, TEMP_commonCommandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
+            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
 
             vkDestroyBuffer(device, stagingBuffer, null);
             vkFreeMemory(device, stagingBufferMemory, null);
@@ -1218,12 +1222,12 @@ public class GameVulkan extends Game {
 
             colorImageView = createImageView(colorImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, device);
 
-            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, TEMP_commonCommandPool, graphicsQueue);
+            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
         }
     }
     private void createDescriptorSets() {
         try (var stack = stackPush()) {
-            LongBuffer layouts = stack.mallocLong(swapChainImages.size());
+            LongBuffer layouts = stack.mallocLong(inFlightFrames.size());
             for(int i = 0;i < layouts.capacity();i++) {
                 layouts.put(i, descriptorSetLayout);
             }
@@ -1233,7 +1237,7 @@ public class GameVulkan extends Game {
             allocInfo.descriptorPool(descriptorPool);
             allocInfo.pSetLayouts(layouts);
 
-            LongBuffer pDescriptorSets = stack.mallocLong(swapChainImages.size());
+            LongBuffer pDescriptorSets = stack.mallocLong(inFlightFrames.size());
 
             if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSets) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to allocate descriptor sets");
@@ -1243,7 +1247,7 @@ public class GameVulkan extends Game {
 
             VkDescriptorBufferInfo.Buffer bufferInfo =VkDescriptorBufferInfo.calloc(1, stack);
             bufferInfo.offset(0);
-            bufferInfo.range(UniformBufferObject.SIZEOF);
+            bufferInfo.range(GPUCameraData.SIZEOF);
 
             VkDescriptorImageInfo.Buffer imageInfo = VkDescriptorImageInfo.calloc(1, stack);
             imageInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -1271,7 +1275,7 @@ public class GameVulkan extends Game {
             for(int i = 0;i < pDescriptorSets.capacity();i++) {
                 long descriptorSet = pDescriptorSets.get(i);
 
-                bufferInfo.buffer(uniformBuffers.get(i));
+                bufferInfo.buffer(inFlightFrames.get(i).cameraBuffer);
                 uboDescriptorWrite.dstSet(descriptorSet);
                 samplerDescriptorWrite.dstSet(descriptorSet);
 
@@ -1315,21 +1319,22 @@ public class GameVulkan extends Game {
         try(MemoryStack stack = stackPush()) {
 
             PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, uniformBuffersMemory.get(currentImage), 0, UniformBufferObject.SIZEOF, 0, data);
+            vkMapMemory(device, inFlightFrames.get(currentImage).cameraBufferMemory, 0, GPUCameraData.SIZEOF, 0, data);
             {
-                memcpy(data.getByteBuffer(0, UniformBufferObject.SIZEOF), currentUbo);
+                memcpy(data.getByteBuffer(0, GPUCameraData.SIZEOF), gpuCameraData);
             }
-            vkUnmapMemory(device, uniformBuffersMemory.get(currentImage));
+            vkUnmapMemory(device, inFlightFrames.get(currentImage).cameraBufferMemory);
         }
     }
 
     public void recreateFrameCommandBuffers() {
         try (MemoryStack stack = stackPush()) {
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
                 // Create command buffer
                 VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
                 allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(TEMP_commonCommandPool);
+                allocInfo.commandPool(globalCommandPool);
                 allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
                 allocInfo.commandBufferCount(1);
 
@@ -1344,9 +1349,56 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createSyncObjects() {
-
+    public void initializeFrames() {
         inFlightFrames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            inFlightFrames.add(new Frame());
+        }
+    }
+
+    public void createFrameCommandPoolsAndBuffers() {
+
+        try (var stack = stackPush()) {
+            for (int i = 0; i < inFlightFrames.size(); i++) {
+
+                // Create command pool
+                QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+
+                VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
+                poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
+                poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+                LongBuffer pCommandPool = stack.mallocLong(1);
+
+                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create command pool");
+                }
+                var commandPool = pCommandPool.get(0);
+
+                // Create command buffer
+                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(commandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
+
+                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate command buffers");
+                }
+
+                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+
+                inFlightFrames.get(i).commandPool = commandPool;
+                inFlightFrames.get(i).commandBuffer = commandBuffer;
+            }
+        }
+    }
+
+    public void createSemaphoresAndFences() {
+
         imagesInFlight = new HashMap<>(swapChainImages.size());
 
         try (MemoryStack stack = stackPush()) {
@@ -1371,37 +1423,9 @@ public class GameVulkan extends Game {
                     throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
                 }
 
-                // Create command pool
-                QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
-
-                VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
-                poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-                poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
-                poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-                LongBuffer pCommandPool = stack.mallocLong(1);
-
-                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create command pool");
-                }
-
-                var commandPool = pCommandPool.get(0);
-
-                // Create command buffer
-                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(TEMP_commonCommandPool);
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to allocate command buffers");
-                }
-
-                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-
-                inFlightFrames.add(new Frame(pImageAvailableSemaphore.get(0), pRenderFinishedSemaphore.get(0), pFence.get(0),commandPool,commandBuffer));
+                inFlightFrames.get(i).imageAvailableSemaphore = pImageAvailableSemaphore.get(0);
+                inFlightFrames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
+                inFlightFrames.get(i).fence = pFence.get(0);
             }
 
         }
