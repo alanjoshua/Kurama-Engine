@@ -8,7 +8,14 @@ layout(location = 1) in vec2 fragTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
+//push constants block
+layout( push_constant ) uniform constants
+{
+    vec4 data;
+    mat4 render_matrix;
+} PushConstants;
+
 void main() {
     outColor = texture(texSampler, fragTexCoord);
-//     outColor = vec4(fragColor, 1.0);
+//     outColor = PushConstants.data;
 }

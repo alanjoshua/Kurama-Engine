@@ -134,6 +134,7 @@ public class GameVulkan extends Game {
 
         if(isGameRunning) {
 
+            // Camera updates
             playerCamera.velocity = playerCamera.velocity.add(playerCamera.acceleration.scalarMul(timeDelta));
             var detlaV = playerCamera.velocity.scalarMul(timeDelta);
             playerCamera.setPos(playerCamera.getPos().add(detlaV));
@@ -150,6 +151,10 @@ public class GameVulkan extends Game {
 
             playerCamera.setupTransformationMatrices();
             this.gpuCameraData.view = playerCamera.getWorldToObject();
+            this.gpuCameraData.projview = this.gpuCameraData.proj.matMul(this.gpuCameraData.view);
+
+            // Call tick on all models
+            models.forEach(m -> m.tick(null, input, timeDelta, false));
         }
 
         if(glfwWindowShouldClose(display.window)) {
@@ -226,6 +231,14 @@ public class GameVulkan extends Game {
         if(input.keyDownOnce(input.LEFT_CONTROL)) {
             if(this.speedMultiplier == 1) this.speedMultiplier = this.speedIncreaseMultiplier;
             else this.speedMultiplier = 1;
+        }
+
+        if(input.keyDown(input.LEFT_ARROW)) {
+            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, 90 * timeDelta));
+        }
+
+        if(input.keyDown(input.RIGHT_ARROW)) {
+            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -90 * timeDelta));
         }
 
         this.playerCamera.velocity = velocity;
@@ -351,7 +364,7 @@ public class GameVulkan extends Game {
 
             final int imageIndex = pImageIndex.get(0);
 
-            updateUbo(currentFrame);
+            updateCameraGPUData(currentFrame);
             recordCommandBuffer(thisFrame.commandBuffer,swapChainFramebuffers.get(imageIndex), descriptorSets.get(currentFrame));
 
             if(imagesInFlight.containsKey(imageIndex)) {
@@ -1315,7 +1328,7 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void updateUbo(int currentImage) {
+    private void updateCameraGPUData(int currentImage) {
         try(MemoryStack stack = stackPush()) {
 
             PointerBuffer data = stack.mallocPointer(1);

@@ -551,7 +551,7 @@ public class Vulkan {
     }
 
     public static void memcpy(ByteBuffer buffer, GPUCameraData ubo) {
-        ubo.viewproj.setValuesToBuffer(buffer);
+        ubo.projview.setValuesToBuffer(buffer);
         ubo.view.setValuesToBuffer(buffer);
         ubo.proj.setValuesToBuffer(buffer);
     }

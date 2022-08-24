@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 0) uniform CameraBuffer {
-    mat4 model;
+    mat4 projview;
     mat4 view;
     mat4 proj;
 } cameraData;
@@ -22,10 +22,9 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
-//     mat4 transformMatrix = (cameraData.viewproj * PushConstants.render_matrix);
-//     gl_Position = transformMatrix * vec4(inPosition, 1.0);
+     mat4 transformMatrix = (cameraData.projview * PushConstants.render_matrix);
+     gl_Position = transformMatrix * vec4(inPosition, 1.0);
 
-    gl_Position = cameraData.proj * cameraData.view * cameraData.model * vec4(inPosition, 1.0);
     fragColor = inColor;
     fragTexCoord = inTexCoord;
 }
