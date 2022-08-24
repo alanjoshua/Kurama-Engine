@@ -601,7 +601,7 @@ public class GameVulkan extends Game {
         List<Mesh> meshes;
 
         try {
-            meshes = AssimpStaticLoader.load(location, textureDir, aiProcess_FlipUVs | aiProcess_DropNormals);
+            meshes = AssimpStaticLoader.load(location, textureDir);
             log("successfuly loaded meshes");
         }
         catch (Exception e) {
@@ -620,7 +620,7 @@ public class GameVulkan extends Game {
 
         List<Mesh> meshes2;
         try {
-            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir, aiProcess_FlipUVs | aiProcess_DropNormals);
+            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -633,9 +633,9 @@ public class GameVulkan extends Game {
         meshes2.get(0).getVertices().forEach(v -> colors2.add(new Vector(new float[]{1f,1f,1f})));
         meshes2.get(0).setAttribute(colors2, Mesh.COLOR);
         var house = new Model(this, meshes2, "house");
-        house.pos = new Vector(0,0,-2);
+//        house.pos = new Vector(0,0,-2);
         house.setScale(1f);
-        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
+//        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
 
         models.add(room);
 //        models.add(house);
