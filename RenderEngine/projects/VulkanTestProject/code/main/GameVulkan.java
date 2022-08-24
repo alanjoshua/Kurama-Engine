@@ -109,7 +109,7 @@ public class GameVulkan extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.1f, 10.0f,
+        playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.001f, 1000.0f,
                 swapChainExtent.width(), swapChainExtent.height(), false, "playerCam");
 
         playerCamera.shouldUpdateValues = true;
@@ -155,6 +155,8 @@ public class GameVulkan extends Game {
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
+//
+//            playerCamera.pos.display();
         }
 
         if(glfwWindowShouldClose(display.window)) {
@@ -321,16 +323,25 @@ public class GameVulkan extends Game {
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         pipelineLayout, 0, stack.longs(descriptorSet), null);
 
-                MeshPushConstants pushConstant = new MeshPushConstants();
-                pushConstant.renderMatrix = models.get(0).objectToWorldMatrix;
+                int firstIndex = 0;
+                int vertexOffset = 0;
 
-                vkCmdPushConstants(commandBuffer,
-                        pipelineLayout,
-                        VK_SHADER_STAGE_VERTEX_BIT,
-                        0,
-                        pushConstant.getAsFloatBuffer());
+                for(var model: models) {
+                    MeshPushConstants pushConstant = new MeshPushConstants();
+                    pushConstant.renderMatrix = model.objectToWorldMatrix;
+                    pushConstant.data = new Vector(1,1,1,1);
 
-                vkCmdDrawIndexed(commandBuffer, models.get(0).meshes.get(0).indices.size(), 1, 0, 0, 0);
+                    vkCmdPushConstants(commandBuffer,
+                            pipelineLayout,
+                            VK_SHADER_STAGE_VERTEX_BIT,
+                            0,
+                            pushConstant.getAsFloatBuffer());
+
+                    vkCmdDrawIndexed(commandBuffer, model.meshes.get(0).indices.size(), 1, firstIndex, vertexOffset, 0);
+
+                    firstIndex += model.meshes.get(0).indices.size();
+                    vertexOffset += model.meshes.get(0).getVertices().size();
+                }
             }
             vkCmdEndRenderPass(commandBuffer);
 
@@ -508,15 +519,16 @@ public class GameVulkan extends Game {
         createDescriptorSetLayout();
 
         createSwapChain();
-
         createImageViews();
+
         createRenderPass();
         createGraphicsPipeline();
+
         createColorResources();
         createDepthResources();
         createFramebuffers();
 
-        createUniformBuffers();
+        createUniformBuffersForGPUCameraData();
         createDescriptorPool();
         createDescriptorSets();
 
@@ -604,8 +616,29 @@ public class GameVulkan extends Game {
         var colors = new ArrayList<Vector>();
         meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{1f,1f,1f})));
         meshes.get(0).setAttribute(colors, Mesh.COLOR);
+        var room = new Model(this, meshes, "room");
 
-        models.add(new Model(this, meshes, "windmill"));
+        List<Mesh> meshes2;
+        try {
+            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir, aiProcess_FlipUVs | aiProcess_DropNormals);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        //Add texture loc
+        meshes2.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "house_text.jpg");
+
+        //add color just for the sake of consistency with vulkan tutorial
+        var colors2 = new ArrayList<Vector>();
+        meshes2.get(0).getVertices().forEach(v -> colors2.add(new Vector(new float[]{1f,1f,1f})));
+        meshes2.get(0).setAttribute(colors2, Mesh.COLOR);
+        var house = new Model(this, meshes2, "house");
+        house.pos = new Vector(0,0,-2);
+        house.setScale(1f);
+        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
+
+        models.add(room);
+//        models.add(house);
     }
 
     private void createDepthResources() {
@@ -872,6 +905,7 @@ public class GameVulkan extends Game {
             rasterizer.sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
             rasterizer.depthClampEnable(false);
             rasterizer.rasterizerDiscardEnable(false);
+//            rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
             rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
             rasterizer.lineWidth(1.0f);
             rasterizer.cullMode(VK_CULL_MODE_BACK_BIT);
@@ -1103,7 +1137,7 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createUniformBuffers() {
+    private void createUniformBuffersForGPUCameraData() {
         try (var stack = stackPush()) {
 
             LongBuffer pBuffer = stack.mallocLong(1);
@@ -1258,7 +1292,7 @@ public class GameVulkan extends Game {
 
             descriptorSets = new ArrayList<>(pDescriptorSets.capacity());
 
-            VkDescriptorBufferInfo.Buffer bufferInfo =VkDescriptorBufferInfo.calloc(1, stack);
+            VkDescriptorBufferInfo.Buffer bufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
             bufferInfo.offset(0);
             bufferInfo.range(GPUCameraData.SIZEOF);
 
@@ -1305,17 +1339,17 @@ public class GameVulkan extends Game {
 
             VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
             uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            uniformBufferPoolSize.descriptorCount(swapChainImages.size());
+            uniformBufferPoolSize.descriptorCount(inFlightFrames.size());
 
             VkDescriptorPoolSize textureSamplerPoolSize = poolSizes.get(1);
             textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            textureSamplerPoolSize.descriptorCount(swapChainImages.size());
+            textureSamplerPoolSize.descriptorCount(inFlightFrames.size());
 
 
             VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
             poolInfo.pPoolSizes(poolSizes);
-            poolInfo.maxSets(swapChainImages.size());
+            poolInfo.maxSets(inFlightFrames.size());
 
             LongBuffer pDescriptorPool = stack.mallocLong(1);
 
