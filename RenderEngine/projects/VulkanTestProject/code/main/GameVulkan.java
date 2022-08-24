@@ -32,8 +32,6 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
-import static org.lwjgl.assimp.Assimp.aiProcess_DropNormals;
-import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -155,8 +153,6 @@ public class GameVulkan extends Game {
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
-//
-//            playerCamera.pos.display();
         }
 
         if(glfwWindowShouldClose(display.window)) {
@@ -421,7 +417,7 @@ public class GameVulkan extends Game {
         }
     }
 
-    public void createTEMPCommandBuffer() {
+    public void createGlobalCommandBuffer() {
 
         try (var stack = stackPush()) {
             VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
@@ -496,15 +492,14 @@ public class GameVulkan extends Game {
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
         msaaSamples = getMaxUsableSampleCount(physicalDevice);
-
         createLogicalDevice();
 
 //      allocator = createAllocator(physicalDevice, device, instance);
         initializeFrames();
         createFrameCommandPoolsAndBuffers();
 
-        createTEMPCommandPool();
-        createTEMPCommandBuffer();
+        createGlobalCommandPool();
+        createGlobalCommandBuffer();
 
         loadModels();
 
@@ -514,8 +509,11 @@ public class GameVulkan extends Game {
             ((TextureVK)model.meshes.get(0).materials.get(0).texture).createTextureSampler();
         });
 
+        // All models share the same vertex and index buffer
+        // Maybe this might have to be changed later, or use a more complex scene manager to handle dynamic loading and unloading of objects
         createVertexBuffer();
         createIndexBuffer();
+
         createDescriptorSetLayout();
 
         createSwapChain();
@@ -564,7 +562,7 @@ public class GameVulkan extends Game {
         createDepthResources();
         createFramebuffers();
 
-        createTEMPCommandBuffer();
+        createGlobalCommandBuffer();
         recreateFrameCommandBuffers();
     }
 
@@ -1034,7 +1032,7 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void createTEMPCommandPool() {
+    private void createGlobalCommandPool() {
 
         try(MemoryStack stack = stackPush()) {
 
