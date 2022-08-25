@@ -43,6 +43,8 @@ import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class GameVulkan extends Game {
+
+    // Below are Vulkan specific variables
     private static final int MAX_FRAMES_IN_FLIGHT = 2;
     private long surface;
     private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -63,15 +65,18 @@ public class GameVulkan extends Game {
     long colorImage;
     long colorImageMemory;
     long colorImageView;
-    private List<Long> swapChainFramebuffers;
-    private long renderPass;
-    private long descriptorPool;
-    private long descriptorSetLayout;
+    public List<Long> swapChainFramebuffers;
+    public long renderPass;
+    public long descriptorPool;
+    public long globalDescriptorSetLayout;
     private List<Long> descriptorSets;
     private long pipelineLayout;
     private long graphicsPipeline;
+
+    // The global Command pool and buffer are currently used for tasks such as image loading and transformations
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
+
     private List<Frame> inFlightFrames;
     private Map<Integer, Frame> imagesInFlight;
     private int currentFrame;
@@ -79,6 +84,8 @@ public class GameVulkan extends Game {
 
     public DisplayVulkan display;
     public GPUCameraData gpuCameraData;
+
+    // NON-VULKAN variables
     public Camera playerCamera;
     protected float mouseXSensitivity = 20f;
     protected float mouseYSensitivity = 20f;
@@ -446,7 +453,7 @@ public class GameVulkan extends Game {
         models.forEach(model -> model.meshes.get(0).materials.get(0).texture.cleanUp());
 
         vkDestroyDescriptorPool(device, descriptorPool, null);
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, null);
+        vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
 
         vkDestroyBuffer(device, vertexBuffer, null);
         vkFreeMemory(device, vertexBufferMemory, null);
@@ -514,6 +521,7 @@ public class GameVulkan extends Game {
         createVertexBuffer();
         createIndexBuffer();
 
+        // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         createDescriptorSetLayout();
 
         createSwapChain();
@@ -527,10 +535,10 @@ public class GameVulkan extends Game {
         createFramebuffers();
 
         createUniformBuffersForGPUCameraData();
+        createSemaphoresAndFences();
+
         createDescriptorPool();
         createDescriptorSets();
-
-        createSemaphoresAndFences();
     }
 
     private void recreateSwapChain() {
@@ -946,7 +954,7 @@ public class GameVulkan extends Game {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayout));
+            pipelineLayoutInfo.pSetLayouts(stack.longs(globalDescriptorSetLayout));
 
             // Set push constants
             VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
@@ -1131,7 +1139,7 @@ public class GameVulkan extends Game {
             if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create descriptor set layout");
             }
-            descriptorSetLayout = pDescriptorSetLayout.get(0);
+            globalDescriptorSetLayout = pDescriptorSetLayout.get(0);
         }
     }
 
@@ -1274,7 +1282,7 @@ public class GameVulkan extends Game {
         try (var stack = stackPush()) {
             LongBuffer layouts = stack.mallocLong(inFlightFrames.size());
             for(int i = 0;i < layouts.capacity();i++) {
-                layouts.put(i, descriptorSetLayout);
+                layouts.put(i, globalDescriptorSetLayout);
             }
 
             VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);

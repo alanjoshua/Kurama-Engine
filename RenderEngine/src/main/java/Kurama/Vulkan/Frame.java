@@ -19,9 +19,10 @@ public class Frame {
     public long fence;
     public long commandPool;
     public VkCommandBuffer commandBuffer;
-
     public long cameraBuffer;
     public long cameraBufferMemory;
+
+    public long globalDescriptorSet;
 
     public Frame(long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
         this.imageAvailableSemaphore = imageAvailableSemaphore;
