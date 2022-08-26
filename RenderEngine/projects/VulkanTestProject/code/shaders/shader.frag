@@ -1,21 +1,23 @@
+//glsl version 4.5
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
 
-// layout(binding = 1) uniform sampler2D texSampler;
-
-layout(location = 0) in vec4 fragColor;
+//shader input
+layout (location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
 
-layout(location = 0) out vec4 outColor;
+//output write
+layout (location = 0) out vec4 outFragColor;
 
-//push constants block
-layout( push_constant ) uniform constants
+layout(set = 0, binding = 1) uniform  SceneData{
+    vec4 fogColor; // w is for exponent
+    vec4 fogDistances; //x for min, y for max, zw unused.
+    vec4 ambientColor;
+    vec4 sunlightDirection; //w for sun power
+    vec4 sunlightColor;
+} sceneData;
+
+
+void main()
 {
-    vec4 data;
-    mat4 render_matrix;
-} PushConstants;
-
-void main() {
-//     outColor = texture(texSampler, fragTexCoord);
-    outColor = fragColor;
+    outFragColor = vec4(fragColor + sceneData.ambientColor.xyz,1.0f);
 }

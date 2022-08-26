@@ -398,7 +398,7 @@ public class Vulkan {
             return newBuffer;
         }
     }
-    
+
     public static long createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
         try (var stack = stackPush()) {
 

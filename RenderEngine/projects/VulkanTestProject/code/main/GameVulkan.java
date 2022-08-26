@@ -361,7 +361,7 @@ public class GameVulkan extends Game {
 
                     vkCmdPushConstants(commandBuffer,
                             pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            VK_SHADER_STAGE_VERTEX_BIT,
                             0,
                             pushConstant.getAsFloatBuffer());
 
@@ -1075,7 +1075,7 @@ public class GameVulkan extends Game {
             VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
             pushConstant.offset(0);
             pushConstant.size(MeshPushConstants.SIZEOF);
-            pushConstant.stageFlags(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+            pushConstant.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
 
             pipelineLayoutInfo.pPushConstantRanges(pushConstant);
 
@@ -1323,7 +1323,7 @@ public class GameVulkan extends Game {
             }
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
-            vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer.buffer, vertexBuffer.buffer, bufferSize);
@@ -1411,9 +1411,10 @@ public class GameVulkan extends Game {
             {
                 var offset = (int)(padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame);
                 int bufferSize = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * MAX_FRAMES_IN_FLIGHT);
-                var temp = data.getByteBuffer(bufferSize);
-                temp.position(offset);
-                memcpy(temp, gpuSceneData);
+
+                var buffer = data.getByteBuffer(bufferSize);
+                buffer.position(offset);
+                memcpy(buffer, gpuSceneData);
             }
             vmaUnmapMemory(vmaAllocator, gpuSceneBuffer.allocation);
         }
