@@ -370,7 +370,7 @@ public class Vulkan {
         return indices.isComplete() && extensionsSupported && swapChainAdequate && anisotropySupported;
     }
 
-    public static AllocatedBuffer createBufferVMA(long vmaAllocator, long size, int bufferUsageFlags, int vmaMemoryUsage) {
+    public static AllocatedBuffer createBufferVMA(long vmaAllocator, long size, int bufferUsageFlags, int vmaMemoryUsage, Integer vmaFlags) {
         try (var stack = stackPush()) {
             VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
             bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
@@ -380,6 +380,9 @@ public class Vulkan {
 
             var vmaAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack);
             vmaAllocationCreateInfo.usage(vmaMemoryUsage);
+            if(vmaFlags != null) {
+                vmaAllocationCreateInfo.flags(vmaFlags.intValue());
+            }
 
             var newBuffer = new AllocatedBuffer();
             var pBuffer = stack.mallocLong(1);
@@ -395,35 +398,7 @@ public class Vulkan {
             return newBuffer;
         }
     }
-
-    public static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
-        try(MemoryStack stack = stackPush()) {
-            VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
-            bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
-            bufferInfo.size(size);
-            bufferInfo.usage(usage);
-            bufferInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
-
-            if(vkCreateBuffer(device, bufferInfo, null, pBuffer) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create vertex buffer");
-            }
-
-            VkMemoryRequirements memRequirements = VkMemoryRequirements.malloc(stack);
-            vkGetBufferMemoryRequirements(device, pBuffer.get(0), memRequirements);
-
-            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
-            allocInfo.allocationSize(memRequirements.size());
-            allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), properties, physicalDevice));
-
-            if(vkAllocateMemory(device, allocInfo, null, pBufferMemory) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate vertex buffer memory");
-            }
-
-            vkBindBufferMemory(device, pBuffer.get(0), pBufferMemory.get(0), 0);
-        }
-    }
-
+    
     public static long createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
         try (var stack = stackPush()) {
 

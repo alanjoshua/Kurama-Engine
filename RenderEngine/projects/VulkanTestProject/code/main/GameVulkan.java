@@ -6,6 +6,7 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
+import Kurama.Vulkan.AllocatedBuffer;
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils;
 import Kurama.Vulkan.Vulkan;
@@ -53,10 +54,9 @@ public class GameVulkan extends Game {
     public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
-    public long vertexBuffer;
-    public long vertexBufferMemory;
-    public long indexBuffer;
-    public long indexBufferMemory;
+    public AllocatedBuffer vertexBuffer;
+    public AllocatedBuffer indexBuffer;
+    public AllocatedBuffer gpuSceneBuffer;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
     public long swapChain;
@@ -89,8 +89,6 @@ public class GameVulkan extends Game {
     public DisplayVulkan display;
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
-    public long gpuSceneDataBuffer;
-    public long gpUSceneDataBufferMemory;
     public long vmaAllocator;
 
     // NON-VULKAN variables
@@ -341,10 +339,10 @@ public class GameVulkan extends Game {
             {
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-                LongBuffer vertexBuffers = stack.longs(vertexBuffer);
+                LongBuffer vertexBuffers = stack.longs(vertexBuffer.buffer);
                 LongBuffer offsets = stack.longs(0);
                 vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
                 var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
                 var pUniformOffset = stack.mallocInt(1);
@@ -483,14 +481,9 @@ public class GameVulkan extends Game {
         vkDestroyDescriptorPool(device, descriptorPool, null);
         vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
 
-        vkDestroyBuffer(device, vertexBuffer, null);
-        vkFreeMemory(device, vertexBufferMemory, null);
-
-        vkDestroyBuffer(device, indexBuffer, null);
-        vkFreeMemory(device, indexBufferMemory, null);
-
-        vkDestroyBuffer(device, gpuSceneDataBuffer, null);
-        vkFreeMemory(device, gpUSceneDataBufferMemory, null);
+        vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
+        vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
+        vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation);
 
         inFlightFrames.forEach(frame -> {
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
@@ -577,19 +570,14 @@ public class GameVulkan extends Game {
 
         try (var stack = stackPush()) {
 
-            var pSceneBuffer = stack.mallocLong(1);
-            var pSceneBufferMemory = stack.mallocLong(1);
-
             var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
-            createBuffer(device, physicalDevice,
+            gpuSceneBuffer = createBufferVMA(vmaAllocator,
                     sceneParamsBufferSize,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    pSceneBuffer,
-                    pSceneBufferMemory
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
                     );
-            gpuSceneDataBuffer = pSceneBuffer.get(0);
-            gpUSceneDataBufferMemory = pSceneBufferMemory.get(0);
 
             // Creates a descriptor set layout with 2 bindings
             // binding 0 = GPU Camera Data
@@ -601,8 +589,6 @@ public class GameVulkan extends Game {
 
             for(int i = 0;i < inFlightFrames.size(); i++) {
 
-//                var pBuffer = stack.mallocLong(1);
-//                var pBufferMemory = stack.mallocLong(1);
                 var pDescriptorSet = stack.mallocLong(1);
 
                 // uniform buffer for GPU camera data
@@ -612,17 +598,13 @@ public class GameVulkan extends Game {
                                 vmaAllocator,
                                 GPUCameraData.SIZEOF,
                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                                VMA_MEMORY_USAGE_AUTO,
+                        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
                 log("camera buffer buffer: "+ cameraBuffer.buffer);
                 log("camera buffer allocation: "+ cameraBuffer.allocation);
 
-//                createBuffer(device, physicalDevice,
-//                        GPUCameraData.SIZEOF,
-//                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-//                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-//                        pBuffer,
-//                        pBufferMemory);
                 inFlightFrames.get(i).cameraBuffer = cameraBuffer;
 
                 // Create descriptor set per frame
@@ -652,7 +634,7 @@ public class GameVulkan extends Game {
                 VkDescriptorBufferInfo.Buffer sceneBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
                 sceneBufferInfo.offset(0);
                 sceneBufferInfo.range(GPUSceneData.SIZEOF);
-                sceneBufferInfo.buffer(gpuSceneDataBuffer);
+                sceneBufferInfo.buffer(gpuSceneBuffer.buffer);
 
                 VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
                 var gpuCameraWrite =
@@ -1285,18 +1267,15 @@ public class GameVulkan extends Game {
                 }
             }
 
-            var pBuffer = stack.mallocLong(1);
-            var pBufferMemory = stack.mallocLong(1);
-            createBuffer(device, physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    pBuffer, pBufferMemory);
-
-            long stagingBuffer = pBuffer.get(0);
-            long stagingBufferMemory = pBufferMemory.get(0);
+            var stagingBuffer = createBufferVMA(vmaAllocator,
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             var data = stack.mallocPointer(1);
 
-            vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
+            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
             {
                 for(var model: models) {
                     for(var mesh: model.meshes) {
@@ -1304,21 +1283,16 @@ public class GameVulkan extends Game {
                     }
                 }
             }
-            vkUnmapMemory(device, stagingBufferMemory);
+            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
-            createBuffer(device, physicalDevice, bufferSize,
+            indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
-                    pBuffer,
-                    pBufferMemory);
+                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-            indexBuffer = pBuffer.get(0);
-            indexBufferMemory = pBufferMemory.get(0);
+            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer.buffer, indexBuffer.buffer, bufferSize);
 
-            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer, indexBuffer, bufferSize);
+            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
-            vkDestroyBuffer(device, stagingBuffer, null);
-            vkFreeMemory(device, stagingBufferMemory, null);
         }
     }
 
@@ -1331,18 +1305,15 @@ public class GameVulkan extends Game {
                 }
             }
 
-            var pBuffer = stack.mallocLong(1);
-            var pBufferMemory = stack.mallocLong(1);
-            createBuffer(device, physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    pBuffer, pBufferMemory);
-
-            long stagingBuffer = pBuffer.get(0);
-            long stagingBufferMemory = pBufferMemory.get(0);
+            var stagingBuffer = createBufferVMA(vmaAllocator,
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             var data = stack.mallocPointer(1);
 
-            vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, data);
+            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
             {
                 for(var model: models) {
                     for(var mesh: model.meshes) {
@@ -1350,21 +1321,15 @@ public class GameVulkan extends Game {
                     }
                 }
             }
-            vkUnmapMemory(device, stagingBufferMemory);
+            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
-            createBuffer(device, physicalDevice, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
-                    pBuffer,
-                    pBufferMemory);
+            vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-            vertexBuffer = pBuffer.get(0);
-            vertexBufferMemory = pBufferMemory.get(0);
+            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer.buffer, vertexBuffer.buffer, bufferSize);
 
-            copyBuffer(device, globalCommandPool, graphicsQueue, stagingBuffer, vertexBuffer, bufferSize);
+            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
-            vkDestroyBuffer(device, stagingBuffer, null);
-            vkFreeMemory(device, stagingBufferMemory, null);
         }
     }
 
@@ -1440,17 +1405,17 @@ public class GameVulkan extends Game {
 
     private void updateSceneGPUDataInMemory(int currentFrame) {
         try(MemoryStack stack = stackPush()) {
-
             PointerBuffer data = stack.mallocPointer(1);
 
-            // Mapping the buffer with the right offset depending on the current frame
-            vkMapMemory(device, gpUSceneDataBufferMemory,
-                    padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame,
-                    GPUSceneData.SIZEOF, 0, data);
+            vmaMapMemory(vmaAllocator, gpuSceneBuffer.allocation, data);
             {
-                memcpy(data.getByteBuffer(0, GPUSceneData.SIZEOF), gpuSceneData);
+                var offset = (int)(padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame);
+                int bufferSize = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * MAX_FRAMES_IN_FLIGHT);
+                var temp = data.getByteBuffer(bufferSize);
+                temp.position(offset);
+                memcpy(temp, gpuSceneData);
             }
-            vkUnmapMemory(device, gpUSceneDataBufferMemory);
+            vmaUnmapMemory(vmaAllocator, gpuSceneBuffer.allocation);
         }
     }
 

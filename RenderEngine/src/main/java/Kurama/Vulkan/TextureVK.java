@@ -14,6 +14,7 @@ import static Kurama.Vulkan.Vulkan.memcpy;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.vkFreeMemory;
 
@@ -32,7 +33,7 @@ public class TextureVK extends Texture {
     public TextureVK(ByteBuffer buf) {
     }
 
-    public void createTextureImage(long commandPool, VkQueue graphicsQueue) {
+    public void createTextureImage(long commandPool, VkQueue graphicsQueue, long vmaAllocator) {
 
         try(var stack = stackPush()) {
 
@@ -49,22 +50,17 @@ public class TextureVK extends Texture {
                 throw new RuntimeException("Failed to load texture image ");
             }
 
-            LongBuffer pStagingBuffer = stack.mallocLong(1);
-            LongBuffer pStagingBufferMemory = stack.mallocLong(1);
-
-            createBuffer(device, physicalDevice,
+            var stagingBuffer = createBufferVMA(vmaAllocator,
                     imageSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    pStagingBuffer,
-                    pStagingBufferMemory);
+                    VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, pStagingBufferMemory.get(0), 0, imageSize, 0, data);
+            vkMapMemory(device, stagingBuffer.allocation, 0, imageSize, 0, data);
             {
                 memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
             }
-            vkUnmapMemory(device, pStagingBufferMemory.get(0));
+            vkUnmapMemory(device, stagingBuffer.allocation);
 
             stbi_image_free(pixels);
 
@@ -90,12 +86,11 @@ public class TextureVK extends Texture {
                     commandPool,
                     graphicsQueue);
 
-            copyBufferToImage(pStagingBuffer.get(0), id, pWidth.get(0), pHeight.get(0), commandPool, graphicsQueue);
+            copyBufferToImage(stagingBuffer.buffer, id, pWidth.get(0), pHeight.get(0), commandPool, graphicsQueue);
 
             generateMipMaps(id, VK_FORMAT_R8G8B8A8_SRGB, pWidth.get(0), pHeight.get(0), mipLevels, commandPool, graphicsQueue);
 
-            vkDestroyBuffer(device, pStagingBuffer.get(0), null);
-            vkFreeMemory(device, pStagingBufferMemory.get(0), null);
+           vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
     }
 
