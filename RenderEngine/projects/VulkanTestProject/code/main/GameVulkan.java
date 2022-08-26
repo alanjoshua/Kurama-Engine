@@ -16,9 +16,11 @@ import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
@@ -88,6 +90,7 @@ public class GameVulkan extends Game {
     public GPUSceneData gpuSceneData;
     public long gpuSceneDataBuffer;
     public long gpUSceneDataBufferMemory;
+    public PointerBuffer vmaAllocator;
 
     // NON-VULKAN variables
     public Camera playerCamera;
@@ -530,6 +533,8 @@ public class GameVulkan extends Game {
         gpuProperties = getGPUProperties(physicalDevice);
         msaaSamples = getMaxUsableSampleCount(gpuProperties);
         minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
+
+        vmaAllocator = createAllocator(physicalDevice, device, instance);
 
         initializeFrames();
         createFrameCommandPoolsAndBuffers();
@@ -1542,6 +1547,32 @@ public class GameVulkan extends Game {
         }
     }
 
+    public class MeshPushConstants {
+        public static int SIZEOF = (16 + 4) * Float.BYTES;
+        public Vector data;
+        public Matrix renderMatrix;
+
+        public MeshPushConstants() {
+            renderMatrix = Matrix.getIdentityMatrix(4);
+            data = new Vector(4, 0);
+        }
+        public FloatBuffer getAsFloatBuffer() {
+            FloatBuffer res = MemoryUtil.memAllocFloat((4 * 4 * 4) + (4 * 4));
+
+            for(float v: data.getData()) {
+                res.put(v);
+            }
+
+            for(Vector c:renderMatrix.convertToColumnVectorArray()) {
+                for(float val: c.getData()) {
+                    res.put(val);
+                }
+            }
+            res.flip();
+            return res;
+        }
+    }
+
     public class GPUCameraData {
 
         public static final int SIZEOF = 3 * 16 * Float.BYTES;
@@ -1559,9 +1590,7 @@ public class GameVulkan extends Game {
     }
 
     public class GPUSceneData {
-
         public static final int SIZEOF = Float.BYTES * 4 * 5;
-
         public Vector fogColor; // w is for exponent
         public Vector fogDistance; //x for min, y for max, zw unused.
         public Vector ambientColor;

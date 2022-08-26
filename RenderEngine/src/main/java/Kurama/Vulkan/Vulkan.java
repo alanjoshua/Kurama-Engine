@@ -7,7 +7,9 @@ import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Pointer;
+import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaAllocatorCreateInfo;
+import org.lwjgl.util.vma.VmaVulkanFunctions;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -28,8 +30,7 @@ import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.util.vma.Vma.VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT;
-import static org.lwjgl.util.vma.Vma.vmaCreateAllocator;
+import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
@@ -369,6 +370,28 @@ public class Vulkan {
         return indices.isComplete() && extensionsSupported && swapChainAdequate && anisotropySupported;
     }
 
+    public static AllocatedBuffer createBufferVMA(long vmaAllocator, long size, int bufferUsageFlags, int vmaMemoryUsage) {
+        try (var stack = stackPush()) {
+            VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
+            bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
+            bufferInfo.size(size);
+            bufferInfo.usage(bufferUsageFlags);
+
+            var vmaAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack);
+            vmaAllocationCreateInfo.usage(vmaMemoryUsage);
+
+            var newBuffer = new AllocatedBuffer();
+            var pBuffer = stack.mallocLong(1);
+            var pAllocation = stack.mallocPointer(1);
+
+            vmaCreateBuffer(vmaAllocator, bufferInfo, vmaAllocationCreateInfo, pBuffer, pAllocation, null);
+
+            newBuffer.buffer = pBuffer.get(0);
+            newBuffer.allocation = pAllocation.get(0);
+
+        }
+    }
+
     public static void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, long size, int usage, int properties, LongBuffer pBuffer, LongBuffer pBufferMemory) {
         try(MemoryStack stack = stackPush()) {
             VkBufferCreateInfo bufferInfo = VkBufferCreateInfo.calloc(stack);
@@ -399,13 +422,18 @@ public class Vulkan {
 
     public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
         try (var stack = stackPush()) {
-            VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc(stack);
-            allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
-            allocatorInfo.flags(VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT);
 
-            allocatorInfo.physicalDevice(physicalDevice);
-            allocatorInfo.device(device);
-            allocatorInfo.instance(instance);
+            VmaVulkanFunctions vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack)
+                    .set(instance, device);
+
+            VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.calloc();
+            allocatorInfo.vulkanApiVersion(VK_API_VERSION_1_3);
+
+            allocatorInfo
+                    .physicalDevice(physicalDevice)
+                    .device(device)
+                    .instance(instance)
+                    .pVulkanFunctions(vmaVulkanFunctions);
 
             PointerBuffer allocator = stack.mallocPointer(1);
             if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
