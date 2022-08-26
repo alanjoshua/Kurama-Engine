@@ -99,7 +99,6 @@ public class GameVulkan extends Game {
     public boolean isGameRunning = true;
 
     public List<Model> models = new ArrayList<>();
-
     public float colorChangeAngle = 0;
 
     public GameVulkan(String threadName) {
