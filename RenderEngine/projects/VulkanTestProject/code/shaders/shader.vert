@@ -1,19 +1,11 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(set = 0, binding = 0) uniform CameraBuffer {
+layout(binding = 0) uniform CameraBuffer {
     mat4 projview;
     mat4 view;
     mat4 proj;
 } cameraData;
-
-layout(set = 0, binding = 1) uniform  SceneData{
-    vec4 fogColor; // w is for exponent
-    vec4 fogDistances; //x for min, y for max, zw unused.
-    vec4 ambientColor;
-    vec4 sunlightDirection; //w for sun power
-    vec4 sunlightColor;
-} sceneData;
 
 //push constants block
 layout( push_constant ) uniform constants
@@ -30,9 +22,9 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
-    fragColor = vec3(inColor.xyz + sceneData.ambientColor.xyz);
-    fragTexCoord = inTexCoord;
+     mat4 transformMatrix = (cameraData.projview * PushConstants.render_matrix);
+     gl_Position = transformMatrix * vec4(inPosition, 1.0);
 
-    mat4 transformMatrix = (cameraData.projview * PushConstants.render_matrix);
-    gl_Position = transformMatrix * vec4(inPosition, 1.0);
+    fragColor = inColor;
+    fragTexCoord = inTexCoord;
 }

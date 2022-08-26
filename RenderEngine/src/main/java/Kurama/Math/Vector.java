@@ -1,6 +1,5 @@
 package Kurama.Math;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -364,12 +363,6 @@ public class Vector {
 	public void setValuesToBuffer(FloatBuffer buffer) {
 		for(var v: data) {
 			buffer.put(v);
-		}
-	}
-
-	public void setValuesToBuffer(ByteBuffer buffer) {
-		for(var v: data) {
-			buffer.putFloat(v);
 		}
 	}
 

@@ -1,8 +1,8 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
-import main.GameVulkan;
 import main.QueueFamilyIndices;
+import main.GPUCameraData;
 import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -477,20 +477,11 @@ public class Vulkan {
         }
     }
 
-    public static VkPhysicalDeviceProperties getGPUProperties(VkPhysicalDevice physicalDevice) {
+    public static int getMaxUsableSampleCount(VkPhysicalDevice physicalDevice) {
         try (var stack = stackPush()) {
             var physicalDeviceProperties = VkPhysicalDeviceProperties.calloc(stack);
             vkGetPhysicalDeviceProperties(physicalDevice, physicalDeviceProperties);
-            return physicalDeviceProperties;
-        }
-    }
 
-    public static long getMinBufferOffsetAlignment(VkPhysicalDeviceProperties gpuProperties) {
-        return gpuProperties.limits().minUniformBufferOffsetAlignment();
-    }
-
-    public static int getMaxUsableSampleCount(VkPhysicalDeviceProperties physicalDeviceProperties) {
-        try (var stack = stackPush()) {
             int sampleCountFlags = physicalDeviceProperties.limits().framebufferColorSampleCounts()
                     & physicalDeviceProperties.limits().framebufferDepthSampleCounts();
 
@@ -559,18 +550,10 @@ public class Vulkan {
         src.limit(src.capacity()).rewind();
     }
 
-    public static void memcpy(ByteBuffer buffer, GameVulkan.GPUCameraData ubo) {
+    public static void memcpy(ByteBuffer buffer, GPUCameraData ubo) {
         ubo.projview.setValuesToBuffer(buffer);
         ubo.view.setValuesToBuffer(buffer);
         ubo.proj.setValuesToBuffer(buffer);
-    }
-
-    public static void memcpy(ByteBuffer buffer, GameVulkan.GPUSceneData data) {
-        data.fogColor.setValuesToBuffer(buffer);
-        data.fogDistance.setValuesToBuffer(buffer);
-        data.ambientColor.setValuesToBuffer(buffer);
-        data.sunlightDirection.setValuesToBuffer(buffer);
-        data.sunLightColor.setValuesToBuffer(buffer);
     }
 
     public static void memcpy(ByteBuffer buffer, List<Vertex> vertices) {
@@ -589,6 +572,7 @@ public class Vulkan {
     }
 
     public static void memcpy(ByteBuffer buffer, Mesh mesh) {
+
         for(int i = 0; i < mesh.getVertices().size(); i++) {
             buffer.putFloat(mesh.getVertices().get(i).get(0));
             buffer.putFloat(mesh.getVertices().get(i).get(1));
@@ -601,45 +585,6 @@ public class Vulkan {
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
         }
-    }
-
-    public static long padUniformBufferSize(long originalSize, long minUniformBufferOffsetAlignment) {
-        long alignedSize = originalSize;
-        if(minUniformBufferOffsetAlignment > 0) {
-            alignedSize = (alignedSize + minUniformBufferOffsetAlignment - 1) & ~(minUniformBufferOffsetAlignment - 1);
-        }
-        return alignedSize;
-    }
-
-    public static VkDescriptorSetLayoutBinding createDescriptorSetLayoutBinding(int binding, int descriptorType, int stageFlags, MemoryStack stack) {
-        VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(1);
-
-        VkDescriptorSetLayoutBinding bufferBinding = bindings.get(0);
-        bufferBinding.binding(binding);
-        bufferBinding.descriptorCount(1);
-        bufferBinding.descriptorType(descriptorType);
-        bufferBinding.stageFlags(stageFlags);
-
-        return bufferBinding;
-    }
-
-    public static VkWriteDescriptorSet createWriteDescriptorSet(int type, long dstSet, VkDescriptorBufferInfo.Buffer bufferInfo, int binding, MemoryStack stack) {
-        VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(1, stack);
-        var write = writes.get(0);
-
-        write.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-
-        // descriptor set binding number
-        write.dstBinding(binding);
-
-        // Set the descriptor set
-        write.dstSet(dstSet);
-
-        write.descriptorCount(1);
-        write.descriptorType(type);
-        write.pBufferInfo(bufferInfo);
-
-        return write;
     }
 
     public static VkPhysicalDevice pickPhysicalDevice(VkInstance instance, long surface, Set<String> deviceExtensions) {
