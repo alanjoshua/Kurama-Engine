@@ -376,19 +376,23 @@ public class Vulkan {
             bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
             bufferInfo.size(size);
             bufferInfo.usage(bufferUsageFlags);
+            bufferInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
 
             var vmaAllocationCreateInfo = VmaAllocationCreateInfo.calloc(stack);
             vmaAllocationCreateInfo.usage(vmaMemoryUsage);
 
             var newBuffer = new AllocatedBuffer();
             var pBuffer = stack.mallocLong(1);
-            var pAllocation = stack.mallocPointer(1);
+            var pAllocation = stack.callocPointer(1);
 
-            vmaCreateBuffer(vmaAllocator, bufferInfo, vmaAllocationCreateInfo, pBuffer, pAllocation, null);
+            if(vmaCreateBuffer(vmaAllocator, bufferInfo, vmaAllocationCreateInfo, pBuffer, pAllocation, null) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create vma buffer");
+            }
 
             newBuffer.buffer = pBuffer.get(0);
             newBuffer.allocation = pAllocation.get(0);
 
+            return newBuffer;
         }
     }
 
@@ -420,7 +424,7 @@ public class Vulkan {
         }
     }
 
-    public static PointerBuffer createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
+    public static long createAllocator(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
         try (var stack = stackPush()) {
 
             VmaVulkanFunctions vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack)
@@ -439,7 +443,7 @@ public class Vulkan {
             if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create VMA allocator");
             }
-            return allocator;
+            return allocator.get(0);
         }
     }
 

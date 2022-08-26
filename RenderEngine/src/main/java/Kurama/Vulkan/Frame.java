@@ -19,8 +19,10 @@ public class Frame {
     public long fence;
     public long commandPool;
     public VkCommandBuffer commandBuffer;
-    public long cameraBuffer;
-    public long cameraBufferMemory;
+//    public long cameraBuffer;
+//    public long cameraBufferMemory;
+
+    public AllocatedBuffer cameraBuffer;
 
     public long globalDescriptorSet;
 

@@ -38,6 +38,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
@@ -90,7 +91,7 @@ public class GameVulkan extends Game {
     public GPUSceneData gpuSceneData;
     public long gpuSceneDataBuffer;
     public long gpUSceneDataBufferMemory;
-    public PointerBuffer vmaAllocator;
+    public long vmaAllocator;
 
     // NON-VULKAN variables
     public Camera playerCamera;
@@ -496,12 +497,13 @@ public class GameVulkan extends Game {
             vkDestroySemaphore(device, frame.presentSemaphore(), null);
             vkDestroyFence(device, frame.fence(), null);
             vkDestroyCommandPool(device, frame.commandPool, null);
-            vkDestroyBuffer(device, frame.cameraBuffer, null);
-            vkFreeMemory(device, frame.cameraBufferMemory, null);
+            vmaDestroyBuffer(vmaAllocator, frame.cameraBuffer.buffer, frame.cameraBuffer.allocation);
         });
         inFlightFrames.clear();
 
         vkDestroyCommandPool(device, globalCommandPool, null);
+
+        vmaDestroyAllocator(vmaAllocator);
 
         vkDestroyDevice(device, null);
 
@@ -599,20 +601,29 @@ public class GameVulkan extends Game {
 
             for(int i = 0;i < inFlightFrames.size(); i++) {
 
-                var pBuffer = stack.mallocLong(1);
-                var pBufferMemory = stack.mallocLong(1);
+//                var pBuffer = stack.mallocLong(1);
+//                var pBufferMemory = stack.mallocLong(1);
                 var pDescriptorSet = stack.mallocLong(1);
 
                 // uniform buffer for GPU camera data
                 // A camera buffer is created for each frame
-                createBuffer(device, physicalDevice,
-                        GPUCameraData.SIZEOF,
-                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        pBuffer,
-                        pBufferMemory);
-                inFlightFrames.get(i).cameraBuffer = pBuffer.get(0);
-                inFlightFrames.get(i).cameraBufferMemory = pBufferMemory.get(0);
+                var cameraBuffer
+                        = createBufferVMA(
+                                vmaAllocator,
+                                GPUCameraData.SIZEOF,
+                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+                log("camera buffer buffer: "+ cameraBuffer.buffer);
+                log("camera buffer allocation: "+ cameraBuffer.allocation);
+
+//                createBuffer(device, physicalDevice,
+//                        GPUCameraData.SIZEOF,
+//                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+//                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+//                        pBuffer,
+//                        pBufferMemory);
+                inFlightFrames.get(i).cameraBuffer = cameraBuffer;
 
                 // Create descriptor set per frame
                 var layout = stack.mallocLong(1);
@@ -633,7 +644,7 @@ public class GameVulkan extends Game {
                 VkDescriptorBufferInfo.Buffer cameraBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
                 cameraBufferInfo.offset(0);
                 cameraBufferInfo.range(GPUCameraData.SIZEOF);
-                cameraBufferInfo.buffer(inFlightFrames.get(i).cameraBuffer);
+                cameraBufferInfo.buffer(inFlightFrames.get(i).cameraBuffer.buffer);
 
                 log("min alignment: "+ minUniformBufferOffsetAlignment);
                 log("padding: "+ padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment));
@@ -1419,11 +1430,11 @@ public class GameVulkan extends Game {
         try(MemoryStack stack = stackPush()) {
 
             PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, inFlightFrames.get(currentFrame).cameraBufferMemory, 0, GPUCameraData.SIZEOF, 0, data);
+            vmaMapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation, data);
             {
                 memcpy(data.getByteBuffer(0, GPUCameraData.SIZEOF), gpuCameraData);
             }
-            vkUnmapMemory(device, inFlightFrames.get(currentFrame).cameraBufferMemory);
+            vmaUnmapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation);
         }
     }
 
