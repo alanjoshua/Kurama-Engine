@@ -1,13 +1,13 @@
 package main;
 
 import Kurama.ComponentSystem.components.model.Model;
+import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.Frame;
 import Kurama.Vulkan.ShaderSPIRVUtils;
-import Kurama.Vulkan.TextureVK;
 import Kurama.Vulkan.Vulkan;
 import Kurama.camera.Camera;
 import Kurama.display.DisplayVulkan;
@@ -45,26 +45,28 @@ import static org.lwjgl.vulkan.VK10.*;
 public class GameVulkan extends Game {
 
     // Below are Vulkan specific variables
-    private static final int MAX_FRAMES_IN_FLIGHT = 2;
-    private long surface;
-    private int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-    private long vertexBuffer;
-    private long vertexBufferMemory;
-    private long indexBuffer;
-    private long indexBufferMemory;
-    private VkQueue graphicsQueue;
-    private VkQueue presentQueue;
-    private long swapChain;
-    private List<Long> swapChainImages;
-    private int swapChainImageFormat;
-    private VkExtent2D swapChainExtent;
-    private List<Long> swapChainImageViews;
-    long depthImage;
-    long depthImageMemory;
-    long depthImageView;
-    long colorImage;
-    long colorImageMemory;
-    long colorImageView;
+    public static final int MAX_FRAMES_IN_FLIGHT = 2;
+    public long surface;
+    public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+    public long minUniformBufferOffsetAlignment = 64;
+    public VkPhysicalDeviceProperties gpuProperties;
+    public long vertexBuffer;
+    public long vertexBufferMemory;
+    public long indexBuffer;
+    public long indexBufferMemory;
+    public VkQueue graphicsQueue;
+    public VkQueue presentQueue;
+    public long swapChain;
+    public List<Long> swapChainImages;
+    public int swapChainImageFormat;
+    public VkExtent2D swapChainExtent;
+    public List<Long> swapChainImageViews;
+    public long depthImage;
+    public long depthImageMemory;
+    public long depthImageView;
+    public long colorImage;
+    public long colorImageMemory;
+    public long colorImageView;
     public List<Long> swapChainFramebuffers;
     public long renderPass;
     public long descriptorPool;
@@ -76,24 +78,29 @@ public class GameVulkan extends Game {
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
 
-    private List<Frame> inFlightFrames;
-    private Map<Integer, Frame> imagesInFlight;
-    private int currentFrame;
-    boolean framebufferResize;
+    public List<Frame> inFlightFrames;
+    public Map<Integer, Frame> imagesInFlight;
+    public int currentFrame;
+    public boolean framebufferResize;
 
     public DisplayVulkan display;
     public GPUCameraData gpuCameraData;
+    public GPUSceneData gpuSceneData;
+    public long gpuSceneDataBuffer;
+    public long gpUSceneDataBufferMemory;
 
     // NON-VULKAN variables
     public Camera playerCamera;
-    protected float mouseXSensitivity = 20f;
-    protected float mouseYSensitivity = 20f;
-    protected float speed = 15f;
-    protected float speedMultiplier = 1;
-    protected float speedIncreaseMultiplier = 2;
+    public float mouseXSensitivity = 20f;
+    public float mouseYSensitivity = 20f;
+    public float speed = 15f;
+    public float speedMultiplier = 1;
+    public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
 
     public List<Model> models = new ArrayList<>();
+
+    public float colorChangeAngle = 0;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -126,6 +133,13 @@ public class GameVulkan extends Game {
         this.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
         gpuCameraData.proj.getData()[1][1] *= -1;
 
+        this.gpuSceneData = new GPUSceneData();
+        this.gpuSceneData.sunLightColor = new Vector(new float[]{1,1,1,1});
+        this.gpuSceneData.ambientColor = new Vector(new float[]{1,1,1,1});
+        this.gpuSceneData.fogDistance = new Vector(new float[]{200,200,0,0});
+        this.gpuSceneData.sunlightDirection = new Vector(new float[]{0,-1,0,1});
+        this.gpuSceneData.fogColor = new Vector(new float[]{1,1,1,1});
+
         display.disableCursor();
     }
 
@@ -156,6 +170,9 @@ public class GameVulkan extends Game {
             playerCamera.setupTransformationMatrices();
             this.gpuCameraData.view = playerCamera.getWorldToObject();
             this.gpuCameraData.projview = this.gpuCameraData.proj.matMul(this.gpuCameraData.view);
+
+            colorChangeAngle += 0.1 * timeDelta;
+            this.gpuSceneData.ambientColor = new Vector(new float[]{(float) Math.sin(colorChangeAngle), 0, (float) Math.cos(colorChangeAngle), 1});
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
@@ -281,7 +298,7 @@ public class GameVulkan extends Game {
         drawFrame();
     }
 
-    public void recordCommandBuffer( Frame currentFrame, long swapChainFrameBuffer) {
+    public void recordCommandBuffer( Frame currentFrame, int frameIndex, long swapChainFrameBuffer) {
 
         var commandBuffer = currentFrame.commandBuffer;
         var descriptorSet = currentFrame.globalDescriptorSet;
@@ -326,8 +343,12 @@ public class GameVulkan extends Game {
                 vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
+                var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
+                var pUniformOffset = stack.mallocInt(1);
+                pUniformOffset.put(0, uniformOffset);
+
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        pipelineLayout, 0, stack.longs(descriptorSet), null);
+                        pipelineLayout, 0, stack.longs(descriptorSet), pUniformOffset);
 
                 int firstIndex = 0;
                 int vertexOffset = 0;
@@ -381,8 +402,9 @@ public class GameVulkan extends Game {
 
             final int imageIndex = pImageIndex.get(0);
 
-            updateCameraGPUData(currentFrame);
-            recordCommandBuffer(thisFrame, swapChainFramebuffers.get(imageIndex));
+            updateCameraGPUDataInMemory(currentFrame);
+            updateSceneGPUDataInMemory(currentFrame);
+            recordCommandBuffer(thisFrame, currentFrame, swapChainFramebuffers.get(imageIndex));
 
             if(imagesInFlight.containsKey(imageIndex)) {
                 vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
@@ -464,6 +486,9 @@ public class GameVulkan extends Game {
         vkDestroyBuffer(device, indexBuffer, null);
         vkFreeMemory(device, indexBufferMemory, null);
 
+        vkDestroyBuffer(device, gpuSceneDataBuffer, null);
+        vkFreeMemory(device, gpUSceneDataBufferMemory, null);
+
         inFlightFrames.forEach(frame -> {
             vkDestroySemaphore(device, frame.renderFinishedSemaphore(), null);
             vkDestroySemaphore(device, frame.presentSemaphore(), null);
@@ -501,10 +526,12 @@ public class GameVulkan extends Game {
 
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
-        msaaSamples = getMaxUsableSampleCount(physicalDevice);
         createLogicalDevice();
 
-//      allocator = createAllocator(physicalDevice, device, instance);
+        gpuProperties = getGPUProperties(physicalDevice);
+        msaaSamples = getMaxUsableSampleCount(gpuProperties);
+        minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
+
         initializeFrames();
         createFrameCommandPoolsAndBuffers();
 
@@ -544,20 +571,33 @@ public class GameVulkan extends Game {
 
         try (var stack = stackPush()) {
 
+            var pSceneBuffer = stack.mallocLong(1);
+            var pSceneBufferMemory = stack.mallocLong(1);
+
+            var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
+            createBuffer(device, physicalDevice,
+                    sceneParamsBufferSize,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    pSceneBuffer,
+                    pSceneBufferMemory
+                    );
+            gpuSceneDataBuffer = pSceneBuffer.get(0);
+            gpUSceneDataBufferMemory = pSceneBufferMemory.get(0);
+
             // Creates a descriptor set layout with 2 bindings
             // binding 0 = GPU Camera Data
+            // binding 1 = scene data
             createDescriptorSetLayout();
 
             // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
             createDescriptorPool();
 
-            var pBuffer = stack.mallocLong(1);
-            var pBufferMemory = stack.mallocLong(1);
-            var pDescriptorSet = stack.mallocLong(1);
-            var layout = stack.mallocLong(1);
-            layout.put(0, globalDescriptorSetLayout);
-
             for(int i = 0;i < inFlightFrames.size(); i++) {
+
+                var pBuffer = stack.mallocLong(1);
+                var pBufferMemory = stack.mallocLong(1);
+                var pDescriptorSet = stack.mallocLong(1);
 
                 // uniform buffer for GPU camera data
                 // A camera buffer is created for each frame
@@ -571,6 +611,8 @@ public class GameVulkan extends Game {
                 inFlightFrames.get(i).cameraBufferMemory = pBufferMemory.get(0);
 
                 // Create descriptor set per frame
+                var layout = stack.mallocLong(1);
+                layout.put(0, globalDescriptorSetLayout);
 
                 // Allocate a descriptor set
                 VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
@@ -584,30 +626,36 @@ public class GameVulkan extends Game {
                 inFlightFrames.get(i).globalDescriptorSet = pDescriptorSet.get(0);
 
                 //information about the buffer we want to point at in the descriptor
-                VkDescriptorBufferInfo.Buffer bufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-                bufferInfo.offset(0);
-                bufferInfo.range(GPUCameraData.SIZEOF);
-                bufferInfo.buffer(inFlightFrames.get(i).cameraBuffer);
+                VkDescriptorBufferInfo.Buffer cameraBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
+                cameraBufferInfo.offset(0);
+                cameraBufferInfo.range(GPUCameraData.SIZEOF);
+                cameraBufferInfo.buffer(inFlightFrames.get(i).cameraBuffer);
 
-                VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
-                VkWriteDescriptorSet gpuCameraUBOWrite  = descriptorWrites.get(0);
+                log("min alignment: "+ minUniformBufferOffsetAlignment);
+                log("padding: "+ padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment));
 
-                gpuCameraUBOWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+                VkDescriptorBufferInfo.Buffer sceneBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
+                sceneBufferInfo.offset(0);
+                sceneBufferInfo.range(GPUSceneData.SIZEOF);
+                sceneBufferInfo.buffer(gpuSceneDataBuffer);
 
-                // descriptor set binding number = 0
-                gpuCameraUBOWrite.dstBinding(0);
+                VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
+                var gpuCameraWrite =
+                        createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                inFlightFrames.get(i).globalDescriptorSet,
+                                cameraBufferInfo,
+                                0, stack);
 
-                // Set the descriptor set
-                gpuCameraUBOWrite.dstSet(inFlightFrames.get(i).globalDescriptorSet);
+                var sceneWrite =
+                        createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                inFlightFrames.get(i).globalDescriptorSet,
+                                sceneBufferInfo, 1, stack);
 
-                gpuCameraUBOWrite.descriptorCount(1);
-                gpuCameraUBOWrite.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-                gpuCameraUBOWrite.pBufferInfo(bufferInfo);
+                descriptorWrites.put(0, gpuCameraWrite);
+                descriptorWrites.put(1, sceneWrite);
 
                 vkUpdateDescriptorSets(device, descriptorWrites, null);
             }
-
-//            createDescriptorSets();
         }
     }
 
@@ -690,7 +738,7 @@ public class GameVulkan extends Game {
 
         //add color just for the sake of consistency with vulkan tutorial
         var colors = new ArrayList<Vector>();
-        meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{1f,1f,1f})));
+        meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{0.1f, 0.1f, 0.1f})));
         meshes.get(0).setAttribute(colors, Mesh.COLOR);
         var room = new Model(this, meshes, "room");
 
@@ -1186,19 +1234,19 @@ public class GameVulkan extends Game {
 
     public void createDescriptorSetLayout() {
         try (var stack = stackPush()) {
-            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(1, stack);
 
-            VkDescriptorSetLayoutBinding cameraBufferBinding = bindings.get(0);
-            cameraBufferBinding.binding(0);
-            cameraBufferBinding.descriptorCount(1);
-            cameraBufferBinding.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            cameraBufferBinding.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+            var cameraBufferBinding =
+                    createDescriptorSetLayoutBinding(
+                    0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
 
-//            VkDescriptorSetLayoutBinding samplerLayoutBinding = bindings.get(1);
-//            samplerLayoutBinding.binding(1);
-//            samplerLayoutBinding.descriptorCount(1);
-//            samplerLayoutBinding.descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-//            samplerLayoutBinding.stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
+            var sceneBinding =
+                    createDescriptorSetLayoutBinding(
+                            1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, stack);
+
+            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(2, stack);
+            bindings.put(0, cameraBufferBinding);
+            bindings.put(1, sceneBinding);
 
             VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
             layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
@@ -1329,73 +1377,20 @@ public class GameVulkan extends Game {
             transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
         }
     }
-    private void createDescriptorSets() {
-        try (var stack = stackPush()) {
-            LongBuffer layouts = stack.mallocLong(inFlightFrames.size());
-            for(int i = 0;i < layouts.capacity();i++) {
-                layouts.put(i, globalDescriptorSetLayout);
-            }
-
-            VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-            allocInfo.descriptorPool(descriptorPool);
-            allocInfo.pSetLayouts(layouts);
-
-            LongBuffer pDescriptorSets = stack.mallocLong(inFlightFrames.size());
-
-            if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSets) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate descriptor sets");
-            }
-
-            VkDescriptorBufferInfo.Buffer bufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-            bufferInfo.offset(0);
-            bufferInfo.range(GPUCameraData.SIZEOF);
-
-            VkDescriptorImageInfo.Buffer imageInfo = VkDescriptorImageInfo.calloc(1, stack);
-            imageInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            imageInfo.imageView(((TextureVK)models.get(0).meshes.get(0).materials.get(0).texture).textureImageView);
-            imageInfo.sampler(((TextureVK)models.get(0).meshes.get(0).materials.get(0).texture).textureSampler);
-
-            VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
-
-            VkWriteDescriptorSet uboDescriptorWrite  = descriptorWrites.get(0);
-            uboDescriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-            uboDescriptorWrite.dstBinding(0);
-            uboDescriptorWrite.dstArrayElement(0);
-            uboDescriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            uboDescriptorWrite.descriptorCount(1);
-            uboDescriptorWrite.pBufferInfo(bufferInfo);
-
-            VkWriteDescriptorSet samplerDescriptorWrite = descriptorWrites.get(1);
-            samplerDescriptorWrite.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-            samplerDescriptorWrite.dstBinding(1);
-            samplerDescriptorWrite.dstArrayElement(0);
-            samplerDescriptorWrite.descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            samplerDescriptorWrite.descriptorCount(1);
-            samplerDescriptorWrite.pImageInfo(imageInfo);
-
-            for(int i = 0;i < pDescriptorSets.capacity();i++) {
-                long descriptorSet = pDescriptorSets.get(i);
-
-                bufferInfo.buffer(inFlightFrames.get(i).cameraBuffer);
-                uboDescriptorWrite.dstSet(descriptorSet);
-                samplerDescriptorWrite.dstSet(descriptorSet);
-
-                vkUpdateDescriptorSets(device, descriptorWrites, null);
-                inFlightFrames.get(i).globalDescriptorSet = descriptorSet;
-            }
-        }
-    }
 
     // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
     private void createDescriptorPool() {
         try (var stack = stackPush()) {
 
-            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(1, stack);
+            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(2, stack);
 
             VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
             uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
             uniformBufferPoolSize.descriptorCount(10);
+
+            VkDescriptorPoolSize uniformBufferDynamicPoolSize  = poolSizes.get(1);
+            uniformBufferDynamicPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+            uniformBufferDynamicPoolSize.descriptorCount(10);
 
 //            VkDescriptorPoolSize textureSamplerPoolSize = poolSizes.get(1);
 //            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -1416,15 +1411,31 @@ public class GameVulkan extends Game {
         }
     }
 
-    private void updateCameraGPUData(int currentImage) {
+    private void updateCameraGPUDataInMemory(int currentFrame) {
         try(MemoryStack stack = stackPush()) {
 
             PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, inFlightFrames.get(currentImage).cameraBufferMemory, 0, GPUCameraData.SIZEOF, 0, data);
+            vkMapMemory(device, inFlightFrames.get(currentFrame).cameraBufferMemory, 0, GPUCameraData.SIZEOF, 0, data);
             {
                 memcpy(data.getByteBuffer(0, GPUCameraData.SIZEOF), gpuCameraData);
             }
-            vkUnmapMemory(device, inFlightFrames.get(currentImage).cameraBufferMemory);
+            vkUnmapMemory(device, inFlightFrames.get(currentFrame).cameraBufferMemory);
+        }
+    }
+
+    private void updateSceneGPUDataInMemory(int currentFrame) {
+        try(MemoryStack stack = stackPush()) {
+
+            PointerBuffer data = stack.mallocPointer(1);
+
+            // Mapping the buffer with the right offset depending on the current frame
+            vkMapMemory(device, gpUSceneDataBufferMemory,
+                    padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame,
+                    GPUSceneData.SIZEOF, 0, data);
+            {
+                memcpy(data.getByteBuffer(0, GPUSceneData.SIZEOF), gpuSceneData);
+            }
+            vkUnmapMemory(device, gpUSceneDataBufferMemory);
         }
     }
 
@@ -1531,4 +1542,32 @@ public class GameVulkan extends Game {
 
         }
     }
+
+    public class GPUCameraData {
+
+        public static final int SIZEOF = 3 * 16 * Float.BYTES;
+
+        public Matrix projview;
+        public Matrix view;
+        public Matrix proj;
+
+        public GPUCameraData() {
+            projview = Matrix.getIdentityMatrix(4);
+            view = Matrix.getIdentityMatrix(4);
+            proj = Matrix.getIdentityMatrix(4);
+        }
+
+    }
+
+    public class GPUSceneData {
+
+        public static final int SIZEOF = Float.BYTES * 4 * 5;
+
+        public Vector fogColor; // w is for exponent
+        public Vector fogDistance; //x for min, y for max, zw unused.
+        public Vector ambientColor;
+        public Vector sunlightDirection; // w for sun power
+        public Vector sunLightColor;
+    }
+
 }
