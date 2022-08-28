@@ -47,6 +47,10 @@ public class Vulkan {
     public static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
     public static long debugMessenger;
 
+    public static final Set<String> DEVICE_EXTENSIONS =
+            Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+            .collect(toSet());
+
     public static final Set<String> VALIDATION_LAYERS;
     static {
         if(ENABLE_VALIDATION_LAYERS) {
@@ -89,9 +93,6 @@ public class Vulkan {
 
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
-
-    public static final Set<String> DEVICE_EXTENSIONS = Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
-            .collect(toSet());
 
     public static void createInstance(String applicationName, String engineName) {
 
@@ -564,20 +565,6 @@ public class Vulkan {
         src.limit((int)size);
         dst.put(src);
         src.limit(src.capacity()).rewind();
-    }
-
-    public static void memcpy(ByteBuffer buffer, GameVulkan.GPUCameraData ubo) {
-        ubo.projview.setValuesToBuffer(buffer);
-        ubo.view.setValuesToBuffer(buffer);
-        ubo.proj.setValuesToBuffer(buffer);
-    }
-
-    public static void memcpy(ByteBuffer buffer, GameVulkan.GPUSceneData data) {
-        data.fogColor.setValuesToBuffer(buffer);
-        data.fogDistance.setValuesToBuffer(buffer);
-        data.ambientColor.setValuesToBuffer(buffer);
-        data.sunlightDirection.setValuesToBuffer(buffer);
-        data.sunLightColor.setValuesToBuffer(buffer);
     }
 
     public static void memcpy(ByteBuffer buffer, List<Vertex> vertices) {

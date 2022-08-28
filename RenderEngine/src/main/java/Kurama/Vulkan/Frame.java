@@ -1,11 +1,15 @@
 package Kurama.Vulkan;
 
+import main.GameVulkan;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 
 import java.nio.LongBuffer;
 
+import static Kurama.Vulkan.Vulkan.device;
 import static org.lwjgl.system.MemoryStack.stackGet;
+import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
+import static org.lwjgl.vulkan.VK10.*;
 
 /**
  * Wraps the needed sync objects for an in flight frame
@@ -20,18 +24,36 @@ public class Frame {
     public long commandPool;
     public VkCommandBuffer commandBuffer;
     public AllocatedBuffer cameraBuffer;
+    public AllocatedBuffer objectBuffer;
+
+    // Global Descriptor set contains the camera data and other scene parameters
     public long globalDescriptorSet;
 
-    public Frame(long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
+    // This contains the object transformation matrices
+    public long objectDescriptorSet;
+
+    public GameVulkan gameHandle;
+
+    public Frame(GameVulkan gameHandle, long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
         this.imageAvailableSemaphore = imageAvailableSemaphore;
         this.renderFinishedSemaphore = renderFinishedSemaphore;
         this.fence = fence;
         this.commandBuffer = commandBuffer;
         this.commandPool = commandPool;
+        this.gameHandle = gameHandle;
     }
 
-    public Frame() {
+    public Frame(GameVulkan gameHandle) {
+        this.gameHandle = gameHandle;
+    }
 
+    public void cleanUp() {
+        vkDestroySemaphore(device, renderFinishedSemaphore(), null);
+        vkDestroySemaphore(device, presentSemaphore(), null);
+        vkDestroyFence(device, fence(), null);
+        vkDestroyCommandPool(device, commandPool, null);
+        vmaDestroyBuffer(gameHandle.vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
+        vmaDestroyBuffer(gameHandle.vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
     }
 
     public long presentSemaphore() {

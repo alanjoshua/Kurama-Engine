@@ -1,5 +1,5 @@
 //glsl version 4.5
-#version 450
+#version 460
 
 //shader input
 layout (location = 0) in vec3 fragColor;
@@ -19,5 +19,5 @@ layout(set = 0, binding = 1) uniform  SceneData{
 
 void main()
 {
-    outFragColor = vec4(fragColor + sceneData.ambientColor.xyz,1.0f);
+    outFragColor = vec4(fragColor,1.0f);
 }
