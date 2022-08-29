@@ -1,6 +1,7 @@
 package Kurama.Vulkan;
 
 import main.GameVulkan;
+import main.RenderingEngineVulkan;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 
@@ -32,19 +33,19 @@ public class Frame {
     // This contains the object transformation matrices
     public long objectDescriptorSet;
 
-    public GameVulkan gameHandle;
+    public RenderingEngineVulkan renderingEngine;
 
-    public Frame(GameVulkan gameHandle, long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
+    public Frame(RenderingEngineVulkan renderingEngine, long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
         this.imageAvailableSemaphore = imageAvailableSemaphore;
         this.renderFinishedSemaphore = renderFinishedSemaphore;
         this.fence = fence;
         this.commandBuffer = commandBuffer;
         this.commandPool = commandPool;
-        this.gameHandle = gameHandle;
+        this.renderingEngine = renderingEngine;
     }
 
-    public Frame(GameVulkan gameHandle) {
-        this.gameHandle = gameHandle;
+    public Frame(RenderingEngineVulkan renderingEngine) {
+        this.renderingEngine = renderingEngine;
     }
 
     public void cleanUp() {
@@ -52,8 +53,8 @@ public class Frame {
         vkDestroySemaphore(device, presentSemaphore(), null);
         vkDestroyFence(device, fence(), null);
         vkDestroyCommandPool(device, commandPool, null);
-        vmaDestroyBuffer(gameHandle.vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
-        vmaDestroyBuffer(gameHandle.vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
+        vmaDestroyBuffer(renderingEngine.vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
+        vmaDestroyBuffer(renderingEngine.vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
     }
 
     public long presentSemaphore() {

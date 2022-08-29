@@ -97,6 +97,7 @@ public class Renderable {
     }
 
     public void cleanUp(long vmaAllocator) {
+        model.meshes.get(0).materials.get(0).texture.cleanUp();
         vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
     }
