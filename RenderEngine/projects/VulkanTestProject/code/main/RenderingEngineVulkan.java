@@ -50,8 +50,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
-    //    public AllocatedBuffer vertexBuffer;
-//    public AllocatedBuffer indexBuffer;
     public AllocatedBuffer gpuSceneBuffer;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
