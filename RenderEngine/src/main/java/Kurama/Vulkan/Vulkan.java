@@ -423,6 +423,27 @@ public class Vulkan {
         }
     }
 
+    public static VkCommandBufferBeginInfo createCommandBufferBeginInfo(int flags) {
+        try (var stack = stackPush()) {
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
+            beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+            beginInfo.flags(flags);
+            return beginInfo;
+        }
+    }
+
+    public static VkCommandBufferAllocateInfo createCommandBufferAllocateInfo() {
+
+    }
+
+    public static VkCommandPoolCreateInfo createCommandPoolCreateInfo() {
+
+    }
+
+    public static VkSubmitInfo createSubmitInfo(VkCommandBuffer cmd) {
+
+    }
+
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
         try(MemoryStack stack = stackPush()) {
             VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);

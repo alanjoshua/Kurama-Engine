@@ -1,6 +1,5 @@
 package main;
 
-import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -30,7 +29,6 @@ import static Kurama.Vulkan.Vulkan.*;
 import static Kurama.Vulkan.Vulkan.instance;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.glfwTerminate;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -87,6 +85,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
+    public UploadContext uploadContext;
     public long vmaAllocator;
     public DisplayVulkan display;
     public GameVulkan game;
@@ -135,7 +134,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         createDepthResources();
         createFramebuffers();
 
-        createSemaphoresAndFences();
+        initSyncObjects();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
@@ -1230,7 +1229,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
-    public void createSemaphoresAndFences() {
+    public void initSyncObjects() {
 
         imagesInFlight = new HashMap<>(swapChainImages.size());
 
@@ -1260,6 +1259,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 inFlightFrames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
                 inFlightFrames.get(i).fence = pFence.get(0);
             }
+
+            // Create fence and commandPool/buffer for immediate upload context
+            fenceInfo = VkFenceCreateInfo.calloc(stack);
+            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
+
+            if(vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create VkFence for uploadContext");
+            }
+            var uploadContextFence = pFence.get(0);
 
         }
     }
@@ -1373,13 +1381,25 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
     }
 
-    public class GPUObjectData {
+    public static class GPUObjectData {
         public static final int SIZEOF = Float.BYTES * 4 * 4;
         public Matrix modelMatrix;
-
         public static void memcpy(ByteBuffer buffer, GPUObjectData data) {
             data.modelMatrix.setValuesToBuffer(buffer);
         }
+    }
+
+    // Used for submitting immediate commands to the gpu
+    public static class UploadContext {
+        public long fence;
+        public long commandPool;
+        VkCommandBuffer commandBuffer;
+        public UploadContext(long fence, long commandPool, VkCommandBuffer commandBuffer) {
+            this.fence = fence;
+            this.commandPool = commandPool;
+            this.commandBuffer = commandBuffer;
+        }
+
     }
 
 }
