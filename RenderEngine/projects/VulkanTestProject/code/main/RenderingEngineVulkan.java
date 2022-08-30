@@ -26,7 +26,6 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.Vulkan.*;
-import static Kurama.Vulkan.Vulkan.instance;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackGet;
@@ -49,6 +48,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
     public AllocatedBuffer gpuSceneBuffer;
+    public int graphicsQueueFamilyIndex;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
     public long swapChain;
@@ -941,6 +941,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             QueueFamilyIndices indices = Vulkan.findQueueFamilies(physicalDevice, surface);
 
+            graphicsQueueFamilyIndex = indices.graphicsFamily;
             int[] uniqueQueueFamilies = indices.unique();
 
             VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
@@ -1261,14 +1262,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             // Create fence and commandPool/buffer for immediate upload context
-            fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
+            uploadContext = new UploadContext();
 
-            if(vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create VkFence for uploadContext");
-            }
-            var uploadContextFence = pFence.get(0);
+            uploadContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
 
+            uploadContext.commandPool =  createCommandPool(device,
+                  createCommandPoolCreateInfo(graphicsQueueFamilyIndex, 0, stack), stack);
+
+            var cmdAllocInfo = createCommandBufferAllocateInfo(uploadContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            uploadContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
         }
     }
 
@@ -1282,6 +1284,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
         vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null);
 
+        uploadContext.cleanUp(device);
 
         renderables.forEach(r -> r.cleanUp(vmaAllocator));
         vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation);
@@ -1394,10 +1397,19 @@ public class RenderingEngineVulkan extends RenderingEngine {
         public long fence;
         public long commandPool;
         VkCommandBuffer commandBuffer;
+
+        public UploadContext() {
+
+        }
         public UploadContext(long fence, long commandPool, VkCommandBuffer commandBuffer) {
             this.fence = fence;
             this.commandPool = commandPool;
             this.commandBuffer = commandBuffer;
+        }
+
+        public void cleanUp(VkDevice device) {
+            vkDestroyCommandPool(device, this.commandPool, null);
+            vkDestroyFence(device, this.fence, null);
         }
 
     }

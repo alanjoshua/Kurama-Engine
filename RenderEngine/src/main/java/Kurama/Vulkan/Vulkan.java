@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.Vulkan.device;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -432,37 +433,61 @@ public class Vulkan {
         }
     }
 
-    public static VkCommandBufferAllocateInfo createCommandBufferAllocateInfo(long commandPool, int count, int commandBufferLevel) {
-        try (var stack = stackPush()) {
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-            allocInfo.level(commandBufferLevel);
-            allocInfo.commandPool(commandPool);
-            allocInfo.commandBufferCount(count);
+    public static VkCommandBufferAllocateInfo createCommandBufferAllocateInfo(long commandPool, int count, int commandBufferLevel, MemoryStack stack) {
+        VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+        allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+        allocInfo.level(commandBufferLevel);
+        allocInfo.commandPool(commandPool);
+        allocInfo.commandBufferCount(count);
 
-            return allocInfo;
+        return allocInfo;
+    }
+
+    public static long createCommandPool(VkDevice device, VkCommandPoolCreateInfo createInfo, MemoryStack stack) {
+
+        var pCommandPool = stack.callocLong(1);
+        if(vkCreateCommandPool(device, createInfo, null, pCommandPool) != VK_SUCCESS) {
+            throw new RuntimeException("Error occured while creating command pool");
+        }
+        return pCommandPool.get(0);
+    }
+
+    public static long createFence(VkFenceCreateInfo fenceInfo) {
+        try (var stack = stackPush()) {
+            LongBuffer pFence = stack.mallocLong(1);
+
+            if(vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create VkFence for uploadContext");
+            }
+           return pFence.get(0);
         }
     }
 
-    public static VkCommandPoolCreateInfo createCommandPoolCreateInfo(int queueFamilyIndex, int flags) {
-        try (var stack = stackPush()) {
-            VkCommandPoolCreateInfo info = VkCommandPoolCreateInfo.calloc(stack);
-            info.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-            info.flags(flags);
-            return info;
+    public static VkCommandBuffer createCommandBuffer(VkDevice device, VkCommandBufferAllocateInfo allocInfo, MemoryStack stack) {
+        var pCommandBuffer = stack.callocPointer(1);
+        if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer) != VK_SUCCESS) {
+            throw new RuntimeException("Error occured while creating command buffer");
         }
+        return new VkCommandBuffer(pCommandBuffer.get(0), device);
     }
 
-    public static VkSubmitInfo.Buffer createSubmitInfo(VkCommandBuffer cmd) {
-        try(var stack = stackPush()) {
-            var submitInfo = VkSubmitInfo.calloc(1, stack);
-            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-            submitInfo.waitSemaphoreCount(0);
-            submitInfo.pWaitSemaphores(null);
-            submitInfo.pWaitDstStageMask(null);
-            submitInfo.pCommandBuffers(stack.pointers(cmd));
-            return submitInfo;
-        }
+    public static VkCommandPoolCreateInfo createCommandPoolCreateInfo(int queueFamilyIndex, int flags, MemoryStack stack) {
+        log("queue family index queue;: "+ queueFamilyIndex);
+        VkCommandPoolCreateInfo info = VkCommandPoolCreateInfo.calloc(stack);
+        info.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
+        info.queueFamilyIndex(queueFamilyIndex);
+        info.flags(flags);
+        return info;
+    }
+
+    public static VkSubmitInfo.Buffer createSubmitInfo(VkCommandBuffer cmd, MemoryStack stack) {
+        var submitInfo = VkSubmitInfo.calloc(1, stack);
+        submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+        submitInfo.waitSemaphoreCount(0);
+        submitInfo.pWaitSemaphores(null);
+        submitInfo.pWaitDstStageMask(null);
+        submitInfo.pCommandBuffers(stack.pointers(cmd));
+        return submitInfo;
     }
 
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
