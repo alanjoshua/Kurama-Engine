@@ -53,7 +53,7 @@ public class TextureVK extends Texture {
             var stagingBuffer = createBufferVMA(vmaAllocator,
                     imageSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+                    VMA_MEMORY_USAGE_CPU_COPY, null);
 
             PointerBuffer data = stack.mallocPointer(1);
             vkMapMemory(device, stagingBuffer.allocation, 0, imageSize, 0, data);
