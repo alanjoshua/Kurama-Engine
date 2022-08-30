@@ -9,8 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 
-import static Kurama.Vulkan.Vulkan.*;
-import static Kurama.Vulkan.Vulkan.memcpy;
+import static Kurama.Vulkan.VulkanUtilities.*;
+import static Kurama.Vulkan.VulkanUtilities.memcpy;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryStack.stackPush;

@@ -136,9 +136,7 @@ public class GameVulkan extends Game {
         renderables.add(new Renderable(room.meshes.get(0), room));
         renderables.add(new Renderable(house.meshes.get(0), house));
 
-        for(var r: renderables) {
-            r.uploadMesh(renderingEngineAlias.vmaAllocator, renderingEngineAlias.globalCommandPool, renderingEngineAlias.graphicsQueue);
-        }
+        renderables.forEach(r -> renderingEngineAlias.uploadRenderable(r));
     }
 
     @Override

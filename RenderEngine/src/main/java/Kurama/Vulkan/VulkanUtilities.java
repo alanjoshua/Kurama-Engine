@@ -1,8 +1,8 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
-import main.GameVulkan;
 import main.QueueFamilyIndices;
+import main.RenderingEngineVulkan;
 import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -19,9 +19,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static Kurama.Vulkan.Vulkan.device;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -38,7 +38,7 @@ import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
-public class Vulkan {
+public class VulkanUtilities {
 
     public static final int UINT32_MAX = 0xFFFFFFFF;
     public static final long UINT64_MAX = 0xFFFFFFFFFFFFFFFFL;
@@ -123,7 +123,7 @@ public class Vulkan {
             if(ENABLE_VALIDATION_LAYERS) {
                 createInfo.ppEnabledLayerNames(asPointerBuffer(VALIDATION_LAYERS));
                 VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = VkDebugUtilsMessengerCreateInfoEXT.calloc(stack);
-                Vulkan.populateDebugMessengerCreateInfo(debugCreateInfo);
+                VulkanUtilities.populateDebugMessengerCreateInfo(debugCreateInfo);
                 createInfo.pNext(debugCreateInfo.address());
             }
 
@@ -142,7 +142,7 @@ public class Vulkan {
         debugCreateInfo.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
         debugCreateInfo.messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
         debugCreateInfo.messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
-        debugCreateInfo.pfnUserCallback(Vulkan::debugCallback);
+        debugCreateInfo.pfnUserCallback(VulkanUtilities::debugCallback);
     }
 
     private static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
@@ -490,6 +490,25 @@ public class Vulkan {
         return submitInfo;
     }
 
+    public static void submitImmediateCommand(Consumer<VkCommandBuffer> func, RenderingEngineVulkan.SingleTimeCommandObj singleTimeCommandObj, VkQueue queue) {
+        try (var stack = stackPush()) {
+            var cmdBeginInfo = createCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            vkCheck(vkBeginCommandBuffer(singleTimeCommandObj.commandBuffer, cmdBeginInfo));
+
+            func.accept(singleTimeCommandObj.commandBuffer);
+
+            vkCheck(vkEndCommandBuffer(singleTimeCommandObj.commandBuffer));
+
+            var submit = createSubmitInfo(singleTimeCommandObj.commandBuffer, stack);
+            vkCheck(vkQueueSubmit(queue, submit, singleTimeCommandObj.fence));
+
+            vkWaitForFences(device, singleTimeCommandObj.fence, true, 999999999);
+            vkResetFences(device, singleTimeCommandObj.fence);
+
+            vkResetCommandPool(device, singleTimeCommandObj.commandPool, 0);
+        }
+    }
+
     public static VkCommandBuffer beginSingleTimeCommands(VkDevice device, long commandPool) {
         try(MemoryStack stack = stackPush()) {
             VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
@@ -590,6 +609,14 @@ public class Vulkan {
 
             return VK_SAMPLE_COUNT_1_BIT;
         }
+    }
+
+    public static int findDepthFormat() {
+        return findSupportedFormat(
+                physicalDevice,
+                stackGet().ints(VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT),
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     public static int findSupportedFormat(VkPhysicalDevice physicalDevice, IntBuffer formatCandidates, int tiling, int features) {
@@ -905,6 +932,12 @@ public class Vulkan {
                     .collect(toSet());
 
             return availableLayerNames.containsAll(validationLayers);
+        }
+    }
+
+    public static void vkCheck(int success) {
+        if(success != VK_SUCCESS) {
+            throw new RuntimeException("VK: Error occured");
         }
     }
 

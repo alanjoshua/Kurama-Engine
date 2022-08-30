@@ -21,14 +21,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
-import static Kurama.Vulkan.Vulkan.*;
+import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
@@ -85,7 +85,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
-    public UploadContext uploadContext;
+    public SingleTimeCommandObj singleTimeCommandObj;
     public long vmaAllocator;
     public DisplayVulkan display;
     public GameVulkan game;
@@ -106,8 +106,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
     }
 
     public void initVulkan() {
-        Vulkan.createInstance("Vulkan game", "Kurama Engine");
-        Vulkan.setupDebugMessenger();
+        VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
+        VulkanUtilities.setupDebugMessenger();
 
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
@@ -308,6 +308,84 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
+    public void uploadRenderable(Renderable renderable) {
+        createIndexBufferForRenderable(renderable);
+        createVertexBufferForRenderable(renderable);
+    }
+
+    public void createIndexBufferForRenderable(Renderable renderable) {
+        try (var stack = stackPush()) {
+
+            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
+            var stagingBuffer = createBufferVMA(vmaAllocator,
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+            var data = stack.mallocPointer(1);
+
+            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+            {
+                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
+            }
+            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+
+            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+                var copy = VkBufferCopy.calloc(1, stack);
+                copy.dstOffset(0);
+                copy.srcOffset(0);
+                copy.size(bufferSize);
+                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
+            };
+
+            submitImmediateCommand(copyCmd, singleTimeCommandObj, graphicsQueue);
+
+            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+        }
+    }
+
+    public void createVertexBufferForRenderable(Renderable renderable) {
+        try (var stack = stackPush()) {
+
+            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
+            var stagingBuffer = createBufferVMA(vmaAllocator,
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+            var data = stack.mallocPointer(1);
+
+            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+            {
+                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
+            }
+            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+
+            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+
+            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+                var copy = VkBufferCopy.calloc(1, stack);
+                copy.dstOffset(0);
+                copy.srcOffset(0);
+                copy.size(bufferSize);
+                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
+            };
+
+            submitImmediateCommand(copyCmd, singleTimeCommandObj, graphicsQueue);
+
+            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+
+        }
+    }
+
     public void createGlobalCommandBuffer() {
 
         try (var stack = stackPush()) {
@@ -500,7 +578,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
 
-        vkFreeCommandBuffers(device, globalCommandPool, Vulkan.asPointerBuffer(List.of(new VkCommandBuffer[]{globalCommandBuffer})));
+        vkFreeCommandBuffers(device, globalCommandPool, VulkanUtilities.asPointerBuffer(List.of(new VkCommandBuffer[]{globalCommandBuffer})));
 
         vkDestroyPipeline(device, graphicsPipeline, null);
 
@@ -547,14 +625,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
 
         }
-    }
-
-    public int findDepthFormat() {
-        return findSupportedFormat(
-                physicalDevice,
-                stackGet().ints(VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT),
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     public void createSwapChain() {
@@ -939,7 +1009,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public void createLogicalDevice() {
         try(MemoryStack stack = stackPush()) {
 
-            QueueFamilyIndices indices = Vulkan.findQueueFamilies(physicalDevice, surface);
+            QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
 
             graphicsQueueFamilyIndex = indices.graphicsFamily;
             int[] uniqueQueueFamilies = indices.unique();
@@ -969,10 +1039,10 @@ public class RenderingEngineVulkan extends RenderingEngine {
             // queueCreateInfoCount is automatically set
             createInfo.pEnabledFeatures(deviceFeatures);
 
-            createInfo.ppEnabledExtensionNames(Vulkan.asPointerBuffer(DEVICE_EXTENSIONS));
+            createInfo.ppEnabledExtensionNames(VulkanUtilities.asPointerBuffer(DEVICE_EXTENSIONS));
 
             if(ENABLE_VALIDATION_LAYERS) {
-                createInfo.ppEnabledLayerNames(Vulkan.asPointerBuffer(VALIDATION_LAYERS));
+                createInfo.ppEnabledLayerNames(VulkanUtilities.asPointerBuffer(VALIDATION_LAYERS));
             }
 
             PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
@@ -1262,15 +1332,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             // Create fence and commandPool/buffer for immediate upload context
-            uploadContext = new UploadContext();
+            singleTimeCommandObj = new SingleTimeCommandObj();
 
-            uploadContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeCommandObj.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
 
-            uploadContext.commandPool =  createCommandPool(device,
+            singleTimeCommandObj.commandPool =  createCommandPool(device,
                   createCommandPoolCreateInfo(graphicsQueueFamilyIndex, 0, stack), stack);
 
-            var cmdAllocInfo = createCommandBufferAllocateInfo(uploadContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            uploadContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandObj.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeCommandObj.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
         }
     }
 
@@ -1284,7 +1354,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
         vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null);
 
-        uploadContext.cleanUp(device);
+        singleTimeCommandObj.cleanUp(device);
 
         renderables.forEach(r -> r.cleanUp(vmaAllocator));
         vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation);
@@ -1393,15 +1463,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
     }
 
     // Used for submitting immediate commands to the gpu
-    public static class UploadContext {
+    public static class SingleTimeCommandObj {
         public long fence;
         public long commandPool;
-        VkCommandBuffer commandBuffer;
+        public VkCommandBuffer commandBuffer;
 
-        public UploadContext() {
+        public SingleTimeCommandObj() {
 
         }
-        public UploadContext(long fence, long commandPool, VkCommandBuffer commandBuffer) {
+        public SingleTimeCommandObj(long fence, long commandPool, VkCommandBuffer commandBuffer) {
             this.fence = fence;
             this.commandPool = commandPool;
             this.commandBuffer = commandBuffer;

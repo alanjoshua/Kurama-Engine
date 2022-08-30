@@ -1,13 +1,11 @@
 package Kurama.Vulkan;
 
-import main.GameVulkan;
 import main.RenderingEngineVulkan;
 import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 
 import java.nio.LongBuffer;
 
-import static Kurama.Vulkan.Vulkan.device;
+import static Kurama.Vulkan.VulkanUtilities.device;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
 import static org.lwjgl.vulkan.VK10.*;

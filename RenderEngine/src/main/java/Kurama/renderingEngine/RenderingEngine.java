@@ -1,5 +1,6 @@
 package Kurama.renderingEngine;
 
+import Kurama.Vulkan.Renderable;
 import Kurama.game.Game;
 import Kurama.scene.Scene;
 
