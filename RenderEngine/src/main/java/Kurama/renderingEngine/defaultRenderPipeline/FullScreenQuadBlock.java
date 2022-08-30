@@ -6,7 +6,7 @@ import Kurama.geometry.MeshBuilder;
 import Kurama.renderingEngine.RenderBufferData;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 
 import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11C.glBindTexture;
@@ -16,7 +16,7 @@ import static org.lwjgl.opengl.GL13.glActiveTexture;
 public class FullScreenQuadBlock extends RenderPipeline {
 
     private static String quadShaderID = "particleShader";
-    private ShaderProgram quadShader;
+    private ShaderProgramGL quadShader;
     private Mesh quad;
 
     public FullScreenQuadBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
@@ -25,7 +25,7 @@ public class FullScreenQuadBlock extends RenderPipeline {
 
     @Override
     public void setup(RenderPipelineData input) {
-        quadShader = new ShaderProgram(quadShaderID);
+        quadShader = new ShaderProgramGL(quadShaderID);
 
         try {
             quadShader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/fullscreenQuad_Vertex.glsl");

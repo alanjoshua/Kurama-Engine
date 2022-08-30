@@ -168,7 +168,7 @@ public class MD5Utils {
 
             if(mesh.texture != null) {
                 try {
-                    mats.get(0).texture = new Texture(mesh.texture);
+                    mats.get(0).texture = Texture.createTexture(mesh.texture);
                     mats.get(0).diffuseMap = mats.get(0).texture;
                     mats.get(0).specularMap = mats.get(0).texture;
                 }
@@ -189,7 +189,7 @@ public class MD5Utils {
             var normalFile = tempSplit[0]+"_normal."+fileFormat;
 
             if(new File(normalFile).exists()) {
-                mats.get(0).normalMap = new Texture(normalFile);
+                mats.get(0).normalMap = Texture.createTexture(normalFile);
             }
 
             Mesh m = new Mesh(indexList, mesh.triangles, vertAttribs, mats, null, null);

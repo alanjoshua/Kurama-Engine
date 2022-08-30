@@ -1,7 +1,7 @@
 package Kurama.lighting;
 
 import Kurama.Mesh.Mesh;
-import Kurama.shadow.ShadowMap;
+import Kurama.shadow.ShadowMapGL;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -16,11 +16,11 @@ public class SpotLight extends Model {
     public float angle;
     public PointLight pointLight;
     public Vector coneDirection;
-    public ShadowMap shadowMap;
+    public ShadowMapGL shadowMap;
     public Matrix shadowProjectionMatrix;
     public boolean doesProduceShadow = false;
 
-    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
+    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMapGL shadowMap,
                      Mesh mesh, Matrix shadowProjectionMatrix, String identifier) {
         super(game,mesh, identifier);
         this.pointLight = pointLight;
@@ -31,7 +31,7 @@ public class SpotLight extends Model {
         this.shadowProjectionMatrix = shadowProjectionMatrix;
     }
 
-    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMap shadowMap,
+    public SpotLight(Game game, PointLight pointLight, Quaternion orientation, float angle, ShadowMapGL shadowMap,
                      List<Mesh> meshes, Matrix shadowProjectionMatrix, String identifier) {
         super(game, meshes, identifier);
         this.pointLight = pointLight;

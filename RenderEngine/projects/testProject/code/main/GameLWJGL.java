@@ -17,9 +17,11 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
+import Kurama.OpenGL.TextureGL;
 import Kurama.Terrain.Terrain;
 import Kurama.audio.SoundBuffer;
 import Kurama.audio.SoundManager;
+import Kurama.audio.SoundSource;
 import Kurama.camera.Camera;
 import Kurama.display.Display;
 import Kurama.display.DisplayLWJGL;
@@ -40,7 +42,7 @@ import Kurama.renderingEngine.RenderingEngineGL;
 import Kurama.renderingEngine.defaultRenderPipeline.DefaultRenderPipeline;
 import Kurama.renderingEngine.ginchan.Gintoki;
 import Kurama.scene.Scene;
-import Kurama.shadow.ShadowMap;
+import Kurama.shadow.ShadowMapGL;
 import Kurama.utils.Logger;
 import Kurama.utils.Utils;
 
@@ -65,6 +67,7 @@ public class GameLWJGL extends Game implements Runnable {
 
     public GameLWJGL(String threadName) {
         super(threadName);
+        GRAPHICS_API = GraphicsApi.OPENGL;
     }
 
     public void init() {
@@ -84,7 +87,7 @@ public class GameLWJGL extends Game implements Runnable {
         renderingEngine.init(scene);
 
         playerCamera = new Camera(this,scene.rootSceneComp, null, new Vector(new float[] {0,7,5}),90, 0.001f, 5000,
-                Display.defaultWindowedWidth, Display.defaultWindowedHeight, "playerCam");
+                Display.defaultWindowedWidth, Display.defaultWindowedHeight, true,"playerCam");
         playerCamera.shouldPerformFrustumCulling = true;
         scene.rootSceneComp.addChild(playerCamera);
 
@@ -128,7 +131,7 @@ public class GameLWJGL extends Game implements Runnable {
         var gameScreen =
                 new Rectangle(this, rootGuiComponent, "gameScreen")
                         .attachSelfToParent(rootGuiComponent)
-                        .setTexture(new Texture(playerCamera.renderBuffer.textureId))
+                        .setTexture(Texture.createTexture(playerCamera.renderBuffer.textureId))
                         .addOnResizeAction(new ResizeCameraRenderResolution(playerCamera))
                         .setKeyInputFocused(true)
                         .addOnClickAction(new GrabKeyboardFocus())
@@ -376,7 +379,7 @@ public class GameLWJGL extends Game implements Runnable {
         var sunMesh = scene.loadMesh("res/glassball/glassball.obj", "sun_mesh", hints);
         DirectionalLight directionalLight = new DirectionalLight(this,new Vector(new float[]{1,1,1}),
                 Quaternion.getAxisAsQuat(new Vector(new float[]{1,0,0}),10),1f,
-                new ShadowMap(ShadowMap.DEFAULT_SHADOWMAP_WIDTH, ShadowMap.DEFAULT_SHADOWMAP_HEIGHT),
+                new ShadowMapGL(ShadowMapGL.DEFAULT_SHADOWMAP_WIDTH, ShadowMapGL.DEFAULT_SHADOWMAP_HEIGHT),
                 sunMesh, directionalLightOrthoProjection, "Sun");
 
 //        rootGuiComponent.findComponent("shadowMap").setTexture(directionalLight.shadowMap.depthMap);
@@ -471,7 +474,7 @@ public class GameLWJGL extends Game implements Runnable {
 
         var skybox_mesh = scene.loadMesh("res/misc/skybox.obj", "skybox_mesh", hints);
         scene.renderPipeline.initializeMesh(skybox_mesh);
-        Material skyMat = new Material(new Texture("res/misc/skybox.png"),1, "SkyBox");
+        Material skyMat = new Material(Texture.createTexture("res/misc/skybox.png"),1, "SkyBox");
         skyMat.ambientColor = new Vector(new float[]{1f,1f,1f,1f});
         skybox_mesh.materials.set(0, skyMat);
 
@@ -490,7 +493,7 @@ public class GameLWJGL extends Game implements Runnable {
         scene.renderPipeline.initializeMesh(cubeMesh);
         hints.isInstanced = false;
 
-        Texture cubeTexture = new Texture("res/misc/grassblock.png");
+        Texture cubeTexture = Texture.createTexture("res/misc/grassblock.png");
         Material cubeMat = new Material(cubeTexture, "minecraftCubeMat");
         cubeMat.diffuseMap = cubeMat.texture;
         cubeMat.specularMap = cubeMat.texture;
@@ -518,10 +521,10 @@ public class GameLWJGL extends Game implements Runnable {
         Mesh terrain_mesh = TerrainUtils.createTerrainFromHeightMap(heightMap,boxCount/1,"Terrain_mesh");
         Material ter_mat = new Material();
         ter_mat.matName = "TERRAIN";
-        ter_mat.texture = new Texture("res/misc/crystalTexture.jpg");
+        ter_mat.texture = Texture.createTexture("res/misc/crystalTexture.jpg");
         ter_mat.diffuseMap = ter_mat.texture;
-        ter_mat.normalMap = new Texture("res/misc/crystalNormalMap.jpg");
-        ter_mat.specularMap = new Texture("res/misc/crystalSpecularMap.jpg");
+        ter_mat.normalMap = Texture.createTexture("res/misc/crystalNormalMap.jpg");
+        ter_mat.specularMap = Texture.createTexture("res/misc/crystalSpecularMap.jpg");
         ter_mat.reflectance = 1f;
         terrain_mesh.materials.set(0,ter_mat);
         scene.renderPipeline.initializeMesh(terrain_mesh);
@@ -572,12 +575,12 @@ public class GameLWJGL extends Game implements Runnable {
         madara_model.setOrientation(Quaternion.getAxisAsQuat(new Vector(1, 0,0), -90).multiply(Quaternion.getAxisAsQuat(0, 0, 1, -90)));
         scene.rootSceneComp.addChild(madara_model);
 
-//        SoundSource madaraSource = new SoundSource("madara", true, false);
-//        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
-//        madaraSource.setGain(10);
-//        madaraSource.attachToModel(madara_model);
-//        madaraSource.play();
-//        scene.soundManager.addSoundSource(madaraSource);
+        SoundSource madaraSource = new SoundSource("madara", true, false);
+        madaraSource.setBuffer(scene.soundManager.soundBufferMap.get("madara"));
+        madaraSource.setGain(10);
+        madaraSource.attachToModel(madara_model);
+        madaraSource.play();
+        scene.soundManager.addSoundSource(madaraSource);
 
         var partHints = new MeshBuilderHints();
         partHints.isInstanced = true;
@@ -587,7 +590,7 @@ public class GameLWJGL extends Game implements Runnable {
         partHints.shouldReverseWindingOrder = true;
         Mesh partMesh = MeshBuilder.buildMesh("res/misc/particle.obj", partHints);
         scene.renderPipeline.initializeMesh(partMesh);
-        Texture partTex = new Texture("res/misc/explosion2.png", 4,5);
+        Texture partTex = Texture.createTexture("res/misc/explosion2.png", 4,5);
         partMesh.materials.get(0).texture = partTex;
 
         Particle particle = new Particle(this, null, partMesh, new Vector(-1f, 0f, 0), new Vector(-5f, 0f, 0),

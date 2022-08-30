@@ -8,7 +8,7 @@
     <artifactId>KuramaEngine</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <lwjgl.version>3.2.3</lwjgl.version>
+        <lwjgl.version>3.3.1</lwjgl.version>
         <lwjgl.natives>natives-windows</lwjgl.natives>
         <maven.compiler.source>1.13</maven.compiler.source>
         <maven.compiler.target>1.13</maven.compiler.target>
@@ -19,8 +19,8 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>13</source>
-                    <target>13</target>
+                    <source>19</source>
+                    <target>19</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -42,6 +42,9 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.joml/joml -->
+
         </dependencies>
     </dependencyManagement>
 
@@ -357,6 +360,11 @@
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-zstd</artifactId>
             <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>1.10.4</version>
         </dependency>
     </dependencies>
     

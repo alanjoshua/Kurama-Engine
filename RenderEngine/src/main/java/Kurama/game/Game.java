@@ -7,6 +7,7 @@ import Kurama.inputs.Input;
 import Kurama.misc_structures.GridNode;
 import Kurama.renderingEngine.RenderingEngine;
 import Kurama.scene.Scene;
+import Kurama.utils.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,6 +37,10 @@ public abstract class Game implements Runnable {
     public Display display;
     public Input input;
 
+    public static GraphicsApi GRAPHICS_API;
+
+    public enum GraphicsApi {CPU, OPENGL, VULKAN}
+
     public Game(String threadName) {
         gameLoopThread = new Thread(this,threadName);
     }
@@ -59,6 +64,11 @@ public abstract class Game implements Runnable {
     }
 
     public void start() {
+        if(gameLoopThread == null) {
+            run();
+            return;
+        }
+
         String osName = System.getProperty("os.name");
         if ( osName.contains("Mac") ) {
             gameLoopThread.run();   //To make this program compatible with macs
@@ -143,6 +153,10 @@ public abstract class Game implements Runnable {
                 fps = 0;
                 timer = 0;
                 timerStartTime = System.nanoTime();
+
+                if(shouldDisplayFPS) {
+                    Logger.log("fps: "+ displayFPS);
+                }
 
                 if(shouldBenchMark) {
                     try {

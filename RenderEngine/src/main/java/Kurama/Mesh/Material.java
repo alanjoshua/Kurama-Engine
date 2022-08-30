@@ -123,10 +123,10 @@ public class Material {
 
 //        System.out.println("Ref int: "+ref_int + " Spec int: "+spec_int);
 
-        int result = (texture == null ? 0:texture.getId()) +  (normalMap == null ? 0:normalMap.getId()) +
-                (diffuseMap == null ? 0:diffuseMap.getId()) + (specularMap == null ? 0:specularMap.getId()) +
-                ambientColor.hashCode() + diffuseColor.hashCode() + specularColor.hashCode() +
-                ref_int + spec_int + matName.hashCode();
+        int result = (int) ((long)(texture == null ? 0:texture.getId()) +  (long)(normalMap == null ? 0:normalMap.getId()) +
+                        (long)(diffuseMap == null ? 0:diffuseMap.getId()) + (long)(specularMap == null ? 0:specularMap.getId()) +
+                        ambientColor.hashCode() + diffuseColor.hashCode() + specularColor.hashCode() +
+                        ref_int + spec_int + matName.hashCode());
 
         return result;
     }

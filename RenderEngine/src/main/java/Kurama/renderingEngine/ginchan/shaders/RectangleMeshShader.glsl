@@ -28,8 +28,8 @@ layout (location = 0) out PerVertexData{
     flat uint mi;
 } v_out[];
 
-out uint gl_PrimitiveCountNV;
-out uint gl_PrimitiveIndicesNV[];
+out uint PrimitiveCountNV;
+out uint PrimitiveIndicesNV[];
 out Rectangle outRect;
 
 const vec4 v1 = vec4(-0.5,-0.5,0f,1f);

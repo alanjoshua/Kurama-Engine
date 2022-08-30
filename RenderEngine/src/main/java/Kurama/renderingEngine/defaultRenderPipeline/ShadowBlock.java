@@ -12,7 +12,7 @@ import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
 import Kurama.renderingEngine.ShadowPackageData;
 import Kurama.scene.Scene;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -28,7 +28,7 @@ import static org.lwjgl.opengl.GL45C.glNamedBufferSubData;
 public class ShadowBlock extends RenderPipeline {
 
     private String shadow_ShaderID = "shadow_shader";
-    private ShaderProgram shadow_shader;
+    private ShaderProgramGL shadow_shader;
 
     public ShadowBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
         super(game,parentPipeline, pipelineID);
@@ -36,7 +36,7 @@ public class ShadowBlock extends RenderPipeline {
 
     @Override
     public void setup(RenderPipelineData input) {
-        shadow_shader = new ShaderProgram(shadow_ShaderID);
+        shadow_shader = new ShaderProgramGL(shadow_ShaderID);
         try {
             shadow_shader.createVertexShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightVertexShader.glsl");
             shadow_shader.createFragmentShader("src/main/java/Kurama/renderingEngine/defaultRenderPipeline/shaders/depthDirectionalLightFragmentShader.glsl");
@@ -69,8 +69,8 @@ public class ShadowBlock extends RenderPipeline {
         glEnable(GL_CULL_FACE);
         glCullFace(currCull);
 
-        ShaderProgram depthShaderProgram = shadow_shader;
-        depthShaderProgram.bind();
+        ShaderProgramGL depthShaderProgramGL = shadow_shader;
+        depthShaderProgramGL.bind();
         List<Matrix> worldToDirectionalLights = new ArrayList<>();
         List<Matrix> worldToSpotLights = new ArrayList<>();
 
@@ -85,7 +85,7 @@ public class ShadowBlock extends RenderPipeline {
                 glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                depthShaderProgram.setUniform("projectionMatrix", light.shadowProjectionMatrix);
+                depthShaderProgramGL.setUniform("projectionMatrix", light.shadowProjectionMatrix);
 
                 for (String meshId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).keySet()) {
 
@@ -108,7 +108,7 @@ public class ShadowBlock extends RenderPipeline {
                     pipeline.initRender(mesh);
 
                     if (mesh.isInstanced) {
-                        depthShaderProgram.setUniform("isInstanced", 1);
+                        depthShaderProgramGL.setUniform("isInstanced", 1);
                         var inst_mesh = mesh;
                         var models = new ArrayList<Model>();
 
@@ -123,10 +123,10 @@ public class ShadowBlock extends RenderPipeline {
                             chunks = InstancedUtils.getRenderChunks(models,
                                     inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
                                             inst_mesh.instanceChunkSize : DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
-                            depthShaderProgram.setUniform("isAnimated", 1);
+                            depthShaderProgramGL.setUniform("isAnimated", 1);
                         } else {
                             chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
-                            depthShaderProgram.setUniform("isAnimated", 0);
+                            depthShaderProgramGL.setUniform("isAnimated", 0);
                         }
 
                         for (var chunk : chunks) {
@@ -165,25 +165,25 @@ public class ShadowBlock extends RenderPipeline {
                             pipeline.renderInstanced(inst_mesh, chunk.size());
                         }
                     } else {
-                        depthShaderProgram.setUniform("isInstanced", 0);
+                        depthShaderProgramGL.setUniform("isInstanced", 0);
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
                             Model m = scene.modelID_model_map.get(modelId);
 
                             if (m instanceof AnimatedModel) {
-                                depthShaderProgram.setUniform("isAnimated", 1);
+                                depthShaderProgramGL.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
                                 AnimatedModel anim = (AnimatedModel) m;
                                 for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
                                     var matrix = anim.currentJointTransformations.get(j);
-                                    depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
+                                    depthShaderProgramGL.setUniform("jointMatrices[" + j + "]", matrix);
                                 }
                             } else {
-                                depthShaderProgram.setUniform("isAnimated", 0);
+                                depthShaderProgramGL.setUniform("isAnimated", 0);
                             }
 
                             if (m.shouldSelfCastShadow && m.shouldRender) {
                                 Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                                depthShaderProgramGL.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                                 pipeline.render(mesh);
                             }
                         }
@@ -205,7 +205,7 @@ public class ShadowBlock extends RenderPipeline {
             if(light.doesProduceShadow) {
 
                 Matrix projMatrix = light.shadowProjectionMatrix;
-                depthShaderProgram.setUniform("projectionMatrix", projMatrix);
+                depthShaderProgramGL.setUniform("projectionMatrix", projMatrix);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, light.shadowMap.depthMapFBO);
                 glViewport(0, 0, light.shadowMap.shadowMapWidth, light.shadowMap.shadowMapHeight);
@@ -231,7 +231,7 @@ public class ShadowBlock extends RenderPipeline {
                     pipeline.initRender(mesh);
 
                     if (mesh.isInstanced) {
-                        depthShaderProgram.setUniform("isInstanced", 1);
+                        depthShaderProgramGL.setUniform("isInstanced", 1);
                         var inst_mesh = mesh;
                         var models = new ArrayList<Model>();
 
@@ -246,10 +246,10 @@ public class ShadowBlock extends RenderPipeline {
                             chunks = InstancedUtils.getRenderChunks(models,
                                     inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
                                             inst_mesh.instanceChunkSize : DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
-                            depthShaderProgram.setUniform("isAnimated", 1);
+                            depthShaderProgramGL.setUniform("isAnimated", 1);
                         } else {
                             chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
-                            depthShaderProgram.setUniform("isAnimated", 0);
+                            depthShaderProgramGL.setUniform("isAnimated", 0);
                         }
 
                         for (var chunk : chunks) {
@@ -289,25 +289,25 @@ public class ShadowBlock extends RenderPipeline {
                             pipeline.renderInstanced(inst_mesh, chunk.size());
                         }
                     } else {
-                        depthShaderProgram.setUniform("isInstanced", 0);
+                        depthShaderProgramGL.setUniform("isInstanced", 0);
                         for (String modelId : scene.shaderblock_mesh_model_map.get(DefaultRenderPipeline.sceneShaderBlockID).get(meshId).keySet()) {
                             Model m = scene.modelID_model_map.get(modelId);
 
                             if (m instanceof AnimatedModel) {
-                                depthShaderProgram.setUniform("isAnimated", 1);
+                                depthShaderProgramGL.setUniform("isAnimated", 1);
 //                        Logger.log("detecting animated model");
                                 AnimatedModel anim = (AnimatedModel) m;
                                 for (int j = 0; j < anim.currentJointTransformations.size(); j++) {
                                     var matrix = anim.currentJointTransformations.get(j);
-                                    depthShaderProgram.setUniform("jointMatrices[" + j + "]", matrix);
+                                    depthShaderProgramGL.setUniform("jointMatrices[" + j + "]", matrix);
                                 }
                             } else {
-                                depthShaderProgram.setUniform("isAnimated", 0);
+                                depthShaderProgramGL.setUniform("isAnimated", 0);
                             }
 
                             if (m.shouldSelfCastShadow && m.shouldRender) {
                                 Matrix modelLightViewMatrix = worldToLight.matMul(m.getObjectToWorldMatrix());
-                                depthShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+                                depthShaderProgramGL.setUniform("modelLightViewMatrix", modelLightViewMatrix);
                                 pipeline.render(mesh);
                             }
                         }
@@ -318,7 +318,7 @@ public class ShadowBlock extends RenderPipeline {
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        depthShaderProgram.unbind();
+        depthShaderProgramGL.unbind();
         return new ShadowDepthRenderPackage(worldToDirectionalLights,worldToSpotLights);
     }
 

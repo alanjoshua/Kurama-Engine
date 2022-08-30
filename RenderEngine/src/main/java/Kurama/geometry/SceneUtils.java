@@ -2,7 +2,7 @@ package Kurama.geometry;
 
 import Kurama.Effects.Fog;
 import Kurama.Mesh.Material;
-import Kurama.shadow.ShadowMap;
+import Kurama.shadow.ShadowMapGL;
 import Kurama.Mesh.Texture;
 import Kurama.Text.Text;
 import Kurama.Math.Matrix;
@@ -299,7 +299,7 @@ public class SceneUtils {
                                 break;
                         }
                     }
-                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight, Kurama.utils.Utils.getUniqueID()));
+                    scene.cameras.add(new Camera(game, orientation, pos, fovX, near, far, imageWidth, imageHeight, true, Kurama.utils.Utils.getUniqueID()));
                 }
 
                 if(isLoadingPointLights) {
@@ -372,8 +372,8 @@ public class SceneUtils {
                         Vector color = null;
                         float intensity = 1;
                         float lightPosScale = 100;
-                        int shadowMapWidth = ShadowMap.DEFAULT_SHADOWMAP_WIDTH;
-                        int shadowMapHeight = ShadowMap.DEFAULT_SHADOWMAP_HEIGHT;
+                        int shadowMapWidth = ShadowMapGL.DEFAULT_SHADOWMAP_WIDTH;
+                        int shadowMapHeight = ShadowMapGL.DEFAULT_SHADOWMAP_HEIGHT;
                         Matrix shadowProjectMatrix = null;
                         float angle=45;
                         float att_constant=1;
@@ -542,7 +542,7 @@ public class SceneUtils {
                             DirectionalLight l;
 
                             l = new DirectionalLight(game, color, orientation, intensity,
-                                    new ShadowMap(shadowMapWidth, shadowMapHeight), meshes,
+                                    new ShadowMapGL(shadowMapWidth, shadowMapHeight), meshes,
                                     shadowProjectMatrix, id);
 
                             l.setPos(pos);

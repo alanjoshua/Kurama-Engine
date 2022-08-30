@@ -8,7 +8,7 @@ import Kurama.game.Game;
 import Kurama.renderingEngine.GUIComponentRenderData;
 import Kurama.renderingEngine.RenderPipeline;
 import Kurama.renderingEngine.RenderPipelineData;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 import Kurama.utils.Utils;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
@@ -27,7 +27,7 @@ import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 
 public class RectangleShaderBlock extends RenderPipeline {
 
-    private ShaderProgram shader;
+    private ShaderProgramGL shader;
     int rectangleUniformBuffer;
     int bufferBaseInd = 2;
     FloatBuffer buffer;
@@ -45,7 +45,7 @@ public class RectangleShaderBlock extends RenderPipeline {
 
     @Override
     public void setup(RenderPipelineData input) {
-        shader = new ShaderProgram(Utils.getUniqueID());
+        shader = new ShaderProgramGL(Utils.getUniqueID());
 
         try {
             shader.createMeshShader("src/main/java/Kurama/renderingEngine/ginchan/shaders/RectangleMeshShader.glsl");
@@ -190,7 +190,7 @@ public class RectangleShaderBlock extends RenderPipeline {
             alphaMaskSoFar = alphaMaskSoFar*masterComponent.alphaMask;
 
             if (masterComponent.texture != null) {
-                glBindTexture(GL_TEXTURE_2D, masterComponent.texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) masterComponent.texture.getId());
             }
             setupRectangleUniform(mat, ((Rectangle)masterComponent).radii, masterComponent.getWidth(), masterComponent.getHeight(),
                     masterComponent.texture == null ? false : true, masterComponent.color, colorSoFar, alphaMaskSoFar, (Rectangle) masterComponent, buffer);

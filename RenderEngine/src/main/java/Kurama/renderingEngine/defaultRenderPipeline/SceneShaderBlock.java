@@ -14,7 +14,7 @@ import Kurama.ComponentSystem.components.model.AnimatedModel;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.renderingEngine.*;
 import Kurama.scene.Scene;
-import Kurama.shader.ShaderProgram;
+import Kurama.shader.ShaderProgramGL;
 import Kurama.utils.Logger;
 import org.lwjgl.system.MemoryUtil;
 
@@ -32,7 +32,7 @@ import static org.lwjgl.opengl.GL45.glNamedBufferSubData;
 public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
     private String scene_shader_id = "scene_shader";
-    private ShaderProgram scene_shader;
+    private ShaderProgramGL scene_shader;
 //    private DefaultRenderPipeline pipeline;
 
     public SceneShaderBlock(Game game, RenderPipeline parentPipeline, String pipelineID) {
@@ -64,7 +64,7 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
 
     public void setupSceneShader() {
 
-        scene_shader = new ShaderProgram(scene_shader_id);
+        scene_shader = new ShaderProgramGL(scene_shader_id);
 
         try {
 
@@ -114,22 +114,22 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
             var material = materials.get(i);
             if (material.texture != null) {
                 glActiveTexture(offset+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.texture.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.texture.getId());
             }
 
             if (material.normalMap != null) {
                 glActiveTexture(offset+1+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.normalMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.normalMap.getId());
             }
 
             if (material.diffuseMap != null) {
                 glActiveTexture(offset+2+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.diffuseMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.diffuseMap.getId());
             }
 
             if (material.specularMap != null) {
                 glActiveTexture(offset+3+GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, material.specularMap.getId());
+                glBindTexture(GL_TEXTURE_2D, (Integer) material.specularMap.getId());
             }
             offset += 4;
         }
@@ -142,29 +142,29 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         boolean curShouldCull = true;
         int currCull = GL_BACK;
 
-        ShaderProgram sceneShaderProgram = scene_shader;
-        sceneShaderProgram.bind();
+        ShaderProgramGL sceneShaderProgramGL = scene_shader;
+        sceneShaderProgramGL.bind();
 
         Matrix worldToCam = camera.getWorldToObject();
         Matrix projectionMatrix = camera.getPerspectiveProjectionMatrix();
 
-        sceneShaderProgram.setUniform("projectionMatrix",projectionMatrix);
-        sceneShaderProgram.setUniform("worldToCam", worldToCam);
+        sceneShaderProgramGL.setUniform("projectionMatrix",projectionMatrix);
+        sceneShaderProgramGL.setUniform("worldToCam", worldToCam);
 
-        sceneShaderProgram.setUniform("ambientLight",scene.ambientLight);
+        sceneShaderProgramGL.setUniform("ambientLight",scene.ambientLight);
 
         LightDataPackage lights = processLights(scene.pointLights, scene.spotLights, scene.directionalLights, worldToCam);
 
-        sceneShaderProgram.setUniform("spotLights",lights.spotLights);
-        sceneShaderProgram.setUniform("pointLights",lights.pointLights);
-        sceneShaderProgram.setUniform("directionalLights",lights.directionalLights);
-        sceneShaderProgram.setUniform("numDirectionalLights",scene.directionalLights.size());
-        sceneShaderProgram.setUniform("numberOfSpotLights",scene.spotLights.size());
-        sceneShaderProgram.setUniform("fog", scene.fog);
+        sceneShaderProgramGL.setUniform("spotLights",lights.spotLights);
+        sceneShaderProgramGL.setUniform("pointLights",lights.pointLights);
+        sceneShaderProgramGL.setUniform("directionalLights",lights.directionalLights);
+        sceneShaderProgramGL.setUniform("numDirectionalLights",scene.directionalLights.size());
+        sceneShaderProgramGL.setUniform("numberOfSpotLights",scene.spotLights.size());
+        sceneShaderProgramGL.setUniform("fog", scene.fog);
 
         if(scene.hasMatLibraryUpdated) {
             Logger.log("setting materials");
-            sceneShaderProgram.setMaterials_bindTextures("materials", "mat_textures",
+            sceneShaderProgramGL.setMaterials_bindTextures("materials", "mat_textures",
                     "mat_normalMaps", "mat_diffuseMaps", "mat_specularMaps", scene.materialLibrary, 0);
         }
         int offset = activateMaterialTextures(scene.materialLibrary, 0);
@@ -173,150 +173,147 @@ public class SceneShaderBlock extends Kurama.renderingEngine.RenderPipeline {
         for(int i = 0;i < scene.directionalLights.size(); i++) {
             DirectionalLight l = scene.directionalLights.get(i);
             c = c.add(l.color.scalarMul(l.intensity));
-            sceneShaderProgram.setUniform("worldToDirectionalLightMatrix["+i+"]",
+            sceneShaderProgramGL.setUniform("worldToDirectionalLightMatrix["+i+"]",
                     l.shadowProjectionMatrix.matMul(shadowPackage.worldToDirectionalLights.get(i)));
         }
-        sceneShaderProgram.setUniform("allDirectionalLightStatic", c);
+        sceneShaderProgramGL.setUniform("allDirectionalLightStatic", c);
 
         for(int i = 0;i < scene.spotLights.size(); i++) {
             SpotLight l = scene.spotLights.get(i);
-            sceneShaderProgram.setUniform("worldToSpotlightMatrix["+i+"]",
+            sceneShaderProgramGL.setUniform("worldToSpotlightMatrix["+i+"]",
                     l.shadowProjectionMatrix.matMul(shadowPackage.worldToSpotLights.get(i)));
         }
 
-        offset = sceneShaderProgram.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,offset);
-        offset = sceneShaderProgram.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
+        offset = sceneShaderProgramGL.setAndActivateDirectionalShadowMaps("directionalShadowMaps", scene.directionalLights,offset);
+        offset = sceneShaderProgramGL.setAndActivateSpotLightShadowMaps("spotLightShadowMaps", scene.spotLights, offset);
 
-        for(String meshId :scene.shaderblock_mesh_model_map.get(pipelineID).keySet()) {
+        if(scene.shaderblock_mesh_model_map.get(pipelineID) != null) {
+            for (String meshId : scene.shaderblock_mesh_model_map.get(pipelineID).keySet()) {
 
-            Mesh mesh = scene.meshID_mesh_map.get(meshId);
-            if (curShouldCull != mesh.shouldCull) {
-                if(mesh.shouldCull) {
-                    glEnable(GL_CULL_FACE);
-                }
-                else {
-                    glDisable(GL_CULL_FACE);
-                }
-                curShouldCull = mesh.shouldCull;
-            }
-
-            if(currCull != mesh.cullmode) {
-                glCullFace(mesh.cullmode);
-                currCull = mesh.cullmode;
-            }
-
-            pipeline.initRender(mesh);
-
-            if(mesh.isInstanced) {
-
-                sceneShaderProgram.setUniform("isInstanced", 1);
-
-                List<Model> models = new ArrayList<>();
-                for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
-                    Model model = scene.modelID_model_map.get(modelId);
-                    if(model.shouldRender && model.isInsideFrustum) {
-                        models.add(model);
+                Mesh mesh = scene.meshID_mesh_map.get(meshId);
+                if (curShouldCull != mesh.shouldCull) {
+                    if (mesh.shouldCull) {
+                        glEnable(GL_CULL_FACE);
+                    } else {
+                        glDisable(GL_CULL_FACE);
                     }
+                    curShouldCull = mesh.shouldCull;
                 }
 
-                var inst_mesh = mesh;
-                List<List<Model>> chunks;
-                if(mesh.isAnimatedSkeleton) {
-                    chunks = InstancedUtils.getRenderChunks(models,
-                            inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
-                                    inst_mesh.instanceChunkSize: DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
-                    scene_shader.setUniform("isAnimated", 1);
+                if (currCull != mesh.cullmode) {
+                    glCullFace(mesh.cullmode);
+                    currCull = mesh.cullmode;
                 }
-                else {
-                    chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
-                    scene_shader.setUniform("isAnimated", 0);
-                }
-                for (var chunk: chunks) {
-                    inst_mesh.instanceDataBuffer.clear();
 
-                    int modelCount = 0;
-                    for(Model m: chunk) {
+                pipeline.initRender(mesh);
 
-                        if(mesh.isAnimatedSkeleton) {
-                            var anim = (AnimatedModel) m;
-                            for (int i = 0; i < anim.currentAnimation.numJoints; i++) {
-                                Matrix jointMat;
-                                jointMat = anim.currentJointTransformations.get(i);
+                if (mesh.isInstanced) {
+
+                    sceneShaderProgramGL.setUniform("isInstanced", 1);
+
+                    List<Model> models = new ArrayList<>();
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
+                        Model model = scene.modelID_model_map.get(modelId);
+                        if (model.shouldRender && model.isInsideFrustum) {
+                            models.add(model);
+                        }
+                    }
+
+                    var inst_mesh = mesh;
+                    List<List<Model>> chunks;
+                    if (mesh.isAnimatedSkeleton) {
+                        chunks = InstancedUtils.getRenderChunks(models,
+                                inst_mesh.instanceChunkSize < DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES ?
+                                        inst_mesh.instanceChunkSize : DefaultRenderPipeline.MAX_INSTANCED_SKELETAL_MESHES);
+                        scene_shader.setUniform("isAnimated", 1);
+                    } else {
+                        chunks = InstancedUtils.getRenderChunks(models, inst_mesh.instanceChunkSize);
+                        scene_shader.setUniform("isAnimated", 0);
+                    }
+                    for (var chunk : chunks) {
+                        inst_mesh.instanceDataBuffer.clear();
+
+                        int modelCount = 0;
+                        for (Model m : chunk) {
+
+                            if (mesh.isAnimatedSkeleton) {
+                                var anim = (AnimatedModel) m;
+                                for (int i = 0; i < anim.currentAnimation.numJoints; i++) {
+                                    Matrix jointMat;
+                                    jointMat = anim.currentJointTransformations.get(i);
 //                                }
-                                FloatBuffer temp = jointMat.getAsFloatBuffer();
+                                    FloatBuffer temp = jointMat.getAsFloatBuffer();
 //                                TODO: Change this to persistent map
-                                glNamedBufferSubData(pipeline.jointsInstancedBufferID,
-                                        ((modelCount * DefaultRenderPipeline.MAX_JOINTS) + i) * DefaultRenderPipeline.MATRIX_SIZE_BYTES, temp);
-                                MemoryUtil.memFree(temp);
+                                    glNamedBufferSubData(pipeline.jointsInstancedBufferID,
+                                            ((modelCount * DefaultRenderPipeline.MAX_JOINTS) + i) * DefaultRenderPipeline.MATRIX_SIZE_BYTES, temp);
+                                    MemoryUtil.memFree(temp);
+                                }
                             }
-                        }
 
-                        Matrix objectToWorld = m.getObjectToWorldMatrix();
-                        objectToWorld.setValuesToBuffer(inst_mesh.instanceDataBuffer);
+                            Matrix objectToWorld = m.getObjectToWorldMatrix();
+                            objectToWorld.setValuesToBuffer(inst_mesh.instanceDataBuffer);
 
-                        Vector matsGlobalLoc = new Vector(4, 0);
-                        for(int i = 0;i < m.materials.get(meshId).size();i++) {
-                            matsGlobalLoc.setDataElement(i, m.materials.get(meshId).get(i).globalSceneID);
-                        }
+                            Vector matsGlobalLoc = new Vector(4, 0);
+                            for (int i = 0; i < m.materials.get(meshId).size(); i++) {
+                                matsGlobalLoc.setDataElement(i, m.materials.get(meshId).get(i).globalSceneID);
+                            }
 
-                        for(var v: matsGlobalLoc.getData()) {
-                            inst_mesh.instanceDataBuffer.put(v);
+                            for (var v : matsGlobalLoc.getData()) {
+                                inst_mesh.instanceDataBuffer.put(v);
+                            }
+                            modelCount++;
                         }
-                        modelCount++;
+                        inst_mesh.instanceDataBuffer.flip();
+                        glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
+                        glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+
+                        pipeline.renderInstanced(inst_mesh, chunk.size());
                     }
-                    inst_mesh.instanceDataBuffer.flip();
-                    glBindBuffer(GL_ARRAY_BUFFER, inst_mesh.instanceDataVBO);
-                    glBufferData(GL_ARRAY_BUFFER, inst_mesh.instanceDataBuffer, GL_DYNAMIC_DRAW);
+                } else {  // Non instanced meshes
 
-                    pipeline.renderInstanced(inst_mesh, chunk.size());
-                }
-            }
+                    sceneShaderProgramGL.setUniform("isInstanced", 0);
 
-            else {  // Non instanced meshes
+                    for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
+                        Model model = scene.modelID_model_map.get(modelId);
 
-                sceneShaderProgram.setUniform("isInstanced", 0);
+                        if (model.shouldRender) {
 
-                for (String modelId : scene.shaderblock_mesh_model_map.get(pipelineID).get(meshId).keySet()) {
-                    Model model = scene.modelID_model_map.get(modelId);
+                            if (model instanceof AnimatedModel) {
+                                scene_shader.setUniform("isAnimated", 1);
 
-                    if (model.shouldRender) {
-
-                        if (model instanceof AnimatedModel) {
-                            scene_shader.setUniform("isAnimated", 1);
-
-                            AnimatedModel anim = (AnimatedModel) model;
-                            for (int i = 0; i < anim.currentJointTransformations.size(); i++) {
-                                var matrix = anim.currentJointTransformations.get(i);
-                                sceneShaderProgram.setUniform("jointMatrices[" + i + "]", matrix);
+                                AnimatedModel anim = (AnimatedModel) model;
+                                for (int i = 0; i < anim.currentJointTransformations.size(); i++) {
+                                    var matrix = anim.currentJointTransformations.get(i);
+                                    sceneShaderProgramGL.setUniform("jointMatrices[" + i + "]", matrix);
+                                }
+                            } else {
+                                scene_shader.setUniform("isAnimated", 0);
                             }
-                        } else {
-                            scene_shader.setUniform("isAnimated", 0);
+
+                            Vector matsGlobalLoc = new Vector(4, 0);
+                            for (int i = 0; i < model.materials.get(meshId).size(); i++) {
+                                try {
+                                    matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+
+                            scene_shader.setUniform("materialsGlobalLoc", matsGlobalLoc);
+                            Matrix objectToWorld = model.getObjectToWorldMatrix();
+                            scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
+
+                            pipeline.render(mesh);
                         }
-
-                        Vector matsGlobalLoc = new Vector(4, 0);
-                        for(int i = 0;i < model.materials.get(meshId).size();i++) {
-                            try {
-                                matsGlobalLoc.setDataElement(i, model.materials.get(meshId).get(i).globalSceneID);
-                            }
-                            catch (Exception e) {
-                                e.printStackTrace();
-                                System.exit(1);
-                            }
-                        }
-
-                        scene_shader.setUniform("materialsGlobalLoc", matsGlobalLoc);
-                        Matrix objectToWorld = model.getObjectToWorldMatrix();
-                        scene_shader.setUniform("modelToWorldMatrix", objectToWorld);
-
-                        pipeline.render(mesh);
                     }
                 }
-            }
 
-            pipeline.endRender(mesh);
+                pipeline.endRender(mesh);
+            }
         }
 
-        sceneShaderProgram.unbind();
+        sceneShaderProgramGL.unbind();
     }
 
     public class LightDataPackage {
