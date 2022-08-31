@@ -20,8 +20,8 @@ import static org.lwjgl.vulkan.VK10.vkFreeMemory;
 
 public class TextureVK extends Texture {
 
-    public long id;
-    public long textureImageMemory;
+    public long id; // same as image.image
+    public AllocatedImage image;
     public long textureSampler;
     public long textureImageView;
     public int mipLevels;
@@ -37,65 +37,76 @@ public class TextureVK extends Texture {
 
         try(var stack = stackPush()) {
 
-            IntBuffer pWidth = stack.mallocInt(1);
-            IntBuffer pHeight = stack.mallocInt(1);
-            IntBuffer pChannels = stack.mallocInt(1);
-
-            ByteBuffer pixels = stbi_load(fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
-
-            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
-            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
-
-            if(pixels == null) {
-                throw new RuntimeException("Failed to load texture image ");
-            }
-
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    imageSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_CPU_COPY, null);
-
-            PointerBuffer data = stack.mallocPointer(1);
-            vkMapMemory(device, stagingBuffer.allocation, 0, imageSize, 0, data);
-            {
-                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
-            }
-            vkUnmapMemory(device, stagingBuffer.allocation);
-
-            stbi_image_free(pixels);
-
-            LongBuffer pTextureImage = stack.mallocLong(1);
-            LongBuffer pTextureImageMemory = stack.mallocLong(1);
-            createImage(pWidth.get(0), pHeight.get(0),
-                    VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    mipLevels,
-                    VK_SAMPLE_COUNT_1_BIT,
-                    pTextureImage,
-                    pTextureImageMemory);
-
-            id = pTextureImage.get(0);
-            textureImageMemory = pTextureImageMemory.get(0);
-
-            transitionImageLayout(id,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_IMAGE_LAYOUT_UNDEFINED,
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    mipLevels,
-                    commandPool,
-                    graphicsQueue);
-
-            copyBufferToImage(stagingBuffer.buffer, id, pWidth.get(0), pHeight.get(0), commandPool, graphicsQueue);
-
-            generateMipMaps(id, VK_FORMAT_R8G8B8A8_SRGB, pWidth.get(0), pHeight.get(0), mipLevels, commandPool, graphicsQueue);
-
-           vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+//            IntBuffer pWidth = stack.mallocInt(1);
+//            IntBuffer pHeight = stack.mallocInt(1);
+//            IntBuffer pChannels = stack.mallocInt(1);
+//
+//            ByteBuffer pixels = stbi_load(fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
+//
+//            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
+//            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
+//
+//            if(pixels == null) {
+//                throw new RuntimeException("Failed to load texture image ");
+//            }
+//
+//            var stagingBuffer = createBufferVMA(vmaAllocator,
+//                    imageSize,
+//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                    VMA_MEMORY_USAGE_CPU_COPY, null);
+//
+//            PointerBuffer data = stack.mallocPointer(1);
+//            vkMapMemory(device, stagingBuffer.allocation, 0, imageSize, 0, data);
+//            {
+//                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
+//            }
+//            vkUnmapMemory(device, stagingBuffer.allocation);
+//
+//            stbi_image_free(pixels);
+//
+//            LongBuffer pTextureImage = stack.mallocLong(1);
+//            LongBuffer pTextureImageMemory = stack.mallocLong(1);
+//            createImage(pWidth.get(0), pHeight.get(0),
+//                    VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+//                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+//                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+//                    mipLevels,
+//                    VK_SAMPLE_COUNT_1_BIT,
+//                    pTextureImage,
+//                    pTextureImageMemory);
+//
+//            id = pTextureImage.get(0);
+//            textureImageMemory = pTextureImageMemory.get(0);
+//
+//            transitionImageLayout(id,
+//                    VK_FORMAT_R8G8B8A8_SRGB,
+//                    VK_IMAGE_LAYOUT_UNDEFINED,
+//                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+//                    mipLevels,
+//                    commandPool,
+//                    graphicsQueue);
+//
+//            copyBufferToImage(stagingBuffer.buffer, id, pWidth.get(0), pHeight.get(0), commandPool, graphicsQueue);
+//
+//            generateMipMaps(id, VK_FORMAT_R8G8B8A8_SRGB, pWidth.get(0), pHeight.get(0), mipLevels, commandPool, graphicsQueue);
+//
+//           vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
     }
 
     public void createTextureImageView() {
-        textureImageView = createImageView(id, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, device);
+        try (var stack = stackPush()) {
+
+            var viewInfo =
+                    createImageViewCreateInfo(
+                            VK_FORMAT_R8G8B8A8_SRGB,
+                            image.image,
+                            VK_IMAGE_ASPECT_COLOR_BIT,
+                            mipLevels,
+                            stack
+                    );
+            textureImageView = createImageView(viewInfo, device);
+        }
     }
 
     public void createTextureSampler() {
@@ -252,7 +263,7 @@ public class TextureVK extends Texture {
         vkDestroyImageView(device, textureImageView, null);
         vkDestroySampler(device, textureSampler, null);
         vkDestroyImage(device, id, null);
-        vkFreeMemory(device, textureImageMemory, null);
+//        vkFreeMemory(device, textureImageMemory, null);
     }
 
 }

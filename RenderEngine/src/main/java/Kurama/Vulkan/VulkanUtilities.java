@@ -170,44 +170,15 @@ public class VulkanUtilities {
         }
     }
 
-    public static void createImage(int width, int height, int format, int tiling, int usage, int memProperties, int mipLevels,
-                             int numSamples, LongBuffer pTextureImage, LongBuffer pTextureImageMemory) {
+    public static AllocatedImage createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, long vmaAllocator) {
 
-        try(MemoryStack stack = stackPush()) {
+        try (var stack = stackPush()) {
+            var pImage = stack.mallocLong(1);
+            var pAllocation = stack.mallocPointer(1);
 
-            VkImageCreateInfo imageInfo = VkImageCreateInfo.calloc(stack);
-            imageInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
-            imageInfo.imageType(VK_IMAGE_TYPE_2D);
-            imageInfo.extent().width(width);
-            imageInfo.extent().height(height);
-            imageInfo.extent().depth(1);
-            imageInfo.mipLevels(mipLevels);
-            imageInfo.arrayLayers(1);
-            imageInfo.format(format);
-            imageInfo.tiling(tiling);
-            imageInfo.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            imageInfo.usage(usage);
-            imageInfo.samples(VK_SAMPLE_COUNT_1_BIT);
-            imageInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
-            imageInfo.samples(numSamples);
+            vmaCreateImage(vmaAllocator, imageInfo, allocInfo, pImage, pAllocation, null);
 
-            if(vkCreateImage(device, imageInfo, null, pTextureImage) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create image");
-            }
-
-            VkMemoryRequirements memRequirements = VkMemoryRequirements.malloc(stack);
-            vkGetImageMemoryRequirements(device, pTextureImage.get(0), memRequirements);
-
-            VkMemoryAllocateInfo allocInfo = VkMemoryAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
-            allocInfo.allocationSize(memRequirements.size());
-            allocInfo.memoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits(), memProperties, physicalDevice));
-
-            if(vkAllocateMemory(device, allocInfo, null, pTextureImageMemory) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate image memory");
-            }
-
-            vkBindImageMemory(device, pTextureImage.get(0), pTextureImageMemory.get(0), 0);
+            return new AllocatedImage(pImage.get(0), pAllocation.get(0));
         }
     }
 
@@ -332,21 +303,6 @@ public class VulkanUtilities {
         return actualExtent;
     }
 
-    public static void copyBuffer(VkDevice device, long commandPool, VkQueue queue, long srcBuffer, long dstBuffer, long size) {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
-
-            VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
-            copyRegion.size(size);
-
-            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, copyRegion);
-
-            endSingleTimeCommands(device, commandPool, commandBuffer, queue);
-        }
-    }
-
     public static int clamp(int min, int max, int value) {
         return Math.max(min, Math.min(max, value));
     }
@@ -422,6 +378,41 @@ public class VulkanUtilities {
             }
             return allocator.get(0);
         }
+    }
+
+    public static VkImageCreateInfo createImageCreateInfo(int format, int usageFlags, VkExtent3D extent, Integer mipLevels, int tiling, Integer numSamples, MemoryStack stack) {
+
+        VkImageCreateInfo imageInfo = VkImageCreateInfo.calloc(stack);
+        imageInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
+        imageInfo.imageType(VK_IMAGE_TYPE_2D);
+        imageInfo.extent(extent);
+
+        imageInfo.mipLevels(mipLevels);
+        imageInfo.arrayLayers(1);
+        imageInfo.format(format);
+        imageInfo.tiling(tiling);
+        imageInfo.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+        imageInfo.usage(usageFlags);
+
+        imageInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+        imageInfo.samples(numSamples);
+
+        return imageInfo;
+    }
+
+    public static VkImageViewCreateInfo createImageViewCreateInfo(int format, long image, int aspectFlags, int mipLevels, MemoryStack stack) {
+        VkImageViewCreateInfo viewInfo = VkImageViewCreateInfo.calloc(stack);
+        viewInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
+        viewInfo.image(image);
+        viewInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
+        viewInfo.format(format);
+        viewInfo.subresourceRange().aspectMask(aspectFlags);
+        viewInfo.subresourceRange().baseMipLevel(0);
+        viewInfo.subresourceRange().levelCount(mipLevels);
+        viewInfo.subresourceRange().baseArrayLayer(0);
+        viewInfo.subresourceRange().layerCount(1);
+
+        return viewInfo;
     }
 
     public static VkCommandBufferBeginInfo createCommandBufferBeginInfo(int flags) {
@@ -548,25 +539,10 @@ public class VulkanUtilities {
         }
     }
 
-    public static long createImageView(long image, int format, int aspectFlags, int mipLevels, VkDevice device) {
+    public static long createImageView(VkImageViewCreateInfo viewInfo, VkDevice device) {
         try (var stack = stackPush()) {
-            VkImageViewCreateInfo viewInfo = VkImageViewCreateInfo.calloc(stack);
-            viewInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
-            viewInfo.image(image);
-            viewInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
-            viewInfo.format(format);
-            viewInfo.subresourceRange().aspectMask(aspectFlags);
-            viewInfo.subresourceRange().baseMipLevel(0);
-            viewInfo.subresourceRange().levelCount(mipLevels);
-            viewInfo.subresourceRange().baseArrayLayer(0);
-            viewInfo.subresourceRange().layerCount(1);
-
             LongBuffer pImageView = stack.mallocLong(1);
-
-            if(vkCreateImageView(device, viewInfo, null, pImageView) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create texture image view");
-            }
-
+            vkCheck(vkCreateImageView(device, viewInfo, null, pImageView));
             return pImageView.get(0);
         }
     }

@@ -11,6 +11,7 @@ import Kurama.scene.Scene;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -56,12 +57,14 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public int swapChainImageFormat;
     public VkExtent2D swapChainExtent;
     public List<Long> swapChainImageViews;
-    public long depthImage;
-    public long depthImageMemory;
+
+    public AllocatedImage depthImage;
     public long depthImageView;
-    public long colorImage;
-    public long colorImageMemory;
+    public int depthFormat;
+
+    public AllocatedImage colorImage;
     public long colorImageView;
+
     public List<Long> swapChainFramebuffers;
     public long renderPass;
     public long descriptorPool;
@@ -589,12 +592,10 @@ public class RenderingEngineVulkan extends RenderingEngine {
         swapChainImageViews.forEach(imageView -> vkDestroyImageView(device, imageView, null));
 
         vkDestroyImageView(device, depthImageView, null);
-        vkDestroyImage(device, depthImage, null);
-        vkFreeMemory(device, depthImageMemory, null);
+        vmaDestroyImage(vmaAllocator, depthImage.image, depthImage.allocation);
 
         vkDestroyImageView(device, colorImageView, null);
-        vkDestroyImage(device, colorImage, null);
-        vkFreeMemory(device, colorImageMemory, null);
+        vmaDestroyImage(vmaAllocator, colorImage.image, colorImage.allocation);
 
         vkDestroySwapchainKHR(device, swapChain, null);
     }
@@ -603,25 +604,34 @@ public class RenderingEngineVulkan extends RenderingEngine {
         try(MemoryStack stack = stackPush()) {
 
             int depthFormat = findDepthFormat();
+            var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
-            LongBuffer pDepthImage = stack.mallocLong(1);
-            LongBuffer pDepthImageMemory = stack.mallocLong(1);
+            var imageInfo = createImageCreateInfo(
+                                                depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                                extent,
+                                                1,
+                                                VK_IMAGE_TILING_OPTIMAL,
+                                                msaaSamples,
+                                                stack);
 
-            createImage(swapChainExtent.width(), swapChainExtent.height(),
-                    depthFormat,
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    1,
-                    msaaSamples,
-                    pDepthImage, pDepthImageMemory);
+            var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
+                                    .usage(VMA_MEMORY_USAGE_GPU_ONLY)
+                                    .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            depthImage = pDepthImage.get(0);
-            depthImageMemory = pDepthImageMemory.get(0);
+            depthImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
 
-            depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, device);
+            var viewInfo =
+                    createImageViewCreateInfo(
+                            depthFormat,
+                            depthImage.image,
+                            VK_IMAGE_ASPECT_DEPTH_BIT,
+                            1,
+                            stack
+                    );
+
+            depthImageView = createImageView(viewInfo, device);
             // Explicitly transitioning the depth image
-            transitionImageLayout(depthImage, depthFormat,
+            transitionImageLayout(depthImage.image, depthFormat,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
 
         }
@@ -698,8 +708,21 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
     public void createImageViews() {
         swapChainImageViews = new ArrayList<>(swapChainImages.size());
-        for(long swapChainImage : swapChainImages) {
-            swapChainImageViews.add(createImageView(swapChainImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, device));
+
+        try (var stack = stackPush()) {
+
+            for (long swapChainImage : swapChainImages) {
+                var viewInfo =
+                        createImageViewCreateInfo(
+                                swapChainImageFormat,
+                                swapChainImage,
+                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                1,
+                                stack
+                        );
+                swapChainImageViews.add(createImageView(viewInfo, device));
+            }
+
         }
     }
 
@@ -716,7 +739,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             colorAttachment.samples(msaaSamples);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
             colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -745,8 +768,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
             depthAttachment.format(findDepthFormat());
             depthAttachment.samples(msaaSamples);
             depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
-            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             depthAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             depthAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
             depthAttachment.finalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -765,9 +788,9 @@ public class RenderingEngineVulkan extends RenderingEngine {
             VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
             dependency.dstSubpass(0);
-            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
             dependency.srcAccessMask(0);
-            dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+            dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
             dependency.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
             VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
@@ -866,7 +889,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             depthStencil.depthTestEnable(true);
             depthStencil.depthWriteEnable(true);
-            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS);
+            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL);
             depthStencil.depthBoundsTestEnable(false);
             depthStencil.minDepthBounds(0.0f); // Optional
             depthStencil.maxDepthBounds(1.0f); // Optional
@@ -1116,26 +1139,35 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
     public void createColorResources() {
         try(var stack = stackPush()) {
+            var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
-            LongBuffer pColorImage = stack.mallocLong(1);
-            LongBuffer pColorImageMemory = stack.mallocLong(1);
-
-            createImage(swapChainExtent.width(), swapChainExtent.height(),
+            var imageInfo = createImageCreateInfo(
                     swapChainImageFormat,
-                    VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    extent,
                     1,
+                    VK_IMAGE_TILING_OPTIMAL,
                     msaaSamples,
-                    pColorImage,
-                    pColorImageMemory);
+                    stack);
 
-            colorImage = pColorImage.get(0);
-            colorImageMemory = pColorImageMemory.get(0);
+            var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
+                    .usage(VMA_MEMORY_USAGE_GPU_ONLY)
+                    .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            colorImageView = createImageView(colorImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, device);
+            colorImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
 
-            transitionImageLayout(colorImage, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
+            var viewInfo =
+                    createImageViewCreateInfo(
+                            swapChainImageFormat,
+                            colorImage.image,
+                            VK_IMAGE_ASPECT_COLOR_BIT,
+                            1,
+                            stack
+                    );
+
+            colorImageView = createImageView(viewInfo, device);
+
+            transitionImageLayout(colorImage.image, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
         }
     }
 
