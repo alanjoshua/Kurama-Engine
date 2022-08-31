@@ -1,5 +1,6 @@
 package main;
 
+import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
+import static Kurama.Vulkan.TextureVK.createTextureImage;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
@@ -89,6 +91,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
     public SingleTimeCommandContext singleTimeCommandContext;
+    public HashMap<String, TextureVK> loadedTextures;
     public long vmaAllocator;
     public DisplayVulkan display;
     public GameVulkan game;
@@ -233,6 +236,22 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
         }
 
+    }
+
+    public void loadTextures(List<Renderable> renderables) {
+        for (var renderable : renderables) {
+            var material = renderable.getMaterial();
+            loadTexture((TextureVK) material.texture);
+        }
+    }
+
+    public void loadTexture(TextureVK texture) {
+        if (texture == null) return;
+
+        TextureVK.createTextureImage(graphicsQueue, vmaAllocator, singleTimeCommandContext, texture);
+        TextureVK.createTextureImageView(texture);
+
+        loadedTextures.put(texture.fileName, texture);
     }
 
     public void performBufferDataUpdates(List<Renderable> renderables, int currentFrameIndex) {

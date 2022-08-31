@@ -59,7 +59,7 @@ public class Texture<T> {
             return new TextureGL(buf);
         }
         else {
-            return new TextureVK(buf);
+            throw new RuntimeException("Vulkan textures don't support initialization through bytebuffers yet");
         }
     }
 

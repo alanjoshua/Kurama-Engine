@@ -32,10 +32,7 @@ public class TextureVK extends Texture {
         this.fileName = fileName;
     }
 
-    public TextureVK(ByteBuffer buf) {
-    }
-
-    public void createTextureImage(VkQueue queue, long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext) {
+    public static void createTextureImage(VkQueue queue, long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext, TextureVK texture) {
 
         try(var stack = stackPush()) {
 
@@ -43,10 +40,10 @@ public class TextureVK extends Texture {
             IntBuffer pHeight = stack.mallocInt(1);
             IntBuffer pChannels = stack.mallocInt(1);
 
-            ByteBuffer pixels = stbi_load(fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
+            ByteBuffer pixels = stbi_load(texture.fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
 
             long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
-            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
+            texture.mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
 
             if(pixels == null) {
                 throw new RuntimeException("Failed to load texture image ");
@@ -73,7 +70,7 @@ public class TextureVK extends Texture {
                     imageFormat,
                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                     extent,
-                    mipLevels,
+                    texture.mipLevels,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_SAMPLE_COUNT_1_BIT,
                     stack);
@@ -82,21 +79,21 @@ public class TextureVK extends Texture {
                     .usage(VMA_MEMORY_USAGE_GPU_ONLY)
                     .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            image = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
-            id = image.image;
+            texture.image = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            texture.id = texture.image.image;
 
             Consumer<VkCommandBuffer> transition_copyBuffer_generateMipMap = (cmd) -> {
 
-                transitionImageLayout(id,
+                transitionImageLayout(texture.image.image,
                         imageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        mipLevels,
+                        texture.mipLevels,
                         cmd);
 
-                copyBufferToImage(stagingBuffer.buffer, image.image, cmd, extent);
+                copyBufferToImage(stagingBuffer.buffer, texture.image.image, cmd, extent);
 
-                generateMipMaps(image.image, imageFormat, pWidth.get(0), pHeight.get(0), mipLevels, cmd);
+                generateMipMaps(texture.image.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, cmd);
 
             };
             submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext, queue);
@@ -105,22 +102,22 @@ public class TextureVK extends Texture {
         }
     }
 
-    public void createTextureImageView() {
+    public static void createTextureImageView(TextureVK texture) {
         try (var stack = stackPush()) {
 
             var viewInfo =
                     createImageViewCreateInfo(
                             VK_FORMAT_R8G8B8A8_SRGB,
-                            image.image,
+                            texture.image.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
-                            mipLevels,
+                            texture.mipLevels,
                             stack
                     );
-            textureImageView = createImageView(viewInfo, device);
+            texture.textureImageView = createImageView(viewInfo, device);
         }
     }
 
-    public void createTextureSampler() {
+    public static void createTextureSampler(TextureVK texture) {
         try(MemoryStack stack = stackPush()) {
 
             VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo.calloc(stack);
@@ -138,7 +135,7 @@ public class TextureVK extends Texture {
             samplerInfo.compareOp(VK_COMPARE_OP_ALWAYS);
             samplerInfo.mipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
             samplerInfo.minLod(0);
-            samplerInfo.maxLod(mipLevels);
+            samplerInfo.maxLod(texture.mipLevels);
             samplerInfo.mipLodBias(0);
 
             LongBuffer pTextureSampler = stack.mallocLong(1);
@@ -147,7 +144,7 @@ public class TextureVK extends Texture {
                 throw new RuntimeException("Failed to create texture sampler");
             }
 
-            textureSampler = pTextureSampler.get(0);
+            texture.textureSampler = pTextureSampler.get(0);
         }
     }
 
