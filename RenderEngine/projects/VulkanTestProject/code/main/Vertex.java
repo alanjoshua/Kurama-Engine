@@ -9,20 +9,16 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class Vertex {
 
-    public static final int SIZEOF = (3 + 3 + 2) * Float.BYTES;
+    public static final int SIZEOF = (3 + 3 + 2 + 3) * Float.BYTES;
     public static final int OFFSETOF_POS = 0;
     public static final int OFFSETOF_COLOR = 3 * Float.BYTES;
     public static final int OFFSETOF_TEXCOORDS = 6 * Float.BYTES;
+    public static final int OFFSETOF_NORMAL = 8 * Float.BYTES;
 
-    public Vector3fc pos;
-    public Vector3fc color;
-    public Vector2fc texCoord;
-
-    public Vertex(Vector3fc pos, Vector3fc color, Vector2fc texCoord) {
-        this.pos = pos;
-        this.color = color;
-        this.texCoord = texCoord;
-    }
+//    Vec3 pos;
+//    Vec3 color;
+//    Vec2 texCoord;
+//    Vec3 normal
 
     public static VkVertexInputBindingDescription.Buffer getBindingDescription() {
 
@@ -38,8 +34,7 @@ public class Vertex {
 
     public static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
 
-        VkVertexInputAttributeDescription.Buffer attributeDescriptions =
-                VkVertexInputAttributeDescription.calloc(3);
+        var attributeDescriptions = VkVertexInputAttributeDescription.calloc(4);
 
         // Position
         VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
@@ -55,11 +50,19 @@ public class Vertex {
         colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
         colorDescription.offset(OFFSETOF_COLOR);
 
+        // textCoords
         var texDescription = attributeDescriptions.get(2);
         texDescription.binding(0);
         texDescription.location(2);
         texDescription.format(VK_FORMAT_R32G32_SFLOAT);
         texDescription.offset(OFFSETOF_TEXCOORDS);
+
+        // Normals
+        VkVertexInputAttributeDescription normalDescription = attributeDescriptions.get(3);
+        colorDescription.binding(0);
+        colorDescription.location(3);
+        colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
+        colorDescription.offset(OFFSETOF_NORMAL);
 
         return attributeDescriptions.rewind();
     }
