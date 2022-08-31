@@ -88,7 +88,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
-    public SingleTimeCommandObj singleTimeCommandObj;
+    public SingleTimeCommandContext singleTimeCommandContext;
     public long vmaAllocator;
     public DisplayVulkan display;
     public GameVulkan game;
@@ -123,6 +123,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vmaAllocator = createAllocator(physicalDevice, device, instance);
 
         initializeFrames();
+        initSyncObjects();
         createFrameCommandPoolsAndBuffers();
 
         createGlobalCommandPool();
@@ -136,8 +137,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
         createColorResources();
         createDepthResources();
         createFramebuffers();
-
-        initSyncObjects();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
@@ -346,7 +345,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandObj, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
@@ -382,7 +381,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandObj, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
@@ -630,10 +629,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
                     );
 
             depthImageView = createImageView(viewInfo, device);
-            // Explicitly transitioning the depth image
-            transitionImageLayout(depthImage.image, depthFormat,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
 
+            // Explicitly transitioning the depth image
+            submitImmediateCommand((cmd) -> {
+                transitionImageLayout(
+                        depthImage.image, depthFormat,
+                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                        1, cmd);
+                },
+                    singleTimeCommandContext, graphicsQueue);
         }
     }
 
@@ -1167,8 +1171,12 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             colorImageView = createImageView(viewInfo, device);
 
-            transitionImageLayout(colorImage.image, swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, globalCommandPool, graphicsQueue);
-        }
+            submitImmediateCommand((cmd) -> {
+                transitionImageLayout(
+                        colorImage.image, swapChainImageFormat,
+                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                        1, cmd);
+            }, singleTimeCommandContext, graphicsQueue);}
     }
 
     // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
@@ -1334,7 +1342,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
     public void initSyncObjects() {
 
-        imagesInFlight = new HashMap<>(swapChainImages.size());
+        imagesInFlight = new HashMap<>(MAX_FRAMES_IN_FLIGHT);
 
         try (MemoryStack stack = stackPush()) {
 
@@ -1364,15 +1372,15 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             // Create fence and commandPool/buffer for immediate upload context
-            singleTimeCommandObj = new SingleTimeCommandObj();
+            singleTimeCommandContext = new SingleTimeCommandContext();
 
-            singleTimeCommandObj.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
 
-            singleTimeCommandObj.commandPool =  createCommandPool(device,
+            singleTimeCommandContext.commandPool =  createCommandPool(device,
                   createCommandPoolCreateInfo(graphicsQueueFamilyIndex, 0, stack), stack);
 
-            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandObj.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeCommandObj.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
         }
     }
 
@@ -1386,7 +1394,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
         vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null);
 
-        singleTimeCommandObj.cleanUp(device);
+        singleTimeCommandContext.cleanUp(device);
 
         renderables.forEach(r -> r.cleanUp(vmaAllocator));
         vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation);
@@ -1492,28 +1500,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
         public static void memcpy(ByteBuffer buffer, GPUObjectData data) {
             data.modelMatrix.setValuesToBuffer(buffer);
         }
-    }
-
-    // Used for submitting immediate commands to the gpu
-    public static class SingleTimeCommandObj {
-        public long fence;
-        public long commandPool;
-        public VkCommandBuffer commandBuffer;
-
-        public SingleTimeCommandObj() {
-
-        }
-        public SingleTimeCommandObj(long fence, long commandPool, VkCommandBuffer commandBuffer) {
-            this.fence = fence;
-            this.commandPool = commandPool;
-            this.commandBuffer = commandBuffer;
-        }
-
-        public void cleanUp(VkDevice device) {
-            vkDestroyCommandPool(device, this.commandPool, null);
-            vkDestroyFence(device, this.fence, null);
-        }
-
     }
 
 }

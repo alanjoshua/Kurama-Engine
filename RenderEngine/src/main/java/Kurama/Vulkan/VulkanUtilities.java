@@ -182,7 +182,7 @@ public class VulkanUtilities {
         }
     }
 
-    public static void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels, long commandPool, VkQueue graphicsQueue) {
+    public static void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels, VkCommandBuffer commandBuffer) {
         try(MemoryStack stack = stackPush()) {
             VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
             barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
@@ -249,8 +249,6 @@ public class VulkanUtilities {
                 throw new IllegalArgumentException("Unsupported layout transition");
             }
 
-            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
-
             vkCmdPipelineBarrier(commandBuffer,
                     sourceStage, destinationStage,
                     0,
@@ -258,7 +256,6 @@ public class VulkanUtilities {
                     null,
                     barrier);
 
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
         }
     }
 
@@ -481,22 +478,22 @@ public class VulkanUtilities {
         return submitInfo;
     }
 
-    public static void submitImmediateCommand(Consumer<VkCommandBuffer> func, RenderingEngineVulkan.SingleTimeCommandObj singleTimeCommandObj, VkQueue queue) {
+    public static void submitImmediateCommand(Consumer<VkCommandBuffer> func, SingleTimeCommandContext singleTimeCommandContext, VkQueue queue) {
         try (var stack = stackPush()) {
             var cmdBeginInfo = createCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            vkCheck(vkBeginCommandBuffer(singleTimeCommandObj.commandBuffer, cmdBeginInfo));
+            vkCheck(vkBeginCommandBuffer(singleTimeCommandContext.commandBuffer, cmdBeginInfo));
 
-            func.accept(singleTimeCommandObj.commandBuffer);
+            func.accept(singleTimeCommandContext.commandBuffer);
 
-            vkCheck(vkEndCommandBuffer(singleTimeCommandObj.commandBuffer));
+            vkCheck(vkEndCommandBuffer(singleTimeCommandContext.commandBuffer));
 
-            var submit = createSubmitInfo(singleTimeCommandObj.commandBuffer, stack);
-            vkCheck(vkQueueSubmit(queue, submit, singleTimeCommandObj.fence));
+            var submit = createSubmitInfo(singleTimeCommandContext.commandBuffer, stack);
+            vkCheck(vkQueueSubmit(queue, submit, singleTimeCommandContext.fence));
 
-            vkWaitForFences(device, singleTimeCommandObj.fence, true, 999999999);
-            vkResetFences(device, singleTimeCommandObj.fence);
+            vkWaitForFences(device, singleTimeCommandContext.fence, true, 999999999);
+            vkResetFences(device, singleTimeCommandContext.fence);
 
-            vkResetCommandPool(device, singleTimeCommandObj.commandPool, 0);
+            vkResetCommandPool(device, singleTimeCommandContext.commandPool, 0);
         }
     }
 

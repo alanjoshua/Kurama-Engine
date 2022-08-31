@@ -38,12 +38,12 @@ public class Renderable {
         return mesh.materials.get(0);
     }
 
-    public void uploadMesh(long vmaAllocator, VkQueue queue, RenderingEngineVulkan.SingleTimeCommandObj singleTimeCommandObj) {
-        createVertexBuffer(vmaAllocator, queue, singleTimeCommandObj);
-        createIndexBuffer(vmaAllocator, queue, singleTimeCommandObj);
+    public void uploadMesh(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
+        createVertexBuffer(vmaAllocator, queue, singleTimeCommandContext);
+        createIndexBuffer(vmaAllocator, queue, singleTimeCommandContext);
     }
 
-    public void createIndexBuffer(long vmaAllocator, VkQueue queue, RenderingEngineVulkan.SingleTimeCommandObj singleTimeCommandObj) {
+    public void createIndexBuffer(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
         try (var stack = stackPush()) {
 
             var bufferSize = Short.SIZE * mesh.indices.size();
@@ -73,13 +73,13 @@ public class Renderable {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, vertexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandObj, queue);
+            submitImmediateCommand(copyCmd, singleTimeCommandContext, queue);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
     }
 
-    public void createVertexBuffer(long vmaAllocator, VkQueue queue, RenderingEngineVulkan.SingleTimeCommandObj singleTimeCommandObj) {
+    public void createVertexBuffer(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
         try (var stack = stackPush()) {
 
             var bufferSize = Vertex.SIZEOF * mesh.getVertices().size();
@@ -109,7 +109,7 @@ public class Renderable {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, vertexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandObj, queue);
+            submitImmediateCommand(copyCmd, singleTimeCommandContext, queue);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 

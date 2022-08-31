@@ -1,13 +1,16 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Texture;
+import main.RenderingEngineVulkan;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.function.Consumer;
 
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.Vulkan.VulkanUtilities.memcpy;
@@ -16,7 +19,6 @@ import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.vkFreeMemory;
 
 public class TextureVK extends Texture {
 
@@ -33,64 +35,73 @@ public class TextureVK extends Texture {
     public TextureVK(ByteBuffer buf) {
     }
 
-    public void createTextureImage(long commandPool, VkQueue graphicsQueue, long vmaAllocator) {
+    public void createTextureImage(VkQueue queue, long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext) {
 
         try(var stack = stackPush()) {
 
-//            IntBuffer pWidth = stack.mallocInt(1);
-//            IntBuffer pHeight = stack.mallocInt(1);
-//            IntBuffer pChannels = stack.mallocInt(1);
-//
-//            ByteBuffer pixels = stbi_load(fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
-//
-//            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
-//            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
-//
-//            if(pixels == null) {
-//                throw new RuntimeException("Failed to load texture image ");
-//            }
-//
-//            var stagingBuffer = createBufferVMA(vmaAllocator,
-//                    imageSize,
-//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//                    VMA_MEMORY_USAGE_CPU_COPY, null);
-//
-//            PointerBuffer data = stack.mallocPointer(1);
-//            vkMapMemory(device, stagingBuffer.allocation, 0, imageSize, 0, data);
-//            {
-//                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
-//            }
-//            vkUnmapMemory(device, stagingBuffer.allocation);
-//
-//            stbi_image_free(pixels);
-//
-//            LongBuffer pTextureImage = stack.mallocLong(1);
-//            LongBuffer pTextureImageMemory = stack.mallocLong(1);
-//            createImage(pWidth.get(0), pHeight.get(0),
-//                    VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-//                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-//                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-//                    mipLevels,
-//                    VK_SAMPLE_COUNT_1_BIT,
-//                    pTextureImage,
-//                    pTextureImageMemory);
-//
-//            id = pTextureImage.get(0);
-//            textureImageMemory = pTextureImageMemory.get(0);
-//
-//            transitionImageLayout(id,
-//                    VK_FORMAT_R8G8B8A8_SRGB,
-//                    VK_IMAGE_LAYOUT_UNDEFINED,
-//                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-//                    mipLevels,
-//                    commandPool,
-//                    graphicsQueue);
-//
-//            copyBufferToImage(stagingBuffer.buffer, id, pWidth.get(0), pHeight.get(0), commandPool, graphicsQueue);
-//
-//            generateMipMaps(id, VK_FORMAT_R8G8B8A8_SRGB, pWidth.get(0), pHeight.get(0), mipLevels, commandPool, graphicsQueue);
-//
-//           vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+            IntBuffer pWidth = stack.mallocInt(1);
+            IntBuffer pHeight = stack.mallocInt(1);
+            IntBuffer pChannels = stack.mallocInt(1);
+
+            ByteBuffer pixels = stbi_load(fileName, pWidth, pHeight, pChannels, STBI_rgb_alpha);
+
+            long imageSize = pWidth.get(0) * pHeight.get(0) * 4;
+            mipLevels = (int) Math.floor(Math.log(Math.max(pWidth.get(0), pHeight.get(0)))) + 1;
+
+            if(pixels == null) {
+                throw new RuntimeException("Failed to load texture image ");
+            }
+
+            var stagingBuffer = createBufferVMA(vmaAllocator,
+                    imageSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VMA_MEMORY_USAGE_CPU_COPY, null);
+
+            PointerBuffer data = stack.mallocPointer(1);
+            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+            {
+                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
+            }
+            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+
+            stbi_image_free(pixels);
+
+            int imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
+            var extent = VkExtent3D.calloc(stack).width(pWidth.get(0)).height(pHeight.get(0)).depth(1);
+
+            var imageInfo = createImageCreateInfo(
+                    imageFormat,
+                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    extent,
+                    mipLevels,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_SAMPLE_COUNT_1_BIT,
+                    stack);
+
+            var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
+                    .usage(VMA_MEMORY_USAGE_GPU_ONLY)
+                    .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            image = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            id = image.image;
+
+            Consumer<VkCommandBuffer> transition_copyBuffer_generateMipMap = (cmd) -> {
+
+                transitionImageLayout(id,
+                        imageFormat,
+                        VK_IMAGE_LAYOUT_UNDEFINED,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        mipLevels,
+                        cmd);
+
+                copyBufferToImage(stagingBuffer.buffer, image.image, cmd, extent);
+
+                generateMipMaps(image.image, imageFormat, pWidth.get(0), pHeight.get(0), mipLevels, cmd);
+
+            };
+            submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext, queue);
+
+           vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
     }
 
@@ -141,7 +152,7 @@ public class TextureVK extends Texture {
     }
 
 
-    public static void generateMipMaps(long image, int imageFormat, int texWidth, int texHeight, int mipLevels, long commandPool, VkQueue graphicsQueue) {
+    public static void generateMipMaps(long image, int imageFormat, int texWidth, int texHeight, int mipLevels, VkCommandBuffer commandBuffer) {
         try (var stack = stackPush()) {
 
             // Check if image format supports linear blitting
@@ -151,8 +162,6 @@ public class TextureVK extends Texture {
             if((formatProperties.optimalTilingFeatures() & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0) {
                 throw new RuntimeException("Texture image format does not support linear blitting");
             }
-
-            var commandBuffer = beginSingleTimeCommands(device, commandPool);
 
             VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
             barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
@@ -226,31 +235,27 @@ public class TextureVK extends Texture {
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                     null,null, barrier);
 
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
         }
     }
 
-    public static void copyBufferToImage(long buffer, long image, int width, int height, long commandPool, VkQueue graphicsQueue) {
+    public static void copyBufferToImage(long buffer, long image, VkCommandBuffer cmd,VkExtent3D extent) {
 
-        try(MemoryStack stack = stackPush()) {
-
-            VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
-
+        try (var stack = stackPush()) {
             VkBufferImageCopy.Buffer region = VkBufferImageCopy.calloc(1, stack);
             region.bufferOffset(0);
             region.bufferRowLength(0);   // Tightly packed
             region.bufferImageHeight(0);  // Tightly packed
+
             region.imageSubresource().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
             region.imageSubresource().mipLevel(0);
             region.imageSubresource().baseArrayLayer(0);
             region.imageSubresource().layerCount(1);
             region.imageOffset().set(0, 0, 0);
-            region.imageExtent(VkExtent3D.calloc(stack).set(width, height, 1));
+            region.imageExtent(extent);
 
-            vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
-
-            endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
+            vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
         }
+
     }
 
     @Override
