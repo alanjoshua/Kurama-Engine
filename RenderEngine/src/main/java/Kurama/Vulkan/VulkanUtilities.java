@@ -15,13 +15,11 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.VulkanUtilities.instance;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -47,6 +45,8 @@ public class VulkanUtilities {
     public static VkInstance instance;
     public static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
     public static long debugMessenger;
+
+    public static List<Runnable> deletionQueue = new ArrayList<>();
 
     public static final Set<String> DEVICE_EXTENSIONS =
             Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
@@ -82,6 +82,8 @@ public class VulkanUtilities {
             }
 
             debugMessenger = pDebugMessenger.get(0);
+
+            deletionQueue.add(() -> vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, null));
         }
     }
 
@@ -135,6 +137,8 @@ public class VulkanUtilities {
             }
 
             instance = new VkInstance(instancePtr.get(0), createInfo);
+
+            deletionQueue.add(() -> vkDestroyInstance(instance, null));
         }
     }
 
@@ -373,7 +377,10 @@ public class VulkanUtilities {
             if(vmaCreateAllocator(allocatorInfo, allocator) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create VMA allocator");
             }
-            return allocator.get(0);
+
+            var allocatorVal = allocator.get(0);
+            deletionQueue.add(() -> vmaDestroyAllocator(allocatorVal));
+            return allocatorVal;
         }
     }
 
@@ -807,7 +814,10 @@ public class VulkanUtilities {
                 throw new RuntimeException("Failed to create window surface");
             }
 
-            return pSurface.get(0);
+            var surface = pSurface.get(0);
+            deletionQueue.add(() -> vkDestroySurfaceKHR(instance, surface, null));
+
+            return surface;
         }
     }
 

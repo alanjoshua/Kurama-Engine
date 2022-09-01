@@ -18,10 +18,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
@@ -148,7 +146,11 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
+        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
+        deletionQueue.add(() -> inFlightFrames.forEach(Frame::cleanUp));
+
         createGraphicsPipeline();
+        deletionQueue.add(() -> cleanupSwapChain());
     }
 
     public void recordCommandBuffer(List<Renderable> renderables, Frame currentFrame, int frameIndex, long swapChainFrameBuffer) {
@@ -1096,6 +1098,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             globalCommandPool = pCommandPool.get(0);
+            deletionQueue.add(() -> vkDestroyCommandPool(device, globalCommandPool, null));
 
         }
     }
@@ -1146,6 +1149,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
+            deletionQueue.add(() -> vkDestroyDevice(device, null));
 
             PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
 
@@ -1176,6 +1180,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 throw new RuntimeException("Failed to create descriptor set layout");
             }
             objectDescriptorSetLayout = pDescriptorSetLayout.get(0);
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null));
         }
     }
 
@@ -1205,6 +1210,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 throw new RuntimeException("Failed to create descriptor set layout");
             }
             globalDescriptorSetLayout = pDescriptorSetLayout.get(0);
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null));
         }
     }
 
@@ -1228,6 +1234,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 throw new RuntimeException("Failed to create descriptor set layout");
             }
             singleTextureSetLayout = pDescriptorSetLayout.get(0);
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, singleTextureSetLayout, null));
         }
     }
 
@@ -1291,10 +1298,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
             textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             textureSamplerPoolSize.descriptorCount(10);
 
-//            VkDescriptorPoolSize textureSamplerPoolSize = poolSizes.get(1);
-//            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-//            textureSamplerPoolSize.descriptorCount(inFlightFrames.size());
-
             VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
             poolInfo.pPoolSizes(poolSizes);
@@ -1307,6 +1310,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
             descriptorPool = pDescriptorPool.get(0);
+            deletionQueue.add(() -> vkDestroyDescriptorPool(device, descriptorPool, null));
         }
     }
 
@@ -1475,54 +1479,21 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
             singleTimeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+
+            deletionQueue.add(() -> singleTimeCommandContext.cleanUp(device));
         }
-    }
-
-    public void cleanUp(List<Renderable> renderables) {
-        // Wait for the device to complete all operations before release resources
-        vkDeviceWaitIdle(device);
-
-        cleanupSwapChain();
-
-        vkDestroyDescriptorPool(device, descriptorPool, null);
-        vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
-        vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null);
-        vkDestroyDescriptorSetLayout(device, singleTextureSetLayout, null);
-
-        singleTimeCommandContext.cleanUp(device);
-
-        renderables.forEach(r -> r.cleanUp(vmaAllocator));
-        vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation);
-
-        inFlightFrames.forEach(Frame::cleanUp);
-        inFlightFrames.clear();
-
-        vkDestroyCommandPool(device, globalCommandPool, null);
-
-        loadedTextures.values().forEach(t -> {
-            t.cleanUp();
-            vmaDestroyImage(vmaAllocator, t.imageBuffer.image, t.imageBuffer.allocation);
-        });
-
-        vmaDestroyAllocator(vmaAllocator);
-
-        vkDestroyDevice(device, null);
-
-        if(ENABLE_VALIDATION_LAYERS) {
-            if(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT") != NULL) {
-                vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, null);
-            }
-        }
-
-        vkDestroySurfaceKHR(instance, surface, null);
-
-        vkDestroyInstance(instance, null);
-
-        log("cleanup Finished calling ");
     }
 
     @Override
-    public void cleanUp() {}
+    public void cleanUp() {
+
+        // Wait for the device to complete all operations before release resources
+        vkDeviceWaitIdle(device);
+
+        for(int i = deletionQueue.size()-1; i >= 0; i--) {
+            deletionQueue.get(i).run();
+        }
+    }
 
     public class MeshPushConstants {
         public static int SIZEOF = (16 + 4) * Float.BYTES;

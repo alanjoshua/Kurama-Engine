@@ -98,6 +98,8 @@ public class TextureVK extends Texture {
             submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext, queue);
 
            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+
+           deletionQueue.add(() -> vmaDestroyImage(vmaAllocator, texture.imageBuffer.image, texture.imageBuffer.allocation));
         }
     }
 
@@ -113,6 +115,7 @@ public class TextureVK extends Texture {
                             stack
                     );
             texture.textureImageView = createImageView(viewInfo, device);
+            deletionQueue.add(() -> vkDestroyImageView(device, texture.textureImageView, null));
         }
     }
 
@@ -142,6 +145,9 @@ public class TextureVK extends Texture {
             if(vkCreateSampler(device, samplerInfo, null, pTextureSampler) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create texture sampler");
             }
+
+            var sampler = pTextureSampler.get(0);
+            deletionQueue.add(() -> vkDestroySampler(device, sampler, null));
 
             return pTextureSampler.get(0);
         }
@@ -263,8 +269,7 @@ public class TextureVK extends Texture {
 
     @Override
     public void cleanUp() {
-        vkDestroyImageView(device, textureImageView, null);
-        vkDestroySampler(device, textureSampler, null);
+
     }
 
 }

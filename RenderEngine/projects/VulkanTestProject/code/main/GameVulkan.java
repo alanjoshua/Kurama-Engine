@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
+import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
 import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
@@ -137,6 +138,8 @@ public class GameVulkan extends Game {
 
         renderables.forEach(r -> {
             renderingEngineAlias.uploadRenderable(r);
+            deletionQueue.add(() -> r.cleanUp(renderingEngineAlias.vmaAllocator));
+
             r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
             renderingEngineAlias.loadTexture((TextureVK) r.getMaterial().texture);
         });
@@ -305,7 +308,7 @@ public class GameVulkan extends Game {
 
     @Override
     public void cleanUp() {
-        ((RenderingEngineVulkan)renderingEngine).cleanUp(renderables);
+        renderingEngine.cleanUp();
         display.cleanUp();
     }
 
