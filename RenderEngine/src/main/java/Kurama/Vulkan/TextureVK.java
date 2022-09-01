@@ -52,7 +52,7 @@ public class TextureVK extends Texture {
             var stagingBuffer = createBufferVMA(vmaAllocator,
                     imageSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_CPU_COPY, null);
+                    VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
@@ -68,7 +68,7 @@ public class TextureVK extends Texture {
 
             var imageInfo = createImageCreateInfo(
                     imageFormat,
-                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                     extent,
                     texture.mipLevels,
                     VK_IMAGE_TILING_OPTIMAL,
@@ -76,8 +76,8 @@ public class TextureVK extends Texture {
                     stack);
 
             var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
-                    .usage(VMA_MEMORY_USAGE_GPU_ONLY)
-                    .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                    .usage(VMA_MEMORY_USAGE_AUTO)
+                    .requiredFlags(VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
             texture.image = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
             texture.id = texture.image.image;
@@ -117,7 +117,7 @@ public class TextureVK extends Texture {
         }
     }
 
-    public static void createTextureSampler(TextureVK texture) {
+    public static long createTextureSampler(int maxLod) {
         try(MemoryStack stack = stackPush()) {
 
             VkSamplerCreateInfo samplerInfo = VkSamplerCreateInfo.calloc(stack);
@@ -135,7 +135,7 @@ public class TextureVK extends Texture {
             samplerInfo.compareOp(VK_COMPARE_OP_ALWAYS);
             samplerInfo.mipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
             samplerInfo.minLod(0);
-            samplerInfo.maxLod(texture.mipLevels);
+            samplerInfo.maxLod(maxLod);
             samplerInfo.mipLodBias(0);
 
             LongBuffer pTextureSampler = stack.mallocLong(1);
@@ -144,7 +144,7 @@ public class TextureVK extends Texture {
                 throw new RuntimeException("Failed to create texture sampler");
             }
 
-            texture.textureSampler = pTextureSampler.get(0);
+            return pTextureSampler.get(0);
         }
     }
 
@@ -173,6 +173,7 @@ public class TextureVK extends Texture {
             int mipWidth = texWidth;
             int mipHeight = texHeight;
             log("mipmap levels: "+mipLevels);
+
             for(int i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange().baseMipLevel(i-1);
                 barrier.oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -181,7 +182,9 @@ public class TextureVK extends Texture {
                 barrier.dstAccessMask(VK_ACCESS_TRANSFER_READ_BIT);
 
                 vkCmdPipelineBarrier(commandBuffer,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        0,
                         null,
                         null,
                         barrier);
@@ -252,7 +255,6 @@ public class TextureVK extends Texture {
 
             vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, region);
         }
-
     }
 
     @Override
@@ -265,7 +267,6 @@ public class TextureVK extends Texture {
         vkDestroyImageView(device, textureImageView, null);
         vkDestroySampler(device, textureSampler, null);
         vkDestroyImage(device, id, null);
-//        vkFreeMemory(device, textureImageMemory, null);
     }
 
 }

@@ -9,11 +9,10 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class Vertex {
 
-    public static final int SIZEOF = (3 + 3 + 2 + 3) * Float.BYTES;
+    public static final int SIZEOF = (3 + 2 + 3) * Float.BYTES;
     public static final int OFFSETOF_POS = 0;
-    public static final int OFFSETOF_COLOR = 3 * Float.BYTES;
-    public static final int OFFSETOF_TEXCOORDS = 6 * Float.BYTES;
-    public static final int OFFSETOF_NORMAL = 8 * Float.BYTES;
+    public static final int OFFSETOF_TEXCOORDS = 3 * Float.BYTES;
+    public static final int OFFSETOF_NORMAL = 5 * Float.BYTES;
 
 //    Vec3 pos;
 //    Vec3 color;
@@ -34,7 +33,7 @@ public class Vertex {
 
     public static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
 
-        var attributeDescriptions = VkVertexInputAttributeDescription.calloc(4);
+        var attributeDescriptions = VkVertexInputAttributeDescription.calloc(3);
 
         // Position
         VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
@@ -43,26 +42,19 @@ public class Vertex {
         posDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
         posDescription.offset(OFFSETOF_POS);
 
-        // Color
-        VkVertexInputAttributeDescription colorDescription = attributeDescriptions.get(1);
-        colorDescription.binding(0);
-        colorDescription.location(1);
-        colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-        colorDescription.offset(OFFSETOF_COLOR);
-
         // textCoords
-        var texDescription = attributeDescriptions.get(2);
+        var texDescription = attributeDescriptions.get(1);
         texDescription.binding(0);
-        texDescription.location(2);
+        texDescription.location(1);
         texDescription.format(VK_FORMAT_R32G32_SFLOAT);
         texDescription.offset(OFFSETOF_TEXCOORDS);
 
         // Normals
-        VkVertexInputAttributeDescription normalDescription = attributeDescriptions.get(3);
-        colorDescription.binding(0);
-        colorDescription.location(3);
-        colorDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-        colorDescription.offset(OFFSETOF_NORMAL);
+        VkVertexInputAttributeDescription normalDescription = attributeDescriptions.get(2);
+        normalDescription.binding(0);
+        normalDescription.location(2);
+        normalDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
+        normalDescription.offset(OFFSETOF_NORMAL);
 
         return attributeDescriptions.rewind();
     }

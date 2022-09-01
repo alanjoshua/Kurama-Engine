@@ -655,12 +655,13 @@ public class VulkanUtilities {
             buffer.putFloat(mesh.getVertices().get(i).get(1));
             buffer.putFloat(mesh.getVertices().get(i).get(2));
 
-            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(0));
-            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(1));
-            buffer.putFloat(mesh.getAttributeList(Mesh.COLOR).get(i).get(2));
-
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
+            // Invert uy for vulkan
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
+
+            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(2));
         }
     }
 
@@ -699,6 +700,25 @@ public class VulkanUtilities {
         write.descriptorCount(1);
         write.descriptorType(type);
         write.pBufferInfo(bufferInfo);
+
+        return write;
+    }
+
+    public static VkWriteDescriptorSet createWriteDescriptorSet(int type, long dstSet, VkDescriptorImageInfo.Buffer imageInfo, int binding, MemoryStack stack) {
+        VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(1, stack);
+        var write = writes.get(0);
+
+        write.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+
+        // descriptor set binding number
+        write.dstBinding(binding);
+
+        // Set the descriptor set
+        write.dstSet(dstSet);
+
+        write.descriptorCount(1);
+        write.descriptorType(type);
+        write.pImageInfo(imageInfo);
 
         return write;
     }

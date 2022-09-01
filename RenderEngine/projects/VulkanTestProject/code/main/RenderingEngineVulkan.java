@@ -77,6 +77,11 @@ public class RenderingEngineVulkan extends RenderingEngine {
     // This contains the object transformation matrices
     public long objectDescriptorSetLayout;
 
+    // TODO: Refactor this into separate Material type class
+    public long singleTextureSetLayout;
+    public long singleTextureDescriptorSet;
+    public long textureSampler;
+
     public long pipelineLayout;
     public long graphicsPipeline;
 
@@ -92,6 +97,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public GPUSceneData gpuSceneData;
     public SingleTimeCommandContext singleTimeCommandContext;
     public HashMap<String, TextureVK> loadedTextures;
+
     public long vmaAllocator;
     public DisplayVulkan display;
     public GameVulkan game;
@@ -104,6 +110,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     @Override
     public void init(Scene scene) {
         this.display = game.display;
+        loadedTextures = new HashMap<>();
         initVulkan();
     }
 
@@ -195,6 +202,9 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         pipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        pipelineLayout, 2, stack.longs(singleTextureDescriptorSet), null);
+
                 Mesh previousMesh = null;
 
                 for(int i = 0; i < renderables.size(); i++) {
@@ -246,7 +256,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     }
 
     public void loadTexture(TextureVK texture) {
-        if (texture == null) return;
+        if (texture == null || texture.fileName == null || loadedTextures.containsKey(texture.fileName)) return;
 
         TextureVK.createTextureImage(graphicsQueue, vmaAllocator, singleTimeCommandContext, texture);
         TextureVK.createTextureImageView(texture);
@@ -388,7 +398,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
-            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 
@@ -440,6 +451,9 @@ public class RenderingEngineVulkan extends RenderingEngine {
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
 
+            // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
+            createDescriptorPool();
+
             // Creates a descriptor set layout with 2 bindings
             // binding 0 = GPU Camera Data
             // binding 1 = scene data
@@ -449,8 +463,11 @@ public class RenderingEngineVulkan extends RenderingEngine {
             // binding 0 = object matrices buffer
             createObjectDescriptorSetLayout();
 
-            // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
-            createDescriptorPool();
+            // TODO: Refactor this with material pipeline abstraction
+            // Creates a descriptor set layout with 1 binding
+            // binding 0 = TextureSampler
+            createTextureDescriptorSetLayout();
+
 
             for(int i = 0;i < inFlightFrames.size(); i++) {
 
@@ -480,6 +497,40 @@ public class RenderingEngineVulkan extends RenderingEngine {
             }
 
         }
+    }
+
+    // TODO: This should be specific to each texture/material
+    public void createTextureDescriptorSet(long textureSampler, long imageView, MemoryStack stack) {
+        var layout = stack.mallocLong(1);
+        layout.put(0, singleTextureSetLayout);
+
+        // Allocate a descriptor set
+        VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
+        allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
+        allocInfo.descriptorPool(descriptorPool);
+        allocInfo.pSetLayouts(layout);
+
+        var pDescriptorSet = stack.mallocLong(1);
+        if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSet) != VK_SUCCESS) {
+            throw new RuntimeException("Failed to allocate descriptor sets");
+        }
+        singleTextureDescriptorSet = pDescriptorSet.get(0);
+
+        //information about the buffer we want to point at in the descriptor
+        var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
+        imageBufferInfo.sampler(textureSampler);
+        imageBufferInfo.imageView(imageView);
+        imageBufferInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
+        var textureWrite =
+                createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        singleTextureDescriptorSet,
+                        imageBufferInfo,
+                        0, stack);
+        descriptorWrites.put(0, textureWrite);
+
+        vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
     public void createObjectDescriptorSetForFrame(Frame frame, MemoryStack stack) {
@@ -944,7 +995,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(globalDescriptorSetLayout, objectDescriptorSetLayout));
+            pipelineLayoutInfo.pSetLayouts(stack.longs(globalDescriptorSetLayout, objectDescriptorSetLayout, singleTextureSetLayout));
 
             // Set push constants
             VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
@@ -1160,6 +1211,29 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
+    public void createTextureDescriptorSetLayout() {
+        try (var stack = stackPush()) {
+
+            var textureBinding =
+                    createDescriptorSetLayoutBinding(
+                            0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, stack);
+
+            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(1, stack);
+            bindings.put(0, textureBinding);
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
+            layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
+            layoutInfo.pBindings(bindings);
+
+            LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
+
+            if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create descriptor set layout");
+            }
+            singleTextureSetLayout = pDescriptorSetLayout.get(0);
+        }
+    }
+
     public void createColorResources() {
         try(var stack = stackPush()) {
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
@@ -1202,7 +1276,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public void createDescriptorPool() {
         try (var stack = stackPush()) {
 
-            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(3, stack);
+            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(4, stack);
 
             VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
             uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
@@ -1215,6 +1289,10 @@ public class RenderingEngineVulkan extends RenderingEngine {
             VkDescriptorPoolSize storageBufferPoolSize  = poolSizes.get(2);
             storageBufferPoolSize.type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
             storageBufferPoolSize.descriptorCount(10);
+
+            VkDescriptorPoolSize textureSamplerPoolSize  = poolSizes.get(3);
+            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            textureSamplerPoolSize.descriptorCount(10);
 
 //            VkDescriptorPoolSize textureSamplerPoolSize = poolSizes.get(1);
 //            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -1412,6 +1490,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkDestroyDescriptorPool(device, descriptorPool, null);
         vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null);
         vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null);
+        vkDestroyDescriptorSetLayout(device, singleTextureSetLayout, null);
 
         singleTimeCommandContext.cleanUp(device);
 

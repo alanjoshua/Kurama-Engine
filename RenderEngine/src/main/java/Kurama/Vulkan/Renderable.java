@@ -9,6 +9,8 @@ import org.lwjgl.vulkan.VkBufferCopy;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkQueue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static Kurama.Vulkan.VulkanUtilities.*;
@@ -38,88 +40,22 @@ public class Renderable {
         return mesh.materials.get(0);
     }
 
-    public void uploadMesh(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
-        createVertexBuffer(vmaAllocator, queue, singleTimeCommandContext);
-        createIndexBuffer(vmaAllocator, queue, singleTimeCommandContext);
-    }
-
-    public void createIndexBuffer(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Short.SIZE * mesh.indices.size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize),mesh.indices);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, vertexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, queue);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-        }
-    }
-
-    public void createVertexBuffer(long vmaAllocator, VkQueue queue, SingleTimeCommandContext singleTimeCommandContext) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Vertex.SIZEOF * mesh.getVertices().size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpy(data.getByteBuffer(0, bufferSize), mesh);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            vertexBuffer = createBufferVMA(vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, vertexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, queue);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-
-        }
-    }
-
     public void cleanUp(long vmaAllocator) {
-        model.meshes.get(0).materials.get(0).texture.cleanUp();
+        if(mesh.materials.get(0).texture != null) {
+            mesh.materials.get(0).texture.cleanUp();
+        }
         vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
+    }
+
+    public static List<Renderable> getRenderablesFromModel(Model model) {
+
+        var result = new ArrayList<Renderable>();
+        for(var mesh: model.meshes) {
+            result.add(new Renderable(mesh, model));
+        }
+
+        return result;
     }
 
 }

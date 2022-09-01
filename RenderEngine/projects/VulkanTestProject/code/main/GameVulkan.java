@@ -15,9 +15,13 @@ import Kurama.inputs.InputLWJGL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
+import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
+import static org.lwjgl.assimp.Assimp.aiProcess_FlipWindingOrder;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class GameVulkan extends Game {
 
@@ -88,7 +92,7 @@ public class GameVulkan extends Game {
 
     public void loadScene() {
 
-        var location = "projects/VulkanTestProject/models/meshes/viking_room.obj";
+        var location = "projects/VulkanTestProject/models/meshes/lost_empire.obj";
         var textureDir = "projects/VulkanTestProject/models/textures/";
 
         List<Mesh> meshes;
@@ -102,44 +106,51 @@ public class GameVulkan extends Game {
             throw new IllegalArgumentException("Could not load mesh");
         }
 
-        //Add texture loc
-        meshes.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "viking_room.png");
+        var lostEmpire = new Model(this, meshes, "room");
+        lostEmpire.setScale(1f);
+//        lostEmpire.setPos(new Vector(5, -10, 0));
 
-        //add color just for the sake of consistency with vulkan tutorial
-        var colors = new ArrayList<Vector>();
-        meshes.get(0).getVertices().forEach(v -> colors.add(new Vector(new float[]{0.1f, 0.1f, 0.1f})));
-        meshes.get(0).setAttribute(colors, Mesh.COLOR);
-        var room = new Model(this, meshes, "room");
+//        List<Mesh> meshes2;
+//        try {
+//            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        //Add texture loc
+//        meshes2.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "house_text.jpg");
+//
+//        //add color just for the sake of consistency with vulkan tutorial
+//        var colors2 = new ArrayList<Vector>();
+//        meshes2.get(0).getVertices().forEach(v -> colors2.add(new Vector(new float[]{1f,1f,1f})));
+//        meshes2.get(0).setAttribute(colors2, Mesh.COLOR);
+//        var house = new Model(this, meshes2, "house");
+////        house.pos = new Vector(0,0,-2);
+//        house.setScale(0.1f);
+////        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
 
-        List<Mesh> meshes2;
-        try {
-            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        models.add(lostEmpire);
+//        models.add(house);
 
-        //Add texture loc
-        meshes2.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "house_text.jpg");
-
-        //add color just for the sake of consistency with vulkan tutorial
-        var colors2 = new ArrayList<Vector>();
-        meshes2.get(0).getVertices().forEach(v -> colors2.add(new Vector(new float[]{1f,1f,1f})));
-        meshes2.get(0).setAttribute(colors2, Mesh.COLOR);
-        var house = new Model(this, meshes2, "house");
-//        house.pos = new Vector(0,0,-2);
-        house.setScale(0.1f);
-//        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
-
-        models.add(room);
-        models.add(house);
-
-        renderables.add(new Renderable(room.meshes.get(0), room));
-        renderables.add(new Renderable(house.meshes.get(0), house));
+        renderables.addAll(getRenderablesFromModel(lostEmpire));
+//        renderables.add(new Renderable(house.meshes.get(0), house));
 
         renderables.forEach(r -> {
             renderingEngineAlias.uploadRenderable(r);
+            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
             renderingEngineAlias.loadTexture((TextureVK) r.getMaterial().texture);
         });
+
+        var texture = renderingEngineAlias.loadedTextures.get(renderables.get(1).getMaterial().texture.fileName);
+        renderingEngineAlias.textureSampler = TextureVK.createTextureSampler(texture.mipLevels);
+        texture.textureSampler = renderingEngineAlias.textureSampler;
+
+        try (var stack = stackPush()) {
+            renderingEngineAlias.createTextureDescriptorSet(
+                    renderingEngineAlias.textureSampler,
+                    texture.textureImageView,
+                    stack);
+        }
     }
 
     @Override
