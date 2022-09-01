@@ -468,7 +468,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
             // binding 0 = TextureSampler
             createTextureDescriptorSetLayout();
 
-
             for(int i = 0;i < inFlightFrames.size(); i++) {
 
                 // uniform buffer for GPU camera data

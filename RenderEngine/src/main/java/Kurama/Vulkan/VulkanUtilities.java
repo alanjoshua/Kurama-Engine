@@ -634,21 +634,6 @@ public class VulkanUtilities {
         src.limit(src.capacity()).rewind();
     }
 
-//    public static void memcpy(ByteBuffer buffer, List<Vertex> vertices) {
-//        for(Vertex vertex : vertices) {
-//            buffer.putFloat(vertex.pos.x());
-//            buffer.putFloat(vertex.pos.y());
-//            buffer.putFloat(vertex.pos.z());
-//
-//            buffer.putFloat(vertex.color.x());
-//            buffer.putFloat(vertex.color.y());
-//            buffer.putFloat(vertex.color.z());
-//
-//            buffer.putFloat(vertex.texCoord.x());
-//            buffer.putFloat(vertex.texCoord.y());
-//        }
-//    }
-
     public static void memcpy(ByteBuffer buffer, Mesh mesh) {
         for(int i = 0; i < mesh.getVertices().size(); i++) {
             buffer.putFloat(mesh.getVertices().get(i).get(0));
@@ -656,7 +641,6 @@ public class VulkanUtilities {
             buffer.putFloat(mesh.getVertices().get(i).get(2));
 
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
-            // Invert uy for vulkan
             buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
 
             buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(0));
