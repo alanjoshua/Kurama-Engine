@@ -1,6 +1,5 @@
 package main;
 
-import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -28,7 +27,6 @@ import java.util.function.Consumer;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
-import static Kurama.Vulkan.TextureVK.createTextureImage;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
@@ -1500,6 +1498,11 @@ public class RenderingEngineVulkan extends RenderingEngine {
         inFlightFrames.clear();
 
         vkDestroyCommandPool(device, globalCommandPool, null);
+
+        loadedTextures.values().forEach(t -> {
+            t.cleanUp();
+            vmaDestroyImage(vmaAllocator, t.imageBuffer.image, t.imageBuffer.allocation);
+        });
 
         vmaDestroyAllocator(vmaAllocator);
 

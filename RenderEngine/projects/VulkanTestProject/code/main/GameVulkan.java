@@ -106,9 +106,9 @@ public class GameVulkan extends Game {
             throw new IllegalArgumentException("Could not load mesh");
         }
 
-        var lostEmpire = new Model(this, meshes, "room");
+        var lostEmpire = new Model(this, meshes, "Lost Empire");
         lostEmpire.setScale(1f);
-//        lostEmpire.setPos(new Vector(5, -10, 0));
+        lostEmpire.setPos(new Vector(5, -10, 0));
 
 //        List<Mesh> meshes2;
 //        try {

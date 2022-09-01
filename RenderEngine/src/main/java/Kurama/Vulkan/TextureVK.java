@@ -1,7 +1,6 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Texture;
-import main.RenderingEngineVulkan;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
@@ -23,7 +22,7 @@ import static org.lwjgl.vulkan.VK10.*;
 public class TextureVK extends Texture {
 
     public long id; // same as image.image
-    public AllocatedImage image;
+    public AllocatedImage imageBuffer;
     public long textureSampler;
     public long textureImageView;
     public int mipLevels;
@@ -79,21 +78,21 @@ public class TextureVK extends Texture {
                     .usage(VMA_MEMORY_USAGE_AUTO)
                     .requiredFlags(VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
-            texture.image = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
-            texture.id = texture.image.image;
+            texture.imageBuffer = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            texture.id = texture.imageBuffer.image;
 
             Consumer<VkCommandBuffer> transition_copyBuffer_generateMipMap = (cmd) -> {
 
-                transitionImageLayout(texture.image.image,
+                transitionImageLayout(texture.imageBuffer.image,
                         imageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         texture.mipLevels,
                         cmd);
 
-                copyBufferToImage(stagingBuffer.buffer, texture.image.image, cmd, extent);
+                copyBufferToImage(stagingBuffer.buffer, texture.imageBuffer.image, cmd, extent);
 
-                generateMipMaps(texture.image.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, cmd);
+                generateMipMaps(texture.imageBuffer.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, cmd);
 
             };
             submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext, queue);
@@ -108,7 +107,7 @@ public class TextureVK extends Texture {
             var viewInfo =
                     createImageViewCreateInfo(
                             VK_FORMAT_R8G8B8A8_SRGB,
-                            texture.image.image,
+                            texture.imageBuffer.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             texture.mipLevels,
                             stack
@@ -266,7 +265,6 @@ public class TextureVK extends Texture {
     public void cleanUp() {
         vkDestroyImageView(device, textureImageView, null);
         vkDestroySampler(device, textureSampler, null);
-        vkDestroyImage(device, id, null);
     }
 
 }

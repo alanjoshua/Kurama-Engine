@@ -41,9 +41,6 @@ public class Renderable {
     }
 
     public void cleanUp(long vmaAllocator) {
-        if(mesh.materials.get(0).texture != null) {
-            mesh.materials.get(0).texture.cleanUp();
-        }
         vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
     }
