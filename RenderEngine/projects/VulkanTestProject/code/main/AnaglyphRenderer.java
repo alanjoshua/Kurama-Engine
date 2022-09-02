@@ -4,9 +4,9 @@ import Kurama.game.Game;
 import Kurama.renderingEngine.RenderingEngine;
 import Kurama.scene.Scene;
 
-public class MultiViewRenderer extends RenderingEngine {
+public class AnaglyphRenderer extends RenderingEngine {
 
-    public MultiViewRenderer(Game game) {
+    public AnaglyphRenderer(Game game) {
         super(game);
     }
 

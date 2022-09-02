@@ -124,6 +124,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         gpuProperties = getGPUProperties(physicalDevice);
         msaaSamples = getMaxUsableSampleCount(gpuProperties);
+//        msaaSamples = 1;
         minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
 
         vmaAllocator = createAllocator(physicalDevice, device, instance);
@@ -821,21 +822,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
             colorAttachmentRef.attachment(0);
             colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-            // Present image attachment
-            var colorAttachmentResolve = attachments.get(2);
-            colorAttachmentResolve.format(swapChainImageFormat);
-            colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
-            colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-            var colorAttachmentResolveRef = attachmentRefs.get(2);
-            colorAttachmentResolveRef.attachment(2);
-            colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
             // Depth-Stencil attachments
             VkAttachmentDescription depthAttachment = attachments.get(1);
             depthAttachment.format(findDepthFormat());
@@ -850,6 +836,21 @@ public class RenderingEngineVulkan extends RenderingEngine {
             VkAttachmentReference depthAttachmentRef = attachmentRefs.get(1);
             depthAttachmentRef.attachment(1);
             depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+            // Present image attachment
+            var colorAttachmentResolve = attachments.get(2);
+            colorAttachmentResolve.format(swapChainImageFormat);
+            colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
+            colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+            colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+            var colorAttachmentResolveRef = attachmentRefs.get(2);
+            colorAttachmentResolveRef.attachment(2);
+            colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
             VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
