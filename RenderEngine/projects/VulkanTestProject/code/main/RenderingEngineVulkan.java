@@ -21,12 +21,14 @@ import java.nio.LongBuffer;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
+import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -40,6 +42,9 @@ import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1
 
 public class RenderingEngineVulkan extends RenderingEngine {
 
+    public Set<String> DEVICE_EXTENSIONS =
+            Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+                    .collect(toSet());
     public int MAXOBJECTS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
@@ -680,6 +685,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                                                 extent,
                                                 1,
                                                 VK_IMAGE_TILING_OPTIMAL,
+                                                1,
                                                 msaaSamples,
                                                 stack);
 
@@ -694,6 +700,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                             depthFormat,
                             depthImage.image,
                             VK_IMAGE_ASPECT_DEPTH_BIT,
+                            1,
                             1,
                             stack
                     );
@@ -791,6 +798,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                                 swapChainImageFormat,
                                 swapChainImage,
                                 VK_IMAGE_ASPECT_COLOR_BIT,
+                                1,
                                 1,
                                 stack
                         );
@@ -1249,6 +1257,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
+                    1,
                     msaaSamples,
                     stack);
 
@@ -1263,6 +1272,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                             swapChainImageFormat,
                             colorImage.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
+                            1,
                             1,
                             stack
                     );

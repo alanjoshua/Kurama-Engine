@@ -21,17 +21,20 @@ import java.nio.LongBuffer;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
+import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
+import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -40,82 +43,86 @@ import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1
 
 public class AnaglyphRenderer extends RenderingEngine {
 
+    public Set<String> DEVICE_EXTENSIONS =
+            Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                            VK_KHR_MULTIVIEW_EXTENSION_NAME)
+                    .collect(toSet());
     public int MAXOBJECTS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 2;
-    public long surface;
-    public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-    public long minUniformBufferOffsetAlignment = 64;
-    public VkPhysicalDeviceProperties gpuProperties;
-    public AllocatedBuffer gpuSceneBuffer;
-    public int graphicsQueueFamilyIndex;
-    public VkQueue graphicsQueue;
-    public VkQueue presentQueue;
-    public long swapChain;
-    public List<Long> swapChainImages;
-    public int swapChainImageFormat;
-    public VkExtent2D swapChainExtent;
-    public List<Long> swapChainImageViews;
+        public static final int MAX_FRAMES_IN_FLIGHT = 2;
+        public long surface;
+        public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        public long minUniformBufferOffsetAlignment = 64;
+        public VkPhysicalDeviceProperties gpuProperties;
+        public AllocatedBuffer gpuSceneBuffer;
+        public int graphicsQueueFamilyIndex;
+        public VkQueue graphicsQueue;
+        public VkQueue presentQueue;
+        public long swapChain;
+        public List<Long> swapChainImages;
+        public int swapChainImageFormat;
+        public VkExtent2D swapChainExtent;
+        public List<Long> swapChainImageViews;
 
-    public AllocatedImage depthImage;
-    public long depthImageView;
-    public int depthFormat;
+        public AllocatedImage depthImage;
+        public long depthImageView;
+        public int depthFormat;
 
-    public AllocatedImage colorImage;
-    public long colorImageView;
+        public AllocatedImage colorImage;
+        public long colorImageView;
 
-    public List<Long> swapChainFramebuffers;
-    public long renderPass;
-    public long descriptorPool;
+        public List<Long> swapChainFramebuffers;
+        public long renderPass;
+        public long descriptorPool;
 
-    // Global Descriptor set contains the camera data and other scene parameters
-    public long globalDescriptorSetLayout;
+        // Global Descriptor set contains the camera data and other scene parameters
+        public long globalDescriptorSetLayout;
 
-    // This contains the object transformation matrices
-    public long objectDescriptorSetLayout;
+        // This contains the object transformation matrices
+        public long objectDescriptorSetLayout;
 
-    // TODO: Refactor this into separate Material type class
-    public long singleTextureSetLayout;
-    public long singleTextureDescriptorSet;
-    public long textureSampler;
+        // TODO: Refactor this into separate Material type class
+        public long singleTextureSetLayout;
+        public long singleTextureDescriptorSet;
+        public long textureSampler;
 
-    public long pipelineLayout;
-    public long graphicsPipeline;
+        public long pipelineLayout;
+        public long graphicsPipeline;
 
-    // The global Command pool and buffer are currently used for tasks such as image loading and transformations
-    public long globalCommandPool;
-    public VkCommandBuffer globalCommandBuffer;
+        // The global Command pool and buffer are currently used for tasks such as image loading and transformations
+        public long globalCommandPool;
+        public VkCommandBuffer globalCommandBuffer;
 
-    public List<Frame> inFlightFrames;
-    public Map<Integer, Frame> imagesInFlight;
-    public int currentFrame;
-    public boolean framebufferResize;
-    public GPUCameraData gpuCameraData;
-    public GPUSceneData gpuSceneData;
-    public SingleTimeCommandContext singleTimeCommandContext;
-    public HashMap<String, TextureVK> loadedTextures;
+        public List<Frame> inFlightFrames;
+        public Map<Integer, Frame> imagesInFlight;
+        public int currentFrame;
+        public boolean framebufferResize;
+        public GPUCameraData gpuCameraData;
+        public GPUSceneData gpuSceneData;
+        public SingleTimeCommandContext singleTimeCommandContext;
+        public HashMap<String, TextureVK> loadedTextures;
 
-    public long vmaAllocator;
-    public DisplayVulkan display;
-    public AnaglyphGame game;
+        public long vmaAllocator;
+        public DisplayVulkan display;
+        public AnaglyphGame game;
 
     public AnaglyphRenderer(Game game) {
-        super(game);
-        this.game = (AnaglyphGame) game;
-    }
+            super(game);
+            this.game = (AnaglyphGame) game;
+        }
 
-    @Override
-    public void init(Scene scene) {
-        this.display = game.display;
-        loadedTextures = new HashMap<>();
-        initVulkan();
-    }
+        @Override
+        public void init(Scene scene) {
+            this.display = game.display;
+            loadedTextures = new HashMap<>();
+            initVulkan();
+        }
 
-    public void render(List<Renderable> renderables) {
-        drawFrame(renderables);
-    }
+        public void render(List<Renderable> renderables) {
+            drawFrame(renderables);
+        }
 
-    public void initVulkan() {
-        VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
+        public void initVulkan() {
+            VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
         VulkanUtilities.setupDebugMessenger();
 
         surface = createSurface(instance, display.window);
@@ -139,10 +146,11 @@ public class AnaglyphRenderer extends RenderingEngine {
         createSwapChain();
         createImageViews();
 
-        createRenderPass();
-
         createColorResources();
         createDepthResources();
+
+        createRenderPass();
+
         createFramebuffers();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
@@ -676,10 +684,12 @@ public class AnaglyphRenderer extends RenderingEngine {
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
             var imageInfo = createImageCreateInfo(
-                    depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    depthFormat,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
+                    2,
                     msaaSamples,
                     stack);
 
@@ -695,6 +705,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             depthImage.image,
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
+                            2,
                             stack
                     );
 
@@ -792,6 +803,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                                 swapChainImage,
                                 VK_IMAGE_ASPECT_COLOR_BIT,
                                 1,
+                                2,
                                 stack
                         );
                 swapChainImageViews.add(createImageView(viewInfo, device));
@@ -1129,6 +1141,8 @@ public class AnaglyphRenderer extends RenderingEngine {
             vkPhysicalDeviceVulkan11Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
             vkPhysicalDeviceVulkan11Features.shaderDrawParameters(true);
 
+            vkPhysicalDeviceVulkan11Features.multiview(true);
+
             VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
@@ -1138,7 +1152,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             createInfo.pEnabledFeatures(deviceFeatures);
 
             createInfo.ppEnabledExtensionNames(VulkanUtilities.asPointerBuffer(DEVICE_EXTENSIONS));
-
             if(ENABLE_VALIDATION_LAYERS) {
                 createInfo.ppEnabledLayerNames(VulkanUtilities.asPointerBuffer(VALIDATION_LAYERS));
             }
@@ -1249,6 +1262,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
+                    2,
                     msaaSamples,
                     stack);
 
@@ -1264,6 +1278,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             colorImage.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
+                            2,
                             stack
                     );
 

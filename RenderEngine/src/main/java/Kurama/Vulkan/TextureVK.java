@@ -71,6 +71,7 @@ public class TextureVK extends Texture {
                     extent,
                     texture.mipLevels,
                     VK_IMAGE_TILING_OPTIMAL,
+                    1,
                     VK_SAMPLE_COUNT_1_BIT,
                     stack);
 
@@ -112,6 +113,7 @@ public class TextureVK extends Texture {
                             texture.imageBuffer.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             texture.mipLevels,
+                            1,
                             stack
                     );
             texture.textureImageView = createImageView(viewInfo, device);

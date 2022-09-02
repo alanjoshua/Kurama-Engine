@@ -22,8 +22,7 @@ import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
 import static org.lwjgl.system.Configuration.DEBUG;
-import static org.lwjgl.system.MemoryStack.stackGet;
-import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
@@ -43,10 +42,6 @@ public class VulkanUtilities {
     public static long debugMessenger;
 
     public static List<Runnable> deletionQueue = new ArrayList<>();
-
-    public static final Set<String> DEVICE_EXTENSIONS =
-            Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
-            .collect(toSet());
 
     public static final Set<String> VALIDATION_LAYERS;
     static {
@@ -380,7 +375,7 @@ public class VulkanUtilities {
         }
     }
 
-    public static VkImageCreateInfo createImageCreateInfo(int format, int usageFlags, VkExtent3D extent, Integer mipLevels, int tiling, Integer numSamples, MemoryStack stack) {
+    public static VkImageCreateInfo createImageCreateInfo(int format, int usageFlags, VkExtent3D extent, Integer mipLevels, int tiling, int numLayers, Integer numSamples, MemoryStack stack) {
 
         VkImageCreateInfo imageInfo = VkImageCreateInfo.calloc(stack);
         imageInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
@@ -388,7 +383,7 @@ public class VulkanUtilities {
         imageInfo.extent(extent);
 
         imageInfo.mipLevels(mipLevels);
-        imageInfo.arrayLayers(1);
+        imageInfo.arrayLayers(numLayers);
         imageInfo.format(format);
         imageInfo.tiling(tiling);
         imageInfo.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
@@ -400,17 +395,22 @@ public class VulkanUtilities {
         return imageInfo;
     }
 
-    public static VkImageViewCreateInfo createImageViewCreateInfo(int format, long image, int aspectFlags, int mipLevels, MemoryStack stack) {
+    public static VkImageViewCreateInfo createImageViewCreateInfo(int format, long image, int aspectFlags, int mipLevels, int layerCount, MemoryStack stack) {
         VkImageViewCreateInfo viewInfo = VkImageViewCreateInfo.calloc(stack);
         viewInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
         viewInfo.image(image);
         viewInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
         viewInfo.format(format);
+
+        if (format >= VK_FORMAT_D16_UNORM_S8_UINT) {
+            aspectFlags = aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT
+        }
         viewInfo.subresourceRange().aspectMask(aspectFlags);
+
         viewInfo.subresourceRange().baseMipLevel(0);
         viewInfo.subresourceRange().levelCount(mipLevels);
         viewInfo.subresourceRange().baseArrayLayer(0);
-        viewInfo.subresourceRange().layerCount(1);
+        viewInfo.subresourceRange().layerCount(layerCount);
 
         return viewInfo;
     }
