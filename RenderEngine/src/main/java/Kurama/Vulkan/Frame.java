@@ -31,28 +31,15 @@ public class Frame {
     // This contains the object transformation matrices
     public long objectDescriptorSet;
 
-    public RenderingEngineVulkan renderingEngine;
-
-    public Frame(RenderingEngineVulkan renderingEngine, long imageAvailableSemaphore, long renderFinishedSemaphore, long fence, long commandPool, VkCommandBuffer commandBuffer) {
-        this.imageAvailableSemaphore = imageAvailableSemaphore;
-        this.renderFinishedSemaphore = renderFinishedSemaphore;
-        this.fence = fence;
-        this.commandBuffer = commandBuffer;
-        this.commandPool = commandPool;
-        this.renderingEngine = renderingEngine;
-    }
-
-    public Frame(RenderingEngineVulkan renderingEngine) {
-        this.renderingEngine = renderingEngine;
-    }
+    public long vmaAllocator;
 
     public void cleanUp() {
         vkDestroySemaphore(device, renderFinishedSemaphore(), null);
         vkDestroySemaphore(device, presentSemaphore(), null);
         vkDestroyFence(device, fence(), null);
         vkDestroyCommandPool(device, commandPool, null);
-        vmaDestroyBuffer(renderingEngine.vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
-        vmaDestroyBuffer(renderingEngine.vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
+        vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
+        vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
     }
 
     public long presentSemaphore() {

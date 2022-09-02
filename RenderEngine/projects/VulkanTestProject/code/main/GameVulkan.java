@@ -19,8 +19,6 @@ import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
-import static org.lwjgl.assimp.Assimp.aiProcess_FlipUVs;
-import static org.lwjgl.assimp.Assimp.aiProcess_FlipWindingOrder;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
@@ -38,7 +36,7 @@ public class GameVulkan extends Game {
     public List<Model> models = new ArrayList<>();
     public List<Renderable> renderables = new ArrayList<>();
     public float colorChangeAngle = 0;
-    public RenderingEngineVulkan renderingEngineAlias;
+    public RenderingEngineVulkan renderer;
 
     public GameVulkan(String threadName) {
         super(threadName);
@@ -49,10 +47,10 @@ public class GameVulkan extends Game {
     public void init() {
 
         renderingEngine = new RenderingEngineVulkan(this);
-        renderingEngineAlias = (RenderingEngineVulkan) renderingEngine;
+        renderer = (RenderingEngineVulkan) renderingEngine;
 
         display = new DisplayVulkan(this);
-        display.resizeEvents.add(() -> ((RenderingEngineVulkan)renderingEngine).framebufferResize = true);
+        display.resizeEvents.add(() -> renderer.framebufferResize = true);
 
         renderingEngine.init(null);
         loadScene();
@@ -62,8 +60,8 @@ public class GameVulkan extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new Camera((GameVulkan)this,null, null, new Vector(new float[] {0,0,0}),45, 0.001f, 1000.0f,
-                ((RenderingEngineVulkan)renderingEngine).swapChainExtent.width(), ((RenderingEngineVulkan)renderingEngine).swapChainExtent.height(), false, "playerCam");
+        playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.001f, 1000.0f,
+                renderer.swapChainExtent.width(), renderer.swapChainExtent.height(), false, "playerCam");
 
         playerCamera.shouldUpdateValues = true;
 
@@ -72,23 +70,23 @@ public class GameVulkan extends Game {
             playerCamera.setShouldUpdateValues(true);
         });
 
-        renderingEngineAlias.gpuCameraData = new RenderingEngineVulkan.GPUCameraData();
-        renderingEngineAlias.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
-        renderingEngineAlias.gpuCameraData.proj.getData()[1][1] *= -1;
+        renderer.gpuCameraData = new RenderingEngineVulkan.GPUCameraData();
+        renderer.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
+        renderer.gpuCameraData.proj.getData()[1][1] *= -1;
 
-        renderingEngineAlias.gpuSceneData = new RenderingEngineVulkan.GPUSceneData();
-        renderingEngineAlias.gpuSceneData.sunLightColor = new Vector(new float[]{1,1,1,1});
-        renderingEngineAlias.gpuSceneData.ambientColor = new Vector(new float[]{1,1,1,1});
-        renderingEngineAlias.gpuSceneData.fogDistance = new Vector(new float[]{200,200,0,0});
-        renderingEngineAlias.gpuSceneData.sunlightDirection = new Vector(new float[]{0,-1,0,1});
-        renderingEngineAlias.gpuSceneData.fogColor = new Vector(new float[]{1,1,1,1});
+        renderer.gpuSceneData = new RenderingEngineVulkan.GPUSceneData();
+        renderer.gpuSceneData.sunLightColor = new Vector(new float[]{1,1,1,1});
+        renderer.gpuSceneData.ambientColor = new Vector(new float[]{1,1,1,1});
+        renderer.gpuSceneData.fogDistance = new Vector(new float[]{200,200,0,0});
+        renderer.gpuSceneData.sunlightDirection = new Vector(new float[]{0,-1,0,1});
+        renderer.gpuSceneData.fogColor = new Vector(new float[]{1,1,1,1});
 
         display.disableCursor();
     }
 
     @Override
     public void render() {
-        renderingEngineAlias.render(renderables);
+        renderer.render(renderables);
     }
 
     public void loadScene() {
@@ -137,20 +135,20 @@ public class GameVulkan extends Game {
 //        renderables.add(new Renderable(house.meshes.get(0), house));
 
         renderables.forEach(r -> {
-            renderingEngineAlias.uploadRenderable(r);
-            deletionQueue.add(() -> r.cleanUp(renderingEngineAlias.vmaAllocator));
+            renderer.uploadRenderable(r);
+            deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
 
             r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
-            renderingEngineAlias.loadTexture((TextureVK) r.getMaterial().texture);
+            renderer.loadTexture((TextureVK) r.getMaterial().texture);
         });
 
-        var texture = renderingEngineAlias.loadedTextures.get(renderables.get(1).getMaterial().texture.fileName);
-        renderingEngineAlias.textureSampler = TextureVK.createTextureSampler(texture.mipLevels);
-        texture.textureSampler = renderingEngineAlias.textureSampler;
+        var texture = renderer.loadedTextures.get(renderables.get(1).getMaterial().texture.fileName);
+        renderer.textureSampler = TextureVK.createTextureSampler(texture.mipLevels);
+        texture.textureSampler = renderer.textureSampler;
 
         try (var stack = stackPush()) {
-            renderingEngineAlias.createTextureDescriptorSet(
-                    renderingEngineAlias.textureSampler,
+            renderer.createTextureDescriptorSet(
+                    renderer.textureSampler,
                     texture.textureImageView,
                     stack);
         }
@@ -173,19 +171,19 @@ public class GameVulkan extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
-                renderingEngineAlias.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
-                renderingEngineAlias.gpuCameraData.proj.getData()[1][1] *= -1;
+                renderer.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
+                renderer.gpuCameraData.proj.getData()[1][1] *= -1;
 
                 playerCamera.setupTransformationMatrices();
-                renderingEngineAlias.gpuCameraData.view = playerCamera.getWorldToObject();
+                renderer.gpuCameraData.view = playerCamera.getWorldToObject();
             }
 
             playerCamera.setupTransformationMatrices();
-            renderingEngineAlias.gpuCameraData.view = playerCamera.getWorldToObject();
-            renderingEngineAlias.gpuCameraData.projview = renderingEngineAlias.gpuCameraData.proj.matMul(renderingEngineAlias.gpuCameraData.view);
+            renderer.gpuCameraData.view = playerCamera.getWorldToObject();
+            renderer.gpuCameraData.projview = renderer.gpuCameraData.proj.matMul(renderer.gpuCameraData.view);
 
             colorChangeAngle += 0.1 * timeDelta;
-            renderingEngineAlias.gpuSceneData.ambientColor = new Vector(new float[]{(float) Math.sin(colorChangeAngle), 0, (float) Math.cos(colorChangeAngle), 1});
+            renderer.gpuSceneData.ambientColor = new Vector(new float[]{(float) Math.sin(colorChangeAngle), 0, (float) Math.cos(colorChangeAngle), 1});
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));

@@ -1,9 +1,6 @@
 package Kurama.Vulkan;
 
 import Kurama.Mesh.Mesh;
-import main.QueueFamilyIndices;
-import main.RenderingEngineVulkan;
-import main.Vertex;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Pointer;
@@ -19,7 +16,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static Kurama.Vulkan.VulkanUtilities.instance;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
