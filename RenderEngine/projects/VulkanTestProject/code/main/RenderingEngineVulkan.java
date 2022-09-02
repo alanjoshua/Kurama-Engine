@@ -49,6 +49,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
     public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+    public boolean msaaEnabled = false;
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
     public AllocatedBuffer gpuSceneBuffer;
@@ -129,7 +130,9 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         gpuProperties = getGPUProperties(physicalDevice);
         msaaSamples = getMaxUsableSampleCount(gpuProperties);
-//        msaaSamples = 1;
+        msaaSamples = 1;
+        msaaEnabled = false;
+
         minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
 
         vmaAllocator = createAllocator(physicalDevice, device, instance);
@@ -712,7 +715,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 transitionImageLayout(
                         depthImage.image, depthFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                        1, cmd);
+                        1, 1, cmd);
                 },
                     singleTimeCommandContext, graphicsQueue);
         }
@@ -812,8 +815,19 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            var attachments  = VkAttachmentDescription.calloc(3, stack);
-            var attachmentRefs = VkAttachmentReference.calloc(3, stack);
+            VkAttachmentDescription.Buffer attachments;
+            VkAttachmentReference.Buffer attachmentRefs;
+
+            // MSAA enabled
+            if (msaaEnabled) {
+                attachments = VkAttachmentDescription.calloc(3, stack);
+                attachmentRefs = VkAttachmentReference.calloc(3, stack);
+            }
+            // MSAA disabled
+            else {
+                attachments = VkAttachmentDescription.calloc(2, stack);
+                attachmentRefs = VkAttachmentReference.calloc(2, stack);
+            }
 
             // MSA image
             var colorAttachment = attachments .get(0);
@@ -824,7 +838,13 @@ public class RenderingEngineVulkan extends RenderingEngine {
             colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            if(msaaEnabled) {
+                colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            }
+            else {
+                colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            }
 
             var colorAttachmentRef = attachmentRefs.get(0);
             colorAttachmentRef.attachment(0);
@@ -845,27 +865,33 @@ public class RenderingEngineVulkan extends RenderingEngine {
             depthAttachmentRef.attachment(1);
             depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-            // Present image attachment
-            var colorAttachmentResolve = attachments.get(2);
-            colorAttachmentResolve.format(swapChainImageFormat);
-            colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
-            colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            // Present image attachment (needed only when msaa is enabled)
+            VkAttachmentReference colorAttachmentResolveRef = null;
+            if(msaaEnabled) {
+                var colorAttachmentResolve = attachments.get(2);
+                colorAttachmentResolve.format(swapChainImageFormat);
+                colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
+                colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+                colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+                colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+                colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
+                colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+                colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-            var colorAttachmentResolveRef = attachmentRefs.get(2);
-            colorAttachmentResolveRef.attachment(2);
-            colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                colorAttachmentResolveRef = attachmentRefs.get(2);
+                colorAttachmentResolveRef.attachment(2);
+                colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            }
 
             VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
             subpass.colorAttachmentCount(1);
-            subpass.pResolveAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentResolveRef));
             subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
             subpass.pDepthStencilAttachment(depthAttachmentRef);
+
+            if(msaaEnabled) {
+                subpass.pResolveAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentResolveRef));
+            }
 
             VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
@@ -984,9 +1010,14 @@ public class RenderingEngineVulkan extends RenderingEngine {
             VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
             multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
             multisampling.sampleShadingEnable(false);
-            multisampling.rasterizationSamples(msaaSamples);
+            if(msaaEnabled) {
+                multisampling.rasterizationSamples(msaaSamples);
+                multisampling.minSampleShading(0.2f);
+            }
+            else {
+                multisampling.rasterizationSamples(1);
+            }
             multisampling.sampleShadingEnable(true);
-            multisampling.minSampleShading(1f);
 
             // ===> COLOR BLENDING <===
 
@@ -1063,7 +1094,14 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            LongBuffer attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
+            LongBuffer attachments = null;
+
+            if(msaaEnabled) {
+                attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
+            }
+            else {
+                attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
+            }
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
@@ -1076,7 +1114,12 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             for(long imageView : swapChainImageViews) {
 
-                attachments.put(2, imageView);
+                if(msaaEnabled) {
+                    attachments.put(2, imageView);
+                }
+                else {
+                    attachments.put(0, imageView);
+                }
 
                 framebufferInfo.pAttachments(attachments);
 
@@ -1283,7 +1326,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 transitionImageLayout(
                         colorImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        1, cmd);
+                        1, 1, cmd);
             }, singleTimeCommandContext, graphicsQueue);}
     }
 

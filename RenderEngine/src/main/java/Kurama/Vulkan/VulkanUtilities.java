@@ -177,7 +177,7 @@ public class VulkanUtilities {
         }
     }
 
-    public static void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels, VkCommandBuffer commandBuffer) {
+    public static void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels, int layerCount, VkCommandBuffer commandBuffer) {
         try(MemoryStack stack = stackPush()) {
             VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);
             barrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
@@ -190,7 +190,7 @@ public class VulkanUtilities {
             barrier.subresourceRange().baseMipLevel(0);
             barrier.subresourceRange().levelCount(mipLevels);
             barrier.subresourceRange().baseArrayLayer(0);
-            barrier.subresourceRange().layerCount(1);
+            barrier.subresourceRange().layerCount(layerCount);
 
             if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 
@@ -403,7 +403,7 @@ public class VulkanUtilities {
         viewInfo.format(format);
 
         if (format >= VK_FORMAT_D16_UNORM_S8_UINT) {
-            aspectFlags = aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT
+            aspectFlags = aspectFlags | VK_IMAGE_ASPECT_STENCIL_BIT;
         }
         viewInfo.subresourceRange().aspectMask(aspectFlags);
 

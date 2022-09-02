@@ -19,7 +19,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -31,12 +30,9 @@ import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
-import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
 import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -50,7 +46,8 @@ public class AnaglyphRenderer extends RenderingEngine {
     public int MAXOBJECTS = 10000;
         public static final int MAX_FRAMES_IN_FLIGHT = 2;
         public long surface;
-        public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
+        public boolean msaaEnabled = false;
         public long minUniformBufferOffsetAlignment = 64;
         public VkPhysicalDeviceProperties gpuProperties;
         public AllocatedBuffer gpuSceneBuffer;
@@ -100,7 +97,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         public GPUSceneData gpuSceneData;
         public SingleTimeCommandContext singleTimeCommandContext;
         public HashMap<String, TextureVK> loadedTextures;
-
+        public int multiViewNumLayers = 2;
         public long vmaAllocator;
         public DisplayVulkan display;
         public AnaglyphGame game;
@@ -130,8 +127,10 @@ public class AnaglyphRenderer extends RenderingEngine {
         createLogicalDevice();
 
         gpuProperties = getGPUProperties(physicalDevice);
-        msaaSamples = getMaxUsableSampleCount(gpuProperties);
-//        msaaSamples = 1;
+        numOfSamples = getMaxUsableSampleCount(gpuProperties);
+        numOfSamples = 1;
+        msaaEnabled = false;
+
         minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
 
         vmaAllocator = createAllocator(physicalDevice, device, instance);
@@ -689,8 +688,8 @@ public class AnaglyphRenderer extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
-                    2,
-                    msaaSamples,
+                    multiViewNumLayers,
+                    numOfSamples,
                     stack);
 
             var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
@@ -705,7 +704,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             depthImage.image,
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
-                            2,
+                            multiViewNumLayers,
                             stack
                     );
 
@@ -716,7 +715,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                         transitionImageLayout(
                                 depthImage.image, depthFormat,
                                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                1, cmd);
+                                1,multiViewNumLayers, cmd);
                     },
                     singleTimeCommandContext, graphicsQueue);
         }
@@ -747,7 +746,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             createInfo.imageFormat(surfaceFormat.format());
             createInfo.imageColorSpace(surfaceFormat.colorSpace());
             createInfo.imageExtent(extent);
-            createInfo.imageArrayLayers(1);
+            createInfo.imageArrayLayers(multiViewNumLayers);
             createInfo.imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
             QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
@@ -803,7 +802,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                                 swapChainImage,
                                 VK_IMAGE_ASPECT_COLOR_BIT,
                                 1,
-                                2,
+                                multiViewNumLayers,
                                 stack
                         );
                 swapChainImageViews.add(createImageView(viewInfo, device));
@@ -816,19 +815,36 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            var attachments  = VkAttachmentDescription.calloc(3, stack);
-            var attachmentRefs = VkAttachmentReference.calloc(3, stack);
+            VkAttachmentDescription.Buffer attachments;
+            VkAttachmentReference.Buffer attachmentRefs;
+
+            // MSAA enabled
+            if (msaaEnabled) {
+                attachments = VkAttachmentDescription.calloc(3, stack);
+                attachmentRefs = VkAttachmentReference.calloc(3, stack);
+            }
+            // MSAA disabled
+            else {
+                attachments = VkAttachmentDescription.calloc(2, stack);
+                attachmentRefs = VkAttachmentReference.calloc(2, stack);
+            }
 
             // MSA image
             var colorAttachment = attachments .get(0);
             colorAttachment.format(swapChainImageFormat);
-            colorAttachment.samples(msaaSamples);
+            colorAttachment.samples(numOfSamples);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
             colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            if(msaaEnabled) {
+                colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            }
+            else {
+                colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            }
 
             var colorAttachmentRef = attachmentRefs.get(0);
             colorAttachmentRef.attachment(0);
@@ -837,7 +853,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             // Depth-Stencil attachments
             VkAttachmentDescription depthAttachment = attachments.get(1);
             depthAttachment.format(findDepthFormat());
-            depthAttachment.samples(msaaSamples);
+            depthAttachment.samples(numOfSamples);
             depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
             depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
@@ -849,27 +865,33 @@ public class AnaglyphRenderer extends RenderingEngine {
             depthAttachmentRef.attachment(1);
             depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-            // Present image attachment
-            var colorAttachmentResolve = attachments.get(2);
-            colorAttachmentResolve.format(swapChainImageFormat);
-            colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
-            colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
-            colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            // Present image attachment (needed only when msaa is enabled)
+            VkAttachmentReference colorAttachmentResolveRef = null;
+            if(msaaEnabled) {
+                var colorAttachmentResolve = attachments.get(2);
+                colorAttachmentResolve.format(swapChainImageFormat);
+                colorAttachmentResolve.samples(VK_SAMPLE_COUNT_1_BIT);
+                colorAttachmentResolve.loadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+                colorAttachmentResolve.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+                colorAttachmentResolve.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+                colorAttachmentResolve.stencilStoreOp(VK_ATTACHMENT_STORE_OP_STORE);
+                colorAttachmentResolve.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+                colorAttachmentResolve.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-            var colorAttachmentResolveRef = attachmentRefs.get(2);
-            colorAttachmentResolveRef.attachment(2);
-            colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                colorAttachmentResolveRef = attachmentRefs.get(2);
+                colorAttachmentResolveRef.attachment(2);
+                colorAttachmentResolveRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            }
 
             VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
             subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
             subpass.colorAttachmentCount(1);
-            subpass.pResolveAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentResolveRef));
             subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
             subpass.pDepthStencilAttachment(depthAttachmentRef);
+
+            if(msaaEnabled) {
+                subpass.pResolveAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentResolveRef));
+            }
 
             VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
@@ -988,9 +1010,14 @@ public class AnaglyphRenderer extends RenderingEngine {
             VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
             multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
             multisampling.sampleShadingEnable(false);
-            multisampling.rasterizationSamples(msaaSamples);
+            if(msaaEnabled) {
+                multisampling.rasterizationSamples(numOfSamples);
+                multisampling.minSampleShading(0.2f);
+            }
+            else {
+                multisampling.rasterizationSamples(1);
+            }
             multisampling.sampleShadingEnable(true);
-            multisampling.minSampleShading(1f);
 
             // ===> COLOR BLENDING <===
 
@@ -1067,7 +1094,14 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            LongBuffer attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
+            LongBuffer attachments = null;
+
+            if(msaaEnabled) {
+                attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
+            }
+            else {
+                attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
+            }
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
@@ -1080,7 +1114,12 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             for(long imageView : swapChainImageViews) {
 
-                attachments.put(2, imageView);
+                if(msaaEnabled) {
+                    attachments.put(2, imageView);
+                }
+                else {
+                    attachments.put(0, imageView);
+                }
 
                 framebufferInfo.pAttachments(attachments);
 
@@ -1135,7 +1174,9 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             var deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
             deviceFeatures.samplerAnisotropy(true);
-            deviceFeatures.sampleRateShading(true);
+            if(msaaEnabled) {
+                deviceFeatures.sampleRateShading(true);
+            }
 
             var vkPhysicalDeviceVulkan11Features = VkPhysicalDeviceVulkan11Features.calloc(stack);
             vkPhysicalDeviceVulkan11Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
@@ -1262,8 +1303,8 @@ public class AnaglyphRenderer extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
-                    2,
-                    msaaSamples,
+                    multiViewNumLayers,
+                    numOfSamples,
                     stack);
 
             var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
@@ -1278,7 +1319,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             colorImage.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
-                            2,
+                            multiViewNumLayers,
                             stack
                     );
 
@@ -1288,7 +1329,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 transitionImageLayout(
                         colorImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        1, cmd);
+                        1, multiViewNumLayers, cmd);
             }, singleTimeCommandContext, graphicsQueue);}
     }
 

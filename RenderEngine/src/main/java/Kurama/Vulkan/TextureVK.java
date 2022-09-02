@@ -88,7 +88,7 @@ public class TextureVK extends Texture {
                         imageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        texture.mipLevels,
+                        texture.mipLevels, 1,
                         cmd);
 
                 copyBufferToImage(stagingBuffer.buffer, texture.imageBuffer.image, cmd, extent);
