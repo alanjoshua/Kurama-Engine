@@ -19,7 +19,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -31,11 +30,8 @@ import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
-import static org.lwjgl.vulkan.EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -91,8 +87,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
 
-    public List<Frame> inFlightFrames;
-    public Map<Integer, Frame> imagesInFlight;
+    public List<RenderingVKFrame> inFlightFrames;
+    public Map<Integer, RenderingVKFrame> imagesInFlight;
     public int currentFrame;
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
@@ -149,20 +145,22 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         createRenderPass();
 
-        createColorResources();
+        if(msaaEnabled) {
+            createColorResources();
+        }
         createDepthResources();
         createFramebuffers();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
-        deletionQueue.add(() -> inFlightFrames.forEach(Frame::cleanUp));
+        deletionQueue.add(() -> inFlightFrames.forEach(RenderingVKFrame::cleanUp));
 
         createGraphicsPipeline();
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
-    public void recordCommandBuffer(List<Renderable> renderables, Frame currentFrame, int frameIndex, long swapChainFrameBuffer) {
+    public void recordCommandBuffer(List<Renderable> renderables, RenderingVKFrame currentFrame, int frameIndex, long swapChainFrameBuffer) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -283,7 +281,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            Frame thisFrame = inFlightFrames.get(currentFrame);
+            RenderingVKFrame thisFrame = inFlightFrames.get(currentFrame);
 
             vkWaitForFences(device, thisFrame.pFence(), true, UINT64_MAX);
 
@@ -541,7 +539,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createObjectDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createObjectDescriptorSetForFrame(RenderingVKFrame frame, MemoryStack stack) {
         var layout = stack.mallocLong(1);
         layout.put(0, objectDescriptorSetLayout);
 
@@ -574,7 +572,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createGlobalDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createGlobalDescriptorSetForFrame(RenderingVKFrame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
         layout.put(0, globalDescriptorSetLayout);
@@ -671,8 +669,10 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkDestroyImageView(device, depthImageView, null);
         vmaDestroyImage(vmaAllocator, depthImage.image, depthImage.allocation);
 
-        vkDestroyImageView(device, colorImageView, null);
-        vmaDestroyImage(vmaAllocator, colorImage.image, colorImage.allocation);
+        if(msaaEnabled) {
+            vkDestroyImageView(device, colorImageView, null);
+            vmaDestroyImage(vmaAllocator, colorImage.image, colorImage.allocation);
+        }
 
         vkDestroySwapchainKHR(device, swapChain, null);
     }
@@ -1017,7 +1017,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
             else {
                 multisampling.rasterizationSamples(1);
             }
-            multisampling.sampleShadingEnable(true);
 
             // ===> COLOR BLENDING <===
 
@@ -1396,7 +1395,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
-    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, Frame frame) {
+    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, RenderingVKFrame frame) {
         try (var stack = stackPush()) {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
@@ -1448,7 +1447,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         inFlightFrames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var frame = new Frame();
+            var frame = new RenderingVKFrame();
             frame.vmaAllocator = vmaAllocator;
             inFlightFrames.add(frame);
         }

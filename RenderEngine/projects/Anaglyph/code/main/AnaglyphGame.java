@@ -7,6 +7,7 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.*;
 import Kurama.camera.Camera;
+import Kurama.camera.StereoCamera;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
@@ -25,7 +26,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 public class AnaglyphGame extends Game {
 
     public DisplayVulkan display;
-    public Camera playerCamera;
+    public StereoCamera playerCamera;
     public float mouseXSensitivity = 20f;
     public float mouseYSensitivity = 20f;
     public float speed = 15f;
@@ -35,7 +36,6 @@ public class AnaglyphGame extends Game {
 
     public List<Model> models = new ArrayList<>();
     public List<Renderable> renderables = new ArrayList<>();
-    public float colorChangeAngle = 0;
     public AnaglyphRenderer renderer;
 
     public AnaglyphGame(String threadName) {
@@ -60,7 +60,7 @@ public class AnaglyphGame extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new Camera(this,null, null, new Vector(new float[] {0,0,0}),45, 0.001f, 1000.0f,
+        playerCamera = new StereoCamera(this,null, null, new Vector(new float[] {0,0,0}),60, 0.001f, 1000.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(), false, "playerCam");
 
         playerCamera.shouldUpdateValues = true;
@@ -70,9 +70,9 @@ public class AnaglyphGame extends Game {
             playerCamera.setShouldUpdateValues(true);
         });
 
-        renderer.gpuCameraData = new AnaglyphRenderer.GPUCameraData();
-        renderer.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
-        renderer.gpuCameraData.proj.getData()[1][1] *= -1;
+        renderer.gpuCameraDataLeft = new AnaglyphRenderer.GPUCameraData();
+        renderer.gpuCameraDataRight = new AnaglyphRenderer.GPUCameraData();
+
 
         renderer.gpuSceneData = new AnaglyphRenderer.GPUSceneData();
         renderer.gpuSceneData.sunLightColor = new Vector(new float[]{1,1,1,1});
@@ -171,19 +171,19 @@ public class AnaglyphGame extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
-                renderer.gpuCameraData.proj = playerCamera.getPerspectiveProjectionMatrix();
-                renderer.gpuCameraData.proj.getData()[1][1] *= -1;
-
-                playerCamera.setupTransformationMatrices();
-                renderer.gpuCameraData.view = playerCamera.getWorldToObject();
             }
 
-            playerCamera.setupTransformationMatrices();
-            renderer.gpuCameraData.view = playerCamera.getWorldToObject();
-            renderer.gpuCameraData.projview = renderer.gpuCameraData.proj.matMul(renderer.gpuCameraData.view);
+            renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;
+            renderer.gpuCameraDataLeft.proj.getData()[1][1] *= -1;
+            renderer.gpuCameraDataLeft.view = playerCamera.leftObjectToWorld;
+            renderer.gpuCameraDataLeft.projview = renderer.gpuCameraDataLeft.proj.matMul(renderer.gpuCameraDataLeft.view);
 
-            colorChangeAngle += 0.1 * timeDelta;
-            renderer.gpuSceneData.ambientColor = new Vector(new float[]{(float) Math.sin(colorChangeAngle), 0, (float) Math.cos(colorChangeAngle), 1});
+            renderer.gpuCameraDataRight.proj = playerCamera.rightProjection;
+            renderer.gpuCameraDataRight.proj.getData()[1][1] *= -1;
+            renderer.gpuCameraDataRight.view = playerCamera.rightObjectToWorld;
+            renderer.gpuCameraDataRight.projview = renderer.gpuCameraDataRight.proj.matMul(renderer.gpuCameraDataRight.view);
+
+            playerCamera.tick(null, input, timeDelta, false);
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
@@ -206,7 +206,7 @@ public class AnaglyphGame extends Game {
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            velocity = velocity.add((z.scalarMul(-cameraSpeed)));
+            velocity = velocity.add((z.scalarMul(cameraSpeed)));
         }
 
         if(input.keyDownOnce(input.ESCAPE)) {
@@ -227,7 +227,7 @@ public class AnaglyphGame extends Game {
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            velocity = velocity.add(z.scalarMul(cameraSpeed));
+            velocity = velocity.add(z.scalarMul(-cameraSpeed));
         }
 
         if(input.keyDown(input.A)) {
@@ -235,7 +235,7 @@ public class AnaglyphGame extends Game {
             Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
         }
 
         if(input.keyDown(input.D)) {
@@ -243,21 +243,21 @@ public class AnaglyphGame extends Game {
             Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
         }
 
         if(input.keyDown(input.SPACE)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
         }
 
         if(input.keyDown(input.LEFT_SHIFT)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
         }
 
         if(input.keyDownOnce(input.LEFT_CONTROL)) {
@@ -266,22 +266,24 @@ public class AnaglyphGame extends Game {
         }
 
         if(input.keyDown(input.LEFT_ARROW)) {
-            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, 90 * timeDelta));
+            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -90 * timeDelta));
         }
 
         if(input.keyDown(input.RIGHT_ARROW)) {
-            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -90 * timeDelta));
+            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, 90 * timeDelta));
         }
 
         this.playerCamera.velocity = velocity;
         calculate3DCamMovement();
+
+        this.playerCamera.setShouldUpdateValues(true);
     }
 
     private void calculate3DCamMovement() {
         if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
 
-            float yawIncrease   = this.mouseXSensitivity * this.timeDelta * -this.input.getDelta().get(0);
-            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * -this.input.getDelta().get(1);
+            float yawIncrease   = this.mouseXSensitivity * this.timeDelta * this.input.getDelta().get(0);
+            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * this.input.getDelta().get(1);
 
             Vector currentAngle = this.playerCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;

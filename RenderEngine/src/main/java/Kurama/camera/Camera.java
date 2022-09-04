@@ -19,7 +19,7 @@ import static Kurama.utils.Logger.log;
 
 public class Camera extends SceneComponent {
 
-	private Game game;
+	public Game game;
 
 	public float filmApertureWidth;
 	public float filmApertureHeight;
@@ -38,15 +38,13 @@ public class Camera extends SceneComponent {
 	public int fitMode = 0;
 	public float filmAspectRatio = 1;
 	public float imageAspectRatio = 1;
-	public float xScale = 1;
-	public float yScale = 1;
 	
 	private int cameraMode = gameModeCamera;
 	private static final int simulateTrueCamera = 1;
 	public static final int gameModeCamera = 0;
 
-	private Matrix perspectiveProjectionMatrix = null;
-	private Matrix orthographicProjectionMatrix = null;
+	public Matrix perspectiveProjectionMatrix = null;
+	public Matrix orthographicProjectionMatrix = null;
 
 	private final float inchToMm = 25.4f;
 	

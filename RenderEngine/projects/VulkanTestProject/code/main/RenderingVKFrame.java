@@ -1,6 +1,6 @@
-package Kurama.Vulkan;
+package main;
 
-import main.RenderingEngineVulkan;
+import Kurama.Vulkan.AllocatedBuffer;
 import org.lwjgl.vulkan.VkCommandBuffer;
 
 import java.nio.LongBuffer;
@@ -15,7 +15,7 @@ import static org.lwjgl.vulkan.VK10.*;
  *
  * This frame's sync objects must be deleted manually
  * */
-public class Frame {
+public class RenderingVKFrame {
 
     public long imageAvailableSemaphore;
     public long renderFinishedSemaphore;

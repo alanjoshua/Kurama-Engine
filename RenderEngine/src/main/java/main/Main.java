@@ -15,11 +15,11 @@ public class Main {
 //		game = new GameLWJGL("OpenGL Renderer");
 //		game = new Editor("Editor");
 
-		game = new GameVulkan("Vulkan");
-		game.start();
-
-//		game = new AnaglyphGame("Anaglyph Renderer");
+//		game = new GameVulkan("Vulkan");
 //		game.start();
+
+		game = new AnaglyphGame("Anaglyph Renderer");
+		game.start();
 
 //		var app = new VulkanGame();
 //		app.run();

@@ -35,6 +35,7 @@ import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 
 public class AnaglyphRenderer extends RenderingEngine {
@@ -47,7 +48,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         public static final int MAX_FRAMES_IN_FLIGHT = 2;
         public long surface;
         public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
-        public boolean msaaEnabled = false;
+        public boolean msaaEnabled = true;
         public long minUniformBufferOffsetAlignment = 64;
         public VkPhysicalDeviceProperties gpuProperties;
         public AllocatedBuffer gpuSceneBuffer;
@@ -89,11 +90,12 @@ public class AnaglyphRenderer extends RenderingEngine {
         public long globalCommandPool;
         public VkCommandBuffer globalCommandBuffer;
 
-        public List<Frame> inFlightFrames;
-        public Map<Integer, Frame> imagesInFlight;
+        public List<MultiViewFrame> inFlightFrames;
+        public Map<Integer, MultiViewFrame> imagesInFlight;
         public int currentFrame;
         public boolean framebufferResize;
-        public GPUCameraData gpuCameraData;
+        public GPUCameraData gpuCameraDataLeft;
+        public GPUCameraData gpuCameraDataRight;
         public GPUSceneData gpuSceneData;
         public SingleTimeCommandContext singleTimeCommandContext;
         public HashMap<String, TextureVK> loadedTextures;
@@ -128,8 +130,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         gpuProperties = getGPUProperties(physicalDevice);
         numOfSamples = getMaxUsableSampleCount(gpuProperties);
-        numOfSamples = 1;
-        msaaEnabled = false;
+//        numOfSamples = 1;
 
         minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
 
@@ -155,13 +156,13 @@ public class AnaglyphRenderer extends RenderingEngine {
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
-        deletionQueue.add(() -> inFlightFrames.forEach(Frame::cleanUp));
+        deletionQueue.add(() -> inFlightFrames.forEach(MultiViewFrame::cleanUp));
 
         createGraphicsPipeline();
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
-    public void recordCommandBuffer(List<Renderable> renderables, Frame currentFrame, int frameIndex, long swapChainFrameBuffer) {
+    public void recordCommandBuffer(List<Renderable> renderables, MultiViewFrame currentFrame, int frameIndex, long swapChainFrameBuffer) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -282,7 +283,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            Frame thisFrame = inFlightFrames.get(currentFrame);
+            MultiViewFrame thisFrame = inFlightFrames.get(currentFrame);
 
             vkWaitForFences(device, thisFrame.pFence(), true, UINT64_MAX);
 
@@ -449,6 +450,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         try (var stack = stackPush()) {
 
             var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
+            var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
 
             var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
             gpuSceneBuffer = createBufferVMA(vmaAllocator,
@@ -483,7 +485,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 inFlightFrames.get(i).cameraBuffer
                         = createBufferVMA(
                         vmaAllocator,
-                        GPUCameraData.SIZEOF,
+                        cameraBufferSize,
                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                         VMA_MEMORY_USAGE_AUTO,
                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -540,7 +542,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createObjectDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createObjectDescriptorSetForFrame(MultiViewFrame frame, MemoryStack stack) {
         var layout = stack.mallocLong(1);
         layout.put(0, objectDescriptorSetLayout);
 
@@ -557,9 +559,11 @@ public class AnaglyphRenderer extends RenderingEngine {
         frame.objectDescriptorSet = pDescriptorSet.get(0);
 
         //information about the buffer we want to point at in the descriptor
+        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
+
         VkDescriptorBufferInfo.Buffer objectBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
         objectBufferInfo.offset(0);
-        objectBufferInfo.range(GPUObjectData.SIZEOF * MAXOBJECTS);
+        objectBufferInfo.range(objectBufferSize);
         objectBufferInfo.buffer(frame.objectBuffer.buffer);
 
         VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
@@ -573,7 +577,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createGlobalDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createGlobalDescriptorSetForFrame(MultiViewFrame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
         layout.put(0, globalDescriptorSetLayout);
@@ -592,9 +596,11 @@ public class AnaglyphRenderer extends RenderingEngine {
         frame.globalDescriptorSet = pDescriptorSet.get(0);
 
         //information about the buffer we want to point at in the descriptor
+        var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
+
         VkDescriptorBufferInfo.Buffer cameraBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
         cameraBufferInfo.offset(0);
-        cameraBufferInfo.range(GPUCameraData.SIZEOF);
+        cameraBufferInfo.range(cameraBufferSize);
         cameraBufferInfo.buffer(frame.cameraBuffer.buffer);
 
         VkDescriptorBufferInfo.Buffer sceneBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
@@ -839,6 +845,8 @@ public class AnaglyphRenderer extends RenderingEngine {
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 
+//            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
             if(msaaEnabled) {
                 colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
             }
@@ -896,16 +904,27 @@ public class AnaglyphRenderer extends RenderingEngine {
             VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
             dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
             dependency.dstSubpass(0);
-            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
-            dependency.srcAccessMask(0);
-            dependency.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
-            dependency.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            dependency.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency.dstStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+            dependency.dstAccessMask(VK_ACCESS_MEMORY_READ_BIT);
+            dependency.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
 
             VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
             renderPassInfo.pAttachments(attachments);
             renderPassInfo.pSubpasses(subpass);
             renderPassInfo.pDependencies(dependency);
+
+            var viewMask = stack.ints(Integer.parseInt("00000011", 2));
+            var correlationMask = stack.ints(Integer.parseInt("00000011", 2));
+
+            var multiviewCreateInfo = VkRenderPassMultiviewCreateInfo.calloc();
+            multiviewCreateInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO);
+            multiviewCreateInfo.pViewMasks(viewMask);
+            multiviewCreateInfo.pCorrelationMasks(correlationMask);
+
+            renderPassInfo.pNext(multiviewCreateInfo);
 
             LongBuffer pRenderPass = stack.mallocLong(1);
 
@@ -1010,14 +1029,15 @@ public class AnaglyphRenderer extends RenderingEngine {
             VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
             multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
             multisampling.sampleShadingEnable(false);
+
             if(msaaEnabled) {
+                multisampling.sampleShadingEnable(true);
                 multisampling.rasterizationSamples(numOfSamples);
                 multisampling.minSampleShading(0.2f);
             }
             else {
                 multisampling.rasterizationSamples(1);
             }
-            multisampling.sampleShadingEnable(true);
 
             // ===> COLOR BLENDING <===
 
@@ -1102,6 +1122,8 @@ public class AnaglyphRenderer extends RenderingEngine {
             else {
                 attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
             }
+
+//            attachments = stack.longs(colorImageView, depthImageView);
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
@@ -1377,7 +1399,14 @@ public class AnaglyphRenderer extends RenderingEngine {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation, data);
             {
-                GPUCameraData.memcpy(data.getByteBuffer(0, GPUCameraData.SIZEOF), gpuCameraData);
+                var offset = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
+                int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
+                var buffer = data.getByteBuffer(bufferSize);
+
+                GPUCameraData.memcpy(buffer, gpuCameraDataLeft);
+
+                buffer.position(offset);
+                GPUCameraData.memcpy(buffer, gpuCameraDataRight);
             }
             vmaUnmapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation);
         }
@@ -1399,7 +1428,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, Frame frame) {
+    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, MultiViewFrame frame) {
         try (var stack = stackPush()) {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
@@ -1451,7 +1480,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         inFlightFrames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var frame = new Frame();
+            var frame = new MultiViewFrame();
             frame.vmaAllocator = vmaAllocator;
             inFlightFrames.add(frame);
         }
