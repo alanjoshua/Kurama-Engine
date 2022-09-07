@@ -672,6 +672,26 @@ public class VulkanUtilities {
         return bufferBinding;
     }
 
+    public static long createDescriptorSetLayout(VkDescriptorSetLayoutBinding[] bindingsList, MemoryStack stack) {
+
+        VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(bindingsList.length, stack);
+        for(int i = 0; i < bindingsList.length; i++) {
+            bindings.put(i, bindingsList[i]);
+        }
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
+        layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
+        layoutInfo.pBindings(bindings);
+
+        LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
+
+        if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
+            throw new RuntimeException("Failed to create descriptor set layout");
+        }
+
+        return pDescriptorSetLayout.get(0);
+    }
+
     public static VkWriteDescriptorSet createWriteDescriptorSet(int type, long dstSet, VkDescriptorBufferInfo.Buffer bufferInfo, int binding, MemoryStack stack) {
         VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(1, stack);
         var write = writes.get(0);

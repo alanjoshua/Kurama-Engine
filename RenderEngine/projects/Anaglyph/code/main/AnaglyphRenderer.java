@@ -481,16 +481,14 @@ public class AnaglyphRenderer extends RenderingEngine {
             // Creates a descriptor set layout with 2 bindings
             // binding 0 = GPU Camera Data
             // binding 1 = scene data
-            createGlobalDescriptorSetLayout();
 
             // Creates a descriptor set layout with 1 binding
             // binding 0 = object matrices buffer
-            createObjectDescriptorSetLayout();
 
             // TODO: Refactor this with material pipeline abstraction
             // Creates a descriptor set layout with 1 binding
             // binding 0 = TextureSampler
-            createTextureDescriptorSetLayout();
+            createMultiViewDescriptorSetLayouts();
 
             for(int i = 0;i < inFlightFrames.size(); i++) {
 
@@ -594,7 +592,7 @@ public class AnaglyphRenderer extends RenderingEngine {
     public void createGlobalDescriptorSetForFrame(Frame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
-        layout.put(0, globalDescriptorSetLayout);
+        layout.put(0, multiViewRenderPass.globalDescriptorSetLayout);
 
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
@@ -805,12 +803,12 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             vkGetSwapchainImagesKHR(device, swapChain, imageCount, pSwapchainImages);
 
-            swapChainAttachments = new ArrayList<>(imageCount.get(0));
+            viewRenderPass.swapChainAttachments = new ArrayList<>(imageCount.get(0));
 
             for(int i = 0;i < pSwapchainImages.capacity();i++) {
                 var swapImage = new SwapChainAttachment();
                 swapImage.swapChainImage = pSwapchainImages.get(i);
-                swapChainAttachments.add(swapImage);
+                viewRenderPass.swapChainAttachments.add(swapImage);
             }
 
             swapChainImageFormat = surfaceFormat.format();
@@ -819,11 +817,11 @@ public class AnaglyphRenderer extends RenderingEngine {
     }
 
     public void createSwapChainImageViews() {
-        if(swapChainAttachments == null) swapChainAttachments = new ArrayList<>();
+        if(viewRenderPass.swapChainAttachments == null) viewRenderPass.swapChainAttachments = new ArrayList<>();
 
         try (var stack = stackPush()) {
 
-            for (var swapChainImageAttachment : swapChainAttachments) {
+            for (var swapChainImageAttachment : viewRenderPass.swapChainAttachments) {
                 var viewInfo =
                         createImageViewCreateInfo(
                                 swapChainImageFormat,
@@ -1219,80 +1217,24 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void createObjectDescriptorSetLayout() {
-        try (var stack = stackPush()) {
-            var objectBinding =
-                    createDescriptorSetLayoutBinding(0,
-                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
+    public void createMultiViewDescriptorSetLayouts() {
 
-            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(1, stack);
-            bindings.put(0, objectBinding);
-
-            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
-            layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
-            layoutInfo.pBindings(bindings);
-
-            LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
-
-            if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create descriptor set layout");
-            }
-            objectDescriptorSetLayout = pDescriptorSetLayout.get(0);
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, objectDescriptorSetLayout, null));
-        }
-    }
-
-    public void createGlobalDescriptorSetLayout() {
         try (var stack = stackPush()) {
 
-            var cameraBufferBinding =
-                    createDescriptorSetLayoutBinding(
-                            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
+            var objectBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
 
-            var sceneBinding =
-                    createDescriptorSetLayoutBinding(
-                            1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, stack);
+            var cameraBufferBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
+            var sceneBinding = createDescriptorSetLayoutBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, stack);
 
-            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(2, stack);
-            bindings.put(0, cameraBufferBinding);
-            bindings.put(1, sceneBinding);
+            var textureBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, stack);
 
-            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
-            layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
-            layoutInfo.pBindings(bindings);
+            multiViewRenderPass.objectDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{objectBinding}, stack);
+            multiViewRenderPass.globalDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{cameraBufferBinding, sceneBinding}, stack);
+            multiViewRenderPass.singleTextureSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{textureBinding}, stack);
 
-            LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
-
-            if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create descriptor set layout");
-            }
-            globalDescriptorSetLayout = pDescriptorSetLayout.get(0);
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, globalDescriptorSetLayout, null));
-        }
-    }
-
-    public void createTextureDescriptorSetLayout() {
-        try (var stack = stackPush()) {
-
-            var textureBinding =
-                    createDescriptorSetLayoutBinding(
-                            0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, stack);
-
-            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(1, stack);
-            bindings.put(0, textureBinding);
-
-            VkDescriptorSetLayoutCreateInfo layoutInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
-            layoutInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
-            layoutInfo.pBindings(bindings);
-
-            LongBuffer pDescriptorSetLayout = stack.mallocLong(1);
-
-            if(vkCreateDescriptorSetLayout(device, layoutInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create descriptor set layout");
-            }
-            singleTextureSetLayout = pDescriptorSetLayout.get(0);
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, singleTextureSetLayout, null));
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.objectDescriptorSetLayout, null));
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.globalDescriptorSetLayout, null));
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.singleTextureSetLayout, null));
         }
     }
 
