@@ -42,7 +42,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
             Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
                     .collect(toSet());
     public int MAXOBJECTS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 2;
+    public final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
     public int msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     public boolean msaaEnabled = false;
@@ -58,12 +58,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public VkExtent2D swapChainExtent;
     public List<Long> swapChainImageViews;
 
-    public AllocatedImage depthImage;
-    public long depthImageView;
-    public int depthFormat;
-
-    public AllocatedImage colorImage;
-    public long colorImageView;
+    public FrameBufferAttachment colorAttachment;
+    public FrameBufferAttachment depthAttachment;
 
     public List<Long> swapChainFramebuffers;
     public long renderPass;
@@ -87,8 +83,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
 
-    public List<RenderingVKFrame> inFlightFrames;
-    public Map<Integer, RenderingVKFrame> imagesInFlight;
+    public List<Frame> inFlightFrames;
+    public Map<Integer, Frame> imagesInFlight;
     public int currentFrame;
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
@@ -154,13 +150,13 @@ public class RenderingEngineVulkan extends RenderingEngine {
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
-        deletionQueue.add(() -> inFlightFrames.forEach(RenderingVKFrame::cleanUp));
+        deletionQueue.add(() -> inFlightFrames.forEach(Frame::cleanUp));
 
         createGraphicsPipeline();
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
-    public void recordCommandBuffer(List<Renderable> renderables, RenderingVKFrame currentFrame, int frameIndex, long swapChainFrameBuffer) {
+    public void recordCommandBuffer(List<Renderable> renderables, Frame currentFrame, int frameIndex, long swapChainFrameBuffer) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -281,14 +277,14 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            RenderingVKFrame thisFrame = inFlightFrames.get(currentFrame);
+            Frame thisFrame = inFlightFrames.get(currentFrame);
 
             vkWaitForFences(device, thisFrame.pFence(), true, UINT64_MAX);
 
             IntBuffer pImageIndex = stack.mallocInt(1);
 
             int vkResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-                    thisFrame.presentSemaphore(), VK_NULL_HANDLE, pImageIndex);
+                    thisFrame.imageAvailableSemaphore(), VK_NULL_HANDLE, pImageIndex);
 
             if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
                 recreateSwapChain();
@@ -539,7 +535,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createObjectDescriptorSetForFrame(RenderingVKFrame frame, MemoryStack stack) {
+    public void createObjectDescriptorSetForFrame(Frame frame, MemoryStack stack) {
         var layout = stack.mallocLong(1);
         layout.put(0, objectDescriptorSetLayout);
 
@@ -572,7 +568,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createGlobalDescriptorSetForFrame(RenderingVKFrame frame, MemoryStack stack) {
+    public void createGlobalDescriptorSetForFrame(Frame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
         layout.put(0, globalDescriptorSetLayout);
@@ -666,12 +662,12 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
         swapChainImageViews.forEach(imageView -> vkDestroyImageView(device, imageView, null));
 
-        vkDestroyImageView(device, depthImageView, null);
-        vmaDestroyImage(vmaAllocator, depthImage.image, depthImage.allocation);
+        vkDestroyImageView(device, depthAttachment.imageView, null);
+        vmaDestroyImage(vmaAllocator, depthAttachment.allocatedImage.image, depthAttachment.allocatedImage.allocation);
 
         if(msaaEnabled) {
-            vkDestroyImageView(device, colorImageView, null);
-            vmaDestroyImage(vmaAllocator, colorImage.image, colorImage.allocation);
+            vkDestroyImageView(device, colorAttachment.imageView, null);
+            vmaDestroyImage(vmaAllocator, colorAttachment.allocatedImage.image, colorAttachment.allocatedImage.allocation);
         }
 
         vkDestroySwapchainKHR(device, swapChain, null);
@@ -680,6 +676,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public void createDepthResources() {
         try(MemoryStack stack = stackPush()) {
 
+            depthAttachment = new FrameBufferAttachment();
             int depthFormat = findDepthFormat();
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
@@ -696,24 +693,24 @@ public class RenderingEngineVulkan extends RenderingEngine {
                                     .usage(VMA_MEMORY_USAGE_GPU_ONLY)
                                     .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            depthImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            depthAttachment.allocatedImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
 
             var viewInfo =
                     createImageViewCreateInfo(
                             depthFormat,
-                            depthImage.image,
+                            depthAttachment.allocatedImage.image,
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
                             1,
                             stack
                     );
 
-            depthImageView = createImageView(viewInfo, device);
+            depthAttachment.imageView = createImageView(viewInfo, device);
 
             // Explicitly transitioning the depth image
             submitImmediateCommand((cmd) -> {
                 transitionImageLayout(
-                        depthImage.image, depthFormat,
+                        depthAttachment.allocatedImage.image, depthFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                         1, 1, cmd);
                 },
@@ -1096,10 +1093,10 @@ public class RenderingEngineVulkan extends RenderingEngine {
             LongBuffer attachments = null;
 
             if(msaaEnabled) {
-                attachments = stack.longs(colorImageView, depthImageView, VK_NULL_HANDLE);
+                attachments = stack.longs(colorAttachment.imageView, depthAttachment.imageView, VK_NULL_HANDLE);
             }
             else {
-                attachments = stack.longs(VK_NULL_HANDLE, depthImageView);
+                attachments = stack.longs(VK_NULL_HANDLE, depthAttachment.imageView);
             }
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
@@ -1307,23 +1304,23 @@ public class RenderingEngineVulkan extends RenderingEngine {
                     .usage(VMA_MEMORY_USAGE_GPU_ONLY)
                     .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            colorImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            colorAttachment.allocatedImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
 
             var viewInfo =
                     createImageViewCreateInfo(
                             swapChainImageFormat,
-                            colorImage.image,
+                            colorAttachment.allocatedImage.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
                             1,
                             stack
                     );
 
-            colorImageView = createImageView(viewInfo, device);
+            colorAttachment.imageView = createImageView(viewInfo, device);
 
             submitImmediateCommand((cmd) -> {
                 transitionImageLayout(
-                        colorImage.image, swapChainImageFormat,
+                        colorAttachment.allocatedImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         1, 1, cmd);
             }, singleTimeCommandContext, graphicsQueue);}
@@ -1395,7 +1392,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
-    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, RenderingVKFrame frame) {
+    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, Frame frame) {
         try (var stack = stackPush()) {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
@@ -1447,7 +1444,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         inFlightFrames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var frame = new RenderingVKFrame();
+            var frame = new Frame();
             frame.vmaAllocator = vmaAllocator;
             inFlightFrames.add(frame);
         }

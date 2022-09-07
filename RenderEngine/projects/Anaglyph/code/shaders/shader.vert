@@ -1,5 +1,6 @@
 #version 460
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_multiview : enable
 
 struct CameraData {
     mat4 projview;
@@ -38,6 +39,6 @@ void main() {
     fragTexCoord = inTexCoord;
     normal = inNormal;
 
-    mat4 transformMatrix = cameraBuffer.cameras[0].projview * objectBuffer.objects[gl_BaseInstance].model;
+    mat4 transformMatrix = cameraBuffer.cameras[gl_ViewIndex].projview * objectBuffer.objects[gl_BaseInstance].model;
     gl_Position = transformMatrix * vec4(inPosition, 1.0);
 }

@@ -17,7 +17,7 @@ public class StereoCamera extends Camera {
     public Matrix rightProjection;
     public Matrix leftObjectToWorld;
     public Matrix rightObjectToWorld;
-    public float focalLength = 5;
+    public float focalLength = 100;
 
     public StereoCamera(Game game, Component parent, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane, int imageWidth, int imageHeight, boolean shouldUseRenderBuffer, String identifier) {
         super(game, parent, quaternion, pos, fovX, nearClippingPlane, farClippingPlane, imageWidth, imageHeight, shouldUseRenderBuffer, identifier);
@@ -66,7 +66,7 @@ public class StereoCamera extends Camera {
         Matrix[] matrices = new Matrix[2];
 
         // Calculate some variables
-        float aspectRatio = (width * 0.5f) / (float)height;
+        float aspectRatio = (width) / (float)height;
         float wd2 = (float) (zNear * tan(Math.toRadians(fov / 2.0f)));
         float ndfl = zNear / focalLength;
         float left, right;

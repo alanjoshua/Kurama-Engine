@@ -15,7 +15,7 @@ import static org.lwjgl.vulkan.VK10.*;
  *
  * This frame's sync objects must be deleted manually
  * */
-public class RenderingVKFrame {
+public class Frame {
 
     public long imageAvailableSemaphore;
     public long renderFinishedSemaphore;
@@ -35,14 +35,14 @@ public class RenderingVKFrame {
 
     public void cleanUp() {
         vkDestroySemaphore(device, renderFinishedSemaphore(), null);
-        vkDestroySemaphore(device, presentSemaphore(), null);
+        vkDestroySemaphore(device, imageAvailableSemaphore(), null);
         vkDestroyFence(device, fence(), null);
         vkDestroyCommandPool(device, commandPool, null);
         vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
     }
 
-    public long presentSemaphore() {
+    public long imageAvailableSemaphore() {
         return imageAvailableSemaphore;
     }
 
