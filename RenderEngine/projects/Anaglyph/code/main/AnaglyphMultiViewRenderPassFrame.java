@@ -15,7 +15,7 @@ import static org.lwjgl.vulkan.VK10.*;
  *
  * This frame's sync objects must be deleted manually
  * */
-public class AnaglpyhFrame {
+public class AnaglyphMultiViewRenderPassFrame {
 
     public long imageAvailableSemaphore;
     public long renderFinishedSemaphore;
@@ -61,7 +61,6 @@ public class AnaglpyhFrame {
     public long fence() {
         return fence;
     }
-
     public LongBuffer pFence() {
         return stackGet().longs(fence);
     }

@@ -28,7 +28,6 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
-import static main.RenderingEngineVulkan.MAX_FRAMES_IN_FLIGHT;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
@@ -57,6 +56,9 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     public static class RenderPass {
 
+        public List<ViewRenderPassFrame> frames;
+        public Map<Integer, ViewRenderPassFrame> imagesToFrameMap;
+        public int currentFrameIndex = 0;
         public List<Long> frameBuffers;
         public List<SwapChainAttachment> swapChainAttachments;
         public long renderPass;
@@ -67,7 +69,10 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     public static class MultiViewRenderPass {
 
-        public long frameBuffer;
+        public List<Long> frameBuffers;
+        public List<AnaglyphMultiViewRenderPassFrame> frames;
+        public Map<Integer, AnaglyphMultiViewRenderPassFrame> imagesToFrameMap;
+        public int currentFrameIndex = 0;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
 
@@ -82,9 +87,6 @@ public class AnaglyphRenderer extends RenderingEngine {
         // TODO: Refactor this into separate Material type class
         public long singleTextureSetLayout;
         public long singleTextureDescriptorSet;
-        public long semaphore;
-        public long fence;
-
         public long textureSampler;
     }
     public RenderPass viewRenderPass = new RenderPass();
@@ -99,10 +101,6 @@ public class AnaglyphRenderer extends RenderingEngine {
     // The global Command pool and buffer are currently used for tasks such as image loading and transformations
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
-
-    public List<Frame> inFlightFrames;
-    public Map<Integer, Frame> imagesInFlight;
-    public int currentFrameIndex;
     public boolean framebufferResize;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
@@ -164,18 +162,21 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         createRenderPass();
 
-        createDisplayFramebuffers();
+        createViewFramebuffers();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
-        deletionQueue.add(() -> inFlightFrames.forEach(Frame::cleanUp));
+        deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
         createGraphicsPipeline();
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
-    public void recordCommandBuffer(List<Renderable> renderables, Frame currentFrame, long frameBuffer, int frameIndex) {
+    public void recordViewCommandBuffer(List<Renderable> renderables, ViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
+    }
+
+        public void recordMultiViewCommandBuffer(List<Renderable> renderables, AnaglyphMultiViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -191,7 +192,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
 
-            renderPassInfo.renderPass(viewRenderPass);
+            renderPassInfo.renderPass(multiViewRenderPass.renderPass);
 
             VkRect2D renderArea = VkRect2D.calloc(stack);
             renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
@@ -226,7 +227,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                         viewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        viewPipelineLayout, 2, stack.longs(singleTextureDescriptorSet), null);
+                        viewPipelineLayout, 2, stack.longs(multiViewRenderPass.singleTextureDescriptorSet), null);
 
                 Mesh previousMesh = null;
 
@@ -290,14 +291,14 @@ public class AnaglyphRenderer extends RenderingEngine {
     public void performBufferDataUpdates(List<Renderable> renderables, int currentFrameIndex) {
         updateCameraGPUDataInMemory(currentFrameIndex);
         updateSceneGPUDataInMemory(currentFrameIndex);
-        updateObjectBufferDataInMemory(renderables, currentFrameIndex, inFlightFrames.get(currentFrameIndex));
+        updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
     }
 
     public void drawFrame(List<Renderable> renderables) {
 
         try(MemoryStack stack = stackPush()) {
 
-            Frame thisFrame = inFlightFrames.get(currentFrameIndex);
+            var thisFrame = viewRenderPass.frames.get(viewRenderPass.currentFrameIndex);
 
             vkWaitForFences(device, thisFrame.pFence(), true, UINT64_MAX);
 
@@ -315,14 +316,16 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             final int imageIndex = pImageIndex.get(0);
 
-            performBufferDataUpdates(renderables, currentFrameIndex);
+            performBufferDataUpdates(renderables, viewRenderPass.currentFrameIndex);
 
-            recordCommandBuffer(renderables, thisFrame, frameBuffers.get(imageIndex),currentFrameIndex);
+//            recordMultiViewCommandBuffer(renderables, thisFrame, viewRenderPass.frameBuffers.get(imageIndex), viewRenderPass.currentFrameIndex);
+            recordViewCommandBuffer(renderables, thisFrame, viewRenderPass.frameBuffers.get(imageIndex), viewRenderPass.currentFrameIndex);
 
-            if(imagesInFlight.containsKey(imageIndex)) {
-                vkWaitForFences(device, imagesInFlight.get(imageIndex).fence(), true, UINT64_MAX);
+
+            if(viewRenderPass.imagesToFrameMap.containsKey(imageIndex)) {
+                vkWaitForFences(device, viewRenderPass.frames.get(imageIndex).fence(), true, UINT64_MAX);
             }
-            imagesInFlight.put(imageIndex, thisFrame);
+            viewRenderPass.imagesToFrameMap.put(imageIndex, thisFrame);
             vkResetFences(device, thisFrame.pFence());
 
             // Submit rendering commands to GPU
@@ -358,7 +361,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to present swap chain image");
             }
 
-            currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+            viewRenderPass.currentFrameIndex = (viewRenderPass.currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
         }
     }
 
@@ -490,11 +493,11 @@ public class AnaglyphRenderer extends RenderingEngine {
             // binding 0 = TextureSampler
             createMultiViewDescriptorSetLayouts();
 
-            for(int i = 0;i < inFlightFrames.size(); i++) {
+            for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
 
                 // uniform buffer for GPU camera data
                 // A camera buffer is created for each frame
-                inFlightFrames.get(i).cameraBuffer
+                multiViewRenderPass.frames.get(i).cameraBuffer
                         = createBufferVMA(
                         vmaAllocator,
                         cameraBufferSize,
@@ -503,9 +506,9 @@ public class AnaglyphRenderer extends RenderingEngine {
                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-                createGlobalDescriptorSetForFrame(inFlightFrames.get(i), stack);
+                createGlobalDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
 
-                inFlightFrames.get(i).objectBuffer =
+                multiViewRenderPass.frames.get(i).objectBuffer =
                         createBufferVMA(
                                 vmaAllocator,
                                 objectBufferSize,
@@ -514,7 +517,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-                createObjectDescriptorSetForFrame(inFlightFrames.get(i), stack);
+                createObjectDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
             }
 
         }
@@ -523,7 +526,7 @@ public class AnaglyphRenderer extends RenderingEngine {
     // TODO: This should be specific to each texture/material
     public void createTextureDescriptorSet(long textureSampler, long imageView, MemoryStack stack) {
         var layout = stack.mallocLong(1);
-        layout.put(0, singleTextureSetLayout);
+        layout.put(0, multiViewRenderPass.singleTextureSetLayout);
 
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
@@ -535,7 +538,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSet) != VK_SUCCESS) {
             throw new RuntimeException("Failed to allocate descriptor sets");
         }
-        singleTextureDescriptorSet = pDescriptorSet.get(0);
+        multiViewRenderPass.singleTextureDescriptorSet = pDescriptorSet.get(0);
 
         //information about the buffer we want to point at in the descriptor
         var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
@@ -546,7 +549,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
         var textureWrite =
                 createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        singleTextureDescriptorSet,
+                        multiViewRenderPass.singleTextureDescriptorSet,
                         imageBufferInfo,
                         0, stack);
         descriptorWrites.put(0, textureWrite);
@@ -554,9 +557,9 @@ public class AnaglyphRenderer extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createObjectDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createObjectDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
         var layout = stack.mallocLong(1);
-        layout.put(0, objectDescriptorSetLayout);
+        layout.put(0, multiViewRenderPass.objectDescriptorSetLayout);
 
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
@@ -589,7 +592,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         vkUpdateDescriptorSets(device, descriptorWrites, null);
     }
 
-    public void createGlobalDescriptorSetForFrame(Frame frame, MemoryStack stack) {
+    public void createGlobalDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
         layout.put(0, multiViewRenderPass.globalDescriptorSetLayout);
@@ -665,7 +668,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         createGraphicsPipeline();
         createColorAttachment();
         createMultiViewDepthAttachment();
-        createDisplayFramebuffers();
+        createViewFramebuffers();
 
         createGlobalCommandBuffer();
         recreateFrameCommandBuffers();
@@ -926,7 +929,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to create render pass");
             }
 
-            viewRenderPass = pRenderPass.get(0);
+            viewRenderPass.renderPass = pRenderPass.get(0);
         }
     }
 
@@ -1048,7 +1051,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(globalDescriptorSetLayout, objectDescriptorSetLayout, singleTextureSetLayout));
+            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.globalDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, multiViewRenderPass.singleTextureSetLayout));
 
             // Set push constants
             VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
@@ -1078,7 +1081,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             pipelineInfo.pMultisampleState(multisampling);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(viewPipelineLayout);
-            pipelineInfo.renderPass(viewRenderPass);
+            pipelineInfo.renderPass(viewRenderPass.renderPass);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
             pipelineInfo.basePipelineIndex(-1);
@@ -1102,33 +1105,37 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void createDisplayFramebuffers() {
+    public void createMultiViewFrameBuffer() {
+
+    }
+
+    public void createViewFramebuffers() {
 
         try(MemoryStack stack = stackPush()) {
 
-            frameBuffers = new ArrayList<>();
-            var attachments = stack.longs(VK_NULL_HANDLE, depthAttachment.imageView);
+            viewRenderPass.frameBuffers = new ArrayList<>();
+            var attachments = stack.longs(VK_NULL_HANDLE);
 
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
             // Lets allocate the create info struct once and just update the pAttachments field each iteration
             VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
             framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            framebufferInfo.renderPass(viewRenderPass);
+            framebufferInfo.renderPass(viewRenderPass.renderPass);
             framebufferInfo.width(swapChainExtent.width());
             framebufferInfo.height(swapChainExtent.height());
             framebufferInfo.layers(1);
 
-            for(int i = 0; i < swapChainAttachments.size(); i++) {
+            for(int i = 0; i < viewRenderPass.swapChainAttachments.size(); i++) {
 
-                attachments.put(0, swapChainAttachments.get(i).swapChainImageView);
+                attachments.put(0, viewRenderPass.swapChainAttachments.get(i).swapChainImageView);
                 framebufferInfo.pAttachments(attachments);
 
                 if(vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to create framebuffer");
                 }
 
-                frameBuffers.add(pFramebuffer.get(0));
+                viewRenderPass.frameBuffers.add(pFramebuffer.get(0));
             }
         }
     }
@@ -1326,7 +1333,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         try(MemoryStack stack = stackPush()) {
 
             PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation, data);
+            vmaMapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation, data);
             {
                 var offset = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
                 int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
@@ -1345,7 +1352,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 buffer.position(offset);
                 GPUCameraData.memcpy(buffer, gpuCameraDataRight);
             }
-            vmaUnmapMemory(vmaAllocator, inFlightFrames.get(currentFrame).cameraBuffer.allocation);
+            vmaUnmapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation);
         }
     }
 
@@ -1365,7 +1372,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, Frame frame) {
+    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, AnaglyphMultiViewRenderPassFrame frame) {
         try (var stack = stackPush()) {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
@@ -1408,34 +1415,54 @@ public class AnaglyphRenderer extends RenderingEngine {
                 }
 
                 var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-                inFlightFrames.get(i).commandBuffer = commandBuffer;
+                viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
+
+                // Create command buffer for MultiView Render pass
+                allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(globalCommandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
+
+                pCommandBuffers = stack.mallocPointer(1);
+                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate command buffers");
+                }
+
+                commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+                multiViewRenderPass.frames.get(i).commandBuffer = commandBuffer;
             }
         }
     }
 
     public void initializeFrames() {
-        inFlightFrames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+        viewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+        multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var frame = new Frame();
-            frame.vmaAllocator = vmaAllocator;
-            inFlightFrames.add(frame);
+            var frame = new ViewRenderPassFrame();
+            viewRenderPass.frames.add(frame);
+
+            var newFrame = new AnaglyphMultiViewRenderPassFrame();
+            newFrame.vmaAllocator = vmaAllocator;
+            multiViewRenderPass.frames.add(newFrame);
         }
     }
 
     public void createFrameCommandPoolsAndBuffers() {
 
         try (var stack = stackPush()) {
-            for (int i = 0; i < inFlightFrames.size(); i++) {
 
-                // Create command pool
-                QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+            QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
-                VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
-                poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-                poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
-                poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+            VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
+            poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
+            poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
+            for (int i = 0; i < viewRenderPass.frames.size(); i++) {
+
+                // Create command pool and command buffer for ViewRenderPass
                 LongBuffer pCommandPool = stack.mallocLong(1);
 
                 if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
@@ -1451,21 +1478,45 @@ public class AnaglyphRenderer extends RenderingEngine {
                 allocInfo.commandBufferCount(1);
 
                 PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to allocate command buffers");
                 }
 
                 var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
 
-                inFlightFrames.get(i).commandPool = commandPool;
-                inFlightFrames.get(i).commandBuffer = commandBuffer;
+                viewRenderPass.frames.get(i).commandPool = commandPool;
+                viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
+
+                // Create command pool and command buffer for MultiView RenderPass
+                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create command pool");
+                }
+                commandPool = pCommandPool.get(0);
+
+                // Create command buffer
+                allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(commandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
+
+                pCommandBuffers = stack.mallocPointer(1);
+                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to allocate command buffers");
+                }
+
+                commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+
+                multiViewRenderPass.frames.get(i).commandPool = commandPool;
+                multiViewRenderPass.frames.get(i).commandBuffer = commandBuffer;
+
             }
         }
     }
 
     public void initSyncObjects() {
 
-        imagesInFlight = new HashMap<>(MAX_FRAMES_IN_FLIGHT);
+        viewRenderPass.imagesToFrameMap = new HashMap<>(MAX_FRAMES_IN_FLIGHT);
 
         try (MemoryStack stack = stackPush()) {
 
@@ -1489,9 +1540,9 @@ public class AnaglyphRenderer extends RenderingEngine {
                     throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
                 }
 
-                inFlightFrames.get(i).imageAvailableSemaphore = pImageAvailableSemaphore.get(0);
-                inFlightFrames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
-                inFlightFrames.get(i).fence = pFence.get(0);
+                viewRenderPass.frames.get(i).imageAvailableSemaphore = pImageAvailableSemaphore.get(0);
+                viewRenderPass.frames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
+                viewRenderPass.frames.get(i).fence = pFence.get(0);
             }
 
             // Create fence and commandPool/buffer for immediate upload context
