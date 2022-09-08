@@ -10,12 +10,10 @@ import Kurama.renderingEngine.RenderingEngine;
 import Kurama.scene.Scene;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
@@ -35,13 +33,16 @@ import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 
 public class AnaglyphRenderer extends RenderingEngine {
+
     public Set<String> DEVICE_EXTENSIONS =
             Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                             VK_KHR_MULTIVIEW_EXTENSION_NAME)
                     .collect(toSet());
+
     public int MAXOBJECTS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
@@ -69,7 +70,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     public static class MultiViewRenderPass {
 
-        public List<Long> frameBuffers;
+        public long frameBuffer;
         public List<AnaglyphMultiViewRenderPassFrame> frames;
         public Map<Integer, AnaglyphMultiViewRenderPassFrame> imagesToFrameMap;
         public int currentFrameIndex = 0;
@@ -79,7 +80,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         public long renderPass;
 
         // Global Descriptor set contains the camera data and other scene parameters
-        public long globalDescriptorSetLayout;
+        public long cameraAndSceneDescriptorSetLayout;
 
         // This contains the object transformation matrices
         public long objectDescriptorSetLayout;
@@ -89,9 +90,9 @@ public class AnaglyphRenderer extends RenderingEngine {
         public long singleTextureDescriptorSet;
         public long textureSampler;
     }
+
     public RenderPass viewRenderPass = new RenderPass();
     public MultiViewRenderPass multiViewRenderPass = new MultiViewRenderPass();
-    public long descriptorPool;
 
     public long viewPipelineLayout;
     public long viewGraphicsPipeline;
@@ -101,6 +102,10 @@ public class AnaglyphRenderer extends RenderingEngine {
     // The global Command pool and buffer are currently used for tasks such as image loading and transformations
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
+
+    // Used to create descriptor sets for all render passes
+    public long globalDescriptorPool;
+
     public boolean framebufferResize;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
@@ -157,12 +162,12 @@ public class AnaglyphRenderer extends RenderingEngine {
         createSwapChain();
         createSwapChainImageViews();
 
-        createColorAttachment();
+        createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
 
-        createRenderPass();
+        createRenderPasses();
 
-        createViewFramebuffers();
+        createFramebuffers();
 
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
@@ -170,10 +175,14 @@ public class AnaglyphRenderer extends RenderingEngine {
         deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
         createGraphicsPipeline();
+        createMultiViewGraphicsPipeline();
+
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
     public void recordViewCommandBuffer(List<Renderable> renderables, ViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
+//        TODO: Update multiview graphics pipeline creation
+//        TODO: Create new texture sampler and descriptor set for color shader attachment
     }
 
         public void recordMultiViewCommandBuffer(List<Renderable> renderables, AnaglyphMultiViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
@@ -242,22 +251,6 @@ public class AnaglyphRenderer extends RenderingEngine {
                         vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
                     }
                     previousMesh = renderable.mesh;
-
-                    MeshPushConstants pushConstant = new MeshPushConstants();
-                    pushConstant.renderMatrix = model.objectToWorldMatrix;
-
-                    if(i == 0) {
-                        pushConstant.data = new Vector(0f,0f,1f,1f);
-                    }
-                    else {
-                        pushConstant.data = new Vector(1f,1f,0f,1f);
-                    }
-
-                    vkCmdPushConstants(commandBuffer,
-                            viewPipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT,
-                            0,
-                            pushConstant.getAsFloatBuffer());
 
                     vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
                 }
@@ -531,7 +524,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
         allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(descriptorPool);
+        allocInfo.descriptorPool(globalDescriptorPool);
         allocInfo.pSetLayouts(layout);
 
         var pDescriptorSet = stack.mallocLong(1);
@@ -564,7 +557,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
         allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(descriptorPool);
+        allocInfo.descriptorPool(globalDescriptorPool);
         allocInfo.pSetLayouts(layout);
 
         var pDescriptorSet = stack.mallocLong(1);
@@ -595,12 +588,12 @@ public class AnaglyphRenderer extends RenderingEngine {
     public void createGlobalDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
 
         var layout = stack.mallocLong(1);
-        layout.put(0, multiViewRenderPass.globalDescriptorSetLayout);
+        layout.put(0, multiViewRenderPass.cameraAndSceneDescriptorSetLayout);
 
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
         allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(descriptorPool);
+        allocInfo.descriptorPool(globalDescriptorPool);
         allocInfo.pSetLayouts(layout);
 
         var pDescriptorSet = stack.mallocLong(1);
@@ -664,11 +657,12 @@ public class AnaglyphRenderer extends RenderingEngine {
     private void createSwapChainObjects() {
         createSwapChain();
         createSwapChainImageViews();
-        createRenderPass();
+        createRenderPasses();
         createGraphicsPipeline();
-        createColorAttachment();
+        createMultiViewGraphicsPipeline();
+        createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
-        createViewFramebuffers();
+        createFramebuffers();
 
         createGlobalCommandBuffer();
         recreateFrameCommandBuffers();
@@ -713,7 +707,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
-                    1,
+                    multiViewNumLayers,
                     numOfSamples,
                     stack);
 
@@ -729,7 +723,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             depthAttachment.allocatedImage.image,
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
-                            1,
+                            multiViewNumLayers,
                             stack
                     );
 
@@ -740,7 +734,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                         transitionImageLayout(
                                 depthAttachment.allocatedImage.image, depthFormat,
                                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                1,1, cmd);
+                                1,multiViewNumLayers, cmd);
                     },
                     singleTimeCommandContext, graphicsQueue);
 
@@ -840,20 +834,16 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void createMultiViewRenderPass() {
-
-    }
-
-    public void createMultiViewPipeline() {
-
-    }
-
     public void createMultiViewDescriptors() {
 
     }
 
-    public void createRenderPass() {
+    public void createRenderPasses() {
+        createViewRenderPass();
+        createMultiViewRenderPass();
+    }
 
+    public void createMultiViewRenderPass() {
         try(MemoryStack stack = stackPush()) {
 
             VkAttachmentDescription.Buffer attachments;
@@ -862,8 +852,8 @@ public class AnaglyphRenderer extends RenderingEngine {
             attachments = VkAttachmentDescription.calloc(2, stack);
             attachmentRefs = VkAttachmentReference.calloc(2, stack);
 
-            // MSA image
-            var colorAttachment = attachments .get(0);
+            // Color attachment
+            var colorAttachment = attachments.get(0);
             colorAttachment.format(swapChainImageFormat);
             colorAttachment.samples(numOfSamples);
             colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
@@ -871,7 +861,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
             colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
             var colorAttachmentRef = attachmentRefs.get(0);
             colorAttachmentRef.attachment(0);
@@ -898,30 +888,90 @@ public class AnaglyphRenderer extends RenderingEngine {
             subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
             subpass.pDepthStencilAttachment(depthAttachmentRef);
 
-            VkSubpassDependency.Buffer dependency = VkSubpassDependency.calloc(1, stack);
-            dependency.srcSubpass(VK_SUBPASS_EXTERNAL);
-            dependency.dstSubpass(0);
-            dependency.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-            dependency.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            dependency.dstStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-            dependency.dstAccessMask(VK_ACCESS_MEMORY_READ_BIT);
-            dependency.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
+            VkSubpassDependency.Buffer dependencies = VkSubpassDependency.calloc(2, stack);
+
+            var dependency1 = dependencies.get(0);
+            dependency1.srcSubpass(VK_SUBPASS_EXTERNAL);
+            dependency1.dstSubpass(0);
+
+            dependency1.srcStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+            dependency1.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+            dependency1.srcAccessMask(VK_ACCESS_MEMORY_READ_BIT);
+            dependency1.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency1.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
+
+            var dependency2 = dependencies.get(1);
+            dependency2.srcSubpass(0);
+            dependency2.dstSubpass(VK_SUBPASS_EXTERNAL);
+
+            dependency2.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            dependency2.dstStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+
+            dependency2.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency2.dstAccessMask(VK_ACCESS_MEMORY_READ_BIT);
+            dependency2.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
 
             VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
             renderPassInfo.pAttachments(attachments);
             renderPassInfo.pSubpasses(subpass);
-            renderPassInfo.pDependencies(dependency);
+            renderPassInfo.pDependencies(dependencies);
 
-//            var viewMask = stack.ints(Integer.parseInt("00000011", 2));
-//            var correlationMask = stack.ints(Integer.parseInt("00000011", 2));
-//
-//            var multiviewCreateInfo = VkRenderPassMultiviewCreateInfo.calloc();
-//            multiviewCreateInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO);
-//            multiviewCreateInfo.pViewMasks(viewMask);
-//            multiviewCreateInfo.pCorrelationMasks(correlationMask);
-//
-//            renderPassInfo.pNext(multiviewCreateInfo);
+            var viewMask = stack.ints(Integer.parseInt("00000011", 2));
+            var correlationMask = stack.ints(Integer.parseInt("00000011", 2));
+
+            var multiviewCreateInfo = VkRenderPassMultiviewCreateInfo.calloc();
+            multiviewCreateInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO);
+            multiviewCreateInfo.pViewMasks(viewMask);
+            multiviewCreateInfo.pCorrelationMasks(correlationMask);
+
+            renderPassInfo.pNext(multiviewCreateInfo);
+
+            LongBuffer pRenderPass = stack.mallocLong(1);
+
+            if(vkCreateRenderPass(device, renderPassInfo, null, pRenderPass) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create render pass");
+            }
+
+            multiViewRenderPass.renderPass = pRenderPass.get(0);
+        }
+    }
+
+    public void createViewRenderPass() {
+
+        try(MemoryStack stack = stackPush()) {
+
+            VkAttachmentDescription.Buffer attachments;
+            VkAttachmentReference.Buffer attachmentRefs;
+
+            attachments = VkAttachmentDescription.calloc(1, stack);
+            attachmentRefs = VkAttachmentReference.calloc(1, stack);
+
+            // Color attachment
+            var colorAttachment = attachments.get(0);
+            colorAttachment.format(swapChainImageFormat);
+            colorAttachment.samples(numOfSamples);
+            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+            var colorAttachmentRef = attachmentRefs.get(0);
+            colorAttachmentRef.attachment(0);
+            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
+            subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            subpass.colorAttachmentCount(1);
+            subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
+
+            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
+            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
+            renderPassInfo.pAttachments(attachments);
+            renderPassInfo.pSubpasses(subpass);
 
             LongBuffer pRenderPass = stack.mallocLong(1);
 
@@ -933,14 +983,159 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
+    public void createMultiViewGraphicsPipeline() {
+
+        try (var stack = stackPush()) {
+            var vertShaderSPIRV = compileShaderFile("shaders/anaglyph.vert", VERTEX_SHADER);
+            var fragShaderSPIRV = compileShaderFile("shaders/anaglyph.frag", FRAGMENT_SHADER);
+
+            long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode(), device);
+            long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode(), device);
+
+            ByteBuffer entryPoint = stack.UTF8("main");
+
+            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
+
+            VkPipelineShaderStageCreateInfo vertShaderStageInfo = shaderStages.get(0);
+
+            vertShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+            vertShaderStageInfo.stage(VK_SHADER_STAGE_VERTEX_BIT);
+            vertShaderStageInfo.module(vertShaderModule);
+            vertShaderStageInfo.pName(entryPoint);
+
+            VkPipelineShaderStageCreateInfo fragShaderStageInfo = shaderStages.get(1);
+
+            fragShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+            fragShaderStageInfo.stage(VK_SHADER_STAGE_FRAGMENT_BIT);
+            fragShaderStageInfo.module(fragShaderModule);
+            fragShaderStageInfo.pName(entryPoint);
+
+            // ===> VERTEX STAGE <===
+
+            VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
+            vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+            vertexInputInfo.pVertexBindingDescriptions(Vertex.getBindingDescription());
+            vertexInputInfo.pVertexAttributeDescriptions(Vertex.getAttributeDescriptions());
+
+            // ===> ASSEMBLY STAGE <===
+
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
+            inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+            inputAssembly.topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+            inputAssembly.primitiveRestartEnable(false);
+
+            // ===> VIEWPORT & SCISSOR
+
+            VkViewport.Buffer viewport = VkViewport.calloc(1, stack);
+            viewport.x(0.0f);
+            viewport.y(0.0f);
+            viewport.width(swapChainExtent.width());
+            viewport.height(swapChainExtent.height());
+            viewport.minDepth(0.0f);
+            viewport.maxDepth(1.0f);
+
+            VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
+            scissor.offset(VkOffset2D.calloc(stack).set(0, 0));
+            scissor.extent(swapChainExtent);
+
+            VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
+            viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+            viewportState.pViewports(viewport);
+            viewportState.pScissors(scissor);
+
+            // ===> RASTERIZATION STAGE <===
+
+            VkPipelineRasterizationStateCreateInfo rasterizer = VkPipelineRasterizationStateCreateInfo.calloc(stack);
+            rasterizer.sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
+            rasterizer.depthClampEnable(false);
+            rasterizer.rasterizerDiscardEnable(false);
+            rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
+            rasterizer.lineWidth(1.0f);
+            rasterizer.cullMode(VK_CULL_MODE_BACK_BIT);
+            rasterizer.frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+            rasterizer.depthBiasEnable(false);
+
+            VkPipelineDepthStencilStateCreateInfo depthStencil = VkPipelineDepthStencilStateCreateInfo.calloc(stack);
+            depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+            depthStencil.depthTestEnable(true);
+            depthStencil.depthWriteEnable(true);
+            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL);
+            depthStencil.depthBoundsTestEnable(false);
+            depthStencil.minDepthBounds(0.0f); // Optional
+            depthStencil.maxDepthBounds(1.0f); // Optional
+            depthStencil.stencilTestEnable(false);
+            depthStencil.front();
+            depthStencil.back();
+
+            // ===> COLOR BLENDING <===
+
+            VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = VkPipelineColorBlendAttachmentState.calloc(1, stack);
+            colorBlendAttachment.colorWriteMask(VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
+            colorBlendAttachment.blendEnable(false);
+
+            VkPipelineColorBlendStateCreateInfo colorBlending = VkPipelineColorBlendStateCreateInfo.calloc(stack);
+            colorBlending.sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
+            colorBlending.logicOpEnable(false);
+            colorBlending.logicOp(VK_LOGIC_OP_COPY);
+            colorBlending.pAttachments(colorBlendAttachment);
+            colorBlending.blendConstants(stack.floats(0.0f, 0.0f, 0.0f, 0.0f));
+
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
+            pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.cameraAndSceneDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, multiViewRenderPass.singleTextureSetLayout));
+
+            // ===> PIPELINE LAYOUT CREATION <===
+
+            LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
+
+            if(vkCreatePipelineLayout(device, pipelineLayoutInfo, null, pPipelineLayout) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create pipeline layout");
+            }
+
+            multiViewPipelineLayout = pPipelineLayout.get(0);
+
+            VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
+            pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+            pipelineInfo.pStages(shaderStages);
+            pipelineInfo.pVertexInputState(vertexInputInfo);
+            pipelineInfo.pInputAssemblyState(inputAssembly);
+            pipelineInfo.pViewportState(viewportState);
+            pipelineInfo.pRasterizationState(rasterizer);
+            pipelineInfo.pColorBlendState(colorBlending);
+            pipelineInfo.layout(multiViewPipelineLayout);
+            pipelineInfo.renderPass(multiViewRenderPass.renderPass);
+            pipelineInfo.subpass(0);
+            pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
+            pipelineInfo.basePipelineIndex(-1);
+            pipelineInfo.pDepthStencilState(depthStencil);
+
+            LongBuffer pGraphicsPipeline = stack.mallocLong(1);
+
+            if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create graphics pipeline");
+            }
+
+            multiViewGraphicsPipeline = pGraphicsPipeline.get(0);
+
+            // ===> RELEASE RESOURCES <===
+
+            vkDestroyShaderModule(device, vertShaderModule, null);
+            vkDestroyShaderModule(device, fragShaderModule, null);
+
+            vertShaderSPIRV.free();
+            fragShaderSPIRV.free();
+        }
+
+    }
+
     public void createGraphicsPipeline() {
 
-        try(MemoryStack stack = stackPush()) {
+        try(var stack = stackPush()) {
 
             // Let's compile the GLSL shaders into SPIR-V at runtime using the shaderc library
             // Check ShaderSPIRVUtils class to see how it can be done
-            ShaderSPIRVUtils.SPIRV vertShaderSPIRV = compileShaderFile("shaders/shader.vert", VERTEX_SHADER);
-            ShaderSPIRVUtils.SPIRV fragShaderSPIRV = compileShaderFile("shaders/shader.frag", FRAGMENT_SHADER);
+            var vertShaderSPIRV = compileShaderFile("shaders/view.vert", VERTEX_SHADER);
+            var fragShaderSPIRV = compileShaderFile("shaders/view.frag", FRAGMENT_SHADER);
 
             long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode(), device);
             long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode(), device);
@@ -1011,8 +1206,8 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkPipelineDepthStencilStateCreateInfo depthStencil = VkPipelineDepthStencilStateCreateInfo.calloc(stack);
             depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-            depthStencil.depthTestEnable(true);
-            depthStencil.depthWriteEnable(true);
+            depthStencil.depthTestEnable(false);
+            depthStencil.depthWriteEnable(false);
             depthStencil.depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL);
             depthStencil.depthBoundsTestEnable(false);
             depthStencil.minDepthBounds(0.0f); // Optional
@@ -1020,21 +1215,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             depthStencil.stencilTestEnable(false);
             depthStencil.front();
             depthStencil.back();
-
-            // ===> MULTISAMPLING <===
-
-            VkPipelineMultisampleStateCreateInfo multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
-            multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-            multisampling.sampleShadingEnable(false);
-
-            if(msaaEnabled) {
-                multisampling.sampleShadingEnable(true);
-                multisampling.rasterizationSamples(numOfSamples);
-                multisampling.minSampleShading(0.2f);
-            }
-            else {
-                multisampling.rasterizationSamples(1);
-            }
 
             // ===> COLOR BLENDING <===
 
@@ -1051,15 +1231,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.globalDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, multiViewRenderPass.singleTextureSetLayout));
-
-            // Set push constants
-            VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
-            pushConstant.offset(0);
-            pushConstant.size(MeshPushConstants.SIZEOF);
-            pushConstant.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
-
-            pipelineLayoutInfo.pPushConstantRanges(pushConstant);
+            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.singleTextureSetLayout));
 
             // ===> PIPELINE LAYOUT CREATION <===
 
@@ -1078,7 +1250,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             pipelineInfo.pInputAssemblyState(inputAssembly);
             pipelineInfo.pViewportState(viewportState);
             pipelineInfo.pRasterizationState(rasterizer);
-            pipelineInfo.pMultisampleState(multisampling);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(viewPipelineLayout);
             pipelineInfo.renderPass(viewRenderPass.renderPass);
@@ -1105,20 +1276,17 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void createMultiViewFrameBuffer() {
-
-    }
-
-    public void createViewFramebuffers() {
+    public void createFramebuffers() {
 
         try(MemoryStack stack = stackPush()) {
 
             viewRenderPass.frameBuffers = new ArrayList<>();
+
             var attachments = stack.longs(VK_NULL_HANDLE);
 
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
-            // Lets allocate the create info struct once and just update the pAttachments field each iteration
+            // Create one framebuffer per swapchain image available
             VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
             framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
             framebufferInfo.renderPass(viewRenderPass.renderPass);
@@ -1137,6 +1305,17 @@ public class AnaglyphRenderer extends RenderingEngine {
 
                 viewRenderPass.frameBuffers.add(pFramebuffer.get(0));
             }
+
+            // Create single frameBuffer for multiview renderpass
+            framebufferInfo.renderPass(multiViewRenderPass.renderPass);
+            attachments = stack.longs(multiViewRenderPass.colorAttachment.imageView, multiViewRenderPass.depthAttachment.imageView);
+            framebufferInfo.pAttachments(attachments);
+
+            if(vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create framebuffer");
+            }
+
+            multiViewRenderPass.frameBuffer = pFramebuffer.get(0);
         }
     }
 
@@ -1236,16 +1415,16 @@ public class AnaglyphRenderer extends RenderingEngine {
             var textureBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, stack);
 
             multiViewRenderPass.objectDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{objectBinding}, stack);
-            multiViewRenderPass.globalDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{cameraBufferBinding, sceneBinding}, stack);
+            multiViewRenderPass.cameraAndSceneDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{cameraBufferBinding, sceneBinding}, stack);
             multiViewRenderPass.singleTextureSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{textureBinding}, stack);
 
             deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.objectDescriptorSetLayout, null));
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.globalDescriptorSetLayout, null));
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.cameraAndSceneDescriptorSetLayout, null));
             deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.singleTextureSetLayout, null));
         }
     }
 
-    public void createColorAttachment() {
+    public void createMultiViewColorAttachment() {
         try(var stack = stackPush()) {
 
             var colorAttachment = new FrameBufferAttachment();
@@ -1258,7 +1437,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
-                    1,
+                    multiViewNumLayers,
                     numOfSamples,
                     stack);
 
@@ -1274,7 +1453,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             colorAttachment.allocatedImage.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
-                            1,
+                            multiViewNumLayers,
                             stack
                     );
 
@@ -1284,7 +1463,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 transitionImageLayout(
                         colorAttachment.allocatedImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        1, 1, cmd);
+                        1, multiViewNumLayers, cmd);
             }, singleTimeCommandContext, graphicsQueue);
 
             multiViewRenderPass.colorAttachment = colorAttachment;
@@ -1324,8 +1503,8 @@ public class AnaglyphRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to create descriptor pool");
             }
 
-            descriptorPool = pDescriptorPool.get(0);
-            deletionQueue.add(() -> vkDestroyDescriptorPool(device, descriptorPool, null));
+            globalDescriptorPool = pDescriptorPool.get(0);
+            deletionQueue.add(() -> vkDestroyDescriptorPool(device, globalDescriptorPool, null));
         }
     }
 
@@ -1570,38 +1749,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             deletionQueue.get(i).run();
         }
     }
-
-    public class MeshPushConstants {
-        public static int SIZEOF = (16 + 4) * Float.BYTES;
-        public Vector data;
-        public Matrix renderMatrix;
-
-        public MeshPushConstants() {
-            renderMatrix = Matrix.getIdentityMatrix(4);
-            data = new Vector(4, 0);
-        }
-        public FloatBuffer getAsFloatBuffer() {
-            FloatBuffer res = MemoryUtil.memAllocFloat((Float.BYTES * 4 * 4) + (Float.BYTES * 4));
-
-            for(Vector c:renderMatrix.convertToColumnVectorArray()) {
-                for(float val: c.getData()) {
-                    res.put(val);
-                }
-            }
-
-            for(float v: data.getData()) {
-                res.put(v);
-            }
-            res.flip();
-            return res;
-        }
-
-        public static void memcpy(FloatBuffer buffer, MeshPushConstants data) {
-            data.renderMatrix.setValuesToBuffer(buffer);
-            data.data.setValuesToBuffer(buffer);
-        }
-    }
-
     public static class GPUCameraData {
 
         public static final int SIZEOF = 3 * 16 * Float.BYTES;
