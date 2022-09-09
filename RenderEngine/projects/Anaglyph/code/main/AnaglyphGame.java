@@ -143,13 +143,14 @@ public class AnaglyphGame extends Game {
         });
 
         var texture = renderer.loadedTextures.get(renderables.get(1).getMaterial().texture.fileName);
-        renderer.multiViewRenderPass.textureSampler = TextureVK.createTextureSampler(texture.mipLevels);
-        texture.textureSampler = renderer.multiViewRenderPass.textureSampler;
+        texture.textureSampler = renderer.getTextureSampler(texture.mipLevels);
 
         try (var stack = stackPush()) {
-            renderer.createTextureDescriptorSet(
-                    renderer.multiViewRenderPass.textureSampler,
+            renderer.multiViewRenderPass.singleTextureDescriptorSet = renderer.createTextureDescriptorSet(
+                    texture.textureSampler,
                     texture.textureImageView,
+                    renderer.globalDescriptorPool,
+                    0,
                     stack);
         }
     }

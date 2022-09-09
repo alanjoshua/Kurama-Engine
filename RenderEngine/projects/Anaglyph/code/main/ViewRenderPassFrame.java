@@ -17,6 +17,8 @@ public class ViewRenderPassFrame {
     public long commandPool;
     public VkCommandBuffer commandBuffer;
 
+    public long imageInputDescriptorSet;
+
     public void cleanUp() {
         vkDestroySemaphore(device, renderFinishedSemaphore(), null);
         vkDestroySemaphore(device, imageAvailableSemaphore(), null);
