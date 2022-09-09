@@ -6,7 +6,6 @@ import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.*;
-import Kurama.camera.Camera;
 import Kurama.camera.StereoCamera;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
@@ -146,7 +145,7 @@ public class AnaglyphGame extends Game {
         texture.textureSampler = renderer.getTextureSampler(texture.mipLevels);
 
         try (var stack = stackPush()) {
-            renderer.multiViewRenderPass.singleTextureDescriptorSet = renderer.createTextureDescriptorSet(
+            renderer.multiViewRenderPass.temp_singleTextureDescriptorSet = renderer.createTextureDescriptorSet(
                     texture.textureSampler,
                     texture.textureImageView,
                     renderer.globalDescriptorPool,

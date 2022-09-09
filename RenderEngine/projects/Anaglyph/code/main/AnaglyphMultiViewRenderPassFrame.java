@@ -26,7 +26,7 @@ public class AnaglyphMultiViewRenderPassFrame {
     public AllocatedBuffer objectBuffer;
 
     // Global Descriptor set contains the camera data and other scene parameters
-    public long globalDescriptorSet;
+    public long cameraAndSceneDescriptorSet;
 
     // This contains the object transformation matrices
     public long objectDescriptorSet;
