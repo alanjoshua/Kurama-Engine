@@ -15,7 +15,6 @@ import Kurama.inputs.InputLWJGL;
 import java.util.ArrayList;
 import java.util.List;
 
-import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logError;
@@ -62,6 +61,12 @@ public class AnaglyphGame extends Game {
         playerCamera = new StereoCamera(this,null, null, new Vector(new float[] {0,0,0}),60, 0.001f, 1000.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(), false, "playerCam");
 
+        playerCamera.loadDefaultSettings();
+        playerCamera.fovX = 45;
+        playerCamera.focalLength = 2;
+//        playerCamera.nearClippingPlane = 1;
+        playerCamera.eyeSeparation = playerCamera.focalLength/30f;
+
         playerCamera.shouldUpdateValues = true;
 
         display.resizeEvents.add(() -> {
@@ -71,7 +76,6 @@ public class AnaglyphGame extends Game {
 
         renderer.gpuCameraDataLeft = new AnaglyphRenderer.GPUCameraData();
         renderer.gpuCameraDataRight = new AnaglyphRenderer.GPUCameraData();
-
 
         renderer.gpuSceneData = new AnaglyphRenderer.GPUSceneData();
         renderer.gpuSceneData.sunLightColor = new Vector(new float[]{1,1,1,1});
@@ -93,55 +97,49 @@ public class AnaglyphGame extends Game {
         var location = "projects/Anaglyph/models/meshes/lost_empire.obj";
         var textureDir = "projects/Anaglyph/models/textures/";
 
-        List<Mesh> meshes;
-
-        try {
-            meshes = AssimpStaticLoader.load(location, textureDir);
-            log("successfuly loaded meshes");
-        }
-        catch (Exception e) {
-            logError("Failed to load mesh");
-            throw new IllegalArgumentException("Could not load mesh");
-        }
-
-        var lostEmpire = new Model(this, meshes, "Lost Empire");
-        lostEmpire.setScale(1f);
-        lostEmpire.setPos(new Vector(5, -10, 0));
-
-//        List<Mesh> meshes2;
+//        List<Mesh> meshes;
+//
 //        try {
-//            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/house.obj", textureDir);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
+//            meshes = AssimpStaticLoader.load(location, textureDir);
+//            log("successfuly loaded meshes");
+//        }
+//        catch (Exception e) {
+//            logError("Failed to load mesh");
+//            throw new IllegalArgumentException("Could not load mesh");
 //        }
 //
-//        //Add texture loc
-//        meshes2.get(0).materials.get(0).texture = Texture.createTexture(textureDir + "house_text.jpg");
-//
-//        //add color just for the sake of consistency with vulkan tutorial
-//        var colors2 = new ArrayList<Vector>();
-//        meshes2.get(0).getVertices().forEach(v -> colors2.add(new Vector(new float[]{1f,1f,1f})));
-//        meshes2.get(0).setAttribute(colors2, Mesh.COLOR);
-//        var house = new Model(this, meshes2, "house");
-////        house.pos = new Vector(0,0,-2);
-//        house.setScale(0.1f);
-////        house.setOrientation(Quaternion.getQuaternionFromEuler(-90, 0,0));
+//        var lostEmpire = new Model(this, meshes, "Lost Empire");
+//        lostEmpire.setScale(1f);
+//        lostEmpire.setPos(new Vector(5, -10, 0));
 
-        models.add(lostEmpire);
-//        models.add(house);
+        List<Mesh> meshes2;
+        try {
+            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-        renderables.addAll(getRenderablesFromModel(lostEmpire));
-//        renderables.add(new Renderable(house.meshes.get(0), house));
+        //Add texture loc
+        var house = new Model(this, meshes2, "house");
+        house.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+        house.setScale(10);
+
+//        models.add(lostEmpire);
+        models.add(house);
+
+//        renderables.addAll(getRenderablesFromModel(lostEmpire));
+        renderables.add(new Renderable(house.meshes.get(0), house));
 
         renderables.forEach(r -> {
             renderer.uploadRenderable(r);
             deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
 
-            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
+//            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
+            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "viking_room.png");
             renderer.loadTexture((TextureVK) r.getMaterial().texture);
         });
 
-        var texture = renderer.loadedTextures.get(renderables.get(1).getMaterial().texture.fileName);
+        var texture = renderer.loadedTextures.get(renderables.get(0).getMaterial().texture.fileName);
         texture.textureSampler = renderer.getTextureSampler(texture.mipLevels);
 
         try (var stack = stackPush()) {
@@ -176,13 +174,13 @@ public class AnaglyphGame extends Game {
 
             renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;
             renderer.gpuCameraDataLeft.proj.getData()[1][1] *= -1;
-            renderer.gpuCameraDataLeft.view = playerCamera.leftObjectToWorld;
-            renderer.gpuCameraDataLeft.projview = renderer.gpuCameraDataLeft.proj.matMul(renderer.gpuCameraDataLeft.view);
+            renderer.gpuCameraDataLeft.worldToCam = playerCamera.leftWorldToCam;
+            renderer.gpuCameraDataLeft.projWorldToCam = renderer.gpuCameraDataLeft.proj.matMul(renderer.gpuCameraDataLeft.worldToCam);
 
             renderer.gpuCameraDataRight.proj = playerCamera.rightProjection;
             renderer.gpuCameraDataRight.proj.getData()[1][1] *= -1;
-            renderer.gpuCameraDataRight.view = playerCamera.rightObjectToWorld;
-            renderer.gpuCameraDataRight.projview = renderer.gpuCameraDataRight.proj.matMul(renderer.gpuCameraDataRight.view);
+            renderer.gpuCameraDataRight.worldToCam = playerCamera.rightWorldToCam;
+            renderer.gpuCameraDataRight.projWorldToCam = renderer.gpuCameraDataRight.proj.matMul(renderer.gpuCameraDataRight.worldToCam);
 
             playerCamera.tick(null, input, timeDelta, false);
 
@@ -200,16 +198,6 @@ public class AnaglyphGame extends Game {
     public void cameraUpdates(float timeDelta) {
         Vector velocity = new Vector(3,0);
 
-        if(input.keyDown(input.W)) {
-            float cameraSpeed = this.speed * this.speedMultiplier;
-            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
-
-            Vector x = rotationMatrix[0];
-            Vector y = new Vector(new float[] {0,1,0});
-            Vector z = x.cross(y);
-            velocity = velocity.add((z.scalarMul(cameraSpeed)));
-        }
-
         if(input.keyDownOnce(input.ESCAPE)) {
             if(isGameRunning) {
                 isGameRunning = false;
@@ -221,6 +209,16 @@ public class AnaglyphGame extends Game {
             }
         }
 
+        if(input.keyDown(input.W)) {
+            float cameraSpeed = this.speed * this.speedMultiplier;
+            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+
+            Vector x = rotationMatrix[0];
+            Vector y = new Vector(new float[] {0,1,0});
+            Vector z = x.cross(y);
+            velocity = velocity.add((z.scalarMul(-cameraSpeed)));
+        }
+
         if(input.keyDown(input.S)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
             Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -228,7 +226,7 @@ public class AnaglyphGame extends Game {
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
             Vector z = x.cross(y);
-            velocity = velocity.add(z.scalarMul(-cameraSpeed));
+            velocity = velocity.add(z.scalarMul(cameraSpeed));
         }
 
         if(input.keyDown(input.A)) {
@@ -236,7 +234,7 @@ public class AnaglyphGame extends Game {
             Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
         }
 
         if(input.keyDown(input.D)) {
@@ -244,7 +242,7 @@ public class AnaglyphGame extends Game {
             Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
         }
 
         if(input.keyDown(input.F)) {
@@ -255,14 +253,14 @@ public class AnaglyphGame extends Game {
             float cameraSpeed = this.speed * this.speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(-cameraSpeed));
+            velocity = velocity.add(v.scalarMul(cameraSpeed));
         }
 
         if(input.keyDown(input.LEFT_SHIFT)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
 
             Vector v = new Vector(new float[] {0,1,0});
-            velocity = velocity.add(v.scalarMul(cameraSpeed));
+            velocity = velocity.add(v.scalarMul(-cameraSpeed));
         }
 
         if(input.keyDownOnce(input.LEFT_CONTROL)) {
@@ -287,8 +285,8 @@ public class AnaglyphGame extends Game {
     private void calculate3DCamMovement() {
         if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
 
-            float yawIncrease   = this.mouseXSensitivity * this.timeDelta * this.input.getDelta().get(0);
-            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * this.input.getDelta().get(1);
+            float yawIncrease   = this.mouseXSensitivity * -this.timeDelta * this.input.getDelta().get(0);
+            float pitchIncrease = this.mouseYSensitivity * -this.timeDelta * this.input.getDelta().get(1);
 
             Vector currentAngle = this.playerCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;

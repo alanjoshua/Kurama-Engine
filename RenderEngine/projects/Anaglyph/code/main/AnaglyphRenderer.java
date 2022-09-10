@@ -1893,19 +1893,19 @@ public class AnaglyphRenderer extends RenderingEngine {
     public static class GPUCameraData {
 
         public static final int SIZEOF = 3 * 16 * Float.BYTES;
-        public Matrix projview;
-        public Matrix view;
+        public Matrix projWorldToCam;
+        public Matrix worldToCam;
         public Matrix proj;
 
         public GPUCameraData() {
-            projview = Matrix.getIdentityMatrix(4);
-            view = Matrix.getIdentityMatrix(4);
+            projWorldToCam = Matrix.getIdentityMatrix(4);
+            worldToCam = Matrix.getIdentityMatrix(4);
             proj = Matrix.getIdentityMatrix(4);
         }
 
         public static void memcpy(ByteBuffer buffer, GPUCameraData data) {
-            data.projview.setValuesToBuffer(buffer);
-            data.view.setValuesToBuffer(buffer);
+            data.projWorldToCam.setValuesToBuffer(buffer);
+            data.worldToCam.setValuesToBuffer(buffer);
             data.proj.setValuesToBuffer(buffer);
         }
 

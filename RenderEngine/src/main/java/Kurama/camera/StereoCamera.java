@@ -17,10 +17,19 @@ public class StereoCamera extends Camera {
     public Matrix rightProjection;
     public Matrix leftObjectToWorld;
     public Matrix rightObjectToWorld;
-    public float focalLength = 1;
+    public Matrix leftWorldToCam;
+    public Matrix rightWorldToCam;
+    public float focalLength = 0.5f;
 
     public StereoCamera(Game game, Component parent, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane, int imageWidth, int imageHeight, boolean shouldUseRenderBuffer, String identifier) {
         super(game, parent, quaternion, pos, fovX, nearClippingPlane, farClippingPlane, imageWidth, imageHeight, shouldUseRenderBuffer, identifier);
+    }
+
+    public void loadDefaultSettings() {
+        focalLength = 1;
+        // Best practises for optimal 3d experience
+        eyeSeparation = focalLength / 30.0f;
+        nearClippingPlane = focalLength / 5.0f;
     }
 
     @Override
@@ -34,10 +43,6 @@ public class StereoCamera extends Camera {
 
         //Reference from https://github.com/SaschaWillems/Vulkan/blob/master/examples/multiview/multiview.cpp
         // and http://paulbourke.net/stereographics/stereorender/
-
-        // Best practises for optimal 3d experience
-        eyeSeparation = focalLength / 30.0f;
-        nearClippingPlane = focalLength / 5.0f;
 
         var projMatrices =
                 createStereoProjectionMatrices(imageWidth, imageHeight,
@@ -60,6 +65,9 @@ public class StereoCamera extends Camera {
         rightObjectToWorld = rotScalMatrix.
                 addColumn(getPos().add(cameraRight.scalarMul(eyeSeparation/2f))).
                 addRow(new Vector(new float[]{0, 0, 0, 1}));
+
+        leftWorldToCam = leftObjectToWorld.getInverse();
+        rightWorldToCam = rightObjectToWorld.getInverse();
     }
 
     public static Matrix[] createStereoProjectionMatrices(int width, int height, float fov, float eyeSeparation, float focalLength, float zNear, float zFar) {
