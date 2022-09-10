@@ -247,6 +247,10 @@ public class AnaglyphGame extends Game {
             velocity = velocity.add(v.scalarMul(-cameraSpeed));
         }
 
+        if(input.keyDown(input.F)) {
+            display.toggleWindowModes();
+        }
+
         if(input.keyDown(input.SPACE)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
 

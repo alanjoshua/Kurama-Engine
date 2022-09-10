@@ -134,7 +134,7 @@ public class AnaglyphRenderer extends RenderingEngine {
     }
 
     public void initVulkan() {
-            VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
+        VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
         VulkanUtilities.setupDebugMessenger();
 
         surface = createSurface(instance, display.window);
@@ -156,13 +156,6 @@ public class AnaglyphRenderer extends RenderingEngine {
         createGlobalCommandPool();
         createGlobalCommandBuffer();
 
-        // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
-        createDescriptorPool();
-
-        createMultiViewDescriptorSetLayouts();
-        // Both the render passes use the same layout for the textureSampler (for now)
-        viewRenderPass.imageInputSetLayout = multiViewRenderPass.singleTextureSetLayout;
-
         createSwapChain();
         createSwapChainImageViews();
 
@@ -176,6 +169,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
         initDescriptors();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
+        deletionQueue.add(() -> multiViewRenderPass.frames.forEach(AnaglyphMultiViewRenderPassFrame::cleanUp));
         deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
         createViewGraphicsPipeline();
@@ -581,6 +575,13 @@ public class AnaglyphRenderer extends RenderingEngine {
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
 
+            // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
+            createDescriptorPool();
+
+            createMultiViewDescriptorSetLayouts();
+            // Both the render passes use the same layout for the textureSampler (for now)
+            viewRenderPass.imageInputSetLayout = multiViewRenderPass.singleTextureSetLayout;
+
             for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
 
                 // uniform buffer for GPU camera data
@@ -607,10 +608,15 @@ public class AnaglyphRenderer extends RenderingEngine {
 
                 createObjectDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
 
-                // Descriptor set for image input for the view Render pass is created when the color image view is created
-
-                log("image input descriptor set: "+ Long.toHexString(viewRenderPass.frames.get(i).imageInputDescriptorSet));
-
+                // Descriptor set for image input for the view Render pass is created when the color image view is created, and updated whenever window is resized
+                viewRenderPass.frames.get(i).imageInputDescriptorSet =
+                        createImageSamplerDescriptorSet(
+                                viewRenderPass.imageInputSetLayout,
+                                getTextureSampler(1),
+                                multiViewRenderPass.colorAttachment.imageView,
+                                globalDescriptorPool,
+                                0,
+                                stack);
             }
 
         }
@@ -633,6 +639,13 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
         var descriptorSet = pDescriptorSet.get(0);
 
+        updateImageDescriptor(descriptorSet, imageView, textureSampler, binding, stack);
+
+        return descriptorSet;
+    }
+
+    public void updateImageDescriptor(long descriptorSet, long imageView, long textureSampler, int binding, MemoryStack stack) {
+
         //information about the buffer we want to point at in the descriptor
         var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
         imageBufferInfo.sampler(textureSampler);
@@ -648,8 +661,6 @@ public class AnaglyphRenderer extends RenderingEngine {
         descriptorWrites.put(0, textureWrite);
 
         vkUpdateDescriptorSets(device, descriptorWrites, null);
-
-        return descriptorSet;
     }
 
     public void createObjectDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
@@ -765,9 +776,22 @@ public class AnaglyphRenderer extends RenderingEngine {
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
         createFramebuffers();
+        updateViewRenderPassImageInputDescriptorSet();
 
         createGlobalCommandBuffer();
         recreateFrameCommandBuffers();
+    }
+
+    public void updateViewRenderPassImageInputDescriptorSet() {
+        try (var stack = stackPush()) {
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                updateImageDescriptor(
+                        viewRenderPass.frames.get(i).imageInputDescriptorSet,
+                        multiViewRenderPass.colorAttachment.imageView,
+                        getTextureSampler(1),
+                        0, stack);
+            }
+        }
     }
 
     private void cleanupSwapChain() {
@@ -1569,17 +1593,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             }, singleTimeCommandContext, graphicsQueue);
 
             multiViewRenderPass.colorAttachment = colorAttachment;
-
-            for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                viewRenderPass.frames.get(i).imageInputDescriptorSet =
-                        createImageSamplerDescriptorSet(
-                                viewRenderPass.imageInputSetLayout,
-                                getTextureSampler(1),
-                                multiViewRenderPass.colorAttachment.imageView,
-                                globalDescriptorPool,
-                                0,
-                                stack);
-            }
         }
     }
 
