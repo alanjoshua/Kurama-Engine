@@ -145,7 +145,8 @@ public class AnaglyphGame extends Game {
         texture.textureSampler = renderer.getTextureSampler(texture.mipLevels);
 
         try (var stack = stackPush()) {
-            renderer.multiViewRenderPass.temp_singleTextureDescriptorSet = renderer.createTextureDescriptorSet(
+            renderer.multiViewRenderPass.temp_singleTextureDescriptorSet = renderer.createImageSamplerDescriptorSet(
+                    renderer.multiViewRenderPass.singleTextureSetLayout,
                     texture.textureSampler,
                     texture.textureImageView,
                     renderer.globalDescriptorPool,

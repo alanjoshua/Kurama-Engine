@@ -6,12 +6,11 @@ import java.nio.LongBuffer;
 
 import static Kurama.Vulkan.VulkanUtilities.device;
 import static org.lwjgl.system.MemoryStack.stackGet;
-import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class ViewRenderPassFrame {
 
-    public long imageAvailableSemaphore;
+    public long presentCompleteSemaphore;
     public long renderFinishedSemaphore;
     public long fence;
     public long commandPool;
@@ -21,17 +20,17 @@ public class ViewRenderPassFrame {
 
     public void cleanUp() {
         vkDestroySemaphore(device, renderFinishedSemaphore(), null);
-        vkDestroySemaphore(device, imageAvailableSemaphore(), null);
+        vkDestroySemaphore(device, presentCompleteSemaphore(), null);
         vkDestroyFence(device, fence(), null);
         vkDestroyCommandPool(device, commandPool, null);
     }
 
-    public long imageAvailableSemaphore() {
-        return imageAvailableSemaphore;
+    public long presentCompleteSemaphore() {
+        return presentCompleteSemaphore;
     }
 
-    public LongBuffer pImageAvailableSemaphore() {
-        return stackGet().longs(imageAvailableSemaphore);
+    public LongBuffer pPresentCompleteSemaphore() {
+        return stackGet().longs(presentCompleteSemaphore);
     }
 
     public long renderFinishedSemaphore() {

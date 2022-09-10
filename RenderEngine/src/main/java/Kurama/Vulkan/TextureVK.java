@@ -114,6 +114,7 @@ public class TextureVK extends Texture {
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             texture.mipLevels,
                             1,
+                            VK_IMAGE_VIEW_TYPE_2D,
                             stack
                     );
             texture.textureImageView = createImageView(viewInfo, device);

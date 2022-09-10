@@ -25,6 +25,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -59,7 +60,6 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         public List<ViewRenderPassFrame> frames;
         public Map<Integer, ViewRenderPassFrame> imagesToFrameMap;
-        public int currentFrameIndex = 0;
         public List<Long> frameBuffers;
         public List<SwapChainAttachment> swapChainAttachments;
         public long renderPass;
@@ -73,8 +73,6 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         public long frameBuffer;
         public List<AnaglyphMultiViewRenderPassFrame> frames;
-        public Map<Integer, AnaglyphMultiViewRenderPassFrame> imagesToFrameMap;
-        public int currentFrameIndex = 0;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
         public long renderPass;
@@ -92,6 +90,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     public RenderPass viewRenderPass = new RenderPass();
     public MultiViewRenderPass multiViewRenderPass = new MultiViewRenderPass();
+    public int currentFrameIndex = 0;
 
     public long viewPipelineLayout;
     public long viewGraphicsPipeline;
@@ -125,17 +124,17 @@ public class AnaglyphRenderer extends RenderingEngine {
             this.game = (AnaglyphGame) game;
         }
 
-        @Override
-        public void init(Scene scene) {
-            this.display = game.display;
-            initVulkan();
-        }
+    @Override
+    public void init(Scene scene) {
+        this.display = game.display;
+        initVulkan();
+    }
 
-        public void render(List<Renderable> renderables) {
-            drawFrame(renderables);
-        }
+    public void render(List<Renderable> renderables) {
+        draw(renderables);
+    }
 
-        public void initVulkan() {
+    public void initVulkan() {
             VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
         VulkanUtilities.setupDebugMessenger();
 
@@ -285,20 +284,21 @@ public class AnaglyphRenderer extends RenderingEngine {
     }
 
     public void recordSceneToCommandBuffer(List<Renderable> renderables, VkCommandBuffer commandBuffer, AnaglyphMultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, viewGraphicsPipeline);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
 
         var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
         var pUniformOffset = stack.mallocInt(1);
         pUniformOffset.put(0, uniformOffset);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                viewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
+                multiViewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                viewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
+                multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                viewPipelineLayout, 2, stack.longs(multiViewRenderPass.temp_singleTextureDescriptorSet), null);
+                multiViewPipelineLayout, 2, stack.longs(multiViewRenderPass.temp_singleTextureDescriptorSet), null);
 
         Mesh previousMesh = null;
 
@@ -345,18 +345,45 @@ public class AnaglyphRenderer extends RenderingEngine {
         updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
     }
 
-    public void drawFrame(List<Renderable> renderables) {
+    public void drawFrameForMultiView(AnaglyphMultiViewRenderPassFrame curMultiViewFrame, ViewRenderPassFrame viewFrame, List<Renderable> renderables) {
 
         try(MemoryStack stack = stackPush()) {
 
-            var thisFrame = multiViewRenderPass.frames.get(viewRenderPass.currentFrameIndex);
+            vkWaitForFences(device, curMultiViewFrame.pFence(), true, UINT64_MAX);
+            vkResetFences(device, curMultiViewFrame.pFence());
 
-            vkWaitForFences(device, thisFrame.pFence(), true, UINT64_MAX);
+            recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex), multiViewRenderPass.frameBuffer, currentFrameIndex);
+
+            // Submit rendering commands to GPU
+            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+
+            submitInfo.waitSemaphoreCount(1);
+            submitInfo.pWaitSemaphores(viewFrame.pPresentCompleteSemaphore());
+            submitInfo.pSignalSemaphores(curMultiViewFrame.pSemaphore());
+            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
+            submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
+
+            logError("here");
+            int vkResult;
+            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.fence())) != VK_SUCCESS) {
+                vkResetFences(device, curMultiViewFrame.pFence());
+                throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
+            }
+            logError("here2");
+
+        }
+    }
+
+    public void drawandDisplayViewFrame(ViewRenderPassFrame curViewFrame, AnaglyphMultiViewRenderPassFrame curMultiViewFrame) {
+        try(MemoryStack stack = stackPush()) {
+
+            vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
 
             IntBuffer pImageIndex = stack.mallocInt(1);
 
             int vkResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-                    thisFrame.imageAvailableSemaphore(), VK_NULL_HANDLE, pImageIndex);
+                    curViewFrame.presentCompleteSemaphore(), VK_NULL_HANDLE, pImageIndex);
 
             if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
                 recreateSwapChain();
@@ -367,38 +394,37 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             final int imageIndex = pImageIndex.get(0);
 
-            performBufferDataUpdates(renderables, viewRenderPass.currentFrameIndex);
-
-            recordMultiViewCommandBuffer(renderables, thisFrame, viewRenderPass.frameBuffers.get(imageIndex), viewRenderPass.currentFrameIndex);
-//            recordViewCommandBuffer(thisFrame, viewRenderPass.frameBuffers.get(imageIndex));
+            recordViewCommandBuffer(curViewFrame, viewRenderPass.frameBuffers.get(imageIndex));
 
 
             if(viewRenderPass.imagesToFrameMap.containsKey(imageIndex)) {
                 vkWaitForFences(device, viewRenderPass.frames.get(imageIndex).fence(), true, UINT64_MAX);
             }
-            multiViewRenderPass.imagesToFrameMap.put(imageIndex, thisFrame);
-            vkResetFences(device, thisFrame.pFence());
+            viewRenderPass.imagesToFrameMap.put(imageIndex, curViewFrame);
+            vkResetFences(device, curViewFrame.pFence());
 
             // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
             submitInfo.waitSemaphoreCount(1);
-            submitInfo.pWaitSemaphores(thisFrame.pImageAvailableSemaphore());
+
+            submitInfo.pWaitSemaphores(curMultiViewFrame.pSemaphore());
+            submitInfo.pSignalSemaphores(curViewFrame.pRenderFinishedSemaphore());
+
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
 
-            submitInfo.pSignalSemaphores(thisFrame.pRenderFinishedSemaphore());
-            submitInfo.pCommandBuffers(stack.pointers(thisFrame.commandBuffer));
+            submitInfo.pCommandBuffers(stack.pointers(curViewFrame.commandBuffer));
 
-            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, thisFrame.fence())) != VK_SUCCESS) {
-                vkResetFences(device, thisFrame.pFence());
+            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curViewFrame.fence())) != VK_SUCCESS) {
+                vkResetFences(device, curViewFrame.pFence());
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
             // Display rendered image to screen
             VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
             presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-            presentInfo.pWaitSemaphores(thisFrame.pRenderFinishedSemaphore());
+            presentInfo.pWaitSemaphores(curViewFrame.pRenderFinishedSemaphore());
             presentInfo.swapchainCount(1);
             presentInfo.pSwapchains(stack.longs(swapChain));
             presentInfo.pImageIndices(pImageIndex);
@@ -412,8 +438,20 @@ public class AnaglyphRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to present swap chain image");
             }
 
-            viewRenderPass.currentFrameIndex = (viewRenderPass.currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
         }
+    }
+
+    public void draw(List<Renderable> renderables) {
+
+        var curMultiViewFrame = multiViewRenderPass.frames.get(currentFrameIndex);
+        var curViewFrame = viewRenderPass.frames.get(currentFrameIndex);
+
+        performBufferDataUpdates(renderables, currentFrameIndex);
+
+        drawFrameForMultiView(curMultiViewFrame, curViewFrame, renderables);
+        drawandDisplayViewFrame(curViewFrame, curMultiViewFrame);
+
+        currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     public void uploadRenderable(Renderable renderable) {
@@ -574,21 +612,25 @@ public class AnaglyphRenderer extends RenderingEngine {
                 createObjectDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
 
                 viewRenderPass.frames.get(i).imageInputDescriptorSet =
-                        createTextureDescriptorSet(
-                            getTextureSampler(1),
-                            multiViewRenderPass.colorAttachment.imageView,
-                            globalDescriptorPool,
-                            0,
-                            stack);
+                        createImageSamplerDescriptorSet(
+                                viewRenderPass.imageInputSetLayout,
+                                getTextureSampler(1),
+                                multiViewRenderPass.colorAttachment.imageView,
+                                globalDescriptorPool,
+                                0,
+                                stack);
+
+                log("image input descriptor set: "+ Long.toHexString(viewRenderPass.frames.get(i).imageInputDescriptorSet));
+
             }
 
         }
     }
 
     // TODO: This should be specific to each texture/material
-    public long createTextureDescriptorSet(long textureSampler, long imageView, long descriptorPool, int binding, MemoryStack stack) {
+    public long createImageSamplerDescriptorSet(long descriptorLayout, long textureSampler, long imageView, long descriptorPool, int binding, MemoryStack stack) {
         var layout = stack.mallocLong(1);
-        layout.put(0, multiViewRenderPass.singleTextureSetLayout);
+        layout.put(0, descriptorLayout);
 
         // Allocate a descriptor set
         VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
@@ -779,7 +821,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
                     multiViewNumLayers,
-                    numOfSamples,
+                    1,
                     stack);
 
             var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
@@ -795,6 +837,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
                             multiViewNumLayers,
+                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
                             stack
                     );
 
@@ -897,16 +940,13 @@ public class AnaglyphRenderer extends RenderingEngine {
                                 VK_IMAGE_ASPECT_COLOR_BIT,
                                 1,
                                 1,
+                                VK_IMAGE_VIEW_TYPE_2D,
                                 stack
                         );
                 swapChainImageAttachment.swapChainImageView = createImageView(viewInfo, device);
             }
 
         }
-    }
-
-    public void createMultiViewDescriptors() {
-
     }
 
     public void createRenderPasses() {
@@ -1504,12 +1544,12 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             var imageInfo = createImageCreateInfo(
                     swapChainImageFormat,
-                    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     extent,
                     1,
                     VK_IMAGE_TILING_OPTIMAL,
                     multiViewNumLayers,
-                    numOfSamples,
+                    1,
                     stack);
 
             var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
@@ -1525,6 +1565,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
                             multiViewNumLayers,
+                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
                             stack
                     );
 
@@ -1781,6 +1822,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             LongBuffer pRenderFinishedSemaphore = stack.mallocLong(1);
             LongBuffer pFence = stack.mallocLong(1);
 
+            // For view renderpass
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
                 if (vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
@@ -1790,9 +1832,23 @@ public class AnaglyphRenderer extends RenderingEngine {
                     throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
                 }
 
-                viewRenderPass.frames.get(i).imageAvailableSemaphore = pImageAvailableSemaphore.get(0);
+                viewRenderPass.frames.get(i).presentCompleteSemaphore = pImageAvailableSemaphore.get(0);
                 viewRenderPass.frames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
                 viewRenderPass.frames.get(i).fence = pFence.get(0);
+            }
+
+            // For multiview renderpass
+            LongBuffer sempahore = stack.mallocLong(1);
+
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                if (vkCreateSemaphore(device, semaphoreInfo, null, sempahore) != VK_SUCCESS
+                        || vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
+
+                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
+                }
+
+                multiViewRenderPass.frames.get(i).semaphore = sempahore.get(0);
+                multiViewRenderPass.frames.get(i).fence = pFence.get(0);
             }
 
             // Create fence and commandPool/buffer for immediate upload context

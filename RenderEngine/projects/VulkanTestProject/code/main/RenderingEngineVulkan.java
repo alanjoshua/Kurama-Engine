@@ -702,6 +702,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
                             1,
+                            VK_IMAGE_VIEW_TYPE_2D,
                             stack
                     );
 
@@ -800,6 +801,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                                 VK_IMAGE_ASPECT_COLOR_BIT,
                                 1,
                                 1,
+                                VK_IMAGE_VIEW_TYPE_2D,
                                 stack
                         );
                 swapChainImageViews.add(createImageView(viewInfo, device));
@@ -1313,6 +1315,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                             VK_IMAGE_ASPECT_COLOR_BIT,
                             1,
                             1,
+                            VK_IMAGE_VIEW_TYPE_2D,
                             stack
                     );
 

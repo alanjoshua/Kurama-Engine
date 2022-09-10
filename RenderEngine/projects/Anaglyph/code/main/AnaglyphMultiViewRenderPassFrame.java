@@ -17,8 +17,7 @@ import static org.lwjgl.vulkan.VK10.*;
  * */
 public class AnaglyphMultiViewRenderPassFrame {
 
-    public long imageAvailableSemaphore;
-    public long renderFinishedSemaphore;
+    public long semaphore;
     public long fence;
     public long commandPool;
     public VkCommandBuffer commandBuffer;
@@ -34,28 +33,15 @@ public class AnaglyphMultiViewRenderPassFrame {
     public long vmaAllocator;
 
     public void cleanUp() {
-        vkDestroySemaphore(device, renderFinishedSemaphore(), null);
-        vkDestroySemaphore(device, imageAvailableSemaphore(), null);
+        vkDestroySemaphore(device, semaphore, null);
         vkDestroyFence(device, fence(), null);
         vkDestroyCommandPool(device, commandPool, null);
         vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
     }
 
-    public long imageAvailableSemaphore() {
-        return imageAvailableSemaphore;
-    }
-
-    public LongBuffer pImageAvailableSemaphore() {
-        return stackGet().longs(imageAvailableSemaphore);
-    }
-
-    public long renderFinishedSemaphore() {
-        return renderFinishedSemaphore;
-    }
-
-    public LongBuffer pRenderFinishedSemaphore() {
-        return stackGet().longs(renderFinishedSemaphore);
+    public LongBuffer pSemaphore() {
+        return stackGet().longs(semaphore);
     }
 
     public long fence() {
