@@ -63,8 +63,8 @@ public class AnaglyphGame extends Game {
 
         playerCamera.loadDefaultSettings();
         playerCamera.fovX = 45;
-        playerCamera.focalLength = 2;
-//        playerCamera.nearClippingPlane = 1;
+        playerCamera.focalLength = 30;
+        playerCamera.nearClippingPlane = 0.1f;
         playerCamera.eyeSeparation = playerCamera.focalLength/30f;
 
         playerCamera.shouldUpdateValues = true;
