@@ -62,7 +62,6 @@ public class AnaglyphRenderer extends RenderingEngine {
         public List<Long> frameBuffers;
         public List<SwapChainAttachment> swapChainAttachments;
         public long renderPass;
-        public long imageInputSetLayout;
     }
 
     public int swapChainImageFormat;
@@ -81,10 +80,6 @@ public class AnaglyphRenderer extends RenderingEngine {
 
         // This contains the object transformation matrices
         public long objectDescriptorSetLayout;
-
-        // TODO: Refactor this into separate Material type class
-        public long singleTextureSetLayout;
-        public long temp_singleTextureDescriptorSet;
     }
 
     public RenderPass viewRenderPass = new RenderPass();
@@ -103,13 +98,16 @@ public class AnaglyphRenderer extends RenderingEngine {
     // Used to create descriptor sets for all render passes
     public long globalDescriptorPool;
 
+    public long textureSetLayout;
+
     public boolean framebufferResize;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
     public GPUSceneData gpuSceneData;
     public SingleTimeCommandContext singleTimeCommandContext;
-    public HashMap<String, TextureVK> loadedTextures = new HashMap<>();;
+    public HashMap<String, TextureVK> preparedTextures = new HashMap<>();;
     public HashMap<Integer, Long> textureSamplerToMaxLOD = new HashMap<>();
+    public HashMap<String, Long> textureFileToDescriptorSet = new HashMap<>();
     public int multiViewNumLayers = 2;
     public boolean msaaEnabled = false;
 
@@ -297,22 +295,28 @@ public class AnaglyphRenderer extends RenderingEngine {
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                multiViewPipelineLayout, 2, stack.longs(multiViewRenderPass.temp_singleTextureDescriptorSet), null);
-
         Mesh previousMesh = null;
+        Long previousTextureSet = null;
 
         for(int i = 0; i < renderables.size(); i++) {
             var renderable = renderables.get(i);
-            var model = renderable.model;
 
             if(previousMesh != renderable.mesh) {
                 LongBuffer offsets = stack.longs(0);
                 LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
                 vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+                previousMesh = renderable.mesh;
             }
-            previousMesh = renderable.mesh;
+
+            // Bind texture descriptor set only if it is different from previous texture
+            if(previousTextureSet != renderable.textureDescriptorSet) {
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        multiViewPipelineLayout, 2, stack.longs(renderable.textureDescriptorSet), null);
+
+                previousTextureSet = renderable.textureDescriptorSet;
+            }
 
             vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
         }
@@ -323,13 +327,14 @@ public class AnaglyphRenderer extends RenderingEngine {
         return textureSamplerToMaxLOD.get(maxLod);
     }
 
-    public void loadTexture(TextureVK texture) {
-        if (texture == null || texture.fileName == null || loadedTextures.containsKey(texture.fileName)) return;
+    public void prepareTexture(TextureVK texture) {
+        if (texture == null || texture.fileName == null || preparedTextures.containsKey(texture.fileName)) return;
 
         TextureVK.createTextureImage(graphicsQueue, vmaAllocator, singleTimeCommandContext, texture);
         TextureVK.createTextureImageView(texture);
+        texture.textureSampler = getTextureSampler(texture.mipLevels);
 
-        loadedTextures.put(texture.fileName, texture);
+        preparedTextures.put(texture.fileName, texture);
     }
 
     public void performBufferDataUpdates(List<Renderable> renderables, int currentFrameIndex) {
@@ -462,9 +467,30 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     }
 
-    public void uploadRenderable(Renderable renderable) {
+    public void uploadMeshData(Renderable renderable) {
         createIndexBufferForRenderable(renderable);
         createVertexBufferForRenderable(renderable);
+    }
+
+    public Long generateTextureDescriptorSet(TextureVK texture) {
+
+        if(texture.fileName == null) {
+            return null;
+        }
+
+        textureFileToDescriptorSet.computeIfAbsent(texture.fileName, (s) -> {
+            try (var stack = stackPush()) {
+                return createImageSamplerDescriptorSet(
+                        textureSetLayout,
+                        texture.textureSampler,
+                        texture.textureImageView,
+                        globalDescriptorPool,
+                        0,
+                        stack);
+            }
+        });
+
+        return textureFileToDescriptorSet.get(texture.fileName);
     }
 
     public void createIndexBufferForRenderable(Renderable renderable) {
@@ -580,7 +606,6 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             createMultiViewDescriptorSetLayouts();
             // Both the render passes use the same layout for the textureSampler (for now)
-            viewRenderPass.imageInputSetLayout = multiViewRenderPass.singleTextureSetLayout;
 
             for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
 
@@ -611,7 +636,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                 // Descriptor set for image input for the view Render pass is created when the color image view is created, and updated whenever window is resized
                 viewRenderPass.frames.get(i).imageInputDescriptorSet =
                         createImageSamplerDescriptorSet(
-                                viewRenderPass.imageInputSetLayout,
+                                textureSetLayout,
                                 getTextureSampler(1),
                                 multiViewRenderPass.colorAttachment.imageView,
                                 globalDescriptorPool,
@@ -1207,7 +1232,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.cameraAndSceneDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, multiViewRenderPass.singleTextureSetLayout));
+            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.cameraAndSceneDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, textureSetLayout));
 
             // ===> PIPELINE LAYOUT CREATION <===
 
@@ -1356,7 +1381,7 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(viewRenderPass.imageInputSetLayout));
+            pipelineLayoutInfo.pSetLayouts(stack.longs(textureSetLayout));
 
             // ===> PIPELINE LAYOUT CREATION <===
 
@@ -1541,11 +1566,11 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             multiViewRenderPass.objectDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{objectBinding}, stack);
             multiViewRenderPass.cameraAndSceneDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{cameraBufferBinding, sceneBinding}, stack);
-            multiViewRenderPass.singleTextureSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{textureBinding}, stack);
+            textureSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{textureBinding}, stack);
 
             deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.objectDescriptorSetLayout, null));
             deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.cameraAndSceneDescriptorSetLayout, null));
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.singleTextureSetLayout, null));
+            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, textureSetLayout, null));
         }
     }
 
@@ -1604,24 +1629,24 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
             uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            uniformBufferPoolSize.descriptorCount(10);
+            uniformBufferPoolSize.descriptorCount(100);
 
             VkDescriptorPoolSize uniformBufferDynamicPoolSize  = poolSizes.get(1);
             uniformBufferDynamicPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-            uniformBufferDynamicPoolSize.descriptorCount(10);
+            uniformBufferDynamicPoolSize.descriptorCount(100);
 
             VkDescriptorPoolSize storageBufferPoolSize  = poolSizes.get(2);
             storageBufferPoolSize.type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-            storageBufferPoolSize.descriptorCount(10);
+            storageBufferPoolSize.descriptorCount(100);
 
             VkDescriptorPoolSize textureSamplerPoolSize  = poolSizes.get(3);
             textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            textureSamplerPoolSize.descriptorCount(10);
+            textureSamplerPoolSize.descriptorCount(100);
 
             VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
             poolInfo.pPoolSizes(poolSizes);
-            poolInfo.maxSets(10);
+            poolInfo.maxSets(100);
 
             LongBuffer pDescriptorPool = stack.mallocLong(1);
 

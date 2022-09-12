@@ -15,10 +15,11 @@ public class Renderable {
     public AllocatedBuffer vertexBuffer;
     public AllocatedBuffer indexBuffer;
 
+    public Long textureDescriptorSet = null;
+
     // assume each mesh only has one material
     public Mesh mesh;
     public Model model;
-
 
     public Renderable(Mesh mesh, Model model) {
         this.mesh = mesh;

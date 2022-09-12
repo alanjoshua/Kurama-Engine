@@ -15,11 +15,10 @@ import Kurama.inputs.InputLWJGL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class AnaglyphGame extends Game {
 
@@ -63,9 +62,9 @@ public class AnaglyphGame extends Game {
 
         playerCamera.loadDefaultSettings();
         playerCamera.fovX = 45;
-        playerCamera.focalLength = 30;
-        playerCamera.nearClippingPlane = 0.1f;
-        playerCamera.eyeSeparation = playerCamera.focalLength/30f;
+        playerCamera.focalLength = 10;
+        playerCamera.eyeSeparation = playerCamera.focalLength / 30f;
+        playerCamera.nearClippingPlane = playerCamera.focalLength / 5.0f;
 
         playerCamera.shouldUpdateValues = true;
 
@@ -97,60 +96,57 @@ public class AnaglyphGame extends Game {
         var location = "projects/Anaglyph/models/meshes/lost_empire.obj";
         var textureDir = "projects/Anaglyph/models/textures/";
 
-//        List<Mesh> meshes;
-//
-//        try {
-//            meshes = AssimpStaticLoader.load(location, textureDir);
-//            log("successfuly loaded meshes");
-//        }
-//        catch (Exception e) {
-//            logError("Failed to load mesh");
-//            throw new IllegalArgumentException("Could not load mesh");
-//        }
-//
-//        var lostEmpire = new Model(this, meshes, "Lost Empire");
-//        lostEmpire.setScale(1f);
-//        lostEmpire.setPos(new Vector(5, -10, 0));
+        List<Mesh> meshes;
+
+        try {
+            meshes = AssimpStaticLoader.load(location, textureDir);
+
+            // TODO: Temporary because of bug KE:16
+            var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
+            for(var m: meshes) {
+                m.materials.get(0).texture = tex;
+            }
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException("Could not load mesh");
+        }
+
+        var lostEmpire = new Model(this, meshes, "Lost Empire");
+        lostEmpire.setScale(1f);
+        lostEmpire.setPos(new Vector(5, -10, 0));
 
         List<Mesh> meshes2;
         try {
             meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
+
+            // TODO: Temporary because of bug KE:16
+            var tex = Texture.createTexture(textureDir + "viking_room.png");
+            for(var m: meshes2) {
+                m.materials.get(0).texture = tex;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         //Add texture loc
-        var house = new Model(this, meshes2, "house");
-        house.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
-        house.setScale(10);
+        var vikingRoom = new Model(this, meshes2, "vikingRoom");
+        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+        vikingRoom.setPos(new Vector(0, 50, 0));
+        vikingRoom.setScale(10);
 
-//        models.add(lostEmpire);
-        models.add(house);
+        models.add(lostEmpire);
+        models.add(vikingRoom);
 
-//        renderables.addAll(getRenderablesFromModel(lostEmpire));
-        renderables.add(new Renderable(house.meshes.get(0), house));
+        renderables.addAll(getRenderablesFromModel(lostEmpire));
+        renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderables.forEach(r -> {
-            renderer.uploadRenderable(r);
+            renderer.uploadMeshData(r);
+            renderer.prepareTexture((TextureVK) r.getMaterial().texture);
+            r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
+
             deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
-
-//            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");
-            r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "viking_room.png");
-            renderer.loadTexture((TextureVK) r.getMaterial().texture);
         });
-
-        var texture = renderer.loadedTextures.get(renderables.get(0).getMaterial().texture.fileName);
-        texture.textureSampler = renderer.getTextureSampler(texture.mipLevels);
-
-        try (var stack = stackPush()) {
-            renderer.multiViewRenderPass.temp_singleTextureDescriptorSet = renderer.createImageSamplerDescriptorSet(
-                    renderer.multiViewRenderPass.singleTextureSetLayout,
-                    texture.textureSampler,
-                    texture.textureImageView,
-                    renderer.globalDescriptorPool,
-                    0,
-                    stack);
-        }
     }
 
     @Override

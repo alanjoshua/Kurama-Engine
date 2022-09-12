@@ -21,6 +21,9 @@ public class StereoCamera extends Camera {
     public Matrix rightWorldToCam;
     public float focalLength = 0.5f;
 
+    // Assume screen space is in cm
+    public float interOcular = 6.5f;
+
     public StereoCamera(Game game, Component parent, Quaternion quaternion, Vector pos, float fovX, float nearClippingPlane, float farClippingPlane, int imageWidth, int imageHeight, boolean shouldUseRenderBuffer, String identifier) {
         super(game, parent, quaternion, pos, fovX, nearClippingPlane, farClippingPlane, imageWidth, imageHeight, shouldUseRenderBuffer, identifier);
     }
