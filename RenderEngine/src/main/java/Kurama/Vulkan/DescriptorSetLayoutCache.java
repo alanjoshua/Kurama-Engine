@@ -95,7 +95,13 @@ public class DescriptorSetLayoutCache {
 
         @Override
         public boolean equals(Object o) {
-            return this.hashCode() == o.hashCode();
+            var right = (DescriptorBinding)o;
+            if(binding == right.binding
+                    && descriptorType == right.descriptorType
+                    && stageFlags == right.stageFlags) {
+                return true;
+            }
+            return false;
         }
 
     }
