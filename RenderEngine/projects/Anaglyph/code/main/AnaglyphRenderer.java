@@ -603,6 +603,8 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
 
+                var multiViewFrame = multiViewRenderPass.frames.get(i);
+
                 // uniform buffer for GPU camera data
                 // A camera buffer is created for each frame
                 multiViewRenderPass.frames.get(i).cameraBuffer
@@ -614,8 +616,19 @@ public class AnaglyphRenderer extends RenderingEngine {
                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-                createCameraSceneDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
+                var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                        .bindBuffer(0,
+                                new DescriptorBufferInfo(0, cameraBufferSize, multiViewFrame.cameraBuffer.buffer),
+                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                        .bindBuffer(1,
+                                new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
+                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+                        .build();
 
+                multiViewRenderPass.frames.get(i).cameraAndSceneDescriptorSet = result.descriptorSet();
+                multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
+
+                // Object buffer
                 multiViewRenderPass.frames.get(i).objectBuffer =
                         createBufferVMA(
                                 vmaAllocator,
@@ -625,10 +638,18 @@ public class AnaglyphRenderer extends RenderingEngine {
                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-                createObjectDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
+                result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                        .bindBuffer(0,
+                                new DescriptorBufferInfo(0, objectBufferSize, multiViewFrame.objectBuffer.buffer),
+                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                        .build();
 
-                // Descriptor set for image input for the view Render pass is created when the color image view is created, and updated whenever window is resize
-                var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                multiViewFrame.objectDescriptorSet = result.descriptorSet();
+                multiViewRenderPass.objectDescriptorSetLayout = result.layout();
+
+                // Descriptor set for image input for the view Render pass
+                // attaches to the output imageview from the multiview pass
+                result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                         .bindImage(0,
                                 new DescriptorImageInfo(getTextureSampler(1), multiViewRenderPass.colorAttachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -639,39 +660,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             }
 
         }
-    }
-
-    public void createObjectDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
-
-        //information about the buffer we want to point at in the descriptor
-        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
-
-        var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                .bindBuffer(0,
-                        new DescriptorBufferInfo(0, objectBufferSize, frame.objectBuffer.buffer),
-                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-
-        frame.objectDescriptorSet = result.descriptorSet();
-        multiViewRenderPass.objectDescriptorSetLayout = result.layout();
-    }
-
-    public void createCameraSceneDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
-
-        //information about the buffer we want to point at in the descriptor
-        var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
-
-        var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                .bindBuffer(0,
-                        new DescriptorBufferInfo(0, cameraBufferSize, frame.cameraBuffer.buffer),
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .bindBuffer(1,
-                        new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
-                .build();
-
-        frame.cameraAndSceneDescriptorSet = result.descriptorSet();
-        multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
     }
 
     private void recreateSwapChain() {
@@ -1524,14 +1512,6 @@ public class AnaglyphRenderer extends RenderingEngine {
                 var buffer = data.getByteBuffer(bufferSize);
 
                 GPUCameraData.memcpy(buffer, gpuCameraDataLeft);
-//                if(tempSwap == 0) {
-//                    GPUCameraData.memcpy(buffer, gpuCameraDataLeft);
-//                    tempSwap = 1;
-//                }
-//                else {
-//                    GPUCameraData.memcpy(buffer, gpuCameraDataRight);
-//                    tempSwap = 0;
-//                }
 
                 buffer.position(offset);
                 GPUCameraData.memcpy(buffer, gpuCameraDataRight);
