@@ -24,6 +24,9 @@ public class DescriptorAllocator {
 
     public HashMap<Integer, Float> poolSizes = new HashMap<>();
 
+    // arbitrary default
+    public int poolDescriptorCount = 1000;
+
     public DescriptorAllocator() {
         poolSizes.put(VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f);
         poolSizes.put(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4f);
@@ -96,7 +99,7 @@ public class DescriptorAllocator {
         }
 
         else {
-            return createPool(device, poolSizes, 1000, 0);
+            return createPool(device, poolSizes, poolDescriptorCount, 0);
         }
     }
 

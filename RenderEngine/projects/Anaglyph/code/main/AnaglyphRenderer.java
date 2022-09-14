@@ -98,12 +98,7 @@ public class AnaglyphRenderer extends RenderingEngine {
     // The global Command pool and buffer are currently used for tasks such as image loading and transformations
     public long globalCommandPool;
     public VkCommandBuffer globalCommandBuffer;
-
-    // Used to create descriptor sets for all render passes
-    public long globalDescriptorPool;
-
     public long textureSetLayout;
-
     public boolean framebufferResize;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
@@ -1471,27 +1466,6 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
-    public void createMultiViewDescriptorSetLayouts() {
-
-        try (var stack = stackPush()) {
-
-            var objectBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
-
-            var cameraBufferBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, stack);
-            var sceneBinding = createDescriptorSetLayoutBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, stack);
-
-            var textureBinding = createDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, stack);
-
-            multiViewRenderPass.objectDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{objectBinding}, stack);
-            multiViewRenderPass.cameraAndSceneDescriptorSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{cameraBufferBinding, sceneBinding}, stack);
-            textureSetLayout = createDescriptorSetLayout(new VkDescriptorSetLayoutBinding[]{textureBinding}, stack);
-
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.objectDescriptorSetLayout, null));
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, multiViewRenderPass.cameraAndSceneDescriptorSetLayout, null));
-            deletionQueue.add(() -> vkDestroyDescriptorSetLayout(device, textureSetLayout, null));
-        }
-    }
-
     public void createMultiViewColorAttachment() {
         try(var stack = stackPush()) {
 
@@ -1536,44 +1510,6 @@ public class AnaglyphRenderer extends RenderingEngine {
             }, singleTimeCommandContext, graphicsQueue);
 
             multiViewRenderPass.colorAttachment = colorAttachment;
-        }
-    }
-
-    // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
-    public void createDescriptorPool() {
-        try (var stack = stackPush()) {
-
-            VkDescriptorPoolSize.Buffer poolSizes = VkDescriptorPoolSize.calloc(4, stack);
-
-            VkDescriptorPoolSize uniformBufferPoolSize  = poolSizes.get(0);
-            uniformBufferPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-            uniformBufferPoolSize.descriptorCount(100);
-
-            VkDescriptorPoolSize uniformBufferDynamicPoolSize  = poolSizes.get(1);
-            uniformBufferDynamicPoolSize.type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-            uniformBufferDynamicPoolSize.descriptorCount(100);
-
-            VkDescriptorPoolSize storageBufferPoolSize  = poolSizes.get(2);
-            storageBufferPoolSize.type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-            storageBufferPoolSize.descriptorCount(100);
-
-            VkDescriptorPoolSize textureSamplerPoolSize  = poolSizes.get(3);
-            textureSamplerPoolSize.type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            textureSamplerPoolSize.descriptorCount(100);
-
-            VkDescriptorPoolCreateInfo poolInfo = VkDescriptorPoolCreateInfo.calloc(stack);
-            poolInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
-            poolInfo.pPoolSizes(poolSizes);
-            poolInfo.maxSets(100);
-
-            LongBuffer pDescriptorPool = stack.mallocLong(1);
-
-            if(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create descriptor pool");
-            }
-
-            globalDescriptorPool = pDescriptorPool.get(0);
-            deletionQueue.add(() -> vkDestroyDescriptorPool(device, globalDescriptorPool, null));
         }
     }
 
