@@ -1,19 +1,23 @@
 package Kurama.Vulkan;
 
+import main.AnaglyphRenderer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static Kurama.Vulkan.VulkanUtilities.createWriteDescriptorSet;
+import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class DescriptorBuilder {
 
-    private List<VkWriteDescriptorSet> writes;
-    private List<DescriptorSetLayoutCache.DescriptorBinding> bindings;
+    private List<DescriptorWrite> writes = new ArrayList<>();
+    private List<DescriptorBinding> bindings = new ArrayList<>();
     private DescriptorSetLayoutCache cache;
     private DescriptorAllocator allocator;
     public record LayoutAndSet(long layout, long descriptorSet) {}
@@ -28,50 +32,54 @@ public class DescriptorBuilder {
         var layout = cache.createDescriptorLayout(bindings);
         var descriptorSet = allocator.allocate(layout);
 
-        VkWriteDescriptorSet.Buffer descriptorWrites;
-
         try (var stack = stackPush()) {
-            descriptorWrites = VkWriteDescriptorSet.calloc(writes.size(), stack);
+            var descriptorWrites = VkWriteDescriptorSet.calloc(writes.size(), stack);
 
             for(int i = 0; i < writes.size(); i++) {
-                writes.get(i).dstSet(descriptorSet);
-                descriptorWrites.put(i, writes.get(i));
-            }
-        }
 
-        vkUpdateDescriptorSets(allocator.device, descriptorWrites, null);
-        return new LayoutAndSet(layout, descriptorSet);
+                var interWrite = writes.get(i);
+                var write = descriptorWrites.get(i);
+
+                write.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+                write.dstBinding(interWrite.dstBinding());
+                write.dstSet(descriptorSet);
+                write.descriptorType(interWrite.descriptorType());
+                write.descriptorCount(1);
+
+                if(interWrite.bufferInfo() != null) {
+                    var bufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
+                    bufferInfo.offset(interWrite.bufferInfo().offset());
+                    bufferInfo.range(interWrite.bufferInfo().range());
+                    bufferInfo.buffer(interWrite.bufferInfo().buffer());
+                    write.pBufferInfo(bufferInfo);
+                }
+
+                if(interWrite.imageInfo() != null) {
+                    var imageInfo = VkDescriptorImageInfo.calloc(1, stack);
+                    imageInfo.sampler(interWrite.imageInfo().sampler());
+                    imageInfo.imageView(interWrite.imageInfo().imageView());
+                    imageInfo.imageLayout(interWrite.imageInfo().imageLayout());
+                    write.pImageInfo(imageInfo);
+                }
+
+                descriptorWrites.put(i, write);
+            }
+
+            vkUpdateDescriptorSets(allocator.device, descriptorWrites, null);
+            return new LayoutAndSet(layout, descriptorSet);
+        }
     }
 
-    public DescriptorBuilder bindBuffer(int binding, VkDescriptorBufferInfo.Buffer bufferInfo, int descriptorType, int stageFlags) {
-
-        bindings.add(new DescriptorSetLayoutCache.DescriptorBinding(binding, descriptorType, stageFlags));
-
-        try (var stack = stackPush()) {
-            var write = VkWriteDescriptorSet.calloc(stack);
-            write.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-            write.dstBinding(binding);
-            write.descriptorCount(1);
-            write.descriptorType(descriptorType);
-            write.pBufferInfo(bufferInfo);
-            writes.add(write);
-        }
+    public DescriptorBuilder bindBuffer(int binding, DescriptorBufferInfo bufferInfo, int descriptorType, int stageFlags) {
+        bindings.add(new DescriptorBinding(binding, descriptorType, stageFlags));
+        writes.add(new DescriptorWrite(binding, descriptorType, bufferInfo));
         return this;
     }
 
-    public DescriptorBuilder bindImage(int binding, VkDescriptorImageInfo.Buffer imageInfo, int descriptorType, int stageFlags) {
+    public DescriptorBuilder bindImage(int binding, DescriptorImageInfo imageInfo, int descriptorType, int stageFlags) {
 
-        bindings.add(new DescriptorSetLayoutCache.DescriptorBinding(binding, descriptorType, stageFlags));
-
-        try (var stack = stackPush()) {
-            var write = VkWriteDescriptorSet.calloc(stack);
-            write.sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
-            write.dstBinding(binding);
-            write.descriptorCount(1);
-            write.descriptorType(descriptorType);
-            write.pImageInfo(imageInfo);
-            writes.add(write);
-        }
+        bindings.add(new DescriptorBinding(binding, descriptorType, stageFlags));
+        writes.add(new DescriptorWrite(binding, descriptorType, imageInfo));
         return this;
     }
 

@@ -25,6 +25,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -54,6 +55,9 @@ public class AnaglyphRenderer extends RenderingEngine {
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
     public long swapChain;
+
+    public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
+    public DescriptorSetLayoutCache descriptorSetLayoutCache = new DescriptorSetLayoutCache();
 
     public static class RenderPass {
 
@@ -111,7 +115,6 @@ public class AnaglyphRenderer extends RenderingEngine {
     public int multiViewNumLayers = 2;
     public boolean msaaEnabled = false;
 
-    public int tempSwap = 0;
     public long vmaAllocator;
     public DisplayVulkan display;
     public AnaglyphGame game;
@@ -138,6 +141,12 @@ public class AnaglyphRenderer extends RenderingEngine {
         surface = createSurface(instance, display.window);
         physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
         createLogicalDevice();
+
+        descriptorAllocator.init(device);
+        descriptorSetLayoutCache.init(device);
+
+        deletionQueue.add(() -> descriptorSetLayoutCache.cleanUp());
+        deletionQueue.add(() -> descriptorAllocator.cleanUp());
 
         gpuProperties = getGPUProperties(physicalDevice);
         numOfSamples = getMaxUsableSampleCount(gpuProperties);
@@ -478,17 +487,13 @@ public class AnaglyphRenderer extends RenderingEngine {
             return null;
         }
 
-        textureFileToDescriptorSet.computeIfAbsent(texture.fileName, (s) -> {
-            try (var stack = stackPush()) {
-                return createImageSamplerDescriptorSet(
-                        textureSetLayout,
-                        texture.textureSampler,
-                        texture.textureImageView,
-                        globalDescriptorPool,
-                        0,
-                        stack);
-            }
-        });
+        textureFileToDescriptorSet.computeIfAbsent(texture.fileName, (s) ->
+                new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                .bindImage(0,
+                        new DescriptorImageInfo(texture.textureSampler, texture.textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .build().descriptorSet()
+        );
 
         return textureFileToDescriptorSet.get(texture.fileName);
     }
@@ -601,12 +606,6 @@ public class AnaglyphRenderer extends RenderingEngine {
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
 
-            // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
-            createDescriptorPool();
-
-            createMultiViewDescriptorSetLayouts();
-            // Both the render passes use the same layout for the textureSampler (for now)
-
             for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
 
                 // uniform buffer for GPU camera data
@@ -633,143 +632,51 @@ public class AnaglyphRenderer extends RenderingEngine {
 
                 createObjectDescriptorSetForFrame(multiViewRenderPass.frames.get(i), stack);
 
-                // Descriptor set for image input for the view Render pass is created when the color image view is created, and updated whenever window is resized
-                viewRenderPass.frames.get(i).imageInputDescriptorSet =
-                        createImageSamplerDescriptorSet(
-                                textureSetLayout,
-                                getTextureSampler(1),
-                                multiViewRenderPass.colorAttachment.imageView,
-                                globalDescriptorPool,
-                                0,
-                                stack);
+                // Descriptor set for image input for the view Render pass is created when the color image view is created, and updated whenever window is resize
+                var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                        .bindImage(0,
+                                new DescriptorImageInfo(getTextureSampler(1), multiViewRenderPass.colorAttachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                        .build();
+
+                viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
+                textureSetLayout = result.layout();
             }
 
         }
     }
 
-    // TODO: This should be specific to each texture/material
-    public long createImageSamplerDescriptorSet(long descriptorLayout, long textureSampler, long imageView, long descriptorPool, int binding, MemoryStack stack) {
-        var layout = stack.mallocLong(1);
-        layout.put(0, descriptorLayout);
-
-        // Allocate a descriptor set
-        VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
-        allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(descriptorPool);
-        allocInfo.pSetLayouts(layout);
-
-        var pDescriptorSet = stack.mallocLong(1);
-        if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSet) != VK_SUCCESS) {
-            throw new RuntimeException("Failed to allocate descriptor sets");
-        }
-        var descriptorSet = pDescriptorSet.get(0);
-
-        updateImageDescriptor(descriptorSet, imageView, textureSampler, binding, stack);
-
-        return descriptorSet;
-    }
-
-    public void updateImageDescriptor(long descriptorSet, long imageView, long textureSampler, int binding, MemoryStack stack) {
-
-        //information about the buffer we want to point at in the descriptor
-        var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
-        imageBufferInfo.sampler(textureSampler);
-        imageBufferInfo.imageView(imageView);
-        imageBufferInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-        VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
-        var textureWrite =
-                createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        descriptorSet,
-                        imageBufferInfo,
-                        binding, stack);
-        descriptorWrites.put(0, textureWrite);
-
-        vkUpdateDescriptorSets(device, descriptorWrites, null);
-    }
-
     public void createObjectDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
-        var layout = stack.mallocLong(1);
-        layout.put(0, multiViewRenderPass.objectDescriptorSetLayout);
-
-        // Allocate a descriptor set
-        VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
-        allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(globalDescriptorPool);
-        allocInfo.pSetLayouts(layout);
-
-        var pDescriptorSet = stack.mallocLong(1);
-        if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSet) != VK_SUCCESS) {
-            throw new RuntimeException("Failed to allocate descriptor sets");
-        }
-        frame.objectDescriptorSet = pDescriptorSet.get(0);
 
         //information about the buffer we want to point at in the descriptor
         var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
 
-        VkDescriptorBufferInfo.Buffer objectBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-        objectBufferInfo.offset(0);
-        objectBufferInfo.range(objectBufferSize);
-        objectBufferInfo.buffer(frame.objectBuffer.buffer);
+        var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                .bindBuffer(0,
+                        new DescriptorBufferInfo(0, objectBufferSize, frame.objectBuffer.buffer),
+                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .build();
 
-        VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
-        var objectWrite =
-                createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        frame.objectDescriptorSet,
-                        objectBufferInfo,
-                        0, stack);
-        descriptorWrites.put(0, objectWrite);
-
-        vkUpdateDescriptorSets(device, descriptorWrites, null);
+        frame.objectDescriptorSet = result.descriptorSet();
+        multiViewRenderPass.objectDescriptorSetLayout = result.layout();
     }
 
     public void createCameraSceneDescriptorSetForFrame(AnaglyphMultiViewRenderPassFrame frame, MemoryStack stack) {
 
-        var layout = stack.mallocLong(1);
-        layout.put(0, multiViewRenderPass.cameraAndSceneDescriptorSetLayout);
-
-        // Allocate a descriptor set
-        VkDescriptorSetAllocateInfo allocInfo = VkDescriptorSetAllocateInfo.calloc(stack);
-        allocInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
-        allocInfo.descriptorPool(globalDescriptorPool);
-        allocInfo.pSetLayouts(layout);
-
-        var pDescriptorSet = stack.mallocLong(1);
-
-        if(vkAllocateDescriptorSets(device, allocInfo, pDescriptorSet) != VK_SUCCESS) {
-            throw new RuntimeException("Failed to allocate descriptor sets");
-        }
-        frame.cameraAndSceneDescriptorSet = pDescriptorSet.get(0);
-
         //information about the buffer we want to point at in the descriptor
         var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
 
-        VkDescriptorBufferInfo.Buffer cameraBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-        cameraBufferInfo.offset(0);
-        cameraBufferInfo.range(cameraBufferSize);
-        cameraBufferInfo.buffer(frame.cameraBuffer.buffer);
+        var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                .bindBuffer(0,
+                        new DescriptorBufferInfo(0, cameraBufferSize, frame.cameraBuffer.buffer),
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .bindBuffer(1,
+                        new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+                .build();
 
-        VkDescriptorBufferInfo.Buffer sceneBufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-        sceneBufferInfo.offset(0);
-        sceneBufferInfo.range(GPUSceneData.SIZEOF);
-        sceneBufferInfo.buffer(gpuSceneBuffer.buffer);
-
-        VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(2, stack);
-        var gpuCameraWrite =
-                createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        frame.cameraAndSceneDescriptorSet,
-                        cameraBufferInfo,
-                        0, stack);
-
-        var sceneWrite =
-                createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        frame.cameraAndSceneDescriptorSet,
-                        sceneBufferInfo, 1, stack);
-
-        descriptorWrites.put(0, gpuCameraWrite);
-        descriptorWrites.put(1, sceneWrite);
-
-        vkUpdateDescriptorSets(device, descriptorWrites, null);
+        frame.cameraAndSceneDescriptorSet = result.descriptorSet();
+        multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
     }
 
     private void recreateSwapChain() {
@@ -810,11 +717,22 @@ public class AnaglyphRenderer extends RenderingEngine {
     public void updateViewRenderPassImageInputDescriptorSet() {
         try (var stack = stackPush()) {
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                updateImageDescriptor(
-                        viewRenderPass.frames.get(i).imageInputDescriptorSet,
-                        multiViewRenderPass.colorAttachment.imageView,
-                        getTextureSampler(1),
-                        0, stack);
+
+                //information about the buffer we want to point at in the descriptor
+                var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
+                imageBufferInfo.sampler(getTextureSampler(1));
+                imageBufferInfo.imageView(multiViewRenderPass.colorAttachment.imageView);
+                imageBufferInfo.imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+                VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
+                var textureWrite =
+                        createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                viewRenderPass.frames.get(i).imageInputDescriptorSet,
+                                imageBufferInfo,
+                                0, stack);
+                descriptorWrites.put(0, textureWrite);
+
+                vkUpdateDescriptorSets(device, descriptorWrites, null);
             }
         }
     }

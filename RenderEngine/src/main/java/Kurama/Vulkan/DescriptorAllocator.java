@@ -17,8 +17,8 @@ import static org.lwjgl.vulkan.VK11.VK_ERROR_OUT_OF_POOL_MEMORY;
 public class DescriptorAllocator {
 
     VkDevice device;
-    LinkedList<Long> freePools = new LinkedList<>();
-    LinkedList<Long> usedPools = new LinkedList<>();
+    public LinkedList<Long> freePools = new LinkedList<>();
+    public LinkedList<Long> usedPools = new LinkedList<>();
 
     private Long currentPool = null;
 

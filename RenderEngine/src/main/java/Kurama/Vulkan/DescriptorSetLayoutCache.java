@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static Kurama.Vulkan.VulkanUtilities.vkCheck;
+import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
@@ -18,7 +19,7 @@ public class DescriptorSetLayoutCache {
 
     public VkDevice device;
 
-    private HashMap<List<DescriptorBinding>, Long> layoutCache = new HashMap<>();
+    public HashMap<List<DescriptorBinding>, Long> layoutCache = new HashMap<>();
 
     public void init(VkDevice device) {
         this.device = device;
@@ -69,41 +70,6 @@ public class DescriptorSetLayoutCache {
         bufferBinding.stageFlags(stageFlags);
 
         return bufferBinding;
-    }
-
-    public static class DescriptorBinding {
-
-        int binding;
-        int descriptorType;
-        int stageFlags;
-
-        public DescriptorBinding(int binding, int descriptorType, int stageFlags) {
-            this.binding = binding;
-            this.descriptorType = descriptorType;
-            this.stageFlags = stageFlags;
-        }
-
-        @Override
-        public int hashCode() {
-            // Adapted from hashCode function for Java List
-            int hashCode = 1;
-            hashCode = 31*hashCode + Integer.valueOf(binding).hashCode();
-            hashCode = 31*hashCode + Integer.valueOf(descriptorType).hashCode();
-            hashCode = 31*hashCode + Integer.valueOf(stageFlags).hashCode();
-            return hashCode;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            var right = (DescriptorBinding)o;
-            if(binding == right.binding
-                    && descriptorType == right.descriptorType
-                    && stageFlags == right.stageFlags) {
-                return true;
-            }
-            return false;
-        }
-
     }
 
 }
