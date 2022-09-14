@@ -655,7 +655,7 @@ public class VulkanUtilities {
         return pDescriptorSetLayout.get(0);
     }
 
-    public static VkWriteDescriptorSet createWriteDescriptorSet(int type, long dstSet, VkDescriptorBufferInfo.Buffer bufferInfo, int binding, MemoryStack stack) {
+    public static VkWriteDescriptorSet createWriteDescriptorSet(int type, Long dstSet, VkDescriptorBufferInfo.Buffer bufferInfo, int binding, MemoryStack stack) {
         VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(1, stack);
         var write = writes.get(0);
 
