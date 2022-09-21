@@ -182,6 +182,7 @@ public class AnaglyphGame extends Game {
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
+
         }
 
         if(glfwWindowShouldClose(display.window)) {

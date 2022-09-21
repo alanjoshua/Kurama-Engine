@@ -25,9 +25,9 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
@@ -587,78 +587,74 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     public void initDescriptors() {
 
-        try (var stack = stackPush()) {
+        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
+        var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
 
-            var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
-            var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
+        var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
+        gpuSceneBuffer = createBufferVMA(vmaAllocator,
+                sceneParamsBufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+        );
 
-            var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
-            gpuSceneBuffer = createBufferVMA(vmaAllocator,
-                    sceneParamsBufferSize,
+        for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
+
+            var multiViewFrame = multiViewRenderPass.frames.get(i);
+
+            // uniform buffer for GPU camera data
+            // A camera buffer is created for each frame
+            multiViewRenderPass.frames.get(i).cameraBuffer
+                    = createBufferVMA(
+                    vmaAllocator,
+                    cameraBufferSize,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
-            );
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-            for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
+            var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindBuffer(0,
+                            new DescriptorBufferInfo(0, cameraBufferSize, multiViewFrame.cameraBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                    .bindBuffer(1,
+                            new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+                    .build();
 
-                var multiViewFrame = multiViewRenderPass.frames.get(i);
+            multiViewRenderPass.frames.get(i).cameraAndSceneDescriptorSet = result.descriptorSet();
+            multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
 
-                // uniform buffer for GPU camera data
-                // A camera buffer is created for each frame
-                multiViewRenderPass.frames.get(i).cameraBuffer
-                        = createBufferVMA(
-                        vmaAllocator,
-                        cameraBufferSize,
-                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                        VMA_MEMORY_USAGE_AUTO,
-                        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+            // Object buffer
+            multiViewRenderPass.frames.get(i).objectBuffer =
+                    createBufferVMA(
+                            vmaAllocator,
+                            objectBufferSize,
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                            VMA_MEMORY_USAGE_AUTO,
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-                var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                        .bindBuffer(0,
-                                new DescriptorBufferInfo(0, cameraBufferSize, multiViewFrame.cameraBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                        .bindBuffer(1,
-                                new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
-                        .build();
+            result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindBuffer(0,
+                            new DescriptorBufferInfo(0, objectBufferSize, multiViewFrame.objectBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                    .build();
 
-                multiViewRenderPass.frames.get(i).cameraAndSceneDescriptorSet = result.descriptorSet();
-                multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
+            multiViewFrame.objectDescriptorSet = result.descriptorSet();
+            multiViewRenderPass.objectDescriptorSetLayout = result.layout();
 
-                // Object buffer
-                multiViewRenderPass.frames.get(i).objectBuffer =
-                        createBufferVMA(
-                                vmaAllocator,
-                                objectBufferSize,
-                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                VMA_MEMORY_USAGE_AUTO,
-                                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+            // Descriptor set for image input for the view Render pass
+            // attaches to the output imageview from the multiview pass
+            result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindImage(0,
+                            new DescriptorImageInfo(getTextureSampler(1), multiViewRenderPass.colorAttachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                    .build();
 
-                result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                        .bindBuffer(0,
-                                new DescriptorBufferInfo(0, objectBufferSize, multiViewFrame.objectBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                        .build();
-
-                multiViewFrame.objectDescriptorSet = result.descriptorSet();
-                multiViewRenderPass.objectDescriptorSetLayout = result.layout();
-
-                // Descriptor set for image input for the view Render pass
-                // attaches to the output imageview from the multiview pass
-                result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                        .bindImage(0,
-                                new DescriptorImageInfo(getTextureSampler(1), multiViewRenderPass.colorAttachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                        .build();
-
-                viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
-                textureSetLayout = result.layout();
-            }
-
+            viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
+            textureSetLayout = result.layout();
         }
     }
 
@@ -1037,8 +1033,8 @@ public class AnaglyphRenderer extends RenderingEngine {
     public void createMultiViewGraphicsPipeline() {
 
         try (var stack = stackPush()) {
-            var vertShaderSPIRV = compileShaderFile("shaders/anaglyph.vert", VERTEX_SHADER);
-            var fragShaderSPIRV = compileShaderFile("shaders/anaglyph.frag", FRAGMENT_SHADER);
+            var vertShaderSPIRV = compileShaderFile("shaders/multiview.vert", VERTEX_SHADER);
+            var fragShaderSPIRV = compileShaderFile("shaders/multiview.frag", FRAGMENT_SHADER);
 
             long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode(), device);
             long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode(), device);
@@ -1840,6 +1836,85 @@ public class AnaglyphRenderer extends RenderingEngine {
             normalDescription.offset(OFFSETOF_NORMAL);
 
             return attributeDescriptions.rewind();
+        }
+
+    }
+
+    public class AnaglyphMultiViewRenderPassFrame {
+
+        public long semaphore;
+        public long fence;
+        public long commandPool;
+        public VkCommandBuffer commandBuffer;
+        public AllocatedBuffer cameraBuffer;
+        public AllocatedBuffer objectBuffer;
+
+        // Global Descriptor set contains the camera data and other scene parameters
+        public long cameraAndSceneDescriptorSet;
+
+        // This contains the object transformation matrices
+        public long objectDescriptorSet;
+
+        public long vmaAllocator;
+
+        public void cleanUp() {
+            vkDestroySemaphore(device, semaphore, null);
+            vkDestroyFence(device, fence(), null);
+            vkDestroyCommandPool(device, commandPool, null);
+            vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
+            vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
+        }
+
+        public LongBuffer pSemaphore() {
+            return stackGet().longs(semaphore);
+        }
+
+        public long fence() {
+            return fence;
+        }
+        public LongBuffer pFence() {
+            return stackGet().longs(fence);
+        }
+    }
+
+    public class ViewRenderPassFrame {
+
+        public long presentCompleteSemaphore;
+        public long renderFinishedSemaphore;
+        public long fence;
+        public long commandPool;
+        public VkCommandBuffer commandBuffer;
+
+        public long imageInputDescriptorSet;
+
+        public void cleanUp() {
+            vkDestroySemaphore(device, renderFinishedSemaphore(), null);
+            vkDestroySemaphore(device, presentCompleteSemaphore(), null);
+            vkDestroyFence(device, fence(), null);
+            vkDestroyCommandPool(device, commandPool, null);
+        }
+
+        public long presentCompleteSemaphore() {
+            return presentCompleteSemaphore;
+        }
+
+        public LongBuffer pPresentCompleteSemaphore() {
+            return stackGet().longs(presentCompleteSemaphore);
+        }
+
+        public long renderFinishedSemaphore() {
+            return renderFinishedSemaphore;
+        }
+
+        public LongBuffer pRenderFinishedSemaphore() {
+            return stackGet().longs(renderFinishedSemaphore);
+        }
+
+        public long fence() {
+            return fence;
+        }
+        public LongBuffer pFence() {
+            return stackGet().longs(fence);
         }
 
     }
