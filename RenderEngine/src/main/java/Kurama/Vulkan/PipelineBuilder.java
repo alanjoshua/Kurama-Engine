@@ -6,9 +6,15 @@ import java.util.List;
 
 public class PipelineBuilder {
 
-    public static record ShaderStageCreateInfo(String shaderFile, int ShaderType, String entryPoint){}
+    public record ShaderStageCreateInfo(String shaderFile, int ShaderType, String entryPoint){}
+    public record VertexBindingDescription(int binding, int stride, int inputRate){}
+    public record VertexAttributeDescription(int binding, int location, int format, int offset){}
+    public record VertexInputStateCreateInfo(VertexBindingDescription vertexBindingDescription, List<VertexAttributeDescription> vertexAttributeDescription){}
+    public record InputAssemblyCreateInfo(int topology, boolean primitiveRestartEnable){}
 
     List<ShaderStageCreateInfo> shaderStages;
-//    List
+    VertexInputStateCreateInfo vertexInputStateCreateInfo;
+    InputAssemblyCreateInfo inputAssemblyCreateInfo;
+
 
 }
