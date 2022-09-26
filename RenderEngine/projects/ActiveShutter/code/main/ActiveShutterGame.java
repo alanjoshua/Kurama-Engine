@@ -32,7 +32,7 @@ public class ActiveShutterGame extends Game {
     public boolean isGameRunning = true;
 
     // This is a temporary visual to manually swap the rendered image between the left and right images
-    public float viewSwapInterval = 1f;
+    public float viewSwapInterval = 0.5f;
     public float swapDelta = 0;
     public int currentViewImage = 0;
 
