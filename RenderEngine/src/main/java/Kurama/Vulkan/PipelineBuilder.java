@@ -1,5 +1,7 @@
 package Kurama.Vulkan;
 
+import Kurama.Math.Vector;
+import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo;
 
@@ -47,8 +49,39 @@ public class PipelineBuilder {
                     cullMode, frontFace,
                     false, 0f, 0f, 0f);
         }
+    }
+
+    public record PipelineDepthStencilStateCreateInfo(boolean depthTestEnable, boolean depthWriteEnable,
+                                                      int depthCompareOp, boolean depthBoundsTestEnable,
+                                                      float minDepthBounds, float maxDepthBounds,
+                                                      boolean stencilTestEnable) {
+        public PipelineDepthStencilStateCreateInfo() {
+            this(true, true, VK_COMPARE_OP_LESS_OR_EQUAL, false, 0f,1f,false);
+        }
+
+        public PipelineDepthStencilStateCreateInfo(boolean depthTestEnable, boolean depthWriteEnable, int depthCompareOp, boolean depthBoundsTestEnable, boolean stencilTestEnable) {
+            this(depthTestEnable, depthWriteEnable, depthCompareOp, depthBoundsTestEnable, 0f, 1f, stencilTestEnable);
+        }
 
     }
+
+    public record PipelineColorBlendStateCreateInfo(boolean logicOpEnable, int logicOp, Vector blendConstants, int colorWriteMask, boolean blendEnable) {
+        public PipelineColorBlendStateCreateInfo() {
+            this(false, VK_LOGIC_OP_COPY, new Vector(new float[]{0,0,0,0}),
+                    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+                    false);
+        }
+    }
+    public record PushConstant(int offset, int size, int stageFlags) {}
+    public record PipelineMultisampleStateCreateInfo(
+            boolean sampleShadingEnabled, int rasterizationSamples, float minSampleShading, boolean alphaToCoverageEnable, boolean alhphaToOneEnable) {
+
+        public PipelineMultisampleStateCreateInfo() {
+            this(false, 1, 1f, false, false);
+        }
+
+    }
+
 
     List<ShaderStageCreateInfo> shaderStages;
     VertexBindingDescription vertexBindingDescription;
@@ -56,5 +89,15 @@ public class PipelineBuilder {
     InputAssemblyCreateInfo inputAssemblyCreateInfo;
     ViewPort viewport;
     Scissor scissor;
+    PipelineRasterizationStateCreateInfo rasterizer;
+    PipelineDepthStencilStateCreateInfo depthStencil;
+    PipelineColorBlendStateCreateInfo colorBlendAttach;
+    PipelineMultisampleStateCreateInfo multiSample;
+    PushConstant pushConstant;
+    List<Long> descriptorSetLayouts;
+
+    public static long build(VkDevice device, long renderPass) {
+
+    }
 
 }

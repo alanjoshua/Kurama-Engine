@@ -1117,8 +1117,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
             depthStencil.minDepthBounds(0.0f); // Optional
             depthStencil.maxDepthBounds(1.0f); // Optional
             depthStencil.stencilTestEnable(false);
-            depthStencil.front();
-            depthStencil.back();
 
             // ===> COLOR BLENDING <===
 
