@@ -35,7 +35,7 @@ import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
-import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+import static org.lwjgl.vulkan.VK12.*;
 
 public class ActiveShutterRenderer extends RenderingEngine {
 
@@ -180,7 +180,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         deletionQueue.add(() -> cleanupSwapChain());
     }
 
-    public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer) {
+    public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer, int viewImageToRender) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -225,7 +225,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                         viewPipelineLayout,
                         VK_SHADER_STAGE_FRAGMENT_BIT,
                         0,
-                        stack.floats(game.currentViewImage));
+                        stack.floats(viewImageToRender));
 
                 // Render a fullscreen triangle, so that the fragment shader is run for each pixel
                 vkCmdDraw(commandBuffer, 3, 1,0, 0);
@@ -400,12 +400,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void drawViewFrame(ViewRenderPassFrame curViewFrame, MultiViewRenderPassFrame curMultiViewFrame, int imageIndex) {
+    public void drawViewFrame(ViewRenderPassFrame curViewFrame, MultiViewRenderPassFrame curMultiViewFrame, int imageIndex, int viewImageToRender) {
         try(MemoryStack stack = stackPush()) {
 
             vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
 
-            recordViewCommandBuffer(curViewFrame, viewRenderPass.frameBuffers.get(imageIndex));
+            recordViewCommandBuffer(curViewFrame, viewRenderPass.frameBuffers.get(imageIndex), viewImageToRender);
 
             if(viewRenderPass.imagesToFrameMap.containsKey(imageIndex)) {
                 vkWaitForFences(device, viewRenderPass.imagesToFrameMap.get(imageIndex).fence(), true, UINT64_MAX);
@@ -441,14 +441,15 @@ public class ActiveShutterRenderer extends RenderingEngine {
         performBufferDataUpdates(renderables, currentFrameIndex);
 
         Integer imageIndex = prepareDisplay(curViewFrame);
-        if(imageIndex == null) {
-            return;
-        }
+        if(imageIndex == null) return;
 
         drawFrameForMultiView(curMultiViewFrame, curViewFrame, renderables);
-        drawViewFrame(curViewFrame, curMultiViewFrame, imageIndex);
 
+        drawViewFrame(curViewFrame, curMultiViewFrame, imageIndex, 0);
         submitDisplay(curViewFrame, imageIndex);
+
+//        drawViewFrame(curViewFrame, curMultiViewFrame, imageIndex, 0);
+//        submitDisplay(curViewFrame, imageIndex);
 
         currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
@@ -473,6 +474,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             } else if (vkResult != VK_SUCCESS) {
                 throw new RuntimeException("Failed to present swap chain image");
             }
+
         }
 
     }
@@ -1446,7 +1448,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             LongBuffer pRenderFinishedSemaphore = stack.mallocLong(1);
             LongBuffer pFence = stack.mallocLong(1);
 
-            // For view renderpass
+            // For view renderPass
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
                 if (vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
@@ -1459,6 +1461,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 viewRenderPass.frames.get(i).presentCompleteSemaphore = pImageAvailableSemaphore.get(0);
                 viewRenderPass.frames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
                 viewRenderPass.frames.get(i).fence = pFence.get(0);
+
             }
 
             // For multiview renderpass
