@@ -11,7 +11,10 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static java.lang.ClassLoader.getSystemResource;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.shaderc.Shaderc.*;
 
