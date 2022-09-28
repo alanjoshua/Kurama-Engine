@@ -290,13 +290,12 @@ public class PipelineBuilder {
             pipelineInfo.pInputAssemblyState(inputAssembly);
             pipelineInfo.pViewportState(viewportState);
             pipelineInfo.pRasterizationState(rasterizerInfo);
+            pipelineInfo.pDepthStencilState(depthStencilInfo);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(pipelineLayout);
             pipelineInfo.renderPass(renderPass);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
-            pipelineInfo.basePipelineIndex(-1);
-            pipelineInfo.pDepthStencilState(depthStencilInfo);
 
             if(multiSample != null) {
                 pipelineInfo.pMultisampleState(multisampling);

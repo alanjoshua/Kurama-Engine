@@ -17,10 +17,10 @@ public class Main {
 
 //		game = new GameVulkan("Vulkan");
 //		game.start();
-
+//
 //		game = new AnaglyphGame("Anaglyph Renderer");
 //		game.start();
-//
+
 		game = new ActiveShutterGame("Active shutter Renderer");
 		game.start();
 

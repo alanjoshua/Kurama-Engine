@@ -1066,8 +1066,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
         builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
         builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
 
-        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/view.vert", VK_SHADER_STAGE_VERTEX_BIT));
-        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/view.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.vert", VK_SHADER_STAGE_VERTEX_BIT));
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
         builder.descriptorSetLayouts = new long[]{textureSetLayout};
         builder.pushConstant = new PipelineBuilder.PushConstant(0, Float.BYTES, VK_SHADER_STAGE_FRAGMENT_BIT);
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
