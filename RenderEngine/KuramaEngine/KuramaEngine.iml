@@ -11,6 +11,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../Editor" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../projects/VulkanTestProject/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../projects/Anaglyph/code" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../projects/ActiveShutter/code" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../target" />
     </content>
     <orderEntry type="jdk" jdkName="19" jdkType="JavaSDK" />
