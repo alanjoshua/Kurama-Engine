@@ -17,6 +17,7 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.createShaderModule;
 import static Kurama.Vulkan.VulkanUtilities.device;
+import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -93,18 +94,18 @@ public class PipelineBuilder {
     }
     public record PipelineAndLayout(long pipelineLayout, long pipeline){};
 
-    List<ShaderStageCreateInfo> shaderStages;
-    VertexBindingDescription vertexBindingDescription;
-    List<VertexAttributeDescription> vertexAttributeDescriptions;
-    InputAssemblyCreateInfo inputAssemblyCreateInfo = new InputAssemblyCreateInfo();
-    ViewPort viewport;
-    Scissor scissor;
-    PipelineRasterizationStateCreateInfo rasterizer = new PipelineRasterizationStateCreateInfo();
-    PipelineDepthStencilStateCreateInfo depthStencil = new PipelineDepthStencilStateCreateInfo();
-    PipelineColorBlendStateCreateInfo colorBlendAttach = new PipelineColorBlendStateCreateInfo();
-    PipelineMultisampleStateCreateInfo multiSample;
-    PushConstant pushConstant;
-    long[] descriptorSetLayouts;
+    public List<ShaderStageCreateInfo> shaderStages = new ArrayList<>();
+    public VertexBindingDescription vertexBindingDescription;
+    public List<VertexAttributeDescription> vertexAttributeDescriptions;
+    public InputAssemblyCreateInfo inputAssemblyCreateInfo = new InputAssemblyCreateInfo();
+    public ViewPort viewport;
+    public Scissor scissor;
+    public PipelineRasterizationStateCreateInfo rasterizer = new PipelineRasterizationStateCreateInfo();
+    public PipelineDepthStencilStateCreateInfo depthStencil = new PipelineDepthStencilStateCreateInfo();
+    public PipelineColorBlendStateCreateInfo colorBlendAttach = new PipelineColorBlendStateCreateInfo();
+    public PipelineMultisampleStateCreateInfo multiSample;
+    public PushConstant pushConstant;
+    public long[] descriptorSetLayouts;
 
     public PipelineAndLayout build(VkDevice device, long renderPass) {
 
@@ -158,15 +159,14 @@ public class PipelineBuilder {
             vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
 
             if(vertexBindingDescription == null) {
-
-                if(vertexAttributeDescriptions == null || vertexAttributeDescriptions.size() == 0) {
-                    throw new IllegalArgumentException("Vertex binding attributes cannot be null when binding description is present");
-                }
-
                 vertexInputInfo.pVertexBindingDescriptions(null);
                 vertexInputInfo.pVertexAttributeDescriptions(null);
             }
             else {
+                if(vertexAttributeDescriptions == null || vertexAttributeDescriptions.size() == 0) {
+                    throw new IllegalArgumentException("Vertex binding attributes cannot be null when binding description is present");
+                }
+
                 var bindingDescription =
                         VkVertexInputBindingDescription.calloc(1);
 
@@ -261,7 +261,10 @@ public class PipelineBuilder {
 
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayouts));
+
+            if(descriptorSetLayouts != null) {
+                pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayouts));
+            }
 
             // PUSH CONSTANTS
             if(pushConstant != null) {

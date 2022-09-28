@@ -538,7 +538,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public void createVertexBufferForRenderable(Renderable renderable) {
         try (var stack = stackPush()) {
 
-            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
+            var bufferSize = (3 + 2 + 3) * Float.BYTES * renderable.mesh.getVertices().size();
             var stagingBuffer = createBufferVMA(vmaAllocator,
                     bufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -1038,301 +1038,44 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void createMultiViewGraphicsPipeline() {
 
-        try (var stack = stackPush()) {
-            var vertShaderSPIRV = compileShaderFile("shaders/multiview.vert", VERTEX_SHADER);
-            var fragShaderSPIRV = compileShaderFile("shaders/multiview.frag", FRAGMENT_SHADER);
+        var builder = new PipelineBuilder();
 
-            long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode(), device);
-            long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode(), device);
+        // Vertex attribute description
+        var attribs = new ArrayList<PipelineBuilder.VertexAttributeDescription>();
+        attribs.add(new PipelineBuilder.VertexAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0)); //pos
+        attribs.add(new PipelineBuilder.VertexAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 3 * Float.BYTES)); //tex
+        attribs.add(new PipelineBuilder.VertexAttributeDescription(0, 2, VK_FORMAT_R32G32B32_SFLOAT, 5 * Float.BYTES)); //normal
 
-            ByteBuffer entryPoint = stack.UTF8("main");
+        builder.vertexAttributeDescriptions = attribs;
+        builder.vertexBindingDescription = new PipelineBuilder.VertexBindingDescription(0, (3 + 2 + 3) * Float.BYTES, VK_VERTEX_INPUT_RATE_VERTEX);
+        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
+        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
 
-            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.vert", VK_SHADER_STAGE_VERTEX_BIT));
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
+        builder.descriptorSetLayouts = new long[]{multiViewRenderPass.cameraAndSceneDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, textureSetLayout};
 
-            VkPipelineShaderStageCreateInfo vertShaderStageInfo = shaderStages.get(0);
-
-            vertShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-            vertShaderStageInfo.stage(VK_SHADER_STAGE_VERTEX_BIT);
-            vertShaderStageInfo.module(vertShaderModule);
-            vertShaderStageInfo.pName(entryPoint);
-
-            VkPipelineShaderStageCreateInfo fragShaderStageInfo = shaderStages.get(1);
-
-            fragShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-            fragShaderStageInfo.stage(VK_SHADER_STAGE_FRAGMENT_BIT);
-            fragShaderStageInfo.module(fragShaderModule);
-            fragShaderStageInfo.pName(entryPoint);
-
-            // ===> VERTEX STAGE <===
-
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
-            vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            vertexInputInfo.pVertexBindingDescriptions(Vertex.getBindingDescription());
-            vertexInputInfo.pVertexAttributeDescriptions(Vertex.getAttributeDescriptions());
-
-            // ===> ASSEMBLY STAGE <===
-
-            VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
-            inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            inputAssembly.topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-            inputAssembly.primitiveRestartEnable(false);
-
-            // ===> VIEWPORT & SCISSOR
-
-            VkViewport.Buffer viewport = VkViewport.calloc(1, stack);
-            viewport.x(0.0f);
-            viewport.y(0.0f);
-            viewport.width(swapChainExtent.width());
-            viewport.height(swapChainExtent.height());
-            viewport.minDepth(0.0f);
-            viewport.maxDepth(1.0f);
-
-            VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
-            scissor.offset(VkOffset2D.calloc(stack).set(0, 0));
-            scissor.extent(swapChainExtent);
-
-            VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
-            viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            viewportState.pViewports(viewport);
-            viewportState.pScissors(scissor);
-
-            // ===> RASTERIZATION STAGE <===
-
-            VkPipelineRasterizationStateCreateInfo rasterizer = VkPipelineRasterizationStateCreateInfo.calloc(stack);
-            rasterizer.sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-            rasterizer.depthClampEnable(false);
-            rasterizer.rasterizerDiscardEnable(false);
-            rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
-            rasterizer.lineWidth(1.0f);
-            rasterizer.cullMode(VK_CULL_MODE_BACK_BIT);
-            rasterizer.frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-            rasterizer.depthBiasEnable(false);
-
-            VkPipelineDepthStencilStateCreateInfo depthStencil = VkPipelineDepthStencilStateCreateInfo.calloc(stack);
-            depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-            depthStencil.depthTestEnable(true);
-            depthStencil.depthWriteEnable(true);
-            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL);
-            depthStencil.depthBoundsTestEnable(false);
-            depthStencil.minDepthBounds(0.0f); // Optional
-            depthStencil.maxDepthBounds(1.0f); // Optional
-            depthStencil.stencilTestEnable(false);
-
-            // ===> COLOR BLENDING <===
-
-            VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = VkPipelineColorBlendAttachmentState.calloc(1, stack);
-            colorBlendAttachment.colorWriteMask(VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
-            colorBlendAttachment.blendEnable(false);
-
-            VkPipelineColorBlendStateCreateInfo colorBlending = VkPipelineColorBlendStateCreateInfo.calloc(stack);
-            colorBlending.sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-            colorBlending.logicOpEnable(false);
-            colorBlending.logicOp(VK_LOGIC_OP_COPY);
-            colorBlending.pAttachments(colorBlendAttachment);
-            colorBlending.blendConstants(stack.floats(0.0f, 0.0f, 0.0f, 0.0f));
-
-            VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
-            pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(multiViewRenderPass.cameraAndSceneDescriptorSetLayout, multiViewRenderPass.objectDescriptorSetLayout, textureSetLayout));
-
-            // ===> PIPELINE LAYOUT CREATION <===
-
-            LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
-
-            if(vkCreatePipelineLayout(device, pipelineLayoutInfo, null, pPipelineLayout) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create pipeline layout");
-            }
-
-            multiViewPipelineLayout = pPipelineLayout.get(0);
-
-            VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
-            pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            pipelineInfo.pStages(shaderStages);
-            pipelineInfo.pVertexInputState(vertexInputInfo);
-            pipelineInfo.pInputAssemblyState(inputAssembly);
-            pipelineInfo.pViewportState(viewportState);
-            pipelineInfo.pRasterizationState(rasterizer);
-            pipelineInfo.pColorBlendState(colorBlending);
-            pipelineInfo.layout(multiViewPipelineLayout);
-            pipelineInfo.renderPass(multiViewRenderPass.renderPass);
-            pipelineInfo.subpass(0);
-            pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
-            pipelineInfo.basePipelineIndex(-1);
-            pipelineInfo.pDepthStencilState(depthStencil);
-
-            LongBuffer pGraphicsPipeline = stack.mallocLong(1);
-
-            if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create graphics pipeline");
-            }
-
-            multiViewGraphicsPipeline = pGraphicsPipeline.get(0);
-
-            // ===> RELEASE RESOURCES <===
-
-            vkDestroyShaderModule(device, vertShaderModule, null);
-            vkDestroyShaderModule(device, fragShaderModule, null);
-
-            vertShaderSPIRV.free();
-            fragShaderSPIRV.free();
-        }
+        var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
+        multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
+        multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
 
     }
 
     public void createViewGraphicsPipeline() {
+        var builder = new PipelineBuilder();
+        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
+        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
 
-        try(var stack = stackPush()) {
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/view.vert", VK_SHADER_STAGE_VERTEX_BIT));
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/view.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
+        builder.descriptorSetLayouts = new long[]{textureSetLayout};
+        builder.pushConstant = new PipelineBuilder.PushConstant(0, Float.BYTES, VK_SHADER_STAGE_FRAGMENT_BIT);
+        builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
+        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-            // Let's compile the GLSL shaders into SPIR-V at runtime using the shaderc library
-            // Check ShaderSPIRVUtils class to see how it can be done
-            var vertShaderSPIRV = compileShaderFile("shaders/view.vert", VERTEX_SHADER);
-            var fragShaderSPIRV = compileShaderFile("shaders/view.frag", FRAGMENT_SHADER);
-
-            long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode(), device);
-            long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode(), device);
-
-            ByteBuffer entryPoint = stack.UTF8("main");
-
-            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
-
-            VkPipelineShaderStageCreateInfo vertShaderStageInfo = shaderStages.get(0);
-
-            vertShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-            vertShaderStageInfo.stage(VK_SHADER_STAGE_VERTEX_BIT);
-            vertShaderStageInfo.module(vertShaderModule);
-            vertShaderStageInfo.pName(entryPoint);
-
-            VkPipelineShaderStageCreateInfo fragShaderStageInfo = shaderStages.get(1);
-
-            fragShaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
-            fragShaderStageInfo.stage(VK_SHADER_STAGE_FRAGMENT_BIT);
-            fragShaderStageInfo.module(fragShaderModule);
-            fragShaderStageInfo.pName(entryPoint);
-
-            // ===> VERTEX STAGE <===
-
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
-            vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            vertexInputInfo.pVertexBindingDescriptions(null);
-            vertexInputInfo.pVertexAttributeDescriptions(null);
-
-            // ===> ASSEMBLY STAGE <===
-
-            VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
-            inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            inputAssembly.topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-            inputAssembly.primitiveRestartEnable(false);
-
-            // ===> VIEWPORT & SCISSOR
-
-            VkViewport.Buffer viewport = VkViewport.calloc(1, stack);
-            viewport.x(0.0f);
-            viewport.y(0.0f);
-            viewport.width(swapChainExtent.width());
-            viewport.height(swapChainExtent.height());
-            viewport.minDepth(0.0f);
-            viewport.maxDepth(1.0f);
-
-            VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
-            scissor.offset(VkOffset2D.calloc(stack).set(0, 0));
-            scissor.extent(swapChainExtent);
-
-            VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
-            viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            viewportState.pViewports(viewport);
-            viewportState.pScissors(scissor);
-
-            // ===> RASTERIZATION STAGE <===
-
-            VkPipelineRasterizationStateCreateInfo rasterizer = VkPipelineRasterizationStateCreateInfo.calloc(stack);
-            rasterizer.sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-            rasterizer.depthClampEnable(false);
-            rasterizer.rasterizerDiscardEnable(false);
-//            rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
-            rasterizer.polygonMode(VK_POLYGON_MODE_FILL);
-            rasterizer.lineWidth(1.0f);
-            rasterizer.cullMode(VK_CULL_MODE_FRONT_BIT);
-            rasterizer.frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-            rasterizer.depthBiasEnable(false);
-
-            VkPipelineDepthStencilStateCreateInfo depthStencil = VkPipelineDepthStencilStateCreateInfo.calloc(stack);
-            depthStencil.sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-            depthStencil.depthTestEnable(false);
-            depthStencil.depthWriteEnable(false);
-            depthStencil.depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL);
-            depthStencil.depthBoundsTestEnable(false);
-            depthStencil.minDepthBounds(0.0f); // Optional
-            depthStencil.maxDepthBounds(1.0f); // Optional
-            depthStencil.stencilTestEnable(false);
-            depthStencil.front();
-            depthStencil.back();
-
-            // ===> COLOR BLENDING <===
-
-            VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = VkPipelineColorBlendAttachmentState.calloc(1, stack);
-            colorBlendAttachment.colorWriteMask(VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
-            colorBlendAttachment.blendEnable(false);
-
-            VkPipelineColorBlendStateCreateInfo colorBlending = VkPipelineColorBlendStateCreateInfo.calloc(stack);
-            colorBlending.sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-            colorBlending.logicOpEnable(false);
-            colorBlending.logicOp(VK_LOGIC_OP_COPY);
-            colorBlending.pAttachments(colorBlendAttachment);
-            colorBlending.blendConstants(stack.floats(0.0f, 0.0f, 0.0f, 0.0f));
-
-            VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
-            pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pSetLayouts(stack.longs(textureSetLayout));
-
-            // Set push constants
-            VkPushConstantRange.Buffer pushConstant = VkPushConstantRange.calloc(1, stack);
-            pushConstant.offset(0);
-            pushConstant.size(Float.BYTES);
-            pushConstant.stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
-
-            pipelineLayoutInfo.pPushConstantRanges(pushConstant);
-
-            // ===> PIPELINE LAYOUT CREATION <===
-
-            LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
-
-            if(vkCreatePipelineLayout(device, pipelineLayoutInfo, null, pPipelineLayout) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create pipeline layout");
-            }
-
-            viewPipelineLayout = pPipelineLayout.get(0);
-
-            VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
-            pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            pipelineInfo.pStages(shaderStages);
-            pipelineInfo.pVertexInputState(vertexInputInfo);
-            pipelineInfo.pInputAssemblyState(inputAssembly);
-            pipelineInfo.pViewportState(viewportState);
-            pipelineInfo.pRasterizationState(rasterizer);
-            pipelineInfo.pColorBlendState(colorBlending);
-            pipelineInfo.layout(viewPipelineLayout);
-            pipelineInfo.renderPass(viewRenderPass.renderPass);
-            pipelineInfo.subpass(0);
-            pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
-            pipelineInfo.basePipelineIndex(-1);
-            pipelineInfo.pDepthStencilState(depthStencil);
-
-            LongBuffer pGraphicsPipeline = stack.mallocLong(1);
-
-            if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create graphics pipeline");
-            }
-
-            viewGraphicsPipeline = pGraphicsPipeline.get(0);
-
-            // ===> RELEASE RESOURCES <===
-
-            vkDestroyShaderModule(device, vertShaderModule, null);
-            vkDestroyShaderModule(device, fragShaderModule, null);
-
-            vertShaderSPIRV.free();
-            fragShaderSPIRV.free();
-        }
+        var pipeLineCreateResults = builder.build(device, viewRenderPass.renderPass);
+        viewPipelineLayout = pipeLineCreateResults.pipelineLayout();
+        viewGraphicsPipeline = pipeLineCreateResults.pipeline();
     }
 
     public void createFramebuffers() {
@@ -1802,54 +1545,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public static void memcpy(ByteBuffer buffer, GPUObjectData data) {
             data.modelMatrix.setValuesToBuffer(buffer);
         }
-    }
-
-    public static class Vertex {
-        public static final int SIZEOF = (3 + 2 + 3) * Float.BYTES;
-        public static final int OFFSETOF_POS = 0;
-        public static final int OFFSETOF_TEXCOORDS = 3 * Float.BYTES;
-        public static final int OFFSETOF_NORMAL = 5 * Float.BYTES;
-
-        public static VkVertexInputBindingDescription.Buffer getBindingDescription() {
-
-            VkVertexInputBindingDescription.Buffer bindingDescription =
-                    VkVertexInputBindingDescription.calloc(1);
-
-            bindingDescription.binding(0);
-            bindingDescription.stride(Vertex.SIZEOF);
-            bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
-
-            return bindingDescription;
-        }
-
-        public static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
-
-            var attributeDescriptions = VkVertexInputAttributeDescription.calloc(3);
-
-            // Position
-            VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(0);
-            posDescription.binding(0);
-            posDescription.location(0);
-            posDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-            posDescription.offset(OFFSETOF_POS);
-
-            // textCoords
-            var texDescription = attributeDescriptions.get(1);
-            texDescription.binding(0);
-            texDescription.location(1);
-            texDescription.format(VK_FORMAT_R32G32_SFLOAT);
-            texDescription.offset(OFFSETOF_TEXCOORDS);
-
-            // Normals
-            VkVertexInputAttributeDescription normalDescription = attributeDescriptions.get(2);
-            normalDescription.binding(0);
-            normalDescription.location(2);
-            normalDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-            normalDescription.offset(OFFSETOF_NORMAL);
-
-            return attributeDescriptions.rewind();
-        }
-
     }
 
     public class MultiViewRenderPassFrame {
