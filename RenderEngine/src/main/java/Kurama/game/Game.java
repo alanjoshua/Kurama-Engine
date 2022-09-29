@@ -149,9 +149,8 @@ public abstract class Game implements Runnable {
             }
 
             if (timer >= 1000000000.0) {
-                displayFPS = String.valueOf((int)fps);
+                displayFPS = getDisplayFPS();
                 fps = 0;
-                timer = 0;
                 timerStartTime = System.nanoTime();
 
                 if(shouldDisplayFPS) {
@@ -174,41 +173,20 @@ public abstract class Game implements Runnable {
 
     }
 
-    public double getTargetFPS() {
-        return targetFPS;
+    public String getDisplayFPS() {
+        return String.valueOf((int)fps);
     }
 
     public void setTargetFPS(double targetFPS) {
         this.targetFPS = targetFPS;
     }
 
-    public boolean isShouldFPS() {
-        return shouldDisplayFPS;
-    }
-
-    public void setShouldFPS(boolean shouldFPS) {
-        this.shouldDisplayFPS = shouldFPS;
-    }
-
-    public boolean isProgramRunning() {
-        return programRunning;
-    }
-
     public void setProgramRunning(boolean programRunning) {
         this.programRunning = programRunning;
     }
-
-//    public abstract RenderingEngine getRenderingEngine();
 
     public MasterWindow getMasterWindow() {
         return rootGuiComponent;
     }
 
-//    public abstract Camera getCamera();
-//
-//    public abstract Input getInput();
-
-    public float getMovementCost(GridNode current) {
-        return 0f;
-    }
 }

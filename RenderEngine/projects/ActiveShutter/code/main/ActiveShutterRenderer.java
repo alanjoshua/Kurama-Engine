@@ -20,9 +20,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
-import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
@@ -88,7 +85,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public RenderPass viewRenderPass = new RenderPass();
     public MultiViewRenderPass multiViewRenderPass = new MultiViewRenderPass();
-    public int currentFrameIndex = 0;
+    public int currentMultiViewFrameIndex = 0;
 
     public long viewPipelineLayout;
     public long viewGraphicsPipeline;
@@ -353,21 +350,19 @@ public class ActiveShutterRenderer extends RenderingEngine {
         updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
     }
 
-    public void drawFrameForMultiView(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer waitSemaphore, LongBuffer signalSemaphores, List<Renderable> renderables) {
+    public void drawFrameForMultiView(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer signalSemaphores, List<Renderable> renderables) {
 
         try(MemoryStack stack = stackPush()) {
 
             vkWaitForFences(device, stack.longs(curMultiViewFrame.fence), true, UINT64_MAX);
             vkResetFences(device, stack.longs(curMultiViewFrame.fence));
 
-            recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex), multiViewRenderPass.frameBuffer, currentFrameIndex);
+            recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(currentMultiViewFrameIndex), multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
 
             // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
-            submitInfo.waitSemaphoreCount(1);
-            submitInfo.pWaitSemaphores(waitSemaphore);
             submitInfo.pSignalSemaphores(signalSemaphores);
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
             submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
@@ -436,17 +431,17 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public void draw(List<Renderable> renderables) {
 
         try (var stack = stackPush()) {
-            var curMultiViewFrame = multiViewRenderPass.frames.get(currentFrameIndex);
+            var curMultiViewFrame = multiViewRenderPass.frames.get(currentMultiViewFrameIndex);
 
             var viewFrame1 = viewRenderPass.frames.get(0);
             var viewFrame2 = viewRenderPass.frames.get(1);
 
-            performBufferDataUpdates(renderables, currentFrameIndex);
+            performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
 
             Integer imageIndex1 = prepareDisplay(viewFrame1);
             if (imageIndex1 == null) return;
 
-            drawFrameForMultiView(curMultiViewFrame, stack.longs(viewFrame1.presentCompleteSemaphore), stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)), renderables);
+            drawFrameForMultiView(curMultiViewFrame, stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)), renderables);
 
             drawViewFrame(viewFrame1, stack.longs(curMultiViewFrame.semaphores.get(0)), stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1, 0);
             submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
@@ -457,7 +452,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
 
             // Only for multiview
-            currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+            currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
         }
     }
 

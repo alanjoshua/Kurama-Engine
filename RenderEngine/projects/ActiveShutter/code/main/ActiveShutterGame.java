@@ -325,4 +325,10 @@ public class ActiveShutterGame extends Game {
         display.cleanUp();
     }
 
+    @Override
+    public String getDisplayFPS() {
+        // 2 to account for the two images rendered and displayed during each "frame"
+        return String.valueOf((int)fps*2);
+    }
+
 }
