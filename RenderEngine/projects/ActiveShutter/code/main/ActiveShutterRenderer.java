@@ -353,12 +353,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
         updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
     }
 
-    public void drawFrameForMultiView(MultiViewRenderPassFrame curMultiViewFrame, ViewRenderPassFrame viewFrame, List<Renderable> renderables) {
+    public void drawFrameForMultiView(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer waitSemaphore, LongBuffer signalSemaphores, List<Renderable> renderables) {
 
         try(MemoryStack stack = stackPush()) {
 
-            vkWaitForFences(device, curMultiViewFrame.pFence(), true, UINT64_MAX);
-            vkResetFences(device, curMultiViewFrame.pFence());
+            vkWaitForFences(device, stack.longs(curMultiViewFrame.fence), true, UINT64_MAX);
+            vkResetFences(device, stack.longs(curMultiViewFrame.fence));
 
             recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex), multiViewRenderPass.frameBuffer, currentFrameIndex);
 
@@ -367,14 +367,14 @@ public class ActiveShutterRenderer extends RenderingEngine {
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
             submitInfo.waitSemaphoreCount(1);
-            submitInfo.pWaitSemaphores(viewFrame.pPresentCompleteSemaphore());
-            submitInfo.pSignalSemaphores(curMultiViewFrame.pSemaphore());
+            submitInfo.pWaitSemaphores(waitSemaphore);
+            submitInfo.pSignalSemaphores(signalSemaphores);
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
             submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
 
             int vkResult;
-            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.fence())) != VK_SUCCESS) {
-                vkResetFences(device, curMultiViewFrame.pFence());
+            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.fence)) != VK_SUCCESS) {
+                vkResetFences(device, stack.longs(curMultiViewFrame.fence));
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
@@ -386,7 +386,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             IntBuffer pImageIndex = stack.mallocInt(1);
             int vkResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-                    curViewFrame.presentCompleteSemaphore(), VK_NULL_HANDLE, pImageIndex);
+                    curViewFrame.presentCompleteSemaphore, VK_NULL_HANDLE, pImageIndex);
 
             if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
                 recreateSwapChain();
@@ -400,7 +400,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void drawViewFrame(ViewRenderPassFrame curViewFrame, MultiViewRenderPassFrame curMultiViewFrame, int imageIndex, int viewImageToRender) {
+    public void drawViewFrame(ViewRenderPassFrame curViewFrame, LongBuffer waitSemaphore, LongBuffer signalSemaphore, int imageIndex, int viewImageToRender) {
         try(MemoryStack stack = stackPush()) {
 
             vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
@@ -419,8 +419,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             submitInfo.waitSemaphoreCount(1);
 
-            submitInfo.pWaitSemaphores(curMultiViewFrame.pSemaphore());
-            submitInfo.pSignalSemaphores(curViewFrame.pRenderFinishedSemaphore());
+            submitInfo.pWaitSemaphores(waitSemaphore);
+            submitInfo.pSignalSemaphores(signalSemaphore);
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
             submitInfo.pCommandBuffers(stack.pointers(curViewFrame.commandBuffer));
 
@@ -435,33 +435,40 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void draw(List<Renderable> renderables) {
 
-        var curMultiViewFrame = multiViewRenderPass.frames.get(currentFrameIndex);
-        var curViewFrame = viewRenderPass.frames.get(currentFrameIndex);
+        try (var stack = stackPush()) {
+            var curMultiViewFrame = multiViewRenderPass.frames.get(currentFrameIndex);
 
-        performBufferDataUpdates(renderables, currentFrameIndex);
+            var viewFrame1 = viewRenderPass.frames.get(0);
+            var viewFrame2 = viewRenderPass.frames.get(1);
 
-        Integer imageIndex = prepareDisplay(curViewFrame);
-        if(imageIndex == null) return;
+            performBufferDataUpdates(renderables, currentFrameIndex);
 
-        drawFrameForMultiView(curMultiViewFrame, curViewFrame, renderables);
+            Integer imageIndex1 = prepareDisplay(viewFrame1);
+            if (imageIndex1 == null) return;
 
-        drawViewFrame(curViewFrame, curMultiViewFrame, imageIndex, 0);
-        submitDisplay(curViewFrame, imageIndex);
+            drawFrameForMultiView(curMultiViewFrame, stack.longs(viewFrame1.presentCompleteSemaphore), stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)), renderables);
 
-//        drawViewFrame(curViewFrame, curMultiViewFrame, imageIndex, 0);
-//        submitDisplay(curViewFrame, imageIndex);
+            drawViewFrame(viewFrame1, stack.longs(curMultiViewFrame.semaphores.get(0)), stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1, 0);
+            submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
 
-        currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+            Integer imageIndex2 = prepareDisplay(viewFrame2);
+            if (imageIndex2 == null) return;
+            drawViewFrame(viewFrame2, stack.longs(curMultiViewFrame.semaphores.get(1)), stack.longs(viewFrame2.renderFinishedSemaphore), imageIndex2, 1);
+            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
+
+            // Only for multiview
+            currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        }
     }
 
-    public void submitDisplay(ViewRenderPassFrame curViewFrame, int imageIndex) {
+    public void submitDisplay(LongBuffer waitSemaphores, int imageIndex) {
 
         try (var stack = stackPush()) {
 
             // Display rendered image to screen
             VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
             presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-            presentInfo.pWaitSemaphores(curViewFrame.pRenderFinishedSemaphore());
+            presentInfo.pWaitSemaphores(waitSemaphores);
             presentInfo.swapchainCount(1);
             presentInfo.pSwapchains(stack.longs(swapChain));
             presentInfo.pImageIndices(stack.ints(imageIndex));
@@ -1465,16 +1472,17 @@ public class ActiveShutterRenderer extends RenderingEngine {
             }
 
             // For multiview renderpass
-            LongBuffer sempahore = stack.mallocLong(1);
+            LongBuffer sempahore1 = stack.mallocLong(1);
+            LongBuffer sempahore2 = stack.mallocLong(1);
 
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                if (vkCreateSemaphore(device, semaphoreInfo, null, sempahore) != VK_SUCCESS
-                        || vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
 
-                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
-                }
+                vkCheck(vkCreateSemaphore(device, semaphoreInfo, null, sempahore1));
+                vkCheck(vkCreateSemaphore(device, semaphoreInfo, null, sempahore2));
+                vkCheck(vkCreateFence(device, fenceInfo, null, pFence));
 
-                multiViewRenderPass.frames.get(i).semaphore = sempahore.get(0);
+                multiViewRenderPass.frames.get(i).semaphores.add(sempahore1.get(0));
+                multiViewRenderPass.frames.get(i).semaphores.add(sempahore2.get(0));
                 multiViewRenderPass.frames.get(i).fence = pFence.get(0);
             }
 
@@ -1552,7 +1560,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public class MultiViewRenderPassFrame {
 
-        public long semaphore;
+        public List<Long> semaphores = new ArrayList<>();
         public long fence;
         public long commandPool;
         public VkCommandBuffer commandBuffer;
@@ -1568,22 +1576,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public long vmaAllocator;
 
         public void cleanUp() {
-            vkDestroySemaphore(device, semaphore, null);
-            vkDestroyFence(device, fence(), null);
+            semaphores.forEach(s -> vkDestroySemaphore(device, s, null));
+            vkDestroyFence(device, fence, null);
             vkDestroyCommandPool(device, commandPool, null);
             vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
             vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
-        }
-
-        public LongBuffer pSemaphore() {
-            return stackGet().longs(semaphore);
-        }
-
-        public long fence() {
-            return fence;
-        }
-        public LongBuffer pFence() {
-            return stackGet().longs(fence);
         }
     }
 
@@ -1598,26 +1595,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public long imageInputDescriptorSet;
 
         public void cleanUp() {
-            vkDestroySemaphore(device, renderFinishedSemaphore(), null);
-            vkDestroySemaphore(device, presentCompleteSemaphore(), null);
+            vkDestroySemaphore(device, renderFinishedSemaphore, null);
+            vkDestroySemaphore(device, presentCompleteSemaphore, null);
             vkDestroyFence(device, fence(), null);
             vkDestroyCommandPool(device, commandPool, null);
-        }
-
-        public long presentCompleteSemaphore() {
-            return presentCompleteSemaphore;
-        }
-
-        public LongBuffer pPresentCompleteSemaphore() {
-            return stackGet().longs(presentCompleteSemaphore);
-        }
-
-        public long renderFinishedSemaphore() {
-            return renderFinishedSemaphore;
-        }
-
-        public LongBuffer pRenderFinishedSemaphore() {
-            return stackGet().longs(renderFinishedSemaphore);
         }
 
         public long fence() {
