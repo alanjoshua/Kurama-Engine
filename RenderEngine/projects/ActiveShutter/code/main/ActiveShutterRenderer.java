@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
@@ -42,6 +43,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     .collect(toSet());
 
     public int MAXOBJECTS = 10000;
+    public int MAXCOMMANDS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
     public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -151,6 +153,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         initializeFrames();
         initSyncObjects();
         createFrameCommandPoolsAndBuffers();
+        createIndirectCommandBufferForMultiviewFrame();
 
         createGlobalCommandPool();
         createGlobalCommandBuffer();
@@ -175,6 +178,18 @@ public class ActiveShutterRenderer extends RenderingEngine {
         createMultiViewGraphicsPipeline();
 
         deletionQueue.add(() -> cleanupSwapChain());
+    }
+
+    public void createIndirectCommandBufferForMultiviewFrame() {
+        for(var frame: multiViewRenderPass.frames) {
+
+            frame.indirectCommandBuffer = createBufferVMA(
+                    vmaAllocator,
+                    MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO, null
+            );
+        }
     }
 
     public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer, int viewImageToRender) {
@@ -276,7 +291,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
-                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+//                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+                recordSceneToCommandBufferIndirect(renderables, commandBuffer, currentFrame, frameIndex, stack);
             }
             vkCmdEndRenderPass(commandBuffer);
 
@@ -301,6 +317,64 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
+
+        Mesh previousMesh = null;
+        Long previousTextureSet = null;
+
+        for(int i = 0; i < renderables.size(); i++) {
+            var renderable = renderables.get(i);
+
+            if(previousMesh != renderable.mesh) {
+                LongBuffer offsets = stack.longs(0);
+                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
+                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+                previousMesh = renderable.mesh;
+            }
+
+            // Bind texture descriptor set only if it is different from previous texture
+            if(previousTextureSet != renderable.textureDescriptorSet) {
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        multiViewPipelineLayout, 2, stack.longs(renderable.textureDescriptorSet), null);
+
+                previousTextureSet = renderable.textureDescriptorSet;
+            }
+
+            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+        }
+    }
+
+    public void recordSceneToCommandBufferIndirect(List<Renderable> renderables, VkCommandBuffer commandBuffer, MultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
+
+        var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
+        var pUniformOffset = stack.mallocInt(1);
+        pUniformOffset.put(0, uniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
+
+        // Probably needs to be static
+        var indirectBatches = compactDraws(renderables);
+
+        for(var batch: indirectBatches) {
+
+            // Bind mesh vertex and index buffers, and material descriptor sets
+            LongBuffer offsets = stack.longs(0);
+            LongBuffer vertexBuffers = stack.longs(renderables.get(batch.first).vertexBuffer.buffer);
+            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffer, renderables.get(batch.first).indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
+
+        }
+
 
         Mesh previousMesh = null;
         Long previousTextureSet = null;
@@ -1561,6 +1635,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public VkCommandBuffer commandBuffer;
         public AllocatedBuffer cameraBuffer;
         public AllocatedBuffer objectBuffer;
+
+        public AllocatedBuffer indirectCommandBuffer;
 
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSet;

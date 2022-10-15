@@ -62,8 +62,11 @@ public class ActiveShutterGame extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new StereoCamera(this,null, null, new Vector(new float[] {0,0,0}),60, 0.001f, 1000.0f,
-                renderer.swapChainExtent.width(), renderer.swapChainExtent.height(), false, "playerCam");
+        playerCamera = new StereoCamera(this,null, null,
+                new Vector(new float[] {0,0,0}),60,
+                0.001f, 1000.0f,
+                renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
+                false, "playerCam");
 
         playerCamera.loadDefaultSettings();
         playerCamera.fovX = 45;
