@@ -1313,7 +1313,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
 
     public void updateCameraGPUDataInMemory(int currentFrame) {
-
         var alignment = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
         int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
 

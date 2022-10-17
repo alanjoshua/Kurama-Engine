@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
@@ -45,6 +46,7 @@ public class AnaglyphRenderer extends RenderingEngine {
                     .collect(toSet());
 
     public int MAXOBJECTS = 10000;
+    public int MAXCOMMANDS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
     public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -154,6 +156,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         initializeFrames();
         initSyncObjects();
         createFrameCommandPoolsAndBuffers();
+        createIndirectCommandBufferForMultiviewFrame();
 
         createGlobalCommandPool();
         createGlobalCommandBuffer();
@@ -178,6 +181,20 @@ public class AnaglyphRenderer extends RenderingEngine {
         createMultiViewGraphicsPipeline();
 
         deletionQueue.add(() -> cleanupSwapChain());
+    }
+
+    public void createIndirectCommandBufferForMultiviewFrame() {
+        for(var frame: multiViewRenderPass.frames) {
+
+            frame.indirectCommandBuffer = createBufferVMA(
+                    vmaAllocator,
+                    MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+            );
+        }
     }
 
     public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer) {
@@ -273,7 +290,8 @@ public class AnaglyphRenderer extends RenderingEngine {
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
-                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+//                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+                recordSceneToCommandBufferIndirect(renderables, commandBuffer,currentFrame, frameIndex, stack);
             }
             vkCmdEndRenderPass(commandBuffer);
 
@@ -326,6 +344,42 @@ public class AnaglyphRenderer extends RenderingEngine {
         }
     }
 
+    public void recordSceneToCommandBufferIndirect(List<Renderable> renderables, VkCommandBuffer commandBuffer, AnaglyphMultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
+
+        var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
+        var pUniformOffset = stack.mallocInt(1);
+        pUniformOffset.put(0, uniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
+
+        // Probably needs to be static, or better optimized. Will be done when Compute shaders are enabled
+        var indirectBatches = compactDraws(renderables);
+
+        for(var batch: indirectBatches) {
+
+            // Bind mesh vertex and index buffers, and material descriptor sets
+            LongBuffer offsets = stack.longs(0);
+            LongBuffer vertexBuffers = stack.longs(renderables.get(batch.first).vertexBuffer.buffer);
+            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffer, renderables.get(batch.first).indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
+
+            long offset = batch.first * VkDrawIndexedIndirectCommand.SIZEOF;
+            int stride = VkDrawIndexedIndirectCommand.SIZEOF;
+
+            vkCmdDrawIndexedIndirect(commandBuffer, currentFrame.indirectCommandBuffer.buffer,
+                    offset, batch.count, stride);
+        }
+    }
+
     public long getTextureSampler(int maxLod) {
         textureSamplerToMaxLOD.computeIfAbsent(maxLod, TextureVK::createTextureSampler);
         return textureSamplerToMaxLOD.get(maxLod);
@@ -345,6 +399,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         updateCameraGPUDataInMemory(currentFrameIndex);
         updateSceneGPUDataInMemory(currentFrameIndex);
         updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
+        updateIndirectCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex));
     }
 
     public void drawFrameForMultiView(AnaglyphMultiViewRenderPassFrame curMultiViewFrame, ViewRenderPassFrame viewFrame, List<Renderable> renderables) {
@@ -1249,64 +1304,64 @@ public class AnaglyphRenderer extends RenderingEngine {
     }
 
     public void updateCameraGPUDataInMemory(int currentFrame) {
-        try(MemoryStack stack = stackPush()) {
+        var alignment = (int)(padUniformBufferSize(ActiveShutterRenderer.GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
+        int bufferSize = (int) (padUniformBufferSize(ActiveShutterRenderer.GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
 
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation, data);
-            {
-                var offset = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
-                int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
-                var buffer = data.getByteBuffer(bufferSize);
-
-                GPUCameraData.memcpy(buffer, gpuCameraDataLeft);
-
-                buffer.position(offset);
-                GPUCameraData.memcpy(buffer, gpuCameraDataRight);
-            }
-            vmaUnmapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation);
-        }
+        var bw = new BufferWriter(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer, alignment, bufferSize);
+        bw.mapBuffer();
+        GPUCameraData.memcpy(bw.buffer, gpuCameraDataLeft);
+        bw.setPosition(1);
+        GPUCameraData.memcpy(bw.buffer, gpuCameraDataRight);
+        bw.unmapBuffer();
     }
 
     public void updateSceneGPUDataInMemory(int currentFrame) {
-        try(MemoryStack stack = stackPush()) {
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, gpuSceneBuffer.allocation, data);
-            {
-                var offset = (int)(padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame);
-                int bufferSize = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * MAX_FRAMES_IN_FLIGHT);
+        var alignment = (int)padUniformBufferSize(ActiveShutterRenderer.GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
+        int bufferSize = (int) (padUniformBufferSize(ActiveShutterRenderer.GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * MAX_FRAMES_IN_FLIGHT);
 
-                var buffer = data.getByteBuffer(bufferSize);
-                buffer.position(offset);
-                GPUSceneData.memcpy(buffer, gpuSceneData);
-            }
-            vmaUnmapMemory(vmaAllocator, gpuSceneBuffer.allocation);
-        }
+        var bw = new BufferWriter(vmaAllocator, gpuSceneBuffer, alignment, bufferSize);
+        bw.mapBuffer();
+        bw.setPosition(currentFrame);
+        GPUSceneData.memcpy(bw.buffer, gpuSceneData);
+        bw.unmapBuffer();
     }
 
     public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, AnaglyphMultiViewRenderPassFrame frame) {
-        try (var stack = stackPush()) {
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
+        var alignmentSize = (int)(padUniformBufferSize(RenderingEngineVulkan.GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment));
+        int bufferSize = alignmentSize * renderables.size();
 
-            var alignmentSize = (int)(padUniformBufferSize(RenderingEngineVulkan.GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment));
-            int bufferSize = alignmentSize * MAXOBJECTS;
-
-            var buffer = data.getByteBuffer(bufferSize);
-            int offset = 0;
-
-            for(int i = 0; i < renderables.size(); i++) {
-                buffer.position(offset);
-
-                var renderable = renderables.get(i);
-                var gpuObjectData = new GPUObjectData();
-                gpuObjectData.modelMatrix = renderable.model.objectToWorldMatrix;
-                GPUObjectData.memcpy(buffer, gpuObjectData);
-
-                offset += alignmentSize;
-            }
-
-            vmaUnmapMemory(vmaAllocator, frame.objectBuffer.allocation);
+        var bw = new BufferWriter(vmaAllocator, frame.objectBuffer, alignmentSize, bufferSize);
+        bw.mapBuffer();
+        for(int i = 0; i < renderables.size(); i++) {
+            bw.setPosition(i);
+            bw.put(renderables.get(i).model.objectToWorldMatrix);
         }
+        bw.unmapBuffer();
+    }
+
+    public void updateIndirectCommandBuffer(List<Renderable> renderables, AnaglyphMultiViewRenderPassFrame frame) {
+        var alignmentSize = VkDrawIndexedIndirectCommand.SIZEOF;
+        var bufferSize = alignmentSize * renderables.size();
+
+        var bw = new BufferWriter(vmaAllocator, frame.indirectCommandBuffer, alignmentSize, bufferSize);
+        bw.mapBuffer();
+        for(int i = 0; i < renderables.size(); i++) {
+            bw.setPosition(i);
+
+//            uint32_t    indexCount;
+//            uint32_t    instanceCount;
+//            uint32_t    firstIndex;
+//            int32_t     vertexOffset;
+//            uint32_t    firstInstance;
+
+            bw.put(renderables.get(i).mesh.indices.size());
+            bw.put(1);
+            bw.put(0);
+            bw.put(0);
+            bw.put(i);
+        }
+        bw.unmapBuffer();
+
     }
 
     public void recreateFrameCommandBuffers() {
@@ -1599,6 +1654,7 @@ public class AnaglyphRenderer extends RenderingEngine {
         public VkCommandBuffer commandBuffer;
         public AllocatedBuffer cameraBuffer;
         public AllocatedBuffer objectBuffer;
+        public AllocatedBuffer indirectCommandBuffer;
 
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSet;
@@ -1614,6 +1670,7 @@ public class AnaglyphRenderer extends RenderingEngine {
             vkDestroyCommandPool(device, commandPool, null);
             vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
             vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
+            vmaDestroyBuffer(vmaAllocator, indirectCommandBuffer.buffer, indirectCommandBuffer.allocation);
         }
 
         public LongBuffer pSemaphore() {
