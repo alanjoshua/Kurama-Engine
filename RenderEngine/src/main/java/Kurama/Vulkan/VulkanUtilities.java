@@ -816,21 +816,56 @@ public class VulkanUtilities {
 
             IntBuffer presentSupport = stack.ints(VK_FALSE);
 
-            for(int i = 0;i < queueFamilies.capacity() || !indices.isComplete();i++) {
+            indices.graphicsFamily = getQueueFamily(queueFamilies, VK_QUEUE_GRAPHICS_BIT);
+            indices.computeFamily = getQueueFamily(queueFamilies, VK_QUEUE_COMPUTE_BIT);
+            indices.transferFamily = getQueueFamily(queueFamilies, VK_QUEUE_TRANSFER_BIT);
 
-                if((queueFamilies.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
-                    indices.graphicsFamily = i;
-                }
-
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
-
-                if(presentSupport.get(0) == VK_TRUE) {
-                    indices.presentFamily = i;
-                }
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, indices.graphicsFamily, surface, presentSupport);
+            if(presentSupport.get(0) == VK_TRUE) {
+                indices.presentFamily = indices.graphicsFamily;
             }
 
             return indices;
         }
+    }
+
+    private static int getQueueFamily(VkQueueFamilyProperties.Buffer queueFamilies, int flag) {
+
+        // Dedicated queue for compute
+        // Try to find a queue family index that supports compute but not graphics
+        if((flag & VK_QUEUE_COMPUTE_BIT) == flag) {
+
+            for(int i = 0; i < queueFamilies.capacity(); i++) {
+                if(((queueFamilies.get(i).queueFlags() & VK_QUEUE_COMPUTE_BIT) != 0) &&
+                        ((queueFamilies.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) == 0)) {
+                    return i;
+                }
+            }
+        }
+
+        // Dedicated queue for transfer
+        // Try to find a queue family index that supports transfer but not graphics and compute
+        if((flag & VK_QUEUE_TRANSFER_BIT) == flag) {
+
+            for(int i = 0; i < queueFamilies.capacity(); i++) {
+                // Dedicated queue for compute
+                // Try to find a queue family index that supports compute but not graphics
+                if(((queueFamilies.get(i).queueFlags() & VK_QUEUE_TRANSFER_BIT) != 0) &&
+                        ((queueFamilies.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) == 0) &&
+                        ((queueFamilies.get(i).queueFlags() & VK_QUEUE_COMPUTE_BIT) == 0)) {
+                    return i;
+                }
+            }
+        }
+
+        for(int i = 0; i < queueFamilies.capacity(); i++) {
+            if((flag & queueFamilies.get(i).queueFlags() & flag) == flag) {
+                return i;
+            }
+        }
+
+        throw new IllegalArgumentException("Could not find a matching queue family index for flags: "+ flag);
+
     }
 
     public static PointerBuffer asPointerBuffer(Collection<String> collection) {

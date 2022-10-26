@@ -53,6 +53,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public int graphicsQueueFamilyIndex;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
+    public VkQueue computeQueue;
     public long swapChain;
 
     public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
@@ -724,6 +725,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
+    private void prepareCompute() {
+//        vkGetDeviceQueue();
+    }
+
     private void recreateSwapChain() {
 
         try(MemoryStack stack = stackPush()) {
@@ -1372,7 +1377,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
             bw.put(i);
         }
         bw.unmapBuffer();
-
     }
 
     public void recreateFrameCommandBuffers() {
@@ -1663,6 +1667,17 @@ public class ActiveShutterRenderer extends RenderingEngine {
             return stackGet().longs(fence);
         }
 
+    }
+
+    public class ComputePass {
+
+        public long commandPool;
+        public VkCommandBuffer commandBuffer;
+        public long fence;
+        public long semaphore;
+        public long descriptorSet;
+        public long pipelineLayout;
+        public long pipeline;
     }
 
 }
