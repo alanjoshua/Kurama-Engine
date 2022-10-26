@@ -31,7 +31,7 @@ public class TextureVK extends Texture {
         this.fileName = fileName;
     }
 
-    public static void createTextureImage(VkQueue queue, long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext, TextureVK texture) {
+    public static void createTextureImage(long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext, TextureVK texture) {
 
         try(var stack = stackPush()) {
 
@@ -96,7 +96,7 @@ public class TextureVK extends Texture {
                 generateMipMaps(texture.imageBuffer.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, cmd);
 
             };
-            submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext, queue);
+            submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext);
 
            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 

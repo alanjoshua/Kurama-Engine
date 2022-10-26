@@ -22,9 +22,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
-import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
@@ -49,9 +46,11 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
     public AllocatedBuffer gpuSceneBuffer;
-    public int graphicsQueueFamilyIndex;
+    public QueueFamilyIndices queueFamilyIndices;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
+    public VkQueue computeQueue;
+    public VkQueue transferQueue;
     public long swapChain;
     public List<Long> swapChainImages;
     public int swapChainImageFormat;
@@ -89,7 +88,8 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public boolean framebufferResize;
     public GPUCameraData gpuCameraData;
     public GPUSceneData gpuSceneData;
-    public SingleTimeCommandContext singleTimeCommandContext;
+    public SingleTimeCommandContext singleTimeGraphicsCommandContext;
+    public SingleTimeCommandContext singleTimeTransferCommandContext;
     public HashMap<String, TextureVK> loadedTextures;
 
     public long vmaAllocator;
@@ -261,7 +261,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public void loadTexture(TextureVK texture) {
         if (texture == null || texture.fileName == null || loadedTextures.containsKey(texture.fileName)) return;
 
-        TextureVK.createTextureImage(graphicsQueue, vmaAllocator, singleTimeCommandContext, texture);
+        TextureVK.createTextureImage(vmaAllocator, singleTimeGraphicsCommandContext, texture);
         TextureVK.createTextureImageView(texture);
 
         loadedTextures.put(texture.fileName, texture);
@@ -377,7 +377,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
@@ -414,7 +414,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
 
@@ -715,7 +715,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                         1, 1, cmd);
                 },
-                    singleTimeCommandContext, graphicsQueue);
+                    singleTimeGraphicsCommandContext);
         }
     }
 
@@ -1017,8 +1017,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
         try(MemoryStack stack = stackPush()) {
 
             QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
-
-            graphicsQueueFamilyIndex = indices.graphicsFamily;
+            queueFamilyIndices = indices;
             int[] uniqueQueueFamilies = indices.unique();
 
             VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
@@ -1068,6 +1067,12 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
             vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
             presentQueue = new VkQueue(pQueue.get(0), device);
+
+            vkGetDeviceQueue(device, indices.computeFamily, 0, pQueue);
+            computeQueue = new VkQueue(pQueue.get(0), device);
+
+            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
+            transferQueue = new VkQueue(pQueue.get(0), device);
         }
     }
 
@@ -1186,7 +1191,7 @@ public class RenderingEngineVulkan extends RenderingEngine {
                         colorAttachment.allocatedImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         1, 1, cmd);
-            }, singleTimeCommandContext, graphicsQueue);}
+            }, singleTimeGraphicsCommandContext);}
     }
 
     // Allocate a descriptor pool that can create a max of 10 sets and 10 uniform buffers
@@ -1384,18 +1389,26 @@ public class RenderingEngineVulkan extends RenderingEngine {
                 inFlightFrames.get(i).fence = pFence.get(0);
             }
 
-            // Create fence and commandPool/buffer for immediate upload context
-            singleTimeCommandContext = new SingleTimeCommandContext();
+            // Create fence and commandPool/buffer for immediate Graphics context
+            singleTimeGraphicsCommandContext = new SingleTimeCommandContext();
+            singleTimeGraphicsCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeGraphicsCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.graphicsFamily, 0, stack), stack);
+            singleTimeGraphicsCommandContext.queue = graphicsQueue;
+            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeGraphicsCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeGraphicsCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
 
-            singleTimeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            // Create fence and commandPool/buffer for immediate trasnfer context
+            singleTimeTransferCommandContext = new SingleTimeCommandContext();
+            singleTimeTransferCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeTransferCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.transferFamily, 0, stack), stack);
+            singleTimeTransferCommandContext.queue = transferQueue;
+            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeTransferCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeTransferCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
 
-            singleTimeCommandContext.commandPool =  createCommandPool(device,
-                  createCommandPoolCreateInfo(graphicsQueueFamilyIndex, 0, stack), stack);
-
-            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
-
-            deletionQueue.add(() -> singleTimeCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeGraphicsCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeTransferCommandContext.cleanUp(device));
         }
     }
 

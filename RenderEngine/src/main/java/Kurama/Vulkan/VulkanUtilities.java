@@ -483,7 +483,7 @@ public class VulkanUtilities {
         return submitInfo;
     }
 
-    public static void submitImmediateCommand(Consumer<VkCommandBuffer> func, SingleTimeCommandContext singleTimeCommandContext, VkQueue queue) {
+    public static void submitImmediateCommand(Consumer<VkCommandBuffer> func, SingleTimeCommandContext singleTimeCommandContext) {
         try (var stack = stackPush()) {
             var cmdBeginInfo = createCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
             vkCheck(vkBeginCommandBuffer(singleTimeCommandContext.commandBuffer, cmdBeginInfo));
@@ -493,7 +493,7 @@ public class VulkanUtilities {
             vkCheck(vkEndCommandBuffer(singleTimeCommandContext.commandBuffer));
 
             var submit = createSubmitInfo(singleTimeCommandContext.commandBuffer, stack);
-            vkCheck(vkQueueSubmit(queue, submit, singleTimeCommandContext.fence));
+            vkCheck(vkQueueSubmit(singleTimeCommandContext.queue, submit, singleTimeCommandContext.fence));
 
             vkWaitForFences(device, singleTimeCommandContext.fence, true, 999999999);
             vkResetFences(device, singleTimeCommandContext.fence);
