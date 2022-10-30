@@ -60,6 +60,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
     public DescriptorSetLayoutCache descriptorSetLayoutCache = new DescriptorSetLayoutCache();
 
+    public AllocatedBuffer mergedVertexBuffer;
+    public AllocatedBuffer mergedIndexBuffer;
+
     public static class RenderPass {
 
         public List<ViewRenderPassFrame> frames;
@@ -323,6 +326,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
+        vkCmdBindVertexBuffers(commandBuffer, 0, stack.longs(mergedVertexBuffer.buffer), stack.longs(0));
+        vkCmdBindIndexBuffer(commandBuffer, mergedIndexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
         Mesh previousMesh = null;
         Long previousTextureSet = null;
 
@@ -330,11 +336,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
             var renderable = renderables.get(i);
 
             if(previousMesh != renderable.mesh) {
-                LongBuffer offsets = stack.longs(0);
-                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
-                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
+//                LongBuffer offsets = stack.longs(0);
+//                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
+//                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+//                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
                 previousMesh = renderable.mesh;
             }
 
@@ -346,7 +351,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 previousTextureSet = renderable.textureDescriptorSet;
             }
 
-            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, renderable.firstIndex, renderable.firstVertex, i);
         }
     }
 
@@ -364,16 +369,14 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
+        // One vertex buffer and index buffer is used to store all the mesh information
+        vkCmdBindVertexBuffers(commandBuffer, 0, stack.longs(mergedVertexBuffer.buffer), stack.longs(0));
+        vkCmdBindIndexBuffer(commandBuffer, mergedIndexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
         // Probably needs to be static, or better optimized. Will be done when Compute shaders are enabled
         var indirectBatches = compactDraws(renderables);
 
         for(var batch: indirectBatches) {
-
-            // Bind mesh vertex and index buffers, and material descriptor sets
-            LongBuffer offsets = stack.longs(0);
-            LongBuffer vertexBuffers = stack.longs(renderables.get(batch.first).vertexBuffer.buffer);
-            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffer, renderables.get(batch.first).indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
@@ -540,6 +543,52 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
+    public void mergeMeshes(List<Renderable> renderables) {
+        int totalVertices = 0;
+        int totalIndices = 0;
+
+        for(var r: renderables) {
+            r.firstVertex = totalVertices;
+            r.firstIndex = totalIndices;
+
+            totalVertices += r.mesh.getVertices().size();
+            totalIndices += r.mesh.indices.size();
+        }
+
+        mergedVertexBuffer = createBufferVMA(vmaAllocator, totalVertices * (3 + 2 + 3) * Float.BYTES,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+
+        mergedIndexBuffer = createBufferVMA(vmaAllocator, totalIndices * Integer.BYTES,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+
+        try (var stack = stackPush()) {
+
+            var vertexCopy = VkBufferCopy.calloc(1, stack);
+            var indexCopy = VkBufferCopy.calloc(1, stack);
+
+            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+                for(var r: renderables) {
+                    vertexCopy.dstOffset(r.firstVertex * (3 + 2 + 3) * Float.BYTES);
+                    vertexCopy.size(r.mesh.getVertices().size() * (3 + 2 + 3) * Float.BYTES);
+                    vertexCopy.srcOffset(0);
+                    vkCmdCopyBuffer(cmd, r.vertexBuffer.buffer, mergedVertexBuffer.buffer, vertexCopy);
+
+                    indexCopy.dstOffset(r.firstIndex * Integer.BYTES);
+                    indexCopy.size(r.mesh.indices.size() * Integer.BYTES);
+                    indexCopy.srcOffset(0);
+                    vkCmdCopyBuffer(cmd, r.indexBuffer.buffer, mergedIndexBuffer.buffer, indexCopy);
+                }
+            };
+
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+        }
+
+        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedVertexBuffer.buffer, mergedVertexBuffer.allocation));
+        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedIndexBuffer.buffer, mergedIndexBuffer.allocation));
+    }
+
     public void uploadMeshData(Renderable renderable) {
         createIndexBufferForRenderable(renderable);
         createVertexBufferForRenderable(renderable);
@@ -565,7 +614,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public void createIndexBufferForRenderable(Renderable renderable) {
         try (var stack = stackPush()) {
 
-            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
+            var bufferSize = Integer.BYTES * renderable.mesh.indices.size();
             var stagingBuffer = createBufferVMA(vmaAllocator,
                     bufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -576,12 +625,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
             {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
+                memcpyInt(data.getByteBuffer(0, bufferSize), renderable.mesh.indices);
             }
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
             renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             Consumer<VkCommandBuffer> copyCmd = cmd -> {
@@ -617,7 +666,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
             renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 
@@ -727,8 +776,15 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
+    private void prepareComputeBuffers() {
+
+    }
+
     private void prepareCompute() {
-//        vkGetDeviceQueue();
+
+//        var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+//                .bindBuffer(0, new DescriptorBufferInfo(0, ))
+
     }
 
     private void recreateSwapChain() {
@@ -1385,8 +1441,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             bw.put(renderables.get(i).mesh.indices.size());
             bw.put(1);
-            bw.put(0);
-            bw.put(0);
+            bw.put(renderables.get(i).firstIndex);
+            bw.put(renderables.get(i).firstVertex);
             bw.put(i);
         }
         bw.unmapBuffer();
@@ -1699,6 +1755,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public long descriptorSet;
         public long pipelineLayout;
         public long pipeline;
+
+        public AllocatedBuffer instanceBuffer;
+        public AllocatedBuffer indirectCommandsBuffer;
+        public AllocatedBuffer indirectDrawCountBuffer;
+        public List<VkDrawIndexedIndirectCommand> indirectCommands;
     }
 
 }

@@ -15,6 +15,8 @@ public class Renderable {
     public AllocatedBuffer vertexBuffer;
     public AllocatedBuffer indexBuffer;
     public Long textureDescriptorSet = null;
+    public int firstIndex;
+    public int firstVertex;
 
     // assume each mesh only has one material
     public Mesh mesh;

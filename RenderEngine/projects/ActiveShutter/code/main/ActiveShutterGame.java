@@ -19,6 +19,7 @@ import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
 
 public class ActiveShutterGame extends Game {
 
@@ -146,6 +147,7 @@ public class ActiveShutterGame extends Game {
         models.add(vikingRoom);
 
         renderables.addAll(getRenderablesFromModel(lostEmpire));
+//        renderables.add(new Renderable(lostEmpire.meshes.get(2),lostEmpire));
         renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderables.forEach(r -> {
@@ -155,6 +157,8 @@ public class ActiveShutterGame extends Game {
 
             deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
         });
+
+        renderer.mergeMeshes(renderables);
     }
 
     @Override
