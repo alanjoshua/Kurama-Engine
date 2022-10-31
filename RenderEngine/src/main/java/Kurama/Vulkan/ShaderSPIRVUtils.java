@@ -61,7 +61,8 @@ public class ShaderSPIRVUtils {
 
         VERTEX_SHADER(shaderc_glsl_vertex_shader),
         GEOMETRY_SHADER(shaderc_glsl_geometry_shader),
-        FRAGMENT_SHADER(shaderc_glsl_fragment_shader);
+        FRAGMENT_SHADER(shaderc_glsl_fragment_shader),
+        COMPUTE_SHADER(shaderc_glsl_compute_shader);
 
         private final int kind;
 

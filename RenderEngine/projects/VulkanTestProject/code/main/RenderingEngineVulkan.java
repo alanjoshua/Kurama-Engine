@@ -747,11 +747,9 @@ public class RenderingEngineVulkan extends RenderingEngine {
             createInfo.imageArrayLayers(1);
             createInfo.imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-            QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-
-            if(!indices.graphicsFamily.equals(indices.presentFamily)) {
+            if(!queueFamilyIndices.graphicsFamily.equals(queueFamilyIndices.presentFamily)) {
                 createInfo.imageSharingMode(VK_SHARING_MODE_CONCURRENT);
-                createInfo.pQueueFamilyIndices(stack.ints(indices.graphicsFamily, indices.presentFamily));
+                createInfo.pQueueFamilyIndices(stack.ints(queueFamilyIndices.graphicsFamily, queueFamilyIndices.presentFamily));
             } else {
                 createInfo.imageSharingMode(VK_SHARING_MODE_EXCLUSIVE);
             }
@@ -993,8 +991,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
     public void createGlobalCommandPool() {
 
         try(MemoryStack stack = stackPush()) {
-
-            QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
@@ -1324,7 +1320,6 @@ public class RenderingEngineVulkan extends RenderingEngine {
             for (int i = 0; i < inFlightFrames.size(); i++) {
 
                 // Create command pool
-                QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
                 VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
                 poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);

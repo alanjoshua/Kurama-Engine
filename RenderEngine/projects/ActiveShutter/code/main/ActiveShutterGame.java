@@ -178,6 +178,7 @@ public class ActiveShutterGame extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
+                renderer.setCameraUpdated();
             }
 
             renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;

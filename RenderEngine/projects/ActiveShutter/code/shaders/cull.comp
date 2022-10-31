@@ -1,7 +1,44 @@
+#version 460
 
-layout(std140, set = 1, binding = 0) readonly buffer ObjectBuffer {
+struct ObjectData {
+    mat4 model;
+};
+
+layout(std140, binding = 0) readonly buffer ObjectBuffer {
     ObjectData objects[];
 }objectBuffer;
+
+// Same layout as VkDrawIndexedIndirectCommand
+struct IndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    uint vertexOffset;
+    uint firstInstance;
+};
+
+// Binding 1: Multi draw output
+layout(std430, binding = 1) writeonly buffer IndirectDraws {
+    IndexedIndirectCommand indirectDraws[ ];
+};
+
+struct CameraData {
+    mat4 projview;
+    mat4 view;
+    mat4 proj;
+};
+
+// 2 cameras for the left and right eyes, might change it later
+layout(std140, binding = 2) uniform CameraBuffer {
+    CameraData cameras[2];
+}cameraBuffer;
+
+// Binding 3: Indirect draw stats
+layout (binding = 3) buffer UBOOut
+{
+    uint drawCount;
+} uboOut;
 
 void main() {
 
