@@ -168,9 +168,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vmaAllocator = createAllocator(physicalDevice, device, instance);
 
         initializeFrames();
-        initSyncObjects();
+        prepareComputeCmdPoolsCmdBuffersSyncObjects();
         createFrameCommandPoolsAndCommandBuffers();
-        createBuffers();
+        initSyncObjects();
 
         createGlobalCommandPool();
         createGlobalCommandBuffer();
@@ -182,13 +182,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
         createMultiViewDepthAttachment();
 
         createRenderPasses();
-
         createFramebuffers();
 
-        prepareCompute();
+        createBuffers();
+        initDescriptorSets(); // Descriptor set layout is needed when both defining the pipelines
 
-        // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
-        initDescriptorSets();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
         deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
@@ -204,6 +202,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
         var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
+        cameraBufferSize = GPUCameraData.SIZEOF * multiViewNumLayers;
 
         var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
 
@@ -772,17 +771,28 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void initDescriptorSets() {
 
-        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
-        var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
-
         for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
-
             var multiViewFrame = multiViewRenderPass.frames.get(i);
 
-            // GPU Scene data descriptor set
+            // CREATE COMPUTE SHADER DESCRIPTOR SETS
             var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindBuffer(0, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.objectBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(1, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.indirectCommandBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.cameraBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.indirectDrawCountBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .build();
+
+            multiViewRenderPass.computeDescriptorSetLayout = result.layout();
+            multiViewFrame.computeDescriptorSet = result.descriptorSet();
+
+            // GPU Scene data descriptor set
+            result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindBuffer(0,
-                            new DescriptorBufferInfo(0, cameraBufferSize, multiViewFrame.cameraBuffer.buffer),
+                            new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.cameraBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                     .bindBuffer(1,
                             new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
@@ -795,7 +805,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             // Object buffer Descriptor set
             result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindBuffer(0,
-                            new DescriptorBufferInfo(0, objectBufferSize, multiViewFrame.objectBuffer.buffer),
+                            new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.objectBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                     .build();
 
@@ -815,11 +825,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    private void prepareCompute() {
-
-        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
-        var indirectCommandsBufferSize = MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF;
-        var camerabufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
+    private void prepareComputeCmdPoolsCmdBuffersSyncObjects() {
 
         try(var stack = stackPush()) {
 
@@ -844,20 +850,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
             LongBuffer pFence = stack.mallocLong(1);
 
             for (var frame : multiViewRenderPass.frames) {
-
-                var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                        .bindBuffer(0, new DescriptorBufferInfo(0, objectBufferSize, frame.objectBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
-                        .bindBuffer(1, new DescriptorBufferInfo(0, indirectCommandsBufferSize, frame.indirectCommandBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
-                        .bindBuffer(2, new DescriptorBufferInfo(0, camerabufferSize, frame.cameraBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
-                        .bindBuffer(3, new DescriptorBufferInfo(0, Integer.BYTES, frame.indirectDrawCountBuffer.buffer),
-                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
-                        .build();
-
-                multiViewRenderPass.computeDescriptorSetLayout = result.layout();
-                frame.computeDescriptorSet = result.descriptorSet();
 
                 // CREATE COMMAND POOL AND COMMAND BUFFER
                 vkCheck(vkCreateCommandPool(device, poolInfo, null, pCommandPool));
@@ -1490,7 +1482,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void updateCameraGPUDataInMemory(int currentFrame) {
         var alignment = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
+        alignment = GPUCameraData.SIZEOF;
         int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
+        bufferSize = alignment * multiViewNumLayers;
 
         var bw = new BufferWriter(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer, alignment, bufferSize);
         bw.mapBuffer();
@@ -1773,11 +1767,18 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public Matrix projWorldToCam;
         public Matrix worldToCam;
         public Matrix proj;
+        public List<Vector> frustumPlanes;
 
         public GPUCameraData() {
             projWorldToCam = Matrix.getIdentityMatrix(4);
             worldToCam = Matrix.getIdentityMatrix(4);
             proj = Matrix.getIdentityMatrix(4);
+
+            frustumPlanes = new ArrayList<>();
+            for(int i = 0; i < 6; i++) {
+                frustumPlanes.add(new Vector(4, 1.0f));
+            }
+
         }
 
         public static void memcpy(ByteBuffer buffer, GPUCameraData data) {
@@ -1786,10 +1787,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
             data.proj.setValuesToBuffer(buffer);
 
             // Dummy frustum planes value
-            for(int i = 0; i < 6; i++) {
-                new Vector(4, 1.0f).setValuesToBuffer(buffer);
+            for(var f: data.frustumPlanes) {
+                f.setValuesToBuffer(buffer);
             }
-
         }
 
     }
