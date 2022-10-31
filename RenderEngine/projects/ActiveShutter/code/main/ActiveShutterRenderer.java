@@ -1769,7 +1769,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
     public static class GPUCameraData {
 
-        public static final int SIZEOF = 3 * 16 * Float.BYTES;
+        public static final int SIZEOF = ((3 * 16) + (4 * 6)) * Float.BYTES;
         public Matrix projWorldToCam;
         public Matrix worldToCam;
         public Matrix proj;
@@ -1784,6 +1784,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
             data.projWorldToCam.setValuesToBuffer(buffer);
             data.worldToCam.setValuesToBuffer(buffer);
             data.proj.setValuesToBuffer(buffer);
+
+            // Dummy frustum planes value
+            for(int i = 0; i < 6; i++) {
+                new Vector(4, 1.0f).setValuesToBuffer(buffer);
+            }
+
         }
 
     }

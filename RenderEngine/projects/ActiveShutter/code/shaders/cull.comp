@@ -27,6 +27,7 @@ struct CameraData {
     mat4 projview;
     mat4 view;
     mat4 proj;
+    vec4 frustumPlanes[6];
 };
 
 // 2 cameras for the left and right eyes, might change it later
