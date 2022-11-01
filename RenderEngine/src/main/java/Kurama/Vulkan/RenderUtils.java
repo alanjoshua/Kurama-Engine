@@ -35,7 +35,7 @@ public class RenderUtils {
             var sameMesh = renderables.get(i).mesh == lastDraw.mesh;
             var sameMaterial = renderables.get(i).getMaterial() == lastDraw.material;
 
-            if(sameMaterial && sameMesh) {
+            if(sameMaterial) {
                 lastDraw.count++;
             }
             else {

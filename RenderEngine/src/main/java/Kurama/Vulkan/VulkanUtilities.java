@@ -942,4 +942,10 @@ public class VulkanUtilities {
         }
     }
 
+    public static void vkCheck(int success, String errorMessage) {
+        if(success != VK_SUCCESS) {
+            throw new RuntimeException("VK: "+ errorMessage);
+        }
+    }
+
 }
