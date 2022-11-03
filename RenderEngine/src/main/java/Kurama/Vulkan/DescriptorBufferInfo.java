@@ -1,4 +1,4 @@
 package Kurama.Vulkan;
 
-public record DescriptorBufferInfo(int offset, int range, long buffer) {
+public record DescriptorBufferInfo(int offset, long range, long buffer) {
 }

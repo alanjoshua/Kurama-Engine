@@ -1,5 +1,6 @@
 package main;
 
+import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
@@ -42,19 +44,25 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     .collect(toSet());
 
     public int MAXOBJECTS = 10000;
+    public int MAXCOMMANDS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public long surface;
     public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
     public long minUniformBufferOffsetAlignment = 64;
     public VkPhysicalDeviceProperties gpuProperties;
     public AllocatedBuffer gpuSceneBuffer;
-    public int graphicsQueueFamilyIndex;
+    public QueueFamilyIndices queueFamilyIndices;
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
+    public VkQueue computeQueue;
+    public VkQueue transferQueue;
     public long swapChain;
 
     public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
     public DescriptorSetLayoutCache descriptorSetLayoutCache = new DescriptorSetLayoutCache();
+
+    public AllocatedBuffer mergedVertexBuffer;
+    public AllocatedBuffer mergedIndexBuffer;
 
     public static class RenderPass {
 
@@ -78,6 +86,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSetLayout;
+        public long computeDescriptorSetLayout;
 
         // This contains the object transformation matrices
         public long objectDescriptorSetLayout;
@@ -91,6 +100,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public long viewGraphicsPipeline;
     public long multiViewPipelineLayout;
     public long multiViewGraphicsPipeline;
+    public long computePipelineLayout;
+    public long computePipeline;
 
     // The global Command pool and buffer are currently used for tasks such as image loading and transformations
     public long globalCommandPool;
@@ -100,7 +111,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
     public GPUSceneData gpuSceneData;
-    public SingleTimeCommandContext singleTimeCommandContext;
+    public ComputeUBOIn computeUBOIn = new ComputeUBOIn();
+    public SingleTimeCommandContext singleTimeGraphicsCommandContext;
+    public SingleTimeCommandContext singleTimeTransferCommandContext;
     public HashMap<String, TextureVK> preparedTextures = new HashMap<>();;
     public HashMap<Integer, Long> textureSamplerToMaxLOD = new HashMap<>();
     public HashMap<String, Long> textureFileToDescriptorSet = new HashMap<>();
@@ -110,6 +123,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public long vmaAllocator;
     public DisplayVulkan display;
     public ActiveShutterGame game;
+    public boolean shouldUpdateGPUSceneBuffer = true;
+    public FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public ActiveShutterRenderer(Game game) {
         super(game);
@@ -124,6 +139,15 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void render(List<Renderable> renderables) {
         draw(renderables);
+    }
+
+    // Update frustum whenever camera is updated
+    public void cameraUpdated() {
+        for(var frame: multiViewRenderPass.frames) {
+            frame.shouldUpdateCameraBuffer = true;
+            frame.shouldUpdateComputeUboBuffer = true;
+        }
+        computeUBOIn.frustumPlanes = Arrays.asList(game.playerCamera.frustumIntersection.planes);
     }
 
     public void initVulkan() {
@@ -149,8 +173,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vmaAllocator = createAllocator(physicalDevice, device, instance);
 
         initializeFrames();
+        prepareComputeCmdPoolsCmdBuffersSyncObjects();
+        createFrameCommandPoolsAndCommandBuffers();
         initSyncObjects();
-        createFrameCommandPoolsAndBuffers();
 
         createGlobalCommandPool();
         createGlobalCommandBuffer();
@@ -162,19 +187,90 @@ public class ActiveShutterRenderer extends RenderingEngine {
         createMultiViewDepthAttachment();
 
         createRenderPasses();
-
         createFramebuffers();
 
-        // Descriptor set layout is needed when both defining the pipelines, and when creating the descriptor sets
-        initDescriptors();
+        createBuffers();
+        initDescriptorSets(); // Descriptor set layout is needed when both defining the pipelines
+
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
         deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
         createViewGraphicsPipeline();
         createMultiViewGraphicsPipeline();
+        createComputePipeline();
 
         deletionQueue.add(() -> cleanupSwapChain());
+    }
+
+    public void createBuffers() {
+
+        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
+        objectBufferSize = GPUObjectData.SIZEOF * MAXOBJECTS;
+        var cameraBufferSize = GPUCameraData.SIZEOF * multiViewNumLayers;
+
+        var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
+
+        gpuSceneBuffer = createBufferVMA(vmaAllocator,
+                sceneParamsBufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+        );
+
+        for(var frame: multiViewRenderPass.frames) {
+
+            frame.indirectCommandBuffer = createBufferVMA(
+                    vmaAllocator,
+                    MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
+            );
+
+            frame.indirectDrawCountBuffer = createBufferVMA(
+                    vmaAllocator,
+                    Integer.BYTES,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+            );
+
+            frame.computeUBOBuffer = createBufferVMA(
+                    vmaAllocator,
+                    ComputeUBOIn.SIZEOF,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+            );
+
+            // uniform buffer for GPU camera data
+            // A camera buffer is created for each frame
+            frame.cameraBuffer
+                    = createBufferVMA(
+                    vmaAllocator,
+                    cameraBufferSize,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+
+            // Object buffer
+            frame.objectBuffer =
+                    createBufferVMA(
+                            vmaAllocator,
+                            objectBufferSize,
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                            VMA_MEMORY_USAGE_AUTO,
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+        }
+
+
+
     }
 
     public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer, int viewImageToRender) {
@@ -239,6 +335,69 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
+    private void recordComputeCommandBuffer() {
+        try (var stack = stackPush()) {
+
+            for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
+                var frame = multiViewRenderPass.frames.get(i);
+                var commandBuffer = frame.computeCommandBuffer;
+
+                vkCheck(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset compute command buffer");
+
+                VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
+                beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+
+                vkCheck(vkBeginCommandBuffer(commandBuffer, beginInfo), "Could not begin compute command buffer");
+
+                // Acquire barrier
+                // Add memory barrier to ensure that the indirect commands have been consumed before the compute shader updates them
+                if(queueFamilyIndices.graphicsFamily != queueFamilyIndices.computeFamily) {
+
+                    var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                    bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                    bufferBarrier.srcAccessMask(VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+                    bufferBarrier.dstAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
+                    bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                    bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.computeFamily);
+                    bufferBarrier.buffer(frame.indirectCommandBuffer.buffer);
+                    bufferBarrier.offset(0);
+                    bufferBarrier.size(VK_WHOLE_SIZE);
+
+                    vkCmdPipelineBarrier(commandBuffer,
+                            VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            0, null, bufferBarrier, null);
+                }
+
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, stack.longs(frame.computeDescriptorSet), null);
+
+                log("num compute objs: "+ (computeUBOIn.objectCount / 16)+1);
+
+                vkCmdDispatch(commandBuffer, (computeUBOIn.objectCount / 16)+1, 1, 1);
+
+                // Release barrier
+                if(queueFamilyIndices.graphicsFamily != queueFamilyIndices.computeFamily) {
+                    var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                    bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                    bufferBarrier.srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
+                    bufferBarrier.dstAccessMask(VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+                    bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.computeFamily);
+                    bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                    bufferBarrier.buffer(frame.indirectCommandBuffer.buffer);
+                    bufferBarrier.offset(0);
+                    bufferBarrier.size(VK_WHOLE_SIZE);
+
+                    vkCmdPipelineBarrier(commandBuffer,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                            0, null, bufferBarrier, null);
+                }
+
+                vkEndCommandBuffer(commandBuffer);
+            }
+
+        }
+    }
+
     public void recordMultiViewCommandBuffer(List<Renderable> renderables, MultiViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
 
         var commandBuffer = currentFrame.commandBuffer;
@@ -272,13 +431,51 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
+            // Acquire barrier
+            // Add memory barrier to ensure that the indirect commands have been consumed before the compute shader updates them
+            if(queueFamilyIndices.graphicsFamily != queueFamilyIndices.computeFamily) {
+
+                var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                bufferBarrier.srcAccessMask(0);
+                bufferBarrier.dstAccessMask(VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+                bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.computeFamily);
+                bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                bufferBarrier.buffer(currentFrame.indirectCommandBuffer.buffer);
+                bufferBarrier.offset(0);
+                bufferBarrier.size(VK_WHOLE_SIZE);
+
+                vkCmdPipelineBarrier(commandBuffer,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                        0, null, bufferBarrier, null);
+            }
+
             renderPassInfo.framebuffer(frameBuffer);
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
-                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+//                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
+                recordSceneToCommandBufferIndirect(renderables, commandBuffer, currentFrame, frameIndex, stack);
             }
             vkCmdEndRenderPass(commandBuffer);
+
+            // Release barrier
+            if(queueFamilyIndices.graphicsFamily != queueFamilyIndices.computeFamily) {
+
+                var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                bufferBarrier.srcAccessMask(VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+                bufferBarrier.dstAccessMask(0);
+                bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
+                bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.computeFamily);
+                bufferBarrier.buffer(currentFrame.indirectCommandBuffer.buffer);
+                bufferBarrier.offset(0);
+                bufferBarrier.size(VK_WHOLE_SIZE);
+
+                vkCmdPipelineBarrier(commandBuffer,
+                        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                        0, null, bufferBarrier, null);
+            }
 
 
             if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -302,20 +499,14 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                 multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
 
+        vkCmdBindVertexBuffers(commandBuffer, 0, stack.longs(mergedVertexBuffer.buffer), stack.longs(0));
+        vkCmdBindIndexBuffer(commandBuffer, mergedIndexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
         Mesh previousMesh = null;
         Long previousTextureSet = null;
 
         for(int i = 0; i < renderables.size(); i++) {
             var renderable = renderables.get(i);
-
-            if(previousMesh != renderable.mesh) {
-                LongBuffer offsets = stack.longs(0);
-                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
-                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-                previousMesh = renderable.mesh;
-            }
 
             // Bind texture descriptor set only if it is different from previous texture
             if(previousTextureSet != renderable.textureDescriptorSet) {
@@ -325,8 +516,43 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 previousTextureSet = renderable.textureDescriptorSet;
             }
 
-            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, renderable.firstIndex, renderable.firstVertex, i);
         }
+    }
+
+    public void recordSceneToCommandBufferIndirect(List<Renderable> renderables, VkCommandBuffer commandBuffer, MultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
+
+        var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
+        var pUniformOffset = stack.mallocInt(1);
+        pUniformOffset.put(0, uniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
+
+        // One vertex buffer and index buffer is used to store all the mesh information
+        vkCmdBindVertexBuffers(commandBuffer, 0, stack.longs(mergedVertexBuffer.buffer), stack.longs(0));
+        vkCmdBindIndexBuffer(commandBuffer, mergedIndexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        // Probably needs to be static, or better optimized. Will be done when Compute shaders are enabled
+        var indirectBatches = compactDraws(renderables);
+
+        for(var batch: indirectBatches) {
+
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
+
+            long offset = batch.first * VkDrawIndexedIndirectCommand.SIZEOF;
+            int stride = VkDrawIndexedIndirectCommand.SIZEOF;
+
+            vkCmdDrawIndexedIndirect(commandBuffer, currentFrame.indirectCommandBuffer.buffer,
+                    offset, batch.count, stride);
+        }
+
     }
 
     public long getTextureSampler(int maxLod) {
@@ -337,7 +563,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public void prepareTexture(TextureVK texture) {
         if (texture == null || texture.fileName == null || preparedTextures.containsKey(texture.fileName)) return;
 
-        TextureVK.createTextureImage(graphicsQueue, vmaAllocator, singleTimeCommandContext, texture);
+        TextureVK.createTextureImage(vmaAllocator, singleTimeGraphicsCommandContext, texture);
         TextureVK.createTextureImageView(texture);
         texture.textureSampler = getTextureSampler(texture.mipLevels);
 
@@ -345,12 +571,34 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
 
     public void performBufferDataUpdates(List<Renderable> renderables, int currentFrameIndex) {
-        updateCameraGPUDataInMemory(currentFrameIndex);
-        updateSceneGPUDataInMemory(currentFrameIndex);
-        updateObjectBufferDataInMemory(renderables, currentFrameIndex, multiViewRenderPass.frames.get(currentFrameIndex));
+        //TODO: Need to be modified so that buffers are updated only when data is updated,
+        // and only parts of buffers are updated as needed
+
+        if (multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateCameraBuffer) {
+            updateCameraGPUDataInMemory(currentFrameIndex);
+        }
+        if (shouldUpdateGPUSceneBuffer) {
+            updateSceneGPUDataInMemory(currentFrameIndex);
+        }
+        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateObjectBuffer) {
+            updateObjectBufferDataInMemory(renderables, multiViewRenderPass.frames.get(currentFrameIndex));
+        }
+        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateIndirectCommandsBuffer) {
+            updateIndirectCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex));
+        }
+        // This would be toggled else where in the system when a renderable is added or removed
+        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateComputeUboBuffer) {
+            updateComputeUBO(multiViewRenderPass.frames.get(currentFrameIndex));
+        }
+
+        shouldUpdateGPUSceneBuffer = false;
+        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateCameraBuffer = false;
+        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateObjectBuffer = false;
+        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateIndirectCommandsBuffer = false;
+        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateComputeUboBuffer = false;
     }
 
-    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer signalSemaphores, List<Renderable> renderables) {
+    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer signalSemaphores, LongBuffer waitSemaphores, List<Renderable> renderables) {
 
         try(MemoryStack stack = stackPush()) {
 
@@ -364,7 +612,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
             submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
             submitInfo.pSignalSemaphores(signalSemaphores);
-            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
+            submitInfo.pWaitSemaphores(waitSemaphores);
+            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
             submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
 
             int vkResult;
@@ -395,7 +644,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void drawViewFrame(ViewRenderPassFrame curViewFrame, LongBuffer waitSemaphore, LongBuffer signalSemaphore, int imageIndex, int viewImageToRender) {
+    public void drawViewFrame(ViewRenderPassFrame curViewFrame, LongBuffer signalSemaphore, LongBuffer waitSemaphore, int imageIndex, int viewImageToRender) {
         try(MemoryStack stack = stackPush()) {
 
             vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
@@ -428,28 +677,70 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
+    public void callCompute(MultiViewRenderPassFrame frame, MemoryStack stack) {
+        // Wait for fence to ensure that compute buffer writes have finished
+
+        vkWaitForFences(device, stack.longs(frame.computeFence), true, UINT64_MAX);
+        vkResetFences(device, stack.longs(frame.computeFence));
+
+        // Submit rendering commands to GPU
+        VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+        submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+
+        submitInfo.pSignalSemaphores(stack.longs(frame.computeSemaphore));
+        submitInfo.pCommandBuffers(stack.pointers(frame.computeCommandBuffer));
+
+        vkCheck(vkQueueSubmit(computeQueue, submitInfo, frame.computeFence), "Could not submit to compute queue");
+    }
+
     public void draw(List<Renderable> renderables) {
 
         try (var stack = stackPush()) {
+
             var curMultiViewFrame = multiViewRenderPass.frames.get(currentMultiViewFrameIndex);
 
             var viewFrame1 = viewRenderPass.frames.get(0);
             var viewFrame2 = viewRenderPass.frames.get(1);
 
+//            log("compute cmd: "+ curMultiViewFrame.computeCommandBuffer);
+//            log("view1 cmd: "+ viewFrame1.commandBuffer);
+//            log("view1 cmd: "+ viewFrame2.commandBuffer);
+//            log("multiview cmd: "+ curMultiViewFrame.commandBuffer);
+
             performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
+
+            callCompute(curMultiViewFrame, stack);
 
             Integer imageIndex1 = prepareDisplay(viewFrame1);
             if (imageIndex1 == null) return;
 
-            renderMultiViewFrame(curMultiViewFrame, stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)), renderables);
+            renderMultiViewFrame(curMultiViewFrame,
+                    stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)),
+                    stack.longs(curMultiViewFrame.computeSemaphore, viewFrame2.presentCompleteSemaphore),
+                    renderables);
 
-            drawViewFrame(viewFrame1, stack.longs(curMultiViewFrame.semaphores.get(0)), stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1, 0);
+            drawViewFrame(viewFrame1,
+                    stack.longs(viewFrame1.renderFinishedSemaphore),
+                    stack.longs(curMultiViewFrame.semaphores.get(0)),
+                    imageIndex1, 0);
             submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
 
             Integer imageIndex2 = prepareDisplay(viewFrame2);
             if (imageIndex2 == null) return;
-            drawViewFrame(viewFrame2, stack.longs(curMultiViewFrame.semaphores.get(1)), stack.longs(viewFrame2.renderFinishedSemaphore), imageIndex2, 1);
+            drawViewFrame(viewFrame2,
+                    stack.longs(viewFrame2.renderFinishedSemaphore),
+                    stack.longs(curMultiViewFrame.semaphores.get(1)),
+                    imageIndex2, 1);
             submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
+
+            var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
+            bufferReader.mapBuffer();
+
+            int objectCount = bufferReader.buffer.getInt();
+
+            bufferReader.unmapBuffer();
+
+            log("Objects being rendered: "+ objectCount);
 
             // Only for multiview
             currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -481,6 +772,59 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
+    public void mergeMeshes(List<Renderable> renderables) {
+
+        //Temporary
+        computeUBOIn.objectCount = renderables.size();
+
+        int totalVertices = 0;
+        int totalIndices = 0;
+
+        for(var r: renderables) {
+            r.firstVertex = totalVertices;
+            r.firstIndex = totalIndices;
+
+            totalVertices += r.mesh.getVertices().size();
+            totalIndices += r.mesh.indices.size();
+        }
+
+        mergedVertexBuffer = createBufferVMA(vmaAllocator, totalVertices * (3 + 2 + 3) * Float.BYTES,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+
+        mergedIndexBuffer = createBufferVMA(vmaAllocator, totalIndices * Integer.BYTES,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+
+        try (var stack = stackPush()) {
+
+            var vertexCopy = VkBufferCopy.calloc(1, stack);
+            var indexCopy = VkBufferCopy.calloc(1, stack);
+
+            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+                for(var r: renderables) {
+                    vertexCopy.dstOffset(r.firstVertex * (3 + 2 + 3) * Float.BYTES);
+                    vertexCopy.size(r.mesh.getVertices().size() * (3 + 2 + 3) * Float.BYTES);
+                    vertexCopy.srcOffset(0);
+                    vkCmdCopyBuffer(cmd, r.vertexBuffer.buffer, mergedVertexBuffer.buffer, vertexCopy);
+
+                    indexCopy.dstOffset(r.firstIndex * Integer.BYTES);
+                    indexCopy.size(r.mesh.indices.size() * Integer.BYTES);
+                    indexCopy.srcOffset(0);
+                    vkCmdCopyBuffer(cmd, r.indexBuffer.buffer, mergedIndexBuffer.buffer, indexCopy);
+                }
+            };
+
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+        }
+
+        // Record new compute command buffer
+        recordComputeCommandBuffer();
+
+        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedVertexBuffer.buffer, mergedVertexBuffer.allocation));
+        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedIndexBuffer.buffer, mergedIndexBuffer.allocation));
+    }
+
     public void uploadMeshData(Renderable renderable) {
         createIndexBufferForRenderable(renderable);
         createVertexBufferForRenderable(renderable);
@@ -506,7 +850,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public void createIndexBufferForRenderable(Renderable renderable) {
         try (var stack = stackPush()) {
 
-            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
+            var bufferSize = Integer.BYTES * renderable.mesh.indices.size();
             var stagingBuffer = createBufferVMA(vmaAllocator,
                     bufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -517,12 +861,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
             {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
+                memcpyInt(data.getByteBuffer(0, bufferSize), renderable.mesh.indices);
             }
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
             renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
             Consumer<VkCommandBuffer> copyCmd = cmd -> {
@@ -533,7 +877,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
@@ -558,7 +902,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
             renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 
@@ -570,10 +914,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
             };
 
-            submitImmediateCommand(copyCmd, singleTimeCommandContext, graphicsQueue);
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
 
             vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-
         }
     }
 
@@ -595,38 +938,30 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void initDescriptors() {
-
-        var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
-        var cameraBufferSize = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment)) * multiViewNumLayers;
-
-        var sceneParamsBufferSize = MAX_FRAMES_IN_FLIGHT * padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
-        gpuSceneBuffer = createBufferVMA(vmaAllocator,
-                sceneParamsBufferSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VMA_MEMORY_USAGE_AUTO,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
-        );
+    public void initDescriptorSets() {
 
         for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
-
             var multiViewFrame = multiViewRenderPass.frames.get(i);
 
-            // uniform buffer for GPU camera data
-            // A camera buffer is created for each frame
-            multiViewRenderPass.frames.get(i).cameraBuffer
-                    = createBufferVMA(
-                    vmaAllocator,
-                    cameraBufferSize,
-                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
-
+            // CREATE COMPUTE SHADER DESCRIPTOR SETS
             var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindBuffer(0, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.objectBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(1, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.indirectCommandBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.computeUBOBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.indirectDrawCountBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
+                    .build();
+
+            multiViewRenderPass.computeDescriptorSetLayout = result.layout();
+            multiViewFrame.computeDescriptorSet = result.descriptorSet();
+
+            // GPU Scene data descriptor set
+            result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindBuffer(0,
-                            new DescriptorBufferInfo(0, cameraBufferSize, multiViewFrame.cameraBuffer.buffer),
+                            new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.cameraBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                     .bindBuffer(1,
                             new DescriptorBufferInfo(0, GPUSceneData.SIZEOF, gpuSceneBuffer.buffer),
@@ -636,19 +971,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
             multiViewRenderPass.frames.get(i).cameraAndSceneDescriptorSet = result.descriptorSet();
             multiViewRenderPass.cameraAndSceneDescriptorSetLayout = result.layout();
 
-            // Object buffer
-            multiViewRenderPass.frames.get(i).objectBuffer =
-                    createBufferVMA(
-                            vmaAllocator,
-                            objectBufferSize,
-                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                            VMA_MEMORY_USAGE_AUTO,
-                            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
-
+            // Object buffer Descriptor set
             result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindBuffer(0,
-                            new DescriptorBufferInfo(0, objectBufferSize, multiViewFrame.objectBuffer.buffer),
+                            new DescriptorBufferInfo(0, VK_WHOLE_SIZE, multiViewFrame.objectBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
                     .build();
 
@@ -666,6 +992,55 @@ public class ActiveShutterRenderer extends RenderingEngine {
             viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
             textureSetLayout = result.layout();
         }
+    }
+
+    private void prepareComputeCmdPoolsCmdBuffersSyncObjects() {
+
+        try(var stack = stackPush()) {
+
+            VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
+            poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
+            poolInfo.queueFamilyIndex(queueFamilyIndices.computeFamily);
+            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+            // temp pointers to allocate commandpools and cmdBuffers
+            LongBuffer pCommandPool = stack.mallocLong(1);
+            PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+
+            VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
+            semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
+
+            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
+            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
+            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
+
+            // temp pointers to allocate compute semaphores and fences
+            LongBuffer pSemaphore = stack.mallocLong(1);
+            LongBuffer pFence = stack.mallocLong(1);
+
+            for (var frame : multiViewRenderPass.frames) {
+
+                // CREATE COMMAND POOL AND COMMAND BUFFER
+                vkCheck(vkCreateCommandPool(device, poolInfo, null, pCommandPool));
+                frame.computeCommandPool = pCommandPool.get(0);
+
+                var allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+                allocInfo.commandPool(frame.computeCommandPool);
+                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                allocInfo.commandBufferCount(1);
+
+                vkCheck(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers));
+                frame.computeCommandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+
+                vkCheck(vkCreateSemaphore(device, semaphoreInfo, null, pSemaphore));
+                vkCheck(vkCreateFence(device, fenceInfo, null, pFence));
+
+                frame.computeSemaphore = pSemaphore.get(0);
+                frame.computeFence = pFence.get(0);
+            }
+        }
+
     }
 
     private void recreateSwapChain() {
@@ -796,7 +1171,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                 1,multiViewNumLayers, cmd);
                     },
-                    singleTimeCommandContext, graphicsQueue);
+                    singleTimeGraphicsCommandContext);
 
             multiViewRenderPass.depthAttachment = depthAttachment;
         }
@@ -830,11 +1205,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
             createInfo.imageArrayLayers(1);
             createInfo.imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-            QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-
-            if(!indices.graphicsFamily.equals(indices.presentFamily)) {
+            if(!queueFamilyIndices.graphicsFamily.equals(queueFamilyIndices.presentFamily)) {
                 createInfo.imageSharingMode(VK_SHARING_MODE_CONCURRENT);
-                createInfo.pQueueFamilyIndices(stack.ints(indices.graphicsFamily, indices.presentFamily));
+                createInfo.pQueueFamilyIndices(stack.ints(queueFamilyIndices.graphicsFamily, queueFamilyIndices.presentFamily));
             } else {
                 createInfo.imageSharingMode(VK_SHARING_MODE_EXCLUSIVE);
             }
@@ -1040,6 +1413,22 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
+    public void createComputePipeline() {
+
+        var builder = new PipelineBuilder(PipelineBuilder.PipelineType.COMPUTE);
+
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/cull.comp", VK_SHADER_STAGE_COMPUTE_BIT));
+        builder.descriptorSetLayouts = new long[]{multiViewRenderPass.computeDescriptorSetLayout};
+        var result = builder.build(device, null);
+
+        computePipelineLayout = result.pipelineLayout();
+        computePipeline = result.pipeline();
+
+        deletionQueue.add(() -> vkDestroyPipeline(device, computePipeline, null));
+        deletionQueue.add(() -> vkDestroyPipelineLayout(device, computePipelineLayout, null));
+
+    }
+
     public void createMultiViewGraphicsPipeline() {
 
         var builder = new PipelineBuilder();
@@ -1129,8 +1518,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
-
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
@@ -1153,7 +1540,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
 
-            graphicsQueueFamilyIndex = indices.graphicsFamily;
+            queueFamilyIndices = indices;
             int[] uniqueQueueFamilies = indices.unique();
 
             VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
@@ -1206,6 +1593,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
             presentQueue = new VkQueue(pQueue.get(0), device);
+
+            vkGetDeviceQueue(device, indices.computeFamily, 0, pQueue);
+            computeQueue = new VkQueue(pQueue.get(0), device);
+
+            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
+            transferQueue = new VkQueue(pQueue.get(0), device);
         }
     }
 
@@ -1250,71 +1643,104 @@ public class ActiveShutterRenderer extends RenderingEngine {
                         colorAttachment.allocatedImage.image, swapChainImageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         1, multiViewNumLayers, cmd);
-            }, singleTimeCommandContext, graphicsQueue);
+            }, singleTimeGraphicsCommandContext);
 
             multiViewRenderPass.colorAttachment = colorAttachment;
         }
     }
 
+    private void updateComputeUBO(MultiViewRenderPassFrame currentFrame) {
+        var bw = new BufferWriter(vmaAllocator, currentFrame.computeUBOBuffer, ComputeUBOIn.SIZEOF, ComputeUBOIn.SIZEOF);
+        bw.mapBuffer();
+        ComputeUBOIn.memcpy(bw.buffer, computeUBOIn);
+        bw.unmapBuffer();
+    }
+
     public void updateCameraGPUDataInMemory(int currentFrame) {
-        try(MemoryStack stack = stackPush()) {
+        var alignment = GPUCameraData.SIZEOF;
+        var bufferSize = alignment * multiViewNumLayers;
 
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation, data);
-            {
-                var offset = (int)(padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment));
-                int bufferSize = (int) (padUniformBufferSize(GPUCameraData.SIZEOF, minUniformBufferOffsetAlignment) * multiViewNumLayers);
-                var buffer = data.getByteBuffer(bufferSize);
-
-                GPUCameraData.memcpy(buffer, gpuCameraDataLeft);
-
-                buffer.position(offset);
-                GPUCameraData.memcpy(buffer, gpuCameraDataRight);
-            }
-            vmaUnmapMemory(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer.allocation);
-        }
+        var bw = new BufferWriter(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer, alignment, bufferSize);
+        bw.mapBuffer();
+        GPUCameraData.memcpy(bw.buffer, gpuCameraDataLeft);
+        bw.setPosition(1);
+        GPUCameraData.memcpy(bw.buffer, gpuCameraDataRight);
+        bw.unmapBuffer();
     }
 
     public void updateSceneGPUDataInMemory(int currentFrame) {
-        try(MemoryStack stack = stackPush()) {
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, gpuSceneBuffer.allocation, data);
-            {
-                var offset = (int)(padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * currentFrame);
-                int bufferSize = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * MAX_FRAMES_IN_FLIGHT);
 
-                var buffer = data.getByteBuffer(bufferSize);
-                buffer.position(offset);
-                GPUSceneData.memcpy(buffer, gpuSceneData);
-            }
-            vmaUnmapMemory(vmaAllocator, gpuSceneBuffer.allocation);
-        }
+        var alignment = (int)padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
+        int bufferSize = alignment * MAX_FRAMES_IN_FLIGHT;
+
+        var bw = new BufferWriter(vmaAllocator, gpuSceneBuffer, alignment, bufferSize);
+        bw.mapBuffer();
+        bw.setPosition(currentFrame);
+        GPUSceneData.memcpy(bw.buffer, gpuSceneData);
+        bw.unmapBuffer();
     }
 
-    public void updateObjectBufferDataInMemory(List<Renderable> renderables, int currentFrameIndex, MultiViewRenderPassFrame frame) {
-        try (var stack = stackPush()) {
-            PointerBuffer data = stack.mallocPointer(1);
-            vmaMapMemory(vmaAllocator, frame.objectBuffer.allocation, data);
+    public void updateObjectBufferDataInMemory(List<Renderable> renderables, MultiViewRenderPassFrame frame) {
 
-            var alignmentSize = (int)(padUniformBufferSize(RenderingEngineVulkan.GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment));
-            int bufferSize = alignmentSize * MAXOBJECTS;
+        var alignmentSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment));
+        alignmentSize = GPUObjectData.SIZEOF;
+        int bufferSize = alignmentSize * renderables.size();
 
-            var buffer = data.getByteBuffer(bufferSize);
-            int offset = 0;
-
-            for(int i = 0; i < renderables.size(); i++) {
-                buffer.position(offset);
-
-                var renderable = renderables.get(i);
-                var gpuObjectData = new GPUObjectData();
-                gpuObjectData.modelMatrix = renderable.model.objectToWorldMatrix;
-                GPUObjectData.memcpy(buffer, gpuObjectData);
-
-                offset += alignmentSize;
-            }
-
-            vmaUnmapMemory(vmaAllocator, frame.objectBuffer.allocation);
+        var bw = new BufferWriter(vmaAllocator, frame.objectBuffer, alignmentSize, bufferSize);
+        bw.mapBuffer();
+        for(int i = 0; i < renderables.size(); i++) {
+            var renderable = renderables.get(i);
+            bw.setPosition(i);
+            bw.put(renderable.model.objectToWorldMatrix);
+            bw.put(renderable.model.getScale().getNorm() * renderable.mesh.boundingRadius);
         }
+        bw.unmapBuffer();
+    }
+
+    public void updateIndirectCommandBuffer(List<Renderable> renderables, MultiViewRenderPassFrame frame) {
+
+        var alignmentSize = VkDrawIndexedIndirectCommand.SIZEOF;
+        var bufferSize = alignmentSize * renderables.size();
+
+        var stagingBuffer = createBufferVMA(vmaAllocator,
+                bufferSize,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VMA_MEMORY_USAGE_AUTO,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+        var bw = new BufferWriter(vmaAllocator, stagingBuffer, alignmentSize, bufferSize);
+        bw.mapBuffer();
+        for(int i = 0; i < renderables.size(); i++) {
+            bw.setPosition(i);
+
+//            uint32_t    indexCount;
+//            uint32_t    instanceCount;
+//            uint32_t    firstIndex;
+//            int32_t     vertexOffset;
+//            uint32_t    firstInstance;
+
+            bw.put(renderables.get(i).mesh.indices.size());
+            bw.put(1);
+            bw.put(renderables.get(i).firstIndex);
+            bw.put(renderables.get(i).firstVertex);
+            bw.put(i);
+        }
+        bw.unmapBuffer();
+
+        try (var stack = stackPush()) {
+            var copy = VkBufferCopy.calloc(1, stack);
+
+            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+                copy.dstOffset(0);
+                copy.size(bufferSize);
+                copy.srcOffset(0);
+                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, frame.indirectCommandBuffer.buffer, copy);
+            };
+
+            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+        }
+
+        vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
     }
 
     public void recreateFrameCommandBuffers() {
@@ -1368,11 +1794,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void createFrameCommandPoolsAndBuffers() {
+    public void createFrameCommandPoolsAndCommandBuffers() {
 
         try (var stack = stackPush()) {
-
-            QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
 
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
@@ -1481,18 +1905,26 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 multiViewRenderPass.frames.get(i).fence = pFence.get(0);
             }
 
-            // Create fence and commandPool/buffer for immediate upload context
-            singleTimeCommandContext = new SingleTimeCommandContext();
+            // Create fence and commandPool/buffer for immediate Graphics context
+            singleTimeGraphicsCommandContext = new SingleTimeCommandContext();
+            singleTimeGraphicsCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeGraphicsCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.graphicsFamily, 0, stack), stack);
+            singleTimeGraphicsCommandContext.queue = graphicsQueue;
+            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeGraphicsCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeGraphicsCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
 
-            singleTimeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            // Create fence and commandPool/buffer for immediate trasnfer context
+            singleTimeTransferCommandContext = new SingleTimeCommandContext();
+            singleTimeTransferCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeTransferCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.transferFamily, 0, stack), stack);
+            singleTimeTransferCommandContext.queue = transferQueue;
+            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeTransferCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeTransferCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
 
-            singleTimeCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(graphicsQueueFamilyIndex, 0, stack), stack);
-
-            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
-
-            deletionQueue.add(() -> singleTimeCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeGraphicsCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeTransferCommandContext.cleanUp(device));
         }
     }
 
@@ -1508,7 +1940,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
     public static class GPUCameraData {
 
-        public static final int SIZEOF = 3 * 16 * Float.BYTES;
+        public static final int SIZEOF = (3 * 16) * Float.BYTES;
         public Matrix projWorldToCam;
         public Matrix worldToCam;
         public Matrix proj;
@@ -1525,6 +1957,27 @@ public class ActiveShutterRenderer extends RenderingEngine {
             data.proj.setValuesToBuffer(buffer);
         }
 
+    }
+
+    public static class ComputeUBOIn {
+        public static final int SIZEOF = Float.BYTES * 4 * 6 + Integer.BYTES;
+        public List<Vector> frustumPlanes;
+        public int objectCount = 0;
+
+        public ComputeUBOIn() {
+            frustumPlanes = new ArrayList<>();
+            for(int i = 0; i < 6; i++) {
+                frustumPlanes.add(new Vector(4, 1.0f));
+            }
+        }
+
+        public static void memcpy(ByteBuffer buffer, ComputeUBOIn data) {
+            for(var f: data.frustumPlanes) {
+                f.setValuesToBuffer(buffer);
+            }
+
+            buffer.putInt(data.objectCount);
+        }
     }
 
     public static class GPUSceneData {
@@ -1546,11 +1999,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
 
     public static class GPUObjectData {
-        public static final int SIZEOF = Float.BYTES * 4 * 4;
-        public Matrix modelMatrix;
-        public static void memcpy(ByteBuffer buffer, GPUObjectData data) {
-            data.modelMatrix.setValuesToBuffer(buffer);
-        }
+        public static final int SIZEOF = Float.BYTES * (16 + 4);
     }
 
     public class MultiViewRenderPassFrame {
@@ -1558,9 +2007,18 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public List<Long> semaphores = new ArrayList<>();
         public long fence;
         public long commandPool;
+
+        public long computeCommandPool;
+        public VkCommandBuffer computeCommandBuffer;
+        public long computeFence;
+        public long computeSemaphore;
+        public long computeDescriptorSet;
         public VkCommandBuffer commandBuffer;
         public AllocatedBuffer cameraBuffer;
         public AllocatedBuffer objectBuffer;
+        public AllocatedBuffer indirectCommandBuffer;
+        public AllocatedBuffer indirectDrawCountBuffer;
+        public AllocatedBuffer computeUBOBuffer;
 
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSet;
@@ -1570,12 +2028,23 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         public long vmaAllocator;
 
+        public boolean shouldUpdateIndirectCommandsBuffer = true;
+        public boolean shouldUpdateObjectBuffer = true;
+        public boolean shouldUpdateCameraBuffer = true;
+        public boolean shouldUpdateComputeUboBuffer = true;
+
         public void cleanUp() {
             semaphores.forEach(s -> vkDestroySemaphore(device, s, null));
+            vkDestroySemaphore(device, computeSemaphore, null);
             vkDestroyFence(device, fence, null);
+            vkDestroyFence(device, computeFence, null);
             vkDestroyCommandPool(device, commandPool, null);
+            vkDestroyCommandPool(device, computeCommandPool, null);
             vmaDestroyBuffer(vmaAllocator, cameraBuffer.buffer, cameraBuffer.allocation);
             vmaDestroyBuffer(vmaAllocator, objectBuffer.buffer, objectBuffer.allocation);
+            vmaDestroyBuffer(vmaAllocator, indirectCommandBuffer.buffer, indirectCommandBuffer.allocation);
+            vmaDestroyBuffer(vmaAllocator, indirectDrawCountBuffer.buffer, indirectDrawCountBuffer.allocation);
+            vmaDestroyBuffer(vmaAllocator, computeUBOBuffer.buffer, computeUBOBuffer.allocation);
         }
     }
 
@@ -1586,7 +2055,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public long fence;
         public long commandPool;
         public VkCommandBuffer commandBuffer;
-
         public long imageInputDescriptorSet;
 
         public void cleanUp() {

@@ -1,22 +1,15 @@
 package Kurama.Vulkan;
 
 import Kurama.Math.Vector;
-import main.ActiveShutterRenderer;
-import main.RenderingEngineVulkan;
 import org.lwjgl.vulkan.*;
 
-import javax.swing.text.View;
-import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
-import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
+import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.*;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
-import static Kurama.Vulkan.VulkanUtilities.createShaderModule;
-import static Kurama.Vulkan.VulkanUtilities.device;
+import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
@@ -92,7 +85,7 @@ public class PipelineBuilder {
         }
 
     }
-    public record PipelineAndLayout(long pipelineLayout, long pipeline){};
+    public record PipelineLayoutAndPipeline(long pipelineLayout, long pipeline){};
 
     public List<ShaderStageCreateInfo> shaderStages = new ArrayList<>();
     public VertexBindingDescription vertexBindingDescription;
@@ -106,9 +99,19 @@ public class PipelineBuilder {
     public PipelineMultisampleStateCreateInfo multiSample;
     public PushConstant pushConstant;
     public long[] descriptorSetLayouts;
+    public PipelineType pipelineType;
+    public enum PipelineType {COMPUTE, VERTEX_FRAGMENT};
 
-    public PipelineAndLayout build(VkDevice device, long renderPass) {
+    public PipelineBuilder(PipelineType pipelineType) {
+        super();
+        this.pipelineType = pipelineType;
+    }
 
+    public PipelineBuilder() {
+        this.pipelineType = PipelineType.VERTEX_FRAGMENT;
+    }
+
+    private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, long renderPass) {
         if(viewport == null) {
             throw new IllegalArgumentException("Viewport cannot be null");
         }
@@ -129,7 +132,7 @@ public class PipelineBuilder {
 
                 var entryPoint = stack.UTF8(shader.entryPoint);
                 ShaderSPIRVUtils.ShaderKind shaderKind = null;
-                
+
                 switch (shader.ShaderType) {
                     case VK_SHADER_STAGE_VERTEX_BIT:
                         shaderKind = VERTEX_SHADER;
@@ -313,7 +316,91 @@ public class PipelineBuilder {
             shaderModules.forEach(s -> vkDestroyShaderModule(device, s, null));
             shaderSPIRVs.forEach(s -> s.free());
 
-            return new PipelineAndLayout(pipelineLayout, graphicsPipeline);
+            return new PipelineLayoutAndPipeline(pipelineLayout, graphicsPipeline);
+        }
+    }
+
+    public PipelineLayoutAndPipeline buildComputePipeline(VkDevice device) {
+
+        if(descriptorSetLayouts == null) {
+            throw new RuntimeException("Compute shaders must have descriptors");
+        }
+
+        try (var stack = stackPush()) {
+
+            // SHADER STAGES
+            var shaderStagesBuffer = VkPipelineShaderStageCreateInfo.calloc(shaderStages.size(), stack);
+            var shaderModules = new ArrayList<Long>();
+            var shaderSPIRVs = new ArrayList<ShaderSPIRVUtils.SPIRV>();
+
+            for(int i = 0; i < shaderStages.size(); i++) {
+
+                var shader = shaderStages.get(i);
+
+                var entryPoint = stack.UTF8(shader.entryPoint);
+                ShaderSPIRVUtils.ShaderKind shaderKind = null;
+
+                switch (shader.ShaderType) {
+                    case VK_SHADER_STAGE_VERTEX_BIT:
+                        shaderKind = VERTEX_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_FRAGMENT_BIT:
+                        shaderKind = FRAGMENT_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_COMPUTE_BIT:
+                        shaderKind = COMPUTE_SHADER;
+                        break;
+                }
+
+                if(shaderKind == null) {
+                    throw new IllegalArgumentException("Invalid shader type was passed in");
+                }
+                var shaderSPRIV = compileShaderFile(shader.shaderFile, shaderKind);
+                var shaderModule = createShaderModule(shaderSPRIV.bytecode(), device);
+                shaderModules.add(shaderModule);
+                shaderSPIRVs.add(shaderSPRIV);
+
+                var shaderStageInfo = shaderStagesBuffer.get(i);
+                shaderStageInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+                shaderStageInfo.stage(shader.ShaderType);
+                shaderStageInfo.module(shaderModule);
+                shaderStageInfo.pName(entryPoint);
+            }
+
+            var pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
+            pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+            pipelineLayoutInfo.pSetLayouts(stack.longs(descriptorSetLayouts));
+
+            // ===> PIPELINE LAYOUT CREATION <===
+            LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
+            vkCheck(vkCreatePipelineLayout(device, pipelineLayoutInfo, null, pPipelineLayout));
+
+            // ===> PIPELINE CREATION <===
+            LongBuffer pPipeline = stack.longs(VK_NULL_HANDLE);
+            var pipelineInfo = VkComputePipelineCreateInfo.calloc(1, stack);
+            pipelineInfo.sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+            pipelineInfo.layout(pPipelineLayout.get(0));
+            pipelineInfo.flags(0);
+            pipelineInfo.stage(shaderStagesBuffer.get(0));
+            
+            vkCheck(vkCreateComputePipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pPipeline));
+
+            // RELEASE RESOURCES
+            shaderModules.forEach(s -> vkDestroyShaderModule(device, s, null));
+            shaderSPIRVs.forEach(s -> s.free());
+
+            return new PipelineLayoutAndPipeline(pPipelineLayout.get(0), pPipeline.get(0));
+        }
+    }
+
+    public PipelineLayoutAndPipeline build(VkDevice device, Long renderPass) {
+
+        if(pipelineType == PipelineType.VERTEX_FRAGMENT) {
+            return buildVertexFragPipeline(device, renderPass);
+        }
+
+        else {
+            return buildComputePipeline(device);
         }
 
     }

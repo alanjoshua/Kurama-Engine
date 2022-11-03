@@ -9,6 +9,7 @@ layout(set = 0, binding = 0) uniform CameraBuffer {
 
 struct ObjectData {
     mat4 model;
+    float radius;
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer ObjectBuffer {

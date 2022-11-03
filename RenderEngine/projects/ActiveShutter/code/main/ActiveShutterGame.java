@@ -62,8 +62,11 @@ public class ActiveShutterGame extends Game {
 
         this.input = new InputLWJGL(this, display);
 
-        playerCamera = new StereoCamera(this,null, null, new Vector(new float[] {0,0,0}),60, 0.001f, 1000.0f,
-                renderer.swapChainExtent.width(), renderer.swapChainExtent.height(), false, "playerCam");
+        playerCamera = new StereoCamera(this,null, null,
+                new Vector(new float[] {0,0,0}),60,
+                0.001f, 1000.0f,
+                renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
+                false, "playerCam");
 
         playerCamera.loadDefaultSettings();
         playerCamera.fovX = 45;
@@ -110,6 +113,7 @@ public class ActiveShutterGame extends Game {
             var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
             for(var m: meshes) {
                 m.materials.get(0).texture = tex;
+                m.boundingRadius = 50;
             }
         }
         catch (Exception e) {
@@ -152,6 +156,8 @@ public class ActiveShutterGame extends Game {
 
             deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
         });
+
+        renderer.mergeMeshes(renderables);
     }
 
     @Override
@@ -171,6 +177,7 @@ public class ActiveShutterGame extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
+                renderer.cameraUpdated();
             }
 
             renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;

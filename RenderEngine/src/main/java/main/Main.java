@@ -13,16 +13,17 @@ public class Main {
 	
 	public void start() {
 //		game = new GameLWJGL("OpenGL Renderer");
+//		game.start();
 //		game = new Editor("Editor");
 
 //		game = new GameVulkan("Vulkan");
 //		game.start();
 
-		game = new AnaglyphGame("Anaglyph Renderer");
-		game.start();
-//
-//		game = new ActiveShutterGame("Active shutter Renderer");
+//		game = new AnaglyphGame("Anaglyph Renderer");
 //		game.start();
+//
+		game = new ActiveShutterGame("Active shutter Renderer");
+		game.start();
 
 //		var app = new VulkanGame();
 //		app.run();
