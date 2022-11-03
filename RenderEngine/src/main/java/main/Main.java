@@ -13,6 +13,7 @@ public class Main {
 	
 	public void start() {
 //		game = new GameLWJGL("OpenGL Renderer");
+//		game.start();
 //		game = new Editor("Editor");
 
 //		game = new GameVulkan("Vulkan");

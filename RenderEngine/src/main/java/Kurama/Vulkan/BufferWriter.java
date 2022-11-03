@@ -47,6 +47,10 @@ public class BufferWriter {
         buffer.putInt(data);
     }
 
+    public void put(float data) {
+        buffer.putFloat(data);
+    }
+
     public void put(float[][] data) {
         for(int j = 0; j < data[0].length; j++) {
             for(int i = 0; i < data.length; i++) {

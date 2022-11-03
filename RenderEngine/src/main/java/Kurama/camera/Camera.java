@@ -4,6 +4,7 @@ import Kurama.ComponentSystem.automations.DefaultCameraUpdate;
 import Kurama.ComponentSystem.components.Component;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.ComponentSystem.components.model.SceneComponent;
+import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -49,6 +50,7 @@ public class Camera extends SceneComponent {
 	private final float inchToMm = 25.4f;
 	
 	public boolean shouldUpdateValues = false;
+	public FrustumIntersection frustumIntersection = new FrustumIntersection();
 
 	public RenderBuffer renderBuffer;
 	public boolean isActive = true;
@@ -161,6 +163,7 @@ public class Camera extends SceneComponent {
 				this.orthographicProjectionMatrix = Matrix.buildOrthographicProjectionMatrix(nearClippingPlane,farClippingPlane,left,right,top,bottom);
 			}
 		}
+		frustumIntersection.set(getPerspectiveProjectionMatrix().matMul(getWorldToObject()));
 	}
 
 	public Vector lookAtModel(Model m) {

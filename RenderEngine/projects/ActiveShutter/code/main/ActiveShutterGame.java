@@ -19,7 +19,6 @@ import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
 
 public class ActiveShutterGame extends Game {
 
@@ -114,6 +113,7 @@ public class ActiveShutterGame extends Game {
             var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
             for(var m: meshes) {
                 m.materials.get(0).texture = tex;
+                m.boundingRadius = 50;
             }
         }
         catch (Exception e) {
@@ -147,7 +147,6 @@ public class ActiveShutterGame extends Game {
         models.add(vikingRoom);
 
         renderables.addAll(getRenderablesFromModel(lostEmpire));
-//        renderables.add(new Renderable(lostEmpire.meshes.get(2),lostEmpire));
         renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderables.forEach(r -> {
@@ -178,7 +177,7 @@ public class ActiveShutterGame extends Game {
             if (playerCamera.shouldUpdateValues) {
                 playerCamera.updateValues();
                 playerCamera.setShouldUpdateValues(false);
-                renderer.setCameraUpdated();
+                renderer.cameraUpdated();
             }
 
             renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;

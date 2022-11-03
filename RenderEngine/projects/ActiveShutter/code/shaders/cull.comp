@@ -2,6 +2,7 @@
 
 struct ObjectData {
     mat4 model;
+    vec4 radius;
 };
 
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
@@ -64,9 +65,10 @@ void main() {
     }
 
     vec4 pos = vec4(objectBuffer.objects[idx].model[3].xyz, 1.0);
+    float radius = objectBuffer.objects[idx].radius.x;
 
     // Check if object is within current viewing frustum
-    if (frustumCheck(pos, 1.0)) {
+    if (frustumCheck(pos, radius)) {
         indirectDraws[idx].instanceCount = 1;
         // Increase number of indirect draw counts
         atomicAdd(uboOut.drawCount, 1);
@@ -74,5 +76,7 @@ void main() {
     else {
         indirectDraws[idx].instanceCount = 0;
     }
+
+//    indirectDraws[idx].instanceCount = 0;
 
 }
