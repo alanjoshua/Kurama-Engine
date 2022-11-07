@@ -124,7 +124,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public DisplayVulkan display;
     public ActiveShutterGame game;
     public boolean shouldUpdateGPUSceneBuffer = true;
-    public FrustumIntersection frustumIntersection = new FrustumIntersection();
+    public int objectRenderCount;
+
 
     public ActiveShutterRenderer(Game game) {
         super(game);
@@ -602,10 +603,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         try(MemoryStack stack = stackPush()) {
 
-            vkWaitForFences(device, stack.longs(curMultiViewFrame.fence), true, UINT64_MAX);
-            vkResetFences(device, stack.longs(curMultiViewFrame.fence));
+//            vkWaitForFences(device, stack.longs(curMultiViewFrame.computeFence), true, UINT64_MAX);
+//            vkResetFences(device, stack.longs(curMultiViewFrame.computeFence));
 
-            recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(currentMultiViewFrameIndex), multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
+            recordMultiViewCommandBuffer(renderables, curMultiViewFrame, multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
 
             // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
@@ -617,8 +618,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
             submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
 
             int vkResult;
-            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.fence)) != VK_SUCCESS) {
-                vkResetFences(device, stack.longs(curMultiViewFrame.fence));
+            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.computeFence)) != VK_SUCCESS) {
+                vkResetFences(device, stack.longs(curMultiViewFrame.computeFence));
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
@@ -690,7 +691,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         submitInfo.pSignalSemaphores(stack.longs(frame.computeSemaphore));
         submitInfo.pCommandBuffers(stack.pointers(frame.computeCommandBuffer));
 
-        vkCheck(vkQueueSubmit(computeQueue, submitInfo, frame.computeFence), "Could not submit to compute queue");
+        vkCheck(vkQueueSubmit(computeQueue, submitInfo, VK_NULL_HANDLE), "Could not submit to compute queue");
     }
 
     public void draw(List<Renderable> renderables) {
@@ -702,22 +703,25 @@ public class ActiveShutterRenderer extends RenderingEngine {
             var viewFrame1 = viewRenderPass.frames.get(0);
             var viewFrame2 = viewRenderPass.frames.get(1);
 
-//            log("compute cmd: "+ curMultiViewFrame.computeCommandBuffer);
-//            log("view1 cmd: "+ viewFrame1.commandBuffer);
-//            log("view1 cmd: "+ viewFrame2.commandBuffer);
-//            log("multiview cmd: "+ curMultiViewFrame.commandBuffer);
+            log("compute cmd: "+ curMultiViewFrame.computeCommandBuffer);
+            log("view1 cmd: "+ viewFrame1.commandBuffer);
+            log("view1 cmd: "+ viewFrame2.commandBuffer);
+            log("multiview cmd: "+ curMultiViewFrame.commandBuffer);
+
+            log("graphics VKQueue: " + graphicsQueue.toString());
+            log("compute VKQueue: " + computeQueue.toString());
 
             performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
 
             callCompute(curMultiViewFrame, stack);
 
-            Integer imageIndex1 = prepareDisplay(viewFrame1);
-            if (imageIndex1 == null) return;
-
             renderMultiViewFrame(curMultiViewFrame,
                     stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)),
-                    stack.longs(curMultiViewFrame.computeSemaphore, viewFrame2.presentCompleteSemaphore),
+                    stack.longs(curMultiViewFrame.computeSemaphore),
                     renderables);
+
+            Integer imageIndex1 = prepareDisplay(viewFrame1);
+            if (imageIndex1 == null) return;
 
             drawViewFrame(viewFrame1,
                     stack.longs(viewFrame1.renderFinishedSemaphore),
@@ -736,11 +740,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
             var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
             bufferReader.mapBuffer();
 
-            int objectCount = bufferReader.buffer.getInt();
+            objectRenderCount = bufferReader.buffer.getInt();
 
             bufferReader.unmapBuffer();
 
-            log("Objects being rendered: "+ objectCount);
+//            log("Objects being rendered: "+ objectCount);
 
             // Only for multiview
             currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
