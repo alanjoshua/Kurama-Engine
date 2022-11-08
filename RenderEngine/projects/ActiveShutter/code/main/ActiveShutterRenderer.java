@@ -45,7 +45,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public int MAXOBJECTS = 10000;
     public int MAXCOMMANDS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 2;
+    public static final int MAX_FRAMES_IN_FLIGHT = 1;
+    public static final int viewFrames = 2;
     public long surface;
     public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
     public long minUniformBufferOffsetAlignment = 64;
@@ -678,7 +679,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void callCompute(MultiViewRenderPassFrame frame, MemoryStack stack) {
+    public void callCompute(MultiViewRenderPassFrame frame, LongBuffer signalSemaphores, LongBuffer waitSemaphores, MemoryStack stack) {
         // Wait for fence to ensure that compute buffer writes have finished
 
         vkWaitForFences(device, stack.longs(frame.computeFence), true, UINT64_MAX);
@@ -688,7 +689,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
         VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
         submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
-        submitInfo.pSignalSemaphores(stack.longs(frame.computeSemaphore));
+//        submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
+        submitInfo.pSignalSemaphores(signalSemaphores);
+        submitInfo.pWaitSemaphores(waitSemaphores);
         submitInfo.pCommandBuffers(stack.pointers(frame.computeCommandBuffer));
 
         vkCheck(vkQueueSubmit(computeQueue, submitInfo, VK_NULL_HANDLE), "Could not submit to compute queue");
@@ -713,10 +716,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
 
-            callCompute(curMultiViewFrame, stack);
+            callCompute(curMultiViewFrame,
+                    stack.longs(curMultiViewFrame.computeSemaphore),
+                    stack.longs(VK_NULL_HANDLE),
+                    stack);
 
             renderMultiViewFrame(curMultiViewFrame,
-                    stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)),
+                    stack.longs(curMultiViewFrame.semaphores.get(0)),
                     stack.longs(curMultiViewFrame.computeSemaphore),
                     renderables);
 
@@ -729,13 +735,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     imageIndex1, 0);
             submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
 
-            Integer imageIndex2 = prepareDisplay(viewFrame2);
-            if (imageIndex2 == null) return;
-            drawViewFrame(viewFrame2,
-                    stack.longs(viewFrame2.renderFinishedSemaphore),
-                    stack.longs(curMultiViewFrame.semaphores.get(1)),
-                    imageIndex2, 1);
-            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
+//            Integer imageIndex2 = prepareDisplay(viewFrame2);
+//            if (imageIndex2 == null) return;
+//            drawViewFrame(viewFrame2,
+//                    stack.longs(viewFrame2.renderFinishedSemaphore),
+//                    stack.longs(curMultiViewFrame.semaphores.get(1)),
+//                    imageIndex2, 1);
+//            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
 
             var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
             bufferReader.mapBuffer();
@@ -984,10 +990,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             multiViewFrame.objectDescriptorSet = result.descriptorSet();
             multiViewRenderPass.objectDescriptorSetLayout = result.layout();
+        }
 
+        for(int i = 0; i < viewRenderPass.frames.size(); i++) {
             // Descriptor set for image input for the view Render pass
             // attaches to the output imageview from the multiview pass
-            result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+            var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindImage(0,
                             new DescriptorImageInfo(getTextureSampler(1), multiViewRenderPass.colorAttachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -996,6 +1004,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
             textureSetLayout = result.layout();
         }
+
     }
 
     private void prepareComputeCmdPoolsCmdBuffersSyncObjects() {
@@ -1084,7 +1093,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void updateViewRenderPassImageInputDescriptorSet() {
         try (var stack = stackPush()) {
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            for (int i = 0; i < viewFrames; i++) {
 
                 //information about the buffer we want to point at in the descriptor
                 var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
@@ -1749,7 +1758,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void recreateFrameCommandBuffers() {
         try (MemoryStack stack = stackPush()) {
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            for (int i = 0; i < viewFrames; i++) {
 
                 // Create command buffer
                 VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
@@ -1759,39 +1768,43 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 allocInfo.commandBufferCount(1);
 
                 PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to allocate command buffers");
                 }
 
                 var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
                 viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
+            }
+
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
                 // Create command buffer for MultiView Render pass
-                allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                var allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
                 allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
                 allocInfo.commandPool(globalCommandPool);
                 allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
                 allocInfo.commandBufferCount(1);
 
-                pCommandBuffers = stack.mallocPointer(1);
+                var pCommandBuffers = stack.mallocPointer(1);
                 if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to allocate command buffers");
                 }
 
-                commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
                 multiViewRenderPass.frames.get(i).commandBuffer = commandBuffer;
             }
         }
     }
 
     public void initializeFrames() {
-        viewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+        viewRenderPass.frames = new ArrayList<>(viewFrames);
         multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for (int i = 0; i < viewFrames; i++) {
             var frame = new ViewRenderPassFrame();
             viewRenderPass.frames.add(frame);
-
+        }
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             var newFrame = new MultiViewRenderPassFrame();
             newFrame.vmaAllocator = vmaAllocator;
             multiViewRenderPass.frames.add(newFrame);
@@ -1833,15 +1846,21 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
                 viewRenderPass.frames.get(i).commandPool = commandPool;
                 viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
+            }
+
+            for (int i = 0; i < multiViewRenderPass.frames.size(); i++) {
+
+                LongBuffer pCommandPool = stack.mallocLong(1);
+                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
 
                 // Create command pool and command buffer for MultiView RenderPass
                 if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to create command pool");
                 }
-                commandPool = pCommandPool.get(0);
+                var commandPool = pCommandPool.get(0);
 
                 // Create command buffer
-                allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+                var allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
                 allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
                 allocInfo.commandPool(commandPool);
                 allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -1852,7 +1871,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     throw new RuntimeException("Failed to allocate command buffers");
                 }
 
-                commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
+                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
 
                 multiViewRenderPass.frames.get(i).commandPool = commandPool;
                 multiViewRenderPass.frames.get(i).commandBuffer = commandBuffer;
@@ -1879,7 +1898,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             LongBuffer pFence = stack.mallocLong(1);
 
             // For view renderPass
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            for (int i = 0; i < viewFrames; i++) {
 
                 if (vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
                         || vkCreateSemaphore(device, semaphoreInfo, null, pRenderFinishedSemaphore) != VK_SUCCESS
