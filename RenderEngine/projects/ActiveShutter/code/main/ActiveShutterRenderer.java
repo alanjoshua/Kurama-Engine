@@ -344,7 +344,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 var frame = multiViewRenderPass.frames.get(i);
                 var commandBuffer = frame.computeCommandBuffer;
 
-                vkCheck(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset compute command buffer");
+//                vkCheck(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset compute command buffer");
 
                 VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
                 beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -373,7 +373,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, stack.longs(frame.computeDescriptorSet), null);
 
-                log("num compute objs: "+ (computeUBOIn.objectCount / 16)+1);
+                log("num compute objs: "+ (computeUBOIn.objectCount / 256)+1);
 
                 vkCmdDispatch(commandBuffer, (computeUBOIn.objectCount / 16)+1, 1, 1);
 
@@ -390,7 +390,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     bufferBarrier.size(VK_WHOLE_SIZE);
 
                     vkCmdPipelineBarrier(commandBuffer,
-                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
                             0, null, bufferBarrier, null);
                 }
 
@@ -612,7 +612,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
         submitInfo.pSignalSemaphores(signalSemaphores);
-        submitInfo.pWaitSemaphores(waitSemaphores);
+        submitInfo.pWaitSemaphores(stack.longs(curMultiViewFrame.computeSemaphore));
         submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
         submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
 
@@ -718,13 +718,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     null,
                     stack);
 
+            Integer imageIndex1 = prepareDisplay(viewFrame1);
+            if (imageIndex1 == null) return;
+
             renderMultiViewFrame(curMultiViewFrame,
                     stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)),
                     stack.longs(curMultiViewFrame.computeSemaphore, viewFrame1.renderFinishedSemaphore),
                     renderables, stack);
-
-            Integer imageIndex1 = prepareDisplay(viewFrame1);
-            if (imageIndex1 == null) return;
 
             drawViewFrame(viewFrame1,
                     stack.longs(viewFrame1.renderFinishedSemaphore),
