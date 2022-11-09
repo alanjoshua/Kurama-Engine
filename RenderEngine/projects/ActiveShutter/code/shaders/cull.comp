@@ -41,7 +41,7 @@ layout (binding = 3) buffer UBOOut
     uint drawCount;
 } uboOut;
 
-layout (local_size_x = 256) in;
+layout (local_size_x = 16) in;
 
 bool frustumCheck(vec4 pos, float radius)
 {
