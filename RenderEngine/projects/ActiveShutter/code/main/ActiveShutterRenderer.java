@@ -357,7 +357,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
                     var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
                     bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
-                    bufferBarrier.srcAccessMask(VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+                    bufferBarrier.srcAccessMask(0);
                     bufferBarrier.dstAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
                     bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
                     bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.computeFamily);
@@ -366,7 +366,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     bufferBarrier.size(VK_WHOLE_SIZE);
 
                     vkCmdPipelineBarrier(commandBuffer,
-                            VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                             0, null, bufferBarrier, null);
                 }
 
@@ -382,7 +382,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     var bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
                     bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
                     bufferBarrier.srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
-                    bufferBarrier.dstAccessMask(VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+                    bufferBarrier.dstAccessMask(0);
                     bufferBarrier.srcQueueFamilyIndex(queueFamilyIndices.computeFamily);
                     bufferBarrier.dstQueueFamilyIndex(queueFamilyIndices.graphicsFamily);
                     bufferBarrier.buffer(frame.indirectCommandBuffer.buffer);
@@ -390,7 +390,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     bufferBarrier.size(VK_WHOLE_SIZE);
 
                     vkCmdPipelineBarrier(commandBuffer,
-                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                             0, null, bufferBarrier, null);
                 }
 
@@ -600,31 +600,28 @@ public class ActiveShutterRenderer extends RenderingEngine {
         multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateComputeUboBuffer = false;
     }
 
-    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer signalSemaphores, LongBuffer waitSemaphores, List<Renderable> renderables) {
-
-        try(MemoryStack stack = stackPush()) {
+    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, LongBuffer signalSemaphores, LongBuffer waitSemaphores, List<Renderable> renderables, MemoryStack stack) {
 
 //            vkWaitForFences(device, stack.longs(curMultiViewFrame.computeFence), true, UINT64_MAX);
 //            vkResetFences(device, stack.longs(curMultiViewFrame.computeFence));
 
-            recordMultiViewCommandBuffer(renderables, curMultiViewFrame, multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
+        recordMultiViewCommandBuffer(renderables, curMultiViewFrame, multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
 
-            // Submit rendering commands to GPU
-            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+        // Submit rendering commands to GPU
+        VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+        submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
 
-            submitInfo.pSignalSemaphores(signalSemaphores);
-            submitInfo.pWaitSemaphores(waitSemaphores);
-            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
+        submitInfo.pSignalSemaphores(signalSemaphores);
+        submitInfo.pWaitSemaphores(waitSemaphores);
+        submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
+        submitInfo.pCommandBuffers(stack.pointers(curMultiViewFrame.commandBuffer));
 
-            int vkResult;
-            if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.computeFence)) != VK_SUCCESS) {
-                vkResetFences(device, stack.longs(curMultiViewFrame.computeFence));
-                throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
-            }
-
+        int vkResult;
+        if(( vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curMultiViewFrame.computeFence)) != VK_SUCCESS) {
+            vkResetFences(device, stack.longs(curMultiViewFrame.computeFence));
+            throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
         }
+
     }
 
     public Integer prepareDisplay(ViewRenderPassFrame curViewFrame) {
@@ -680,8 +677,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
     }
 
     public void callCompute(MultiViewRenderPassFrame frame, LongBuffer signalSemaphores, LongBuffer waitSemaphores, MemoryStack stack) {
-        // Wait for fence to ensure that compute buffer writes have finished
 
+        // Wait for fence to ensure that compute buffer writes have finished
         vkWaitForFences(device, stack.longs(frame.computeFence), true, UINT64_MAX);
         vkResetFences(device, stack.longs(frame.computeFence));
 
@@ -706,25 +703,25 @@ public class ActiveShutterRenderer extends RenderingEngine {
             var viewFrame1 = viewRenderPass.frames.get(0);
             var viewFrame2 = viewRenderPass.frames.get(1);
 
-            log("compute cmd: "+ curMultiViewFrame.computeCommandBuffer);
-            log("view1 cmd: "+ viewFrame1.commandBuffer);
-            log("view1 cmd: "+ viewFrame2.commandBuffer);
-            log("multiview cmd: "+ curMultiViewFrame.commandBuffer);
-
-            log("graphics VKQueue: " + graphicsQueue.toString());
-            log("compute VKQueue: " + computeQueue.toString());
+//            log("compute cmd: "+ curMultiViewFrame.computeCommandBuffer);
+//            log("view1 cmd: "+ viewFrame1.commandBuffer);
+//            log("view1 cmd: "+ viewFrame2.commandBuffer);
+//            log("multiview cmd: "+ curMultiViewFrame.commandBuffer);
+//
+//            log("graphics VKQueue: " + graphicsQueue.toString());
+//            log("compute VKQueue: " + computeQueue.toString());
 
             performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
 
             callCompute(curMultiViewFrame,
                     stack.longs(curMultiViewFrame.computeSemaphore),
-                    stack.longs(VK_NULL_HANDLE),
+                    null,
                     stack);
 
             renderMultiViewFrame(curMultiViewFrame,
-                    stack.longs(curMultiViewFrame.semaphores.get(0)),
-                    stack.longs(curMultiViewFrame.computeSemaphore),
-                    renderables);
+                    stack.longs(curMultiViewFrame.semaphores.get(0), curMultiViewFrame.semaphores.get(1)),
+                    stack.longs(curMultiViewFrame.computeSemaphore, viewFrame1.renderFinishedSemaphore),
+                    renderables, stack);
 
             Integer imageIndex1 = prepareDisplay(viewFrame1);
             if (imageIndex1 == null) return;
@@ -735,13 +732,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
                     imageIndex1, 0);
             submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
 
-//            Integer imageIndex2 = prepareDisplay(viewFrame2);
-//            if (imageIndex2 == null) return;
-//            drawViewFrame(viewFrame2,
-//                    stack.longs(viewFrame2.renderFinishedSemaphore),
-//                    stack.longs(curMultiViewFrame.semaphores.get(1)),
-//                    imageIndex2, 1);
-//            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
+            Integer imageIndex2 = prepareDisplay(viewFrame2);
+            if (imageIndex2 == null) return;
+            drawViewFrame(viewFrame2,
+                    stack.longs(viewFrame2.renderFinishedSemaphore),
+                    stack.longs(curMultiViewFrame.semaphores.get(1)),
+                    imageIndex2, 1);
+            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
 
             var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
             bufferReader.mapBuffer();
@@ -750,10 +747,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             bufferReader.unmapBuffer();
 
-//            log("Objects being rendered: "+ objectCount);
+//            log("Objects being rendered: "+ objectRenderCount);
 
             // Only for multiview
             currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
+            vkQueueWaitIdle(computeQueue);
         }
     }
 
