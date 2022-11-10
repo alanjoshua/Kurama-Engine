@@ -721,6 +721,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             curMultiViewFrame.timeLineSemaphore = resetTimelineSemaphore(curMultiViewFrame.timeLineSemaphore);
 
+            // Recreate swap chain items if the window is resized
+            // Do it before running the pipeline
+            if(framebufferResize) {
+                recreateSwapChain();
+                framebufferResize = false;
+            }
+
             callCompute(curMultiViewFrame, stack);
 
             Integer imageIndex1 = prepareDisplay(viewFrame1);
@@ -766,8 +773,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             int vkResult = vkQueuePresentKHR(presentQueue, presentInfo);
 
-            if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR || framebufferResize) {
-                framebufferResize = false;
+            if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
                 recreateSwapChain();
             } else if (vkResult != VK_SUCCESS) {
                 throw new RuntimeException("Failed to present swap chain image");
