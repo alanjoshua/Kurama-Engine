@@ -105,10 +105,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
     public long multiViewGraphicsPipeline;
     public long computePipelineLayout;
     public long computePipeline;
-
-    // The global Command pool and buffer are currently used for tasks such as image loading and transformations
-    public long globalCommandPool;
-    public VkCommandBuffer globalCommandBuffer;
     public long textureSetLayout;
     public boolean framebufferResize;
     public GPUCameraData gpuCameraDataLeft;
@@ -181,9 +177,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         prepareComputeCmdPoolsCmdBuffersSyncObjects();
         createFrameCommandPoolsAndCommandBuffers();
         initSyncObjects();
-
-        createGlobalCommandPool();
-        createGlobalCommandBuffer();
 
         createSwapChain();
         createSwapChainImageViews();
@@ -750,7 +743,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             bufferReader.unmapBuffer();
 
-//            log("Objects being rendered: "+ objectRenderCount);
+            if(game.isOneSecond) {
+                log("Rendered object count: " + objectRenderCount);
+            }
 
             // Only for multiview
             currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -930,24 +925,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void createGlobalCommandBuffer() {
-
-        try (var stack = stackPush()) {
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-            allocInfo.commandPool(globalCommandPool);
-            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-            allocInfo.commandBufferCount(1);
-
-            PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-            if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate command buffers");
-            }
-
-            globalCommandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-        }
-    }
-
     public void initDescriptorSets() {
 
         for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
@@ -1069,20 +1046,20 @@ public class ActiveShutterRenderer extends RenderingEngine {
     private void createSwapChainObjects() {
         createSwapChain();
         createSwapChainImageViews();
-        createRenderPasses();
-        createViewGraphicsPipeline();
-        createMultiViewGraphicsPipeline();
+
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
+        createRenderPasses();
         createFramebuffers();
-        updateViewRenderPassImageInputDescriptorSet();
+        createViewGraphicsPipeline();
+        createMultiViewGraphicsPipeline();
 
-        createGlobalCommandBuffer();
-        recreateFrameCommandBuffers();
+        updateViewRenderPassImageInputDescriptorSet();
     }
 
     public void updateViewRenderPassImageInputDescriptorSet() {
         try (var stack = stackPush()) {
+
             for (int i = 0; i < viewFrames; i++) {
 
                 //information about the buffer we want to point at in the descriptor
@@ -1108,8 +1085,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
         viewRenderPass.frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
-
-        vkFreeCommandBuffers(device, globalCommandPool, VulkanUtilities.asPointerBuffer(List.of(new VkCommandBuffer[]{globalCommandBuffer})));
 
         vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
         vkDestroyPipeline(device, viewGraphicsPipeline, null);
@@ -1517,27 +1492,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void createGlobalCommandPool() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
-            poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-            poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
-            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-            LongBuffer pCommandPool = stack.mallocLong(1);
-
-            if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create command pool");
-            }
-
-            globalCommandPool = pCommandPool.get(0);
-            deletionQueue.add(() -> vkDestroyCommandPool(device, globalCommandPool, null));
-
-        }
-    }
-
     public void createLogicalDevice() {
         try(MemoryStack stack = stackPush()) {
 
@@ -1748,46 +1702,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
 
         vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-    }
-
-    public void recreateFrameCommandBuffers() {
-        try (MemoryStack stack = stackPush()) {
-            for (int i = 0; i < viewFrames; i++) {
-
-                // Create command buffer
-                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(globalCommandPool);
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to allocate command buffers");
-                }
-
-                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-                viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
-            }
-
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-                // Create command buffer for MultiView Render pass
-                var allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(globalCommandPool);
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                var pCommandBuffers = stack.mallocPointer(1);
-                if(vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to allocate command buffers");
-                }
-
-                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-                multiViewRenderPass.frames.get(i).commandBuffer = commandBuffer;
-            }
-        }
     }
 
     public void initializeFrames() {

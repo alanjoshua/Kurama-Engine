@@ -37,6 +37,9 @@ public abstract class Game implements Runnable {
     public Display display;
     public Input input;
 
+    // Convenient boolean that could be used by other game objects to conveniently print to console every second
+    public boolean isOneSecond = false;
+
     public static GraphicsApi GRAPHICS_API;
 
     public enum GraphicsApi {CPU, OPENGL, VULKAN}
@@ -102,21 +105,6 @@ public abstract class Game implements Runnable {
         }
     }
 
-    public boolean isVectorInsideWorld(Vector newPos) {
-
-        if(boundMax == null || boundMin == null) {
-            return true;
-        }
-
-        if(boundMin!= null && boundMax!=null
-                && newPos.get(0) >= boundMin.get(0) && newPos.get(0) < boundMax.get(0)
-                && newPos.get(1) >= boundMin.get(1) && newPos.get(1) < boundMax.get(1)
-                && newPos.get(2) >= boundMin.get(2) && newPos.get(2) < boundMax.get(2)) {
-            return true;
-        }
-        return false;
-    }
-
     public void runGame() {
 
         init();
@@ -128,10 +116,11 @@ public abstract class Game implements Runnable {
         double timer = 0.0;
         double tempDt = 0;
         float tickInterval = 0;
+        double timeU = 0;
 
         while (programRunning) {
-
-            double timeU = ((1000000000.0 / targetFPS));
+            isOneSecond = false;
+            timeU = ((1000000000.0 / targetFPS));
             currentTime = System.nanoTime();
             tempDt = (currentTime - startTime);
             dt += tempDt/timeU;
@@ -139,16 +128,8 @@ public abstract class Game implements Runnable {
             startTime = currentTime;
             timer = (currentTime - timerStartTime);
 
-            if (dt >= 1) {
-                timeDelta = (float) (tickInterval /1000000000.0);
-                tickInterval = 0;
-                tick();
-                render();
-                fps++;
-                dt = 0;
-            }
-
             if (timer >= 1000000000.0) {
+                isOneSecond = true;
                 displayFPS = getDisplayFPS();
                 fps = 0;
                 timerStartTime = System.nanoTime();
@@ -165,7 +146,15 @@ public abstract class Game implements Runnable {
                         e.printStackTrace();
                     }
                 }
+            }
 
+            if (dt >= 1) {
+                timeDelta = (float) (tickInterval /1000000000.0);
+                tickInterval = 0;
+                tick();
+                render();
+                fps++;
+                dt = 0;
             }
         }
 

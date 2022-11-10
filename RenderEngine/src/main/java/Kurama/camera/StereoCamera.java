@@ -1,6 +1,7 @@
 package Kurama.camera;
 
 import Kurama.ComponentSystem.components.Component;
+import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Matrix;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
@@ -73,7 +74,29 @@ public class StereoCamera extends Camera {
         rightWorldToCam = rightObjectToWorld.getInverse();
 
         // Temporary, need to create one big frustum
-        frustumIntersection.set(leftProjection.matMul(leftWorldToCam));
+        generateStereoFrustum();
+//        frustumIntersection.set(leftProjection.matMul(leftWorldToCam));
+    }
+
+    private void generateStereoFrustum() {
+        var leftFrustum = new FrustumIntersection().set(leftProjection.matMul(leftWorldToCam));
+        var rightFrustum = new FrustumIntersection().set(rightProjection.matMul(rightWorldToCam));
+
+        // left
+        frustumIntersection.planes[0] = leftFrustum.planes[0];
+        // right
+        frustumIntersection.planes[1] = rightFrustum.planes[1];
+
+        // These should be the same for both eyes
+        // bottom
+        frustumIntersection.planes[2] = leftFrustum.planes[2];
+        // top
+        frustumIntersection.planes[3] = leftFrustum.planes[3];
+        // near
+        frustumIntersection.planes[4] = leftFrustum.planes[4];
+        // far
+        frustumIntersection.planes[5] = leftFrustum.planes[5];
+
     }
 
     public static Matrix[] createStereoProjectionMatrices(int width, int height, float fov, float eyeSeparation, float focalLength, float zNear, float zFar) {
