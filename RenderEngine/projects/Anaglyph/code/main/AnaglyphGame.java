@@ -141,7 +141,7 @@ public class AnaglyphGame extends Game {
         renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderables.forEach(r -> {
-            renderer.uploadMeshData(r);
+//            renderer.uploadMeshData(r);
             renderer.prepareTexture((TextureVK) r.getMaterial().texture);
             r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
 

@@ -320,28 +320,28 @@ public class AnaglyphRenderer extends RenderingEngine {
         Mesh previousMesh = null;
         Long previousTextureSet = null;
 
-        for(int i = 0; i < renderables.size(); i++) {
-            var renderable = renderables.get(i);
-
-            if(previousMesh != renderable.mesh) {
-                LongBuffer offsets = stack.longs(0);
-                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
-                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-                previousMesh = renderable.mesh;
-            }
-
-            // Bind texture descriptor set only if it is different from previous texture
-            if(previousTextureSet != renderable.textureDescriptorSet) {
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        multiViewPipelineLayout, 2, stack.longs(renderable.textureDescriptorSet), null);
-
-                previousTextureSet = renderable.textureDescriptorSet;
-            }
-
-            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
-        }
+//        for(int i = 0; i < renderables.size(); i++) {
+//            var renderable = renderables.get(i);
+//
+//            if(previousMesh != renderable.mesh) {
+//                LongBuffer offsets = stack.longs(0);
+//                LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
+//                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+//                vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+//
+//                previousMesh = renderable.mesh;
+//            }
+//
+//            // Bind texture descriptor set only if it is different from previous texture
+//            if(previousTextureSet != renderable.textureDescriptorSet) {
+//                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+//                        multiViewPipelineLayout, 2, stack.longs(renderable.textureDescriptorSet), null);
+//
+//                previousTextureSet = renderable.textureDescriptorSet;
+//            }
+//
+//            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+//        }
     }
 
     public void recordSceneToCommandBufferIndirect(List<Renderable> renderables, VkCommandBuffer commandBuffer, AnaglyphMultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
@@ -364,10 +364,10 @@ public class AnaglyphRenderer extends RenderingEngine {
         for(var batch: indirectBatches) {
 
             // Bind mesh vertex and index buffers, and material descriptor sets
-            LongBuffer offsets = stack.longs(0);
-            LongBuffer vertexBuffers = stack.longs(renderables.get(batch.first).vertexBuffer.buffer);
-            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffer, renderables.get(batch.first).indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+//            LongBuffer offsets = stack.longs(0);
+//            LongBuffer vertexBuffers = stack.longs(renderables.get(batch.first).vertexBuffer.buffer);
+//            vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+//            vkCmdBindIndexBuffer(commandBuffer, renderables.get(batch.first).indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
@@ -526,10 +526,10 @@ public class AnaglyphRenderer extends RenderingEngine {
 
     }
 
-    public void uploadMeshData(Renderable renderable) {
-        createIndexBufferForRenderable(renderable);
-        createVertexBufferForRenderable(renderable);
-    }
+//    public void uploadMeshData(Renderable renderable) {
+//        createIndexBufferForRenderable(renderable);
+//        createVertexBufferForRenderable(renderable);
+//    }
 
     public Long generateTextureDescriptorSet(TextureVK texture) {
 
@@ -548,79 +548,79 @@ public class AnaglyphRenderer extends RenderingEngine {
         return textureFileToDescriptorSet.get(texture.fileName);
     }
 
-    public void createIndexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-        }
-    }
-
-    public void createVertexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-
-        }
-    }
+//    public void createIndexBufferForRenderable(Renderable renderable) {
+//        try (var stack = stackPush()) {
+//
+//            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
+//            var stagingBuffer = createBufferVMA(vmaAllocator,
+//                    bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                    VMA_MEMORY_USAGE_AUTO,
+//                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            var data = stack.mallocPointer(1);
+//
+//            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+//            {
+//                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
+//            }
+//            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+//
+//            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+//                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+//                var copy = VkBufferCopy.calloc(1, stack);
+//                copy.dstOffset(0);
+//                copy.srcOffset(0);
+//                copy.size(bufferSize);
+//                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
+//            };
+//
+//            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+//
+//            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+//        }
+//    }
+//
+//    public void createVertexBufferForRenderable(Renderable renderable) {
+//        try (var stack = stackPush()) {
+//
+//            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
+//            var stagingBuffer = createBufferVMA(vmaAllocator,
+//                    bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                    VMA_MEMORY_USAGE_AUTO,
+//                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            var data = stack.mallocPointer(1);
+//
+//            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+//            {
+//                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
+//            }
+//            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+//
+//            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//
+//            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+//                var copy = VkBufferCopy.calloc(1, stack);
+//                copy.dstOffset(0);
+//                copy.srcOffset(0);
+//                copy.size(bufferSize);
+//                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
+//            };
+//
+//            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+//
+//            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+//
+//        }
+//    }
 
     public void createGlobalCommandBuffer() {
 

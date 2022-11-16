@@ -210,36 +210,36 @@ public class RenderingEngineVulkan extends RenderingEngine {
 
                 Mesh previousMesh = null;
 
-                for(int i = 0; i < renderables.size(); i++) {
-                    var renderable = renderables.get(i);
-                    var model = renderable.model;
-
-                    if(previousMesh != renderable.mesh) {
-                        LongBuffer offsets = stack.longs(0);
-                        LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
-                        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-                        vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-                    }
-                    previousMesh = renderable.mesh;
-
-                    MeshPushConstants pushConstant = new MeshPushConstants();
-                    pushConstant.renderMatrix = model.objectToWorldMatrix;
-
-                    if(i == 0) {
-                        pushConstant.data = new Vector(0f,0f,1f,1f);
-                    }
-                    else {
-                        pushConstant.data = new Vector(1f,1f,0f,1f);
-                    }
-
-                    vkCmdPushConstants(commandBuffer,
-                            pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT,
-                            0,
-                            pushConstant.getAsFloatBuffer());
-
-                    vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
-                }
+//                for(int i = 0; i < renderables.size(); i++) {
+//                    var renderable = renderables.get(i);
+//                    var model = renderable.model;
+//
+//                    if(previousMesh != renderable.mesh) {
+//                        LongBuffer offsets = stack.longs(0);
+//                        LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
+//                        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+//                        vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+//                    }
+//                    previousMesh = renderable.mesh;
+//
+//                    MeshPushConstants pushConstant = new MeshPushConstants();
+//                    pushConstant.renderMatrix = model.objectToWorldMatrix;
+//
+//                    if(i == 0) {
+//                        pushConstant.data = new Vector(0f,0f,1f,1f);
+//                    }
+//                    else {
+//                        pushConstant.data = new Vector(1f,1f,0f,1f);
+//                    }
+//
+//                    vkCmdPushConstants(commandBuffer,
+//                            pipelineLayout,
+//                            VK_SHADER_STAGE_VERTEX_BIT,
+//                            0,
+//                            pushConstant.getAsFloatBuffer());
+//
+//                    vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+//                }
             }
             vkCmdEndRenderPass(commandBuffer);
 
@@ -342,84 +342,84 @@ public class RenderingEngineVulkan extends RenderingEngine {
         }
     }
 
-    public void uploadRenderable(Renderable renderable) {
-        createIndexBufferForRenderable(renderable);
-        createVertexBufferForRenderable(renderable);
-    }
+//    public void uploadRenderable(Renderable renderable) {
+//        createIndexBufferForRenderable(renderable);
+//        createVertexBufferForRenderable(renderable);
+//    }
 
-    public void createIndexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-        }
-    }
-
-    public void createVertexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-
-        }
-    }
+//    public void createIndexBufferForRenderable(Renderable renderable) {
+//        try (var stack = stackPush()) {
+//
+//            var bufferSize = Short.SIZE * renderable.mesh.indices.size();
+//            var stagingBuffer = createBufferVMA(vmaAllocator,
+//                    bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                    VMA_MEMORY_USAGE_AUTO,
+//                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            var data = stack.mallocPointer(1);
+//
+//            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+//            {
+//                memcpyInt(data.getByteBuffer(0, (int) bufferSize), renderable.mesh.indices);
+//            }
+//            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+//
+//            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+//                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+//                var copy = VkBufferCopy.calloc(1, stack);
+//                copy.dstOffset(0);
+//                copy.srcOffset(0);
+//                copy.size(bufferSize);
+//                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
+//            };
+//
+//            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+//
+//            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+//        }
+//    }
+//
+//    public void createVertexBufferForRenderable(Renderable renderable) {
+//        try (var stack = stackPush()) {
+//
+//            var bufferSize = Vertex.SIZEOF * renderable.mesh.getVertices().size();
+//            var stagingBuffer = createBufferVMA(vmaAllocator,
+//                    bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//                    VMA_MEMORY_USAGE_AUTO,
+//                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//            var data = stack.mallocPointer(1);
+//
+//            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
+//            {
+//                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
+//            }
+//            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
+//
+//            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
+//                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+//
+//
+//            Consumer<VkCommandBuffer> copyCmd = cmd -> {
+//                var copy = VkBufferCopy.calloc(1, stack);
+//                copy.dstOffset(0);
+//                copy.srcOffset(0);
+//                copy.size(bufferSize);
+//                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
+//            };
+//
+//            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
+//
+//            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
+//
+//        }
+//    }
 
     public void createGlobalCommandBuffer() {
 

@@ -135,7 +135,7 @@ public class GameVulkan extends Game {
 //        renderables.add(new Renderable(house.meshes.get(0), house));
 
         renderables.forEach(r -> {
-            renderer.uploadRenderable(r);
+//            renderer.uploadRenderable(r);
             deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
 
             r.mesh.materials.get(0).texture = Texture.createTexture(textureDir + "lost_empire-RGB.png");

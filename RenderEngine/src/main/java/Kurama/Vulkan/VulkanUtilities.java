@@ -591,7 +591,6 @@ public class VulkanUtilities {
         for(int index : indices) {
             buffer.putInt(index);
         }
-        buffer.rewind();
     }
 
     public static void memcpy(ByteBuffer dst, ByteBuffer src, long size) {
