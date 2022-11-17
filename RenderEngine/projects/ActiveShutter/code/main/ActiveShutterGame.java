@@ -7,7 +7,6 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.*;
 import Kurama.camera.StereoCamera;
-import Kurama.display.DisplayLWJGL;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
@@ -17,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
-import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
-import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class ActiveShutterGame extends Game {
@@ -50,7 +47,7 @@ public class ActiveShutterGame extends Game {
         renderer = (ActiveShutterRenderer) renderingEngine;
 
         display = new DisplayVulkan(this);
-        display.resizeEvents.add(() -> renderer.framebufferResize = true);
+        display.resizeEvents.add(() -> renderer.windowResized = true);
 
         renderingEngine.init(null);
         loadScene();
@@ -152,7 +149,7 @@ public class ActiveShutterGame extends Game {
             renderer.prepareTexture((TextureVK) r.getMaterial().texture);
             r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
 
-            deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
+            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
         });
 
         renderer.generateMeshBuffers();
@@ -175,7 +172,7 @@ public class ActiveShutterGame extends Game {
             if (mainCamera.shouldUpdateValues) {
                 mainCamera.updateValues();
                 mainCamera.setShouldUpdateValues(false);
-                renderer.cameraUpdated();
+                renderer.cameraUpdatedEvent();
             }
 
             renderer.gpuCameraDataLeft.proj = mainCamera.leftProjection;

@@ -31,7 +31,7 @@ public class TextureVK extends Texture {
         this.fileName = fileName;
     }
 
-    public static void createTextureImage(long vmaAllocator, SingleTimeCommandContext singleTimeCommandContext, TextureVK texture) {
+    public static void createTextureImage(long vmaAllocator, VkPhysicalDevice physicalDevice, SingleTimeCommandContext singleTimeCommandContext, TextureVK texture) {
 
         try(var stack = stackPush()) {
 
@@ -93,14 +93,12 @@ public class TextureVK extends Texture {
 
                 copyBufferToImage(stagingBuffer.buffer, texture.imageBuffer.image, cmd, extent);
 
-                generateMipMaps(texture.imageBuffer.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, cmd);
+                generateMipMaps(texture.imageBuffer.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, physicalDevice, cmd);
 
             };
             submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext);
 
            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-
-           deletionQueue.add(() -> vmaDestroyImage(vmaAllocator, texture.imageBuffer.image, texture.imageBuffer.allocation));
         }
     }
 
@@ -118,7 +116,6 @@ public class TextureVK extends Texture {
                             stack
                     );
             texture.textureImageView = createImageView(viewInfo, device);
-            deletionQueue.add(() -> vkDestroyImageView(device, texture.textureImageView, null));
         }
     }
 
@@ -150,14 +147,13 @@ public class TextureVK extends Texture {
             }
 
             var sampler = pTextureSampler.get(0);
-            deletionQueue.add(() -> vkDestroySampler(device, sampler, null));
 
             return pTextureSampler.get(0);
         }
     }
 
 
-    public static void generateMipMaps(long image, int imageFormat, int texWidth, int texHeight, int mipLevels, VkCommandBuffer commandBuffer) {
+    public static void generateMipMaps(long image, int imageFormat, int texWidth, int texHeight, int mipLevels, VkPhysicalDevice physicalDevice, VkCommandBuffer commandBuffer) {
         try (var stack = stackPush()) {
 
             // Check if image format supports linear blitting

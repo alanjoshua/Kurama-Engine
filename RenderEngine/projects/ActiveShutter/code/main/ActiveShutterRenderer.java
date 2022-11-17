@@ -4,7 +4,6 @@ import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Vulkan.*;
 import Kurama.game.Game;
-import Kurama.scene.Scene;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
@@ -19,7 +18,6 @@ import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logPerSec;
-import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -31,52 +29,36 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public int MAXOBJECTS = 10000;
     public int MAXCOMMANDS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 1;
-    public static final int viewFrames = 2;
+    public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public AllocatedBuffer gpuSceneBuffer;
-
-    public static class RenderPass {
-
-        public List<ViewRenderPassFrame> frames;
-        public Map<Integer, ViewRenderPassFrame> imagesToFrameMap;
-        public List<Long> frameBuffers;
-        public long renderPass;
-    }
+    public List<Long> imageInputDescriptorSets;
 
     public static class MultiViewRenderPass {
-
         public long frameBuffer;
         public List<MultiViewRenderPassFrame> frames;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
         public long renderPass;
-
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSetLayout;
         public long computeDescriptorSetLayout;
-
         // This contains the object transformation matrices
         public long objectDescriptorSetLayout;
     }
-    public RenderPass viewRenderPass = new RenderPass();
     public MultiViewRenderPass multiViewRenderPass = new MultiViewRenderPass();
     public int currentMultiViewFrameIndex = 0;
-
-    public long viewPipelineLayout;
-    public long viewGraphicsPipeline;
     public long multiViewPipelineLayout;
     public long multiViewGraphicsPipeline;
     public long computePipelineLayout;
     public long computePipeline;
     public long textureSetLayout;
-    public boolean framebufferResize;
+    public boolean windowResized;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
     public GPUSceneData gpuSceneData;
     public ComputeUBOIn computeUBOIn = new ComputeUBOIn();
     public int multiViewNumLayers = 2;
 
-//    public ActiveShutterGame game;
     public boolean shouldUpdateGPUSceneBuffer = true;
     public int objectRenderCount;
 
@@ -88,9 +70,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         try (var stack = stackPush()) {
 
             var curMultiViewFrame = multiViewRenderPass.frames.get(currentMultiViewFrameIndex);
-
-            var viewFrame1 = viewRenderPass.frames.get(0);
-            var viewFrame2 = viewRenderPass.frames.get(1);
 
             // CPU blocks for a value of 2, which indicated that it is safe to run cull compute again
             var waitSemaphoreInfo = VkSemaphoreWaitInfo.calloc(stack);
@@ -106,24 +85,22 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             // Recreate swap chain items if the window is resized
             // Do it before running the pipeline
-            if(framebufferResize) {
+            if(windowResized) {
                 recreateSwapChain();
-                framebufferResize = false;
+                windowResized = false;
             }
 
             callCompute(curMultiViewFrame, stack);
 
-            Integer imageIndex1 = prepareDisplay(viewFrame1.presentCompleteSemaphore);
-            if (imageIndex1 == null) return;
-            renderMultiViewFrame(curMultiViewFrame, renderables, stack);
+            prepareFrame();
+            renderMultiViewFrame(curMultiViewFrame, stack);
 
-            drawViewFrame(viewFrame1, curMultiViewFrame.timeLineSemaphore, imageIndex1, 0);
-            presentFrame(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
+            drawViewFrame(curMultiViewFrame.timeLineSemaphore, 0);
+            submitFrame();
 
-            Integer imageIndex2 = prepareDisplay(viewFrame2.presentCompleteSemaphore);
-            if (imageIndex2 == null) return;
-            drawViewFrame(viewFrame2, curMultiViewFrame.timeLineSemaphore, imageIndex2, 1);
-            presentFrame(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
+            prepareFrame();
+            drawViewFrame(curMultiViewFrame.timeLineSemaphore, 1);
+            submitFrame();
 
             var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
             bufferReader.mapBuffer();
@@ -140,7 +117,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     // Update frustum whenever camera is updated
-    public void cameraUpdated() {
+    public void cameraUpdatedEvent() {
         for(var frame: multiViewRenderPass.frames) {
             frame.shouldUpdateCameraBuffer = true;
             frame.shouldUpdateComputeUboBuffer = true;
@@ -163,30 +140,29 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public void initRenderer() {
 
-        initializeFrames();
-        prepareComputeCmdPoolsCmdBuffersSyncObjects();
-        createFrameCommandPoolsAndCommandBuffers();
-        initSyncObjects();
+        multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            var newFrame = new MultiViewRenderPassFrame();
+            newFrame.vmaAllocator = vmaAllocator;
+            multiViewRenderPass.frames.add(newFrame);
+        }
 
-        createSwapChain();
-        createSwapChainImageViews();
+        initComputeCmdPoolsCmdBuffersSyncObjects();
+        initMultiViewCmdPoolsAndBuffers();
+        initMultiViewSyncObjects();
 
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
 
-        createRenderPasses();
-        createFramebuffers();
+        initMultiViewFrameBuffers();
 
         initBuffers();
         initDescriptorSets(); // Descriptor set layout is needed when both defining the pipelines
 
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
-        deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
-        createViewGraphicsPipeline();
-        createMultiViewGraphicsPipeline();
-        createComputePipeline();
+        initPipelines();
 
         deletionQueue.add(() -> cleanupSwapChainAndRelatedObjects());
     }
@@ -259,9 +235,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
-    public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer, int viewImageToRender) {
+    public void recordViewCommandBuffer(int viewImageToRender) {
 
-        var commandBuffer = currentFrame.commandBuffer;
+        var commandBuffer = drawCmds.get(currentDisplayBufferIndex);
 
         try (var stack = stackPush()) {
             if(vkResetCommandBuffer(commandBuffer, 0) != VK_SUCCESS) {
@@ -274,7 +250,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
 
-            renderPassInfo.renderPass(viewRenderPass.renderPass);
+            renderPassInfo.renderPass(renderPass);
 
             VkRect2D renderArea = VkRect2D.calloc(stack);
             renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
@@ -289,19 +265,19 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
-            renderPassInfo.framebuffer(frameBuffer);
+            renderPassInfo.framebuffer(frameBuffers.get(currentDisplayBufferIndex));
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
                 // Bind color Attachment from previous multiview Renderpass as input
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        viewPipelineLayout, 0,
-                        stack.longs(currentFrame.imageInputDescriptorSet), null);
+                        pipelineLayout, 0,
+                        stack.longs(imageInputDescriptorSets.get(currentDisplayBufferIndex)), null);
 
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, viewGraphicsPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
                 vkCmdPushConstants(commandBuffer,
-                        viewPipelineLayout,
+                        pipelineLayout,
                         VK_SHADER_STAGE_FRAGMENT_BIT,
                         0,
                         stack.floats(viewImageToRender));
@@ -539,14 +515,12 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         frame.renderablesUpdated = false;
     }
 
-    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, List<Renderable> renderables, MemoryStack stack) {
+    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, MemoryStack stack) {
 
         var timeLineInfo = VkTimelineSemaphoreSubmitInfo.calloc(stack);
         timeLineInfo.sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
         timeLineInfo.pWaitSemaphoreValues(stack.longs(1));
         timeLineInfo.pSignalSemaphoreValues(stack.longs(2)); //Signals timeline semaphore of val=2
-
-//        recordMultiViewCommandBuffer(renderables, curMultiViewFrame, multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
 
         // Submit rendering commands to GPU
         VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
@@ -564,10 +538,11 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     }
 
-    public void drawViewFrame(ViewRenderPassFrame curViewFrame, long timeLineSemaphore, int imageIndex, int viewImageToRender) {
+    public void drawViewFrame(long timeLineSemaphore, int viewImageToRender) {
         try(MemoryStack stack = stackPush()) {
 
-            vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
+            vkWaitForFences(device, drawFences.get(currentDisplayBufferIndex), true, UINT64_MAX);
+            vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
 
             var timeLineInfo = VkTimelineSemaphoreSubmitInfo.calloc(stack);
             timeLineInfo.sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
@@ -580,13 +555,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 timeLineInfo.pSignalSemaphoreValues(stack.longs(4, 0)); //Signals timeline semaphore of val=4
             }
 
-            recordViewCommandBuffer(curViewFrame, viewRenderPass.frameBuffers.get(imageIndex), viewImageToRender);
-
-            if(viewRenderPass.imagesToFrameMap.containsKey(imageIndex)) {
-                vkWaitForFences(device, viewRenderPass.imagesToFrameMap.get(imageIndex).fence(), true, UINT64_MAX);
-            }
-            viewRenderPass.imagesToFrameMap.put(imageIndex, curViewFrame);
-            vkResetFences(device, curViewFrame.pFence());
+            recordViewCommandBuffer(viewImageToRender);
 
             // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
@@ -595,13 +564,13 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             submitInfo.waitSemaphoreCount(1);
 
             submitInfo.pWaitSemaphores(stack.longs(timeLineSemaphore));
-            submitInfo.pSignalSemaphores(stack.longs(timeLineSemaphore, curViewFrame.renderFinishedSemaphore));
+            submitInfo.pSignalSemaphores(stack.longs(timeLineSemaphore, renderCompleteSemaphore));
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(curViewFrame.commandBuffer));
+            submitInfo.pCommandBuffers(stack.pointers(drawCmds.get(currentDisplayBufferIndex)));
 
             int vkResult;
-            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curViewFrame.fence)) != VK_SUCCESS) {
-                vkResetFences(device, curViewFrame.pFence());
+            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, drawFences.get(currentDisplayBufferIndex))) != VK_SUCCESS) {
+                vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
@@ -623,6 +592,17 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         submitInfo.pCommandBuffers(stack.pointers(frame.computeCommandBuffer));
 
         vkCheck(vkQueueSubmit(computeQueue, submitInfo, VK_NULL_HANDLE), "Could not submit to compute queue");
+    }
+
+    public void initPipelines() {
+        createComputePipeline();
+        createMultiViewGraphicsPipeline();
+        createViewGraphicsPipeline();
+    }
+
+    public void initRenderPasses() {
+        createMultiViewRenderPass();
+        createViewRenderPass();
     }
 
     @Override
@@ -670,7 +650,8 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             multiViewRenderPass.objectDescriptorSetLayout = result.layout();
         }
 
-        for(int i = 0; i < viewRenderPass.frames.size(); i++) {
+        imageInputDescriptorSets = new ArrayList<>();
+        for(int i = 0; i < swapChainAttachments.size(); i++) {
             // Descriptor set for image input for the view Render pass
             // attaches to the output imageview from the multiview pass
             var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
@@ -679,13 +660,13 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
                     .build();
 
-            viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
+            imageInputDescriptorSets.add(result.descriptorSet());
             textureSetLayout = result.layout();
         }
 
     }
 
-    private void prepareComputeCmdPoolsCmdBuffersSyncObjects() {
+    private void initComputeCmdPoolsCmdBuffersSyncObjects() {
 
         try(var stack = stackPush()) {
 
@@ -700,10 +681,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
 
             for (var frame : multiViewRenderPass.frames) {
 
@@ -727,7 +704,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     public void updateViewRenderPassImageInputDescriptorSet() {
         try (var stack = stackPush()) {
 
-            for (int i = 0; i < viewFrames; i++) {
+            for (int i = 0; i < swapChainAttachments.size(); i++) {
 
                 //information about the buffer we want to point at in the descriptor
                 var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
@@ -738,7 +715,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
                 var textureWrite =
                         createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                viewRenderPass.frames.get(i).imageInputDescriptorSet,
+                                imageInputDescriptorSets.get(i),
                                 imageBufferInfo,
                                 0, stack);
                 descriptorWrites.put(0, textureWrite);
@@ -749,17 +726,17 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     private void cleanupSwapChainAndRelatedObjects() {
-        viewRenderPass.frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
+        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
 
         vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
-        vkDestroyPipeline(device, viewGraphicsPipeline, null);
+        vkDestroyPipeline(device, graphicsPipeline, null);
 
         vkDestroyPipelineLayout(device, multiViewPipelineLayout, null);
-        vkDestroyPipelineLayout(device, viewPipelineLayout, null);
+        vkDestroyPipelineLayout(device, pipelineLayout, null);
 
         vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null);
-        vkDestroyRenderPass(device, viewRenderPass.renderPass, null);
+        vkDestroyRenderPass(device, renderPass, null);
 
         swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
 
@@ -780,10 +757,10 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
-        createRenderPasses();
-        createFramebuffers();
-        createViewGraphicsPipeline();
-        createMultiViewGraphicsPipeline();
+        initRenderPasses();
+        initDrawFrameBuffers();
+        initMultiViewFrameBuffers();
+        initPipelines();
 
         updateViewRenderPassImageInputDescriptorSet();
 
@@ -796,7 +773,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         try(MemoryStack stack = stackPush()) {
             var depthAttachment = new FrameBufferAttachment();
 
-            int depthFormat = findDepthFormat();
+            int depthFormat = findDepthFormat(physicalDevice);
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
             var imageInfo = createImageCreateInfo(
@@ -841,11 +818,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
-    public void createRenderPasses() {
-        createViewRenderPass();
-        createMultiViewRenderPass();
-    }
-
     public void createMultiViewRenderPass() {
         try(MemoryStack stack = stackPush()) {
 
@@ -872,7 +844,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             // Depth-Stencil attachments
             VkAttachmentDescription depthAttachment = attachments.get(1);
-            depthAttachment.format(findDepthFormat());
+            depthAttachment.format(findDepthFormat(physicalDevice));
             depthAttachment.samples(numOfSamples);
             depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
@@ -982,7 +954,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 throw new RuntimeException("Failed to create render pass");
             }
 
-            viewRenderPass.renderPass = pRenderPass.get(0);
+            renderPass = pRenderPass.get(0);
         }
     }
 
@@ -1025,7 +997,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
         multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
         multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
-
     }
 
     public void createViewGraphicsPipeline() {
@@ -1040,40 +1011,24 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
         builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-        var pipeLineCreateResults = builder.build(device, viewRenderPass.renderPass);
-        viewPipelineLayout = pipeLineCreateResults.pipelineLayout();
-        viewGraphicsPipeline = pipeLineCreateResults.pipeline();
+        var pipeLineCreateResults = builder.build(device, renderPass);
+        pipelineLayout = pipeLineCreateResults.pipelineLayout();
+        graphicsPipeline = pipeLineCreateResults.pipeline();
     }
 
-    public void createFramebuffers() {
+    public void initMultiViewFrameBuffers() {
 
         try(MemoryStack stack = stackPush()) {
 
-            viewRenderPass.frameBuffers = new ArrayList<>();
-
             var attachments = stack.longs(VK_NULL_HANDLE);
-
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
-            // Create one framebuffer per swapchain image available
             VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
             framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            framebufferInfo.renderPass(viewRenderPass.renderPass);
+            framebufferInfo.renderPass(renderPass);
             framebufferInfo.width(swapChainExtent.width());
             framebufferInfo.height(swapChainExtent.height());
             framebufferInfo.layers(1);
-
-            for(int i = 0; i < swapChainAttachments.size(); i++) {
-
-                attachments.put(0, swapChainAttachments.get(i).swapChainImageView);
-                framebufferInfo.pAttachments(attachments);
-
-                if(vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create framebuffer");
-                }
-
-                viewRenderPass.frameBuffers.add(pFramebuffer.get(0));
-            }
 
             // Create single frameBuffer for multiview renderpass
             framebufferInfo.renderPass(multiViewRenderPass.renderPass);
@@ -1310,24 +1265,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
     }
 
-//    public void initialize
-
-    public void initializeFrames() {
-        viewRenderPass.frames = new ArrayList<>(viewFrames);
-        multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
-
-        for (int i = 0; i < viewFrames; i++) {
-            var frame = new ViewRenderPassFrame();
-            viewRenderPass.frames.add(frame);
-        }
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var newFrame = new MultiViewRenderPassFrame();
-            newFrame.vmaAllocator = vmaAllocator;
-            multiViewRenderPass.frames.add(newFrame);
-        }
-    }
-
-    public void createFrameCommandPoolsAndCommandBuffers() {
+    public void initMultiViewCmdPoolsAndBuffers() {
 
         try (var stack = stackPush()) {
 
@@ -1335,34 +1273,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
             poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-            for (int i = 0; i < viewRenderPass.frames.size(); i++) {
-
-                // Create command pool and command buffer for ViewRenderPass
-                LongBuffer pCommandPool = stack.mallocLong(1);
-
-                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create command pool");
-                }
-                var commandPool = pCommandPool.get(0);
-
-                // Create command buffer
-                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(commandPool);
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to allocate command buffers");
-                }
-
-                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-
-                viewRenderPass.frames.get(i).commandPool = commandPool;
-                viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
-            }
 
             for (int i = 0; i < multiViewRenderPass.frames.size(); i++) {
 
@@ -1417,38 +1327,12 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     }
 
-    public void initSyncObjects() {
-
-        viewRenderPass.imagesToFrameMap = new HashMap<>(MAX_FRAMES_IN_FLIGHT);
+    public void initMultiViewSyncObjects() {
 
         try (MemoryStack stack = stackPush()) {
 
             VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
-
-            LongBuffer pImageAvailableSemaphore = stack.mallocLong(1);
-            LongBuffer pRenderFinishedSemaphore = stack.mallocLong(1);
-            LongBuffer pFence = stack.mallocLong(1);
-
-            // For view renderPass
-            for (int i = 0; i < viewFrames; i++) {
-
-                if (vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
-                        || vkCreateSemaphore(device, semaphoreInfo, null, pRenderFinishedSemaphore) != VK_SUCCESS
-                        || vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
-
-                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
-                }
-
-                viewRenderPass.frames.get(i).presentCompleteSemaphore = pImageAvailableSemaphore.get(0);
-                viewRenderPass.frames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
-                viewRenderPass.frames.get(i).fence = pFence.get(0);
-
-            }
 
             // For multiview renderpass
             LongBuffer timeLineSemaphore = stack.mallocLong(1);
@@ -1598,31 +1482,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             vmaDestroyBuffer(vmaAllocator, indirectDrawCountBuffer.buffer, indirectDrawCountBuffer.allocation);
             vmaDestroyBuffer(vmaAllocator, computeUBOBuffer.buffer, computeUBOBuffer.allocation);
         }
-    }
-
-    public class ViewRenderPassFrame {
-
-        public long presentCompleteSemaphore;
-        public long renderFinishedSemaphore;
-        public long fence;
-        public long commandPool;
-        public VkCommandBuffer commandBuffer;
-        public long imageInputDescriptorSet;
-
-        public void cleanUp() {
-            vkDestroySemaphore(device, renderFinishedSemaphore, null);
-            vkDestroySemaphore(device, presentCompleteSemaphore, null);
-            vkDestroyFence(device, fence(), null);
-            vkDestroyCommandPool(device, commandPool, null);
-        }
-
-        public long fence() {
-            return fence;
-        }
-        public LongBuffer pFence() {
-            return stackGet().longs(fence);
-        }
-
     }
 
 }
