@@ -1,207 +1,173 @@
 package main;
 
-import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
-import Kurama.Mesh.Mesh;
 import Kurama.Vulkan.*;
-import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
-import Kurama.renderingEngine.RenderingEngine;
-import Kurama.scene.Scene;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
-import static java.util.stream.Collectors.toSet;
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryStack.stackGet;
+import static Kurama.utils.Logger.logPerSec;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
-import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
-import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.*;
 
-public class ActiveShutterRenderer extends RenderingEngine {
-
-    public Set<String> DEVICE_EXTENSIONS =
-            Stream.of(
-                            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                            VK_KHR_MULTIVIEW_EXTENSION_NAME)
-                    .collect(toSet());
+public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public int MAXOBJECTS = 10000;
     public int MAXCOMMANDS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 1;
-    public static final int viewFrames = 2;
-    public long surface;
-    public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
-    public long minUniformBufferOffsetAlignment = 64;
-    public VkPhysicalDeviceProperties gpuProperties;
+    public static final int MAX_FRAMES_IN_FLIGHT = 2;
     public AllocatedBuffer gpuSceneBuffer;
-    public QueueFamilyIndices queueFamilyIndices;
-    public VkQueue graphicsQueue;
-    public VkQueue presentQueue;
-    public VkQueue computeQueue;
-    public VkQueue transferQueue;
-    public long swapChain;
-
-    public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
-    public DescriptorSetLayoutCache descriptorSetLayoutCache = new DescriptorSetLayoutCache();
-
-    public AllocatedBuffer mergedVertexBuffer;
-    public AllocatedBuffer mergedIndexBuffer;
-
-    public static class RenderPass {
-
-        public List<ViewRenderPassFrame> frames;
-        public Map<Integer, ViewRenderPassFrame> imagesToFrameMap;
-        public List<Long> frameBuffers;
-        public List<SwapChainAttachment> swapChainAttachments;
-        public long renderPass;
-    }
-
-    public int swapChainImageFormat;
-    public VkExtent2D swapChainExtent;
+    public List<Long> imageInputDescriptorSets;
 
     public static class MultiViewRenderPass {
-
         public long frameBuffer;
         public List<MultiViewRenderPassFrame> frames;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
         public long renderPass;
-
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSetLayout;
         public long computeDescriptorSetLayout;
-
         // This contains the object transformation matrices
         public long objectDescriptorSetLayout;
     }
-
-    public RenderPass viewRenderPass = new RenderPass();
     public MultiViewRenderPass multiViewRenderPass = new MultiViewRenderPass();
     public int currentMultiViewFrameIndex = 0;
-
-    public long viewPipelineLayout;
-    public long viewGraphicsPipeline;
     public long multiViewPipelineLayout;
     public long multiViewGraphicsPipeline;
     public long computePipelineLayout;
     public long computePipeline;
     public long textureSetLayout;
-    public boolean framebufferResize;
+    public boolean windowResized;
     public GPUCameraData gpuCameraDataLeft;
     public GPUCameraData gpuCameraDataRight;
     public GPUSceneData gpuSceneData;
     public ComputeUBOIn computeUBOIn = new ComputeUBOIn();
-    public SingleTimeCommandContext singleTimeGraphicsCommandContext;
-    public SingleTimeCommandContext singleTimeTransferCommandContext;
-    public SingleTimeCommandContext singleTimeComputeCommandContext;
-    public HashMap<String, TextureVK> preparedTextures = new HashMap<>();;
-    public HashMap<Integer, Long> textureSamplerToMaxLOD = new HashMap<>();
-    public HashMap<String, Long> textureFileToDescriptorSet = new HashMap<>();
     public int multiViewNumLayers = 2;
-    public boolean msaaEnabled = false;
 
-    public long vmaAllocator;
-    public DisplayVulkan display;
-    public ActiveShutterGame game;
     public boolean shouldUpdateGPUSceneBuffer = true;
     public int objectRenderCount;
 
-
     public ActiveShutterRenderer(Game game) {
         super(game);
-        this.game = (ActiveShutterGame) game;
     }
 
-    @Override
-    public void init(Scene scene) {
-        this.display = game.display;
-        initVulkan();
-    }
+    public void render() {
+        try (var stack = stackPush()) {
 
-    public void render(List<Renderable> renderables) {
-        draw(renderables);
+            var curMultiViewFrame = multiViewRenderPass.frames.get(currentMultiViewFrameIndex);
+
+            // CPU blocks for a value of 2, which indicated that it is safe to run cull compute again
+            var waitSemaphoreInfo = VkSemaphoreWaitInfo.calloc(stack);
+            waitSemaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO);
+            waitSemaphoreInfo.pSemaphores(stack.longs(curMultiViewFrame.timeLineSemaphore));
+            waitSemaphoreInfo.pValues(stack.longs(2));
+            waitSemaphoreInfo.semaphoreCount(1);
+            vkWaitSemaphores(device, waitSemaphoreInfo, UINT64_MAX);
+
+            performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
+
+            curMultiViewFrame.timeLineSemaphore = resetTimelineSemaphore(curMultiViewFrame.timeLineSemaphore);
+
+            // Recreate swap chain items if the window is resized
+            // Do it before running the pipeline
+            if(windowResized) {
+                recreateSwapChain();
+                windowResized = false;
+            }
+
+            callCompute(curMultiViewFrame, stack);
+
+            prepareFrame();
+            renderMultiViewFrame(curMultiViewFrame, stack);
+
+            drawViewFrame(curMultiViewFrame.timeLineSemaphore, 0);
+            submitFrame();
+
+            prepareFrame();
+            drawViewFrame(curMultiViewFrame.timeLineSemaphore, 1);
+            submitFrame();
+
+            var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
+            bufferReader.mapBuffer();
+
+            objectRenderCount = bufferReader.buffer.getInt();
+
+            bufferReader.unmapBuffer();
+
+            logPerSec("Rendered object count: " + objectRenderCount);
+
+            // Only for multiview
+            currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        }
     }
 
     // Update frustum whenever camera is updated
-    public void cameraUpdated() {
+    public void cameraUpdatedEvent() {
         for(var frame: multiViewRenderPass.frames) {
             frame.shouldUpdateCameraBuffer = true;
             frame.shouldUpdateComputeUboBuffer = true;
         }
-        computeUBOIn.frustumPlanes = Arrays.asList(game.playerCamera.frustumIntersection.planes);
+        computeUBOIn.frustumPlanes = Arrays.asList(((ActiveShutterGame)game).mainCamera.frustumIntersection.planes);
     }
 
-    public void initVulkan() {
-        VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
-        VulkanUtilities.setupDebugMessenger();
+    public void meshesMergedEvent() {
+        computeUBOIn.objectCount = renderables.size();
+        recordComputeCommandBuffers();
+        int i = 0;
+        for(var frame: multiViewRenderPass.frames) {
+                recordMultiViewCommandBuffer(renderables, frame, i);
+                frame.renderablesUpdated = true;
+                frame.shouldUpdateObjectBuffer = true;
+                frame.shouldUpdateIndirectCommandsBuffer = true;
+                i++;
+        }
+    }
 
-        surface = createSurface(instance, display.window);
-        physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
-        createLogicalDevice();
+    public void initRenderer() {
 
-        descriptorAllocator.init(device);
-        descriptorSetLayoutCache.init(device);
+        multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            var newFrame = new MultiViewRenderPassFrame();
+            newFrame.vmaAllocator = vmaAllocator;
+            multiViewRenderPass.frames.add(newFrame);
+        }
 
-        deletionQueue.add(() -> descriptorSetLayoutCache.cleanUp());
-        deletionQueue.add(() -> descriptorAllocator.cleanUp());
-
-        gpuProperties = getGPUProperties(physicalDevice);
-        numOfSamples = getMaxUsableSampleCount(gpuProperties);
-        numOfSamples = 1;
-
-        minUniformBufferOffsetAlignment = getMinBufferOffsetAlignment(gpuProperties);
-
-        vmaAllocator = createAllocator(physicalDevice, device, instance);
-
-        initializeFrames();
-        prepareComputeCmdPoolsCmdBuffersSyncObjects();
-        createFrameCommandPoolsAndCommandBuffers();
-        initSyncObjects();
-
-        createSwapChain();
-        createSwapChainImageViews();
+        initComputeCmdPoolsCmdBuffersSyncObjects();
+        initMultiViewCmdPoolsAndBuffers();
+        initMultiViewSyncObjects();
 
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
 
-        createRenderPasses();
-        createFramebuffers();
+        initMultiViewFrameBuffers();
 
-        createBuffers();
+        initBuffers();
         initDescriptorSets(); // Descriptor set layout is needed when both defining the pipelines
 
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, gpuSceneBuffer.buffer, gpuSceneBuffer.allocation));
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
-        deletionQueue.add(() -> viewRenderPass.frames.forEach(ViewRenderPassFrame::cleanUp));
 
-        createViewGraphicsPipeline();
-        createMultiViewGraphicsPipeline();
-        createComputePipeline();
+        initPipelines();
 
-        deletionQueue.add(() -> cleanupSwapChain());
+        deletionQueue.add(() -> cleanupSwapChainAndRelatedObjects());
     }
 
-    public void createBuffers() {
+    public void initBuffers() {
 
         var objectBufferSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment)) * MAXOBJECTS;
         objectBufferSize = GPUObjectData.SIZEOF * MAXOBJECTS;
@@ -267,14 +233,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
                                     VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
         }
-
-
-
     }
 
-    public void recordViewCommandBuffer(ViewRenderPassFrame currentFrame, long frameBuffer, int viewImageToRender) {
+    public void recordViewCommandBuffer(int viewImageToRender) {
 
-        var commandBuffer = currentFrame.commandBuffer;
+        var commandBuffer = drawCmds.get(currentDisplayBufferIndex);
 
         try (var stack = stackPush()) {
             if(vkResetCommandBuffer(commandBuffer, 0) != VK_SUCCESS) {
@@ -287,7 +250,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
             VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
 
-            renderPassInfo.renderPass(viewRenderPass.renderPass);
+            renderPassInfo.renderPass(renderPass);
 
             VkRect2D renderArea = VkRect2D.calloc(stack);
             renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
@@ -302,19 +265,19 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
-            renderPassInfo.framebuffer(frameBuffer);
+            renderPassInfo.framebuffer(frameBuffers.get(currentDisplayBufferIndex));
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
                 // Bind color Attachment from previous multiview Renderpass as input
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        viewPipelineLayout, 0,
-                        stack.longs(currentFrame.imageInputDescriptorSet), null);
+                        pipelineLayout, 0,
+                        stack.longs(imageInputDescriptorSets.get(currentDisplayBufferIndex)), null);
 
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, viewGraphicsPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
                 vkCmdPushConstants(commandBuffer,
-                        viewPipelineLayout,
+                        pipelineLayout,
                         VK_SHADER_STAGE_FRAGMENT_BIT,
                         0,
                         stack.floats(viewImageToRender));
@@ -334,7 +297,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    private void recordComputeCommandBuffer() {
+    private void recordComputeCommandBuffers() {
         try (var stack = stackPush()) {
 
             for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
@@ -395,7 +358,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void recordMultiViewCommandBuffer(List<Renderable> renderables, MultiViewRenderPassFrame currentFrame, long frameBuffer, int frameIndex) {
+    public void recordMultiViewCommandBuffer(List<Renderable> renderables, MultiViewRenderPassFrame currentFrame, int frameIndex) {
 
         var commandBuffer = currentFrame.commandBuffer;
 
@@ -447,11 +410,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
                         0, null, bufferBarrier, null);
             }
 
-            renderPassInfo.framebuffer(frameBuffer);
+            renderPassInfo.framebuffer(multiViewRenderPass.frameBuffer);
 
             vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
-//                recordSceneToCommandBuffer(renderables, commandBuffer,currentFrame, frameIndex, stack);
                 recordSceneToCommandBufferIndirect(renderables, commandBuffer, currentFrame, frameIndex, stack);
             }
             vkCmdEndRenderPass(commandBuffer);
@@ -482,41 +444,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    public void recordSceneToCommandBuffer(List<Renderable> renderables, VkCommandBuffer commandBuffer, MultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
-
-        var uniformOffset = (int) (padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment) * frameIndex);
-        var pUniformOffset = stack.mallocInt(1);
-        pUniformOffset.put(0, uniformOffset);
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                multiViewPipelineLayout, 0, stack.longs(currentFrame.cameraAndSceneDescriptorSet), pUniformOffset);
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                multiViewPipelineLayout, 1, stack.longs(currentFrame.objectDescriptorSet), null);
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, stack.longs(mergedVertexBuffer.buffer), stack.longs(0));
-        vkCmdBindIndexBuffer(commandBuffer, mergedIndexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-        Mesh previousMesh = null;
-        Long previousTextureSet = null;
-
-        for(int i = 0; i < renderables.size(); i++) {
-            var renderable = renderables.get(i);
-
-            // Bind texture descriptor set only if it is different from previous texture
-            if(previousTextureSet != renderable.textureDescriptorSet) {
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        multiViewPipelineLayout, 2, stack.longs(renderable.textureDescriptorSet), null);
-
-                previousTextureSet = renderable.textureDescriptorSet;
-            }
-
-            vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, renderable.firstIndex, renderable.firstVertex, i);
-        }
-    }
-
     public void recordSceneToCommandBufferIndirect(List<Renderable> renderables, VkCommandBuffer commandBuffer, MultiViewRenderPassFrame currentFrame, int frameIndex, MemoryStack stack) {
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, multiViewGraphicsPipeline);
@@ -538,6 +465,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
         // Probably needs to be static, or better optimized. Will be done when Compute shaders are enabled
         var indirectBatches = compactDraws(renderables);
 
+        logPerSec("Num of indirect Batches: " + indirectBatches.size());
+
         for(var batch: indirectBatches) {
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -552,57 +481,46 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    public long getTextureSampler(int maxLod) {
-        textureSamplerToMaxLOD.computeIfAbsent(maxLod, TextureVK::createTextureSampler);
-        return textureSamplerToMaxLOD.get(maxLod);
-    }
-
-    public void prepareTexture(TextureVK texture) {
-        if (texture == null || texture.fileName == null || preparedTextures.containsKey(texture.fileName)) return;
-
-        TextureVK.createTextureImage(vmaAllocator, singleTimeGraphicsCommandContext, texture);
-        TextureVK.createTextureImageView(texture);
-        texture.textureSampler = getTextureSampler(texture.mipLevels);
-
-        preparedTextures.put(texture.fileName, texture);
-    }
-
     public void performBufferDataUpdates(List<Renderable> renderables, int currentFrameIndex) {
         //TODO: Need to be modified so that buffers are updated only when data is updated,
         // and only parts of buffers are updated as needed
 
-        if (multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateCameraBuffer) {
+        var frame = multiViewRenderPass.frames.get(currentFrameIndex);
+
+        if(frame.renderablesUpdated) {
+        }
+
+        if (frame.shouldUpdateCameraBuffer) {
             updateCameraGPUDataInMemory(currentFrameIndex);
         }
         if (shouldUpdateGPUSceneBuffer) {
             updateSceneGPUDataInMemory(currentFrameIndex);
         }
-        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateObjectBuffer) {
-            updateObjectBufferDataInMemory(renderables, multiViewRenderPass.frames.get(currentFrameIndex));
+        if(frame.shouldUpdateObjectBuffer) {
+            updateObjectBufferDataInMemory(renderables, frame);
         }
-        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateIndirectCommandsBuffer) {
-            updateIndirectCommandBuffer(renderables, multiViewRenderPass.frames.get(currentFrameIndex));
+        if(frame.shouldUpdateIndirectCommandsBuffer) {
+            updateIndirectCommandBuffer(renderables, frame);
         }
         // This would be toggled else where in the system when a renderable is added or removed
-        if(multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateComputeUboBuffer) {
-            updateComputeUBO(multiViewRenderPass.frames.get(currentFrameIndex));
+        if(frame.shouldUpdateComputeUboBuffer) {
+            updateComputeUBO(frame);
         }
 
         shouldUpdateGPUSceneBuffer = false;
-        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateCameraBuffer = false;
-        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateObjectBuffer = false;
-        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateIndirectCommandsBuffer = false;
-        multiViewRenderPass.frames.get(currentFrameIndex).shouldUpdateComputeUboBuffer = false;
+        frame.shouldUpdateCameraBuffer = false;
+        frame.shouldUpdateObjectBuffer = false;
+        frame.shouldUpdateIndirectCommandsBuffer = false;
+        frame.shouldUpdateComputeUboBuffer = false;
+        frame.renderablesUpdated = false;
     }
 
-    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, List<Renderable> renderables, MemoryStack stack) {
+    public void renderMultiViewFrame(MultiViewRenderPassFrame curMultiViewFrame, MemoryStack stack) {
 
         var timeLineInfo = VkTimelineSemaphoreSubmitInfo.calloc(stack);
         timeLineInfo.sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
         timeLineInfo.pWaitSemaphoreValues(stack.longs(1));
         timeLineInfo.pSignalSemaphoreValues(stack.longs(2)); //Signals timeline semaphore of val=2
-
-        recordMultiViewCommandBuffer(renderables, curMultiViewFrame, multiViewRenderPass.frameBuffer, currentMultiViewFrameIndex);
 
         // Submit rendering commands to GPU
         VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
@@ -620,29 +538,11 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    public Integer prepareDisplay(ViewRenderPassFrame curViewFrame) {
-        try(var stack = stackPush()) {
-
-            IntBuffer pImageIndex = stack.mallocInt(1);
-            int vkResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-                    curViewFrame.presentCompleteSemaphore, VK_NULL_HANDLE, pImageIndex);
-
-            if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
-                recreateSwapChain();
-                return null;
-            } else if(vkResult != VK_SUCCESS) {
-                throw new RuntimeException("Cannot get image");
-            }
-
-            return pImageIndex.get(0);
-
-        }
-    }
-
-    public void drawViewFrame(ViewRenderPassFrame curViewFrame, long timeLineSemaphore, int imageIndex, int viewImageToRender) {
+    public void drawViewFrame(long timeLineSemaphore, int viewImageToRender) {
         try(MemoryStack stack = stackPush()) {
 
-            vkWaitForFences(device, curViewFrame.pFence(), true, UINT64_MAX);
+            vkWaitForFences(device, drawFences.get(currentDisplayBufferIndex), true, UINT64_MAX);
+            vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
 
             var timeLineInfo = VkTimelineSemaphoreSubmitInfo.calloc(stack);
             timeLineInfo.sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
@@ -655,13 +555,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 timeLineInfo.pSignalSemaphoreValues(stack.longs(4, 0)); //Signals timeline semaphore of val=4
             }
 
-            recordViewCommandBuffer(curViewFrame, viewRenderPass.frameBuffers.get(imageIndex), viewImageToRender);
-
-            if(viewRenderPass.imagesToFrameMap.containsKey(imageIndex)) {
-                vkWaitForFences(device, viewRenderPass.imagesToFrameMap.get(imageIndex).fence(), true, UINT64_MAX);
-            }
-            viewRenderPass.imagesToFrameMap.put(imageIndex, curViewFrame);
-            vkResetFences(device, curViewFrame.pFence());
+            recordViewCommandBuffer(viewImageToRender);
 
             // Submit rendering commands to GPU
             VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
@@ -670,13 +564,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
             submitInfo.waitSemaphoreCount(1);
 
             submitInfo.pWaitSemaphores(stack.longs(timeLineSemaphore));
-            submitInfo.pSignalSemaphores(stack.longs(timeLineSemaphore, curViewFrame.renderFinishedSemaphore));
+            submitInfo.pSignalSemaphores(stack.longs(timeLineSemaphore, renderCompleteSemaphore));
             submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(curViewFrame.commandBuffer));
+            submitInfo.pCommandBuffers(stack.pointers(drawCmds.get(currentDisplayBufferIndex)));
 
             int vkResult;
-            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, curViewFrame.fence)) != VK_SUCCESS) {
-                vkResetFences(device, curViewFrame.pFence());
+            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, drawFences.get(currentDisplayBufferIndex))) != VK_SUCCESS) {
+                vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
                 throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
             }
 
@@ -700,237 +594,18 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vkCheck(vkQueueSubmit(computeQueue, submitInfo, VK_NULL_HANDLE), "Could not submit to compute queue");
     }
 
-    public void draw(List<Renderable> renderables) {
-
-        try (var stack = stackPush()) {
-
-            var curMultiViewFrame = multiViewRenderPass.frames.get(currentMultiViewFrameIndex);
-
-            var viewFrame1 = viewRenderPass.frames.get(0);
-            var viewFrame2 = viewRenderPass.frames.get(1);
-
-            // CPU blocks for a value of 4, which indicated that it is safe to run cull compute again
-            var waitSemaphoreInfo = VkSemaphoreWaitInfo.calloc(stack);
-            waitSemaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO);
-            waitSemaphoreInfo.pSemaphores(stack.longs(curMultiViewFrame.timeLineSemaphore));
-            waitSemaphoreInfo.pValues(stack.longs(2));
-            waitSemaphoreInfo.semaphoreCount(1);
-            vkWaitSemaphores(device, waitSemaphoreInfo, UINT64_MAX);
-
-            performBufferDataUpdates(renderables, currentMultiViewFrameIndex);
-
-            curMultiViewFrame.timeLineSemaphore = resetTimelineSemaphore(curMultiViewFrame.timeLineSemaphore);
-
-            // Recreate swap chain items if the window is resized
-            // Do it before running the pipeline
-            if(framebufferResize) {
-                recreateSwapChain();
-                framebufferResize = false;
-            }
-
-            callCompute(curMultiViewFrame, stack);
-
-            Integer imageIndex1 = prepareDisplay(viewFrame1);
-            if (imageIndex1 == null) return;
-
-            renderMultiViewFrame(curMultiViewFrame, renderables, stack);
-
-            drawViewFrame(viewFrame1, curMultiViewFrame.timeLineSemaphore, imageIndex1, 0);
-            submitDisplay(stack.longs(viewFrame1.renderFinishedSemaphore), imageIndex1);
-
-            Integer imageIndex2 = prepareDisplay(viewFrame2);
-            if (imageIndex2 == null) return;
-            drawViewFrame(viewFrame2, curMultiViewFrame.timeLineSemaphore, imageIndex2, 1);
-            submitDisplay(stack.longs(viewFrame1.presentCompleteSemaphore, viewFrame2.renderFinishedSemaphore), imageIndex2);
-
-            var bufferReader = new BufferWriter(vmaAllocator, curMultiViewFrame.indirectDrawCountBuffer, Integer.BYTES, Integer.BYTES);
-            bufferReader.mapBuffer();
-
-            objectRenderCount = bufferReader.buffer.getInt();
-
-            bufferReader.unmapBuffer();
-
-            if(game.isOneSecond) {
-                log("Rendered object count: " + objectRenderCount);
-            }
-
-            // Only for multiview
-            currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-        }
+    public void initPipelines() {
+        createComputePipeline();
+        createMultiViewGraphicsPipeline();
+        createViewGraphicsPipeline();
     }
 
-    public void submitDisplay(LongBuffer waitSemaphores, int imageIndex) {
-
-        try (var stack = stackPush()) {
-
-            // Display rendered image to screen
-            VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
-            presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
-            presentInfo.pWaitSemaphores(waitSemaphores);
-            presentInfo.swapchainCount(1);
-            presentInfo.pSwapchains(stack.longs(swapChain));
-            presentInfo.pImageIndices(stack.ints(imageIndex));
-
-            int vkResult = vkQueuePresentKHR(presentQueue, presentInfo);
-
-            if (vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
-                recreateSwapChain();
-            } else if (vkResult != VK_SUCCESS) {
-                throw new RuntimeException("Failed to present swap chain image");
-            }
-
-        }
-
+    public void initRenderPasses() {
+        createMultiViewRenderPass();
+        createViewRenderPass();
     }
 
-    public void mergeMeshes(List<Renderable> renderables) {
-
-        //Temporary
-        computeUBOIn.objectCount = renderables.size();
-
-        int totalVertices = 0;
-        int totalIndices = 0;
-
-        for(var r: renderables) {
-            r.firstVertex = totalVertices;
-            r.firstIndex = totalIndices;
-
-            totalVertices += r.mesh.getVertices().size();
-            totalIndices += r.mesh.indices.size();
-        }
-
-        mergedVertexBuffer = createBufferVMA(vmaAllocator, totalVertices * (3 + 2 + 3) * Float.BYTES,
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-
-        mergedIndexBuffer = createBufferVMA(vmaAllocator, totalIndices * Integer.BYTES,
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-
-        try (var stack = stackPush()) {
-
-            var vertexCopy = VkBufferCopy.calloc(1, stack);
-            var indexCopy = VkBufferCopy.calloc(1, stack);
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                for(var r: renderables) {
-                    vertexCopy.dstOffset(r.firstVertex * (3 + 2 + 3) * Float.BYTES);
-                    vertexCopy.size(r.mesh.getVertices().size() * (3 + 2 + 3) * Float.BYTES);
-                    vertexCopy.srcOffset(0);
-                    vkCmdCopyBuffer(cmd, r.vertexBuffer.buffer, mergedVertexBuffer.buffer, vertexCopy);
-
-                    indexCopy.dstOffset(r.firstIndex * Integer.BYTES);
-                    indexCopy.size(r.mesh.indices.size() * Integer.BYTES);
-                    indexCopy.srcOffset(0);
-                    vkCmdCopyBuffer(cmd, r.indexBuffer.buffer, mergedIndexBuffer.buffer, indexCopy);
-                }
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-        }
-
-        // Record new compute command buffer
-        recordComputeCommandBuffer();
-
-        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedVertexBuffer.buffer, mergedVertexBuffer.allocation));
-        deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedIndexBuffer.buffer, mergedIndexBuffer.allocation));
-    }
-
-    public void uploadMeshData(Renderable renderable) {
-        createIndexBufferForRenderable(renderable);
-        createVertexBufferForRenderable(renderable);
-    }
-
-    public Long generateTextureDescriptorSet(TextureVK texture) {
-
-        if(texture.fileName == null) {
-            return null;
-        }
-
-        textureFileToDescriptorSet.computeIfAbsent(texture.fileName, (s) ->
-                new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
-                        .bindImage(0,
-                                new DescriptorImageInfo(texture.textureSampler, texture.textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                        .build().descriptorSet()
-        );
-
-        return textureFileToDescriptorSet.get(texture.fileName);
-    }
-
-    public void createIndexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = Integer.BYTES * renderable.mesh.indices.size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpyInt(data.getByteBuffer(0, bufferSize), renderable.mesh.indices);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.indexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.indexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-        }
-    }
-
-    public void createVertexBufferForRenderable(Renderable renderable) {
-        try (var stack = stackPush()) {
-
-            var bufferSize = (3 + 2 + 3) * Float.BYTES * renderable.mesh.getVertices().size();
-            var stagingBuffer = createBufferVMA(vmaAllocator,
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            var data = stack.mallocPointer(1);
-
-            vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
-            {
-                memcpy(data.getByteBuffer(0, bufferSize), renderable.mesh);
-            }
-            vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
-
-            renderable.vertexBuffer = createBufferVMA(vmaAllocator, bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-
-            Consumer<VkCommandBuffer> copyCmd = cmd -> {
-                var copy = VkBufferCopy.calloc(1, stack);
-                copy.dstOffset(0);
-                copy.srcOffset(0);
-                copy.size(bufferSize);
-                vkCmdCopyBuffer(cmd, stagingBuffer.buffer, renderable.vertexBuffer.buffer, copy);
-            };
-
-            submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
-        }
-    }
-
+    @Override
     public void initDescriptorSets() {
 
         for(int i = 0;i < multiViewRenderPass.frames.size(); i++) {
@@ -975,7 +650,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
             multiViewRenderPass.objectDescriptorSetLayout = result.layout();
         }
 
-        for(int i = 0; i < viewRenderPass.frames.size(); i++) {
+        imageInputDescriptorSets = new ArrayList<>();
+        for(int i = 0; i < swapChainAttachments.size(); i++) {
             // Descriptor set for image input for the view Render pass
             // attaches to the output imageview from the multiview pass
             var result = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
@@ -984,13 +660,13 @@ public class ActiveShutterRenderer extends RenderingEngine {
                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
                     .build();
 
-            viewRenderPass.frames.get(i).imageInputDescriptorSet = result.descriptorSet();
+            imageInputDescriptorSets.add(result.descriptorSet());
             textureSetLayout = result.layout();
         }
 
     }
 
-    private void prepareComputeCmdPoolsCmdBuffersSyncObjects() {
+    private void initComputeCmdPoolsCmdBuffersSyncObjects() {
 
         try(var stack = stackPush()) {
 
@@ -1005,10 +681,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
 
             for (var frame : multiViewRenderPass.frames) {
 
@@ -1029,44 +701,10 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    private void recreateSwapChain() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            IntBuffer width = stack.ints(0);
-            IntBuffer height = stack.ints(0);
-
-            while(width.get(0) == 0 && height.get(0) == 0) {
-                glfwGetFramebufferSize(display.window, width, height);
-                glfwWaitEvents();
-            }
-        }
-
-        vkDeviceWaitIdle(device);
-
-        cleanupSwapChain();
-
-        createSwapChainObjects();
-    }
-
-    private void createSwapChainObjects() {
-        createSwapChain();
-        createSwapChainImageViews();
-
-        createMultiViewColorAttachment();
-        createMultiViewDepthAttachment();
-        createRenderPasses();
-        createFramebuffers();
-        createViewGraphicsPipeline();
-        createMultiViewGraphicsPipeline();
-
-        updateViewRenderPassImageInputDescriptorSet();
-    }
-
     public void updateViewRenderPassImageInputDescriptorSet() {
         try (var stack = stackPush()) {
 
-            for (int i = 0; i < viewFrames; i++) {
+            for (int i = 0; i < swapChainAttachments.size(); i++) {
 
                 //information about the buffer we want to point at in the descriptor
                 var imageBufferInfo = VkDescriptorImageInfo.calloc(1, stack);
@@ -1077,7 +715,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 VkWriteDescriptorSet.Buffer descriptorWrites = VkWriteDescriptorSet.calloc(1, stack);
                 var textureWrite =
                         createWriteDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                viewRenderPass.frames.get(i).imageInputDescriptorSet,
+                                imageInputDescriptorSets.get(i),
                                 imageBufferInfo,
                                 0, stack);
                 descriptorWrites.put(0, textureWrite);
@@ -1087,21 +725,20 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    private void cleanupSwapChain() {
-
-        viewRenderPass.frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
+    private void cleanupSwapChainAndRelatedObjects() {
+        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
 
         vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
-        vkDestroyPipeline(device, viewGraphicsPipeline, null);
+        vkDestroyPipeline(device, graphicsPipeline, null);
 
         vkDestroyPipelineLayout(device, multiViewPipelineLayout, null);
-        vkDestroyPipelineLayout(device, viewPipelineLayout, null);
+        vkDestroyPipelineLayout(device, pipelineLayout, null);
 
         vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null);
-        vkDestroyRenderPass(device, viewRenderPass.renderPass, null);
+        vkDestroyRenderPass(device, renderPass, null);
 
-        viewRenderPass.swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
+        swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
 
         vkDestroyImageView(device, multiViewRenderPass.depthAttachment.imageView, null);
         vmaDestroyImage(vmaAllocator, multiViewRenderPass.depthAttachment.allocatedImage.image, multiViewRenderPass.depthAttachment.allocatedImage.allocation);
@@ -1112,11 +749,31 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vkDestroySwapchainKHR(device, swapChain, null);
     }
 
+    public void swapChainRecreatedEvent() {
+        cleanupSwapChainAndRelatedObjects();
+
+        createSwapChain();
+        createSwapChainImageViews();
+
+        createMultiViewColorAttachment();
+        createMultiViewDepthAttachment();
+        initRenderPasses();
+        initDrawFrameBuffers();
+        initMultiViewFrameBuffers();
+        initPipelines();
+
+        updateViewRenderPassImageInputDescriptorSet();
+
+        for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
+            recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(i), i);
+        }
+    }
+
     public void createMultiViewDepthAttachment() {
         try(MemoryStack stack = stackPush()) {
             var depthAttachment = new FrameBufferAttachment();
 
-            int depthFormat = findDepthFormat();
+            int depthFormat = findDepthFormat(physicalDevice);
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
             var imageInfo = createImageCreateInfo(
@@ -1161,102 +818,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    public void createSwapChain() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface, stack);
-
-            VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats());
-            int presentMode = chooseSwapPresentMode(swapChainSupport.presentModes());
-            VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities(), display.window);
-
-            IntBuffer imageCount = stack.ints(swapChainSupport.capabilities().minImageCount() + 1);
-
-            if(swapChainSupport.capabilities().maxImageCount() > 0 && imageCount.get(0) > swapChainSupport.capabilities().maxImageCount()) {
-                imageCount.put(0, swapChainSupport.capabilities().maxImageCount());
-            }
-
-            VkSwapchainCreateInfoKHR createInfo = VkSwapchainCreateInfoKHR.calloc(stack);
-
-            createInfo.sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
-            createInfo.surface(surface);
-            // Image settings
-            createInfo.minImageCount(imageCount.get(0));
-            createInfo.imageFormat(surfaceFormat.format());
-            createInfo.imageColorSpace(surfaceFormat.colorSpace());
-            createInfo.imageExtent(extent);
-            createInfo.imageArrayLayers(1);
-            createInfo.imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-            if(!queueFamilyIndices.graphicsFamily.equals(queueFamilyIndices.presentFamily)) {
-                createInfo.imageSharingMode(VK_SHARING_MODE_CONCURRENT);
-                createInfo.pQueueFamilyIndices(stack.ints(queueFamilyIndices.graphicsFamily, queueFamilyIndices.presentFamily));
-            } else {
-                createInfo.imageSharingMode(VK_SHARING_MODE_EXCLUSIVE);
-            }
-
-            createInfo.preTransform(swapChainSupport.capabilities().currentTransform());
-            createInfo.compositeAlpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-            createInfo.presentMode(presentMode);
-            createInfo.clipped(true);
-
-            createInfo.oldSwapchain(VK_NULL_HANDLE);
-
-            LongBuffer pSwapChain = stack.longs(VK_NULL_HANDLE);
-
-            if(vkCreateSwapchainKHR(device, createInfo, null, pSwapChain) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create swap chain");
-            }
-
-            swapChain = pSwapChain.get(0);
-
-            vkGetSwapchainImagesKHR(device, swapChain, imageCount, null);
-
-            LongBuffer pSwapchainImages = stack.mallocLong(imageCount.get(0));
-
-            vkGetSwapchainImagesKHR(device, swapChain, imageCount, pSwapchainImages);
-
-            viewRenderPass.swapChainAttachments = new ArrayList<>(imageCount.get(0));
-
-            for(int i = 0;i < pSwapchainImages.capacity();i++) {
-                var swapImage = new SwapChainAttachment();
-                swapImage.swapChainImage = pSwapchainImages.get(i);
-                viewRenderPass.swapChainAttachments.add(swapImage);
-            }
-
-            swapChainImageFormat = surfaceFormat.format();
-            swapChainExtent = VkExtent2D.create().set(extent);
-        }
-    }
-
-    public void createSwapChainImageViews() {
-        if(viewRenderPass.swapChainAttachments == null) viewRenderPass.swapChainAttachments = new ArrayList<>();
-
-        try (var stack = stackPush()) {
-
-            for (var swapChainImageAttachment : viewRenderPass.swapChainAttachments) {
-                var viewInfo =
-                        createImageViewCreateInfo(
-                                swapChainImageFormat,
-                                swapChainImageAttachment.swapChainImage,
-                                VK_IMAGE_ASPECT_COLOR_BIT,
-                                1,
-                                1,
-                                VK_IMAGE_VIEW_TYPE_2D,
-                                stack
-                        );
-                swapChainImageAttachment.swapChainImageView = createImageView(viewInfo, device);
-            }
-
-        }
-    }
-
-    public void createRenderPasses() {
-        createViewRenderPass();
-        createMultiViewRenderPass();
-    }
-
     public void createMultiViewRenderPass() {
         try(MemoryStack stack = stackPush()) {
 
@@ -1283,7 +844,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
             // Depth-Stencil attachments
             VkAttachmentDescription depthAttachment = attachments.get(1);
-            depthAttachment.format(findDepthFormat());
+            depthAttachment.format(findDepthFormat(physicalDevice));
             depthAttachment.samples(numOfSamples);
             depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
             depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
@@ -1393,7 +954,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
                 throw new RuntimeException("Failed to create render pass");
             }
 
-            viewRenderPass.renderPass = pRenderPass.get(0);
+            renderPass = pRenderPass.get(0);
         }
     }
 
@@ -1427,6 +988,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         builder.vertexBindingDescription = new PipelineBuilder.VertexBindingDescription(0, (3 + 2 + 3) * Float.BYTES, VK_VERTEX_INPUT_RATE_VERTEX);
         builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
         builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
+        builder.inputAssemblyCreateInfo = new PipelineBuilder.InputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.vert", VK_SHADER_STAGE_VERTEX_BIT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -1435,7 +997,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
         multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
         multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
-
     }
 
     public void createViewGraphicsPipeline() {
@@ -1450,40 +1011,24 @@ public class ActiveShutterRenderer extends RenderingEngine {
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
         builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-        var pipeLineCreateResults = builder.build(device, viewRenderPass.renderPass);
-        viewPipelineLayout = pipeLineCreateResults.pipelineLayout();
-        viewGraphicsPipeline = pipeLineCreateResults.pipeline();
+        var pipeLineCreateResults = builder.build(device, renderPass);
+        pipelineLayout = pipeLineCreateResults.pipelineLayout();
+        graphicsPipeline = pipeLineCreateResults.pipeline();
     }
 
-    public void createFramebuffers() {
+    public void initMultiViewFrameBuffers() {
 
         try(MemoryStack stack = stackPush()) {
 
-            viewRenderPass.frameBuffers = new ArrayList<>();
-
             var attachments = stack.longs(VK_NULL_HANDLE);
-
             LongBuffer pFramebuffer = stack.mallocLong(1);
 
-            // Create one framebuffer per swapchain image available
             VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
             framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            framebufferInfo.renderPass(viewRenderPass.renderPass);
+            framebufferInfo.renderPass(renderPass);
             framebufferInfo.width(swapChainExtent.width());
             framebufferInfo.height(swapChainExtent.height());
             framebufferInfo.layers(1);
-
-            for(int i = 0; i < viewRenderPass.swapChainAttachments.size(); i++) {
-
-                attachments.put(0, viewRenderPass.swapChainAttachments.get(i).swapChainImageView);
-                framebufferInfo.pAttachments(attachments);
-
-                if(vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create framebuffer");
-                }
-
-                viewRenderPass.frameBuffers.add(pFramebuffer.get(0));
-            }
 
             // Create single frameBuffer for multiview renderpass
             framebufferInfo.renderPass(multiViewRenderPass.renderPass);
@@ -1519,6 +1064,9 @@ public class ActiveShutterRenderer extends RenderingEngine {
             deviceFeatures.samplerAnisotropy(true);
             if(msaaEnabled) {
                 deviceFeatures.sampleRateShading(true);
+            }
+            if(deviceFeatures.multiDrawIndirect()) {
+                deviceFeatures.multiDrawIndirect(true);
             }
 
             var vkPhysicalDeviceVulkan11Features = VkPhysicalDeviceVulkan11Features.calloc(stack);
@@ -1649,6 +1197,8 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     public void updateObjectBufferDataInMemory(List<Renderable> renderables, MultiViewRenderPassFrame frame) {
 
+        //        TODO: Check whether buffer must be resized
+
         var alignmentSize = (int)(padUniformBufferSize(GPUObjectData.SIZEOF, minUniformBufferOffsetAlignment));
         alignmentSize = GPUObjectData.SIZEOF;
         int bufferSize = alignmentSize * renderables.size();
@@ -1657,14 +1207,19 @@ public class ActiveShutterRenderer extends RenderingEngine {
         bw.mapBuffer();
         for(int i = 0; i < renderables.size(); i++) {
             var renderable = renderables.get(i);
-            bw.setPosition(i);
-            bw.put(renderable.model.objectToWorldMatrix);
-            bw.put(renderable.model.getScale().getNorm() * renderable.mesh.boundingRadius);
+            if(renderable.isDirty) {
+                bw.setPosition(i);
+                bw.put(renderable.model.objectToWorldMatrix);
+                bw.put(renderable.model.getScale().getNorm() * renderable.mesh.boundingRadius);
+                renderable.isDirty = false;
+            }
         }
         bw.unmapBuffer();
     }
 
     public void updateIndirectCommandBuffer(List<Renderable> renderables, MultiViewRenderPassFrame frame) {
+
+//        TODO: Check whether buffer must be resized
 
         var alignmentSize = VkDrawIndexedIndirectCommand.SIZEOF;
         var bufferSize = alignmentSize * renderables.size();
@@ -1710,22 +1265,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
     }
 
-    public void initializeFrames() {
-        viewRenderPass.frames = new ArrayList<>(viewFrames);
-        multiViewRenderPass.frames = new ArrayList<>(MAX_FRAMES_IN_FLIGHT);
-
-        for (int i = 0; i < viewFrames; i++) {
-            var frame = new ViewRenderPassFrame();
-            viewRenderPass.frames.add(frame);
-        }
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            var newFrame = new MultiViewRenderPassFrame();
-            newFrame.vmaAllocator = vmaAllocator;
-            multiViewRenderPass.frames.add(newFrame);
-        }
-    }
-
-    public void createFrameCommandPoolsAndCommandBuffers() {
+    public void initMultiViewCmdPoolsAndBuffers() {
 
         try (var stack = stackPush()) {
 
@@ -1733,34 +1273,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
             poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-            for (int i = 0; i < viewRenderPass.frames.size(); i++) {
-
-                // Create command pool and command buffer for ViewRenderPass
-                LongBuffer pCommandPool = stack.mallocLong(1);
-
-                if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create command pool");
-                }
-                var commandPool = pCommandPool.get(0);
-
-                // Create command buffer
-                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(commandPool);
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-                if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to allocate command buffers");
-                }
-
-                var commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), device);
-
-                viewRenderPass.frames.get(i).commandPool = commandPool;
-                viewRenderPass.frames.get(i).commandBuffer = commandBuffer;
-            }
 
             for (int i = 0; i < multiViewRenderPass.frames.size(); i++) {
 
@@ -1815,38 +1327,12 @@ public class ActiveShutterRenderer extends RenderingEngine {
 
     }
 
-    public void initSyncObjects() {
-
-        viewRenderPass.imagesToFrameMap = new HashMap<>(MAX_FRAMES_IN_FLIGHT);
+    public void initMultiViewSyncObjects() {
 
         try (MemoryStack stack = stackPush()) {
 
             VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
-
-            LongBuffer pImageAvailableSemaphore = stack.mallocLong(1);
-            LongBuffer pRenderFinishedSemaphore = stack.mallocLong(1);
-            LongBuffer pFence = stack.mallocLong(1);
-
-            // For view renderPass
-            for (int i = 0; i < viewFrames; i++) {
-
-                if (vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
-                        || vkCreateSemaphore(device, semaphoreInfo, null, pRenderFinishedSemaphore) != VK_SUCCESS
-                        || vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
-
-                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
-                }
-
-                viewRenderPass.frames.get(i).presentCompleteSemaphore = pImageAvailableSemaphore.get(0);
-                viewRenderPass.frames.get(i).renderFinishedSemaphore = pRenderFinishedSemaphore.get(0);
-                viewRenderPass.frames.get(i).fence = pFence.get(0);
-
-            }
 
             // For multiview renderpass
             LongBuffer timeLineSemaphore = stack.mallocLong(1);
@@ -1895,16 +1381,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
         }
     }
 
-    @Override
-    public void cleanUp() {
-
-        // Wait for the device to complete all operations before release resources
-        vkDeviceWaitIdle(device);
-
-        for(int i = deletionQueue.size()-1; i >= 0; i--) {
-            deletionQueue.get(i).run();
-        }
-    }
     public static class GPUCameraData {
 
         public static final int SIZEOF = (3 * 16) * Float.BYTES;
@@ -1994,6 +1470,7 @@ public class ActiveShutterRenderer extends RenderingEngine {
         public boolean shouldUpdateObjectBuffer = true;
         public boolean shouldUpdateCameraBuffer = true;
         public boolean shouldUpdateComputeUboBuffer = true;
+        public boolean renderablesUpdated = true;
 
         public void cleanUp() {
             vkDestroySemaphore(device, timeLineSemaphore, null);
@@ -2005,31 +1482,6 @@ public class ActiveShutterRenderer extends RenderingEngine {
             vmaDestroyBuffer(vmaAllocator, indirectDrawCountBuffer.buffer, indirectDrawCountBuffer.allocation);
             vmaDestroyBuffer(vmaAllocator, computeUBOBuffer.buffer, computeUBOBuffer.allocation);
         }
-    }
-
-    public class ViewRenderPassFrame {
-
-        public long presentCompleteSemaphore;
-        public long renderFinishedSemaphore;
-        public long fence;
-        public long commandPool;
-        public VkCommandBuffer commandBuffer;
-        public long imageInputDescriptorSet;
-
-        public void cleanUp() {
-            vkDestroySemaphore(device, renderFinishedSemaphore, null);
-            vkDestroySemaphore(device, presentCompleteSemaphore, null);
-            vkDestroyFence(device, fence(), null);
-            vkDestroyCommandPool(device, commandPool, null);
-        }
-
-        public long fence() {
-            return fence;
-        }
-        public LongBuffer pFence() {
-            return stackGet().longs(fence);
-        }
-
     }
 
 }

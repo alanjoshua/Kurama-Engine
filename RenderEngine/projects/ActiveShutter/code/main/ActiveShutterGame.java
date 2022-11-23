@@ -16,14 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
-import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
-import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class ActiveShutterGame extends Game {
-
-    public DisplayVulkan display;
-    public StereoCamera playerCamera;
+    public StereoCamera mainCamera;
     public float mouseXSensitivity = 20f;
     public float mouseYSensitivity = 20f;
     public float speed = 15f;
@@ -37,7 +33,6 @@ public class ActiveShutterGame extends Game {
     public int currentViewImage = 0;
 
     public List<Model> models = new ArrayList<>();
-    public List<Renderable> renderables = new ArrayList<>();
     public ActiveShutterRenderer renderer;
 
     public ActiveShutterGame(String threadName) {
@@ -52,7 +47,7 @@ public class ActiveShutterGame extends Game {
         renderer = (ActiveShutterRenderer) renderingEngine;
 
         display = new DisplayVulkan(this);
-        display.resizeEvents.add(() -> renderer.framebufferResize = true);
+        display.resizeEvents.add(() -> renderer.windowResized = true);
 
         renderingEngine.init(null);
         loadScene();
@@ -60,25 +55,25 @@ public class ActiveShutterGame extends Game {
         this.setTargetFPS(Integer.MAX_VALUE);
         this.shouldDisplayFPS = true;
 
-        this.input = new InputLWJGL(this, display);
+        this.input = new InputLWJGL(this, (DisplayVulkan) display);
 
-        playerCamera = new StereoCamera(this,null, null,
+        mainCamera = new StereoCamera(this,null, null,
                 new Vector(new float[] {0,0,0}),60,
                 0.001f, 1000.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
                 false, "playerCam");
 
-        playerCamera.loadDefaultSettings();
-        playerCamera.fovX = 45;
-        playerCamera.focalLength = 10;
-        playerCamera.eyeSeparation = playerCamera.focalLength / 30f;
-        playerCamera.nearClippingPlane = playerCamera.focalLength / 5.0f;
+        mainCamera.loadDefaultSettings();
+        mainCamera.fovX = 45;
+        mainCamera.focalLength = 10;
+        mainCamera.eyeSeparation = mainCamera.focalLength / 30f;
+        mainCamera.nearClippingPlane = mainCamera.focalLength / 5.0f;
 
-        playerCamera.shouldUpdateValues = true;
+        mainCamera.shouldUpdateValues = true;
 
         display.resizeEvents.add(() -> {
-            playerCamera.renderResolution = display.windowResolution;
-            playerCamera.setShouldUpdateValues(true);
+            mainCamera.renderResolution = display.windowResolution;
+            mainCamera.setShouldUpdateValues(true);
         });
 
         renderer.gpuCameraDataLeft = new ActiveShutterRenderer.GPUCameraData();
@@ -96,7 +91,7 @@ public class ActiveShutterGame extends Game {
 
     @Override
     public void render() {
-        renderer.render(renderables);
+        renderer.render();
     }
 
     public void loadScene() {
@@ -146,18 +141,18 @@ public class ActiveShutterGame extends Game {
         models.add(lostEmpire);
         models.add(vikingRoom);
 
-        renderables.addAll(getRenderablesFromModel(lostEmpire));
-        renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
+        renderer.renderables.addAll(getRenderablesFromModel(lostEmpire));
+        renderer.renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
-        renderables.forEach(r -> {
-            renderer.uploadMeshData(r);
+        renderer.renderables.forEach(r -> {
+//            renderer.uploadMeshData(r);
             renderer.prepareTexture((TextureVK) r.getMaterial().texture);
             r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
 
-            deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
+            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
         });
 
-        renderer.mergeMeshes(renderables);
+        renderer.generateMeshBuffers();
     }
 
     @Override
@@ -170,27 +165,27 @@ public class ActiveShutterGame extends Game {
         if(isGameRunning) {
 
             // Camera updates
-            playerCamera.velocity = playerCamera.velocity.add(playerCamera.acceleration.scalarMul(timeDelta));
-            var detlaV = playerCamera.velocity.scalarMul(timeDelta);
-            playerCamera.setPos(playerCamera.getPos().add(detlaV));
+            mainCamera.velocity = mainCamera.velocity.add(mainCamera.acceleration.scalarMul(timeDelta));
+            var detlaV = mainCamera.velocity.scalarMul(timeDelta);
+            mainCamera.setPos(mainCamera.getPos().add(detlaV));
 
-            if (playerCamera.shouldUpdateValues) {
-                playerCamera.updateValues();
-                playerCamera.setShouldUpdateValues(false);
-                renderer.cameraUpdated();
+            if (mainCamera.shouldUpdateValues) {
+                mainCamera.updateValues();
+                mainCamera.setShouldUpdateValues(false);
+                renderer.cameraUpdatedEvent();
             }
 
-            renderer.gpuCameraDataLeft.proj = playerCamera.leftProjection;
+            renderer.gpuCameraDataLeft.proj = mainCamera.leftProjection;
             renderer.gpuCameraDataLeft.proj.getData()[1][1] *= -1;
-            renderer.gpuCameraDataLeft.worldToCam = playerCamera.leftWorldToCam;
+            renderer.gpuCameraDataLeft.worldToCam = mainCamera.leftWorldToCam;
             renderer.gpuCameraDataLeft.projWorldToCam = renderer.gpuCameraDataLeft.proj.matMul(renderer.gpuCameraDataLeft.worldToCam);
 
-            renderer.gpuCameraDataRight.proj = playerCamera.rightProjection;
+            renderer.gpuCameraDataRight.proj = mainCamera.rightProjection;
             renderer.gpuCameraDataRight.proj.getData()[1][1] *= -1;
-            renderer.gpuCameraDataRight.worldToCam = playerCamera.rightWorldToCam;
+            renderer.gpuCameraDataRight.worldToCam = mainCamera.rightWorldToCam;
             renderer.gpuCameraDataRight.projWorldToCam = renderer.gpuCameraDataRight.proj.matMul(renderer.gpuCameraDataRight.worldToCam);
 
-            playerCamera.tick(null, input, timeDelta, false);
+            mainCamera.tick(null, input, timeDelta, false);
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
@@ -205,7 +200,7 @@ public class ActiveShutterGame extends Game {
 
         }
 
-        if(glfwWindowShouldClose(display.window)) {
+        if(glfwWindowShouldClose(((DisplayVulkan)display).window)) {
             programRunning = false;
             isGameRunning = false;
         }
@@ -228,7 +223,7 @@ public class ActiveShutterGame extends Game {
 
         if(input.keyDown(input.W)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
-            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = this.mainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -238,7 +233,7 @@ public class ActiveShutterGame extends Game {
 
         if(input.keyDown(input.S)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
-            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = this.mainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector x = rotationMatrix[0];
             Vector y = new Vector(new float[] {0,1,0});
@@ -248,7 +243,7 @@ public class ActiveShutterGame extends Game {
 
         if(input.keyDown(input.A)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
-            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = this.mainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(-cameraSpeed));
@@ -256,7 +251,7 @@ public class ActiveShutterGame extends Game {
 
         if(input.keyDown(input.D)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
-            Vector[] rotationMatrix = this.playerCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
+            Vector[] rotationMatrix = this.mainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
 
             Vector v = rotationMatrix[0];
             velocity = velocity.add(v.scalarMul(cameraSpeed));
@@ -293,10 +288,10 @@ public class ActiveShutterGame extends Game {
             models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, 90 * timeDelta));
         }
 
-        this.playerCamera.velocity = velocity;
+        this.mainCamera.velocity = velocity;
         calculate3DCamMovement();
 
-        this.playerCamera.setShouldUpdateValues(true);
+        this.mainCamera.setShouldUpdateValues(true);
     }
 
     private void calculate3DCamMovement() {
@@ -305,7 +300,7 @@ public class ActiveShutterGame extends Game {
             float yawIncrease   = this.mouseXSensitivity * -this.timeDelta * this.input.getDelta().get(0);
             float pitchIncrease = this.mouseYSensitivity * -this.timeDelta * this.input.getDelta().get(1);
 
-            Vector currentAngle = this.playerCamera.getOrientation().getPitchYawRoll();
+            Vector currentAngle = this.mainCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;
 
             if(currentPitch >= 0 && currentPitch > 60) {
@@ -318,11 +313,11 @@ public class ActiveShutterGame extends Game {
             Quaternion pitch = Quaternion.getAxisAsQuat(new Vector(new float[] {1,0,0}),pitchIncrease);
             Quaternion yaw = Quaternion.getAxisAsQuat(new Vector(new float[] {0,1,0}),yawIncrease);
 
-            Quaternion q = this.playerCamera.getOrientation();
+            Quaternion q = this.mainCamera.getOrientation();
 
             q = q.multiply(pitch);
             q = yaw.multiply(q);
-            this.playerCamera.setOrientation(q);
+            this.mainCamera.setOrientation(q);
         }
     }
 

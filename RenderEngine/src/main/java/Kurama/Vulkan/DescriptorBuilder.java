@@ -1,6 +1,5 @@
 package Kurama.Vulkan;
 
-import main.AnaglyphRenderer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;

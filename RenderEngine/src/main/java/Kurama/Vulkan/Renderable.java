@@ -12,11 +12,12 @@ import static org.lwjgl.util.vma.Vma.*;
 // A renderable object will contain one mesh, one model, and the relevant vulkan specific render attributes
 public class Renderable {
 
-    public AllocatedBuffer vertexBuffer;
-    public AllocatedBuffer indexBuffer;
+//    public AllocatedBuffer vertexBuffer;
+//    public AllocatedBuffer indexBuffer;
     public Long textureDescriptorSet = null;
     public int firstIndex;
     public int firstVertex;
+    public boolean isDirty = true;
 
     // assume each mesh only has one material
     public Mesh mesh;
@@ -33,8 +34,8 @@ public class Renderable {
     }
 
     public void cleanUp(long vmaAllocator) {
-        vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
-        vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
+//        vmaDestroyBuffer(vmaAllocator, vertexBuffer.buffer, vertexBuffer.allocation);
+//        vmaDestroyBuffer(vmaAllocator, indexBuffer.buffer, indexBuffer.allocation);
     }
 
     public static List<Renderable> getRenderablesFromModel(Model model) {

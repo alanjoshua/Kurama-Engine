@@ -36,20 +36,23 @@ public abstract class Game implements Runnable {
     public RenderingEngine renderingEngine;
     public Display display;
     public Input input;
+    public String name;
 
     // Convenient boolean that could be used by other game objects to conveniently print to console every second
-    public boolean isOneSecond = false;
+    public static boolean isOneSecond = false;
 
     public static GraphicsApi GRAPHICS_API;
 
     public enum GraphicsApi {CPU, OPENGL, VULKAN}
 
-    public Game(String threadName) {
-        gameLoopThread = new Thread(this,threadName);
+    public Game(String name) {
+        this.name = name;
+        gameLoopThread = new Thread(this,name);
     }
 
-    public Game(String threadName, boolean shouldBenchMark) {
-        gameLoopThread = new Thread(this,threadName);
+    public Game(String name, boolean shouldBenchMark) {
+        this.name = name;
+        gameLoopThread = new Thread(this,name);
 
         this.shouldBenchMark = shouldBenchMark;
         if(shouldBenchMark) {
@@ -135,7 +138,7 @@ public abstract class Game implements Runnable {
                 timerStartTime = System.nanoTime();
 
                 if(shouldDisplayFPS) {
-                    Logger.log("fps: "+ displayFPS);
+                    Logger.logPerSec("fps: "+ displayFPS);
                 }
 
                 if(shouldBenchMark) {
