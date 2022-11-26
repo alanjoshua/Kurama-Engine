@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static Kurama.Vulkan.VulkanUtilities.*;
+import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFW.glfwWaitEvents;
@@ -24,6 +26,13 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.util.vma.Vma.vmaDestroyBuffer;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
+import static org.lwjgl.vulkan.KHRCreateRenderpass2.VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME;
+import static org.lwjgl.vulkan.KHRDepthStencilResolve.VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME;
+import static org.lwjgl.vulkan.KHRDynamicRendering.VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
+import static org.lwjgl.vulkan.KHRDynamicRendering.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRGetPhysicalDeviceProperties2.VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
+import static org.lwjgl.vulkan.KHRGetPhysicalDeviceProperties2.vkGetPhysicalDeviceFeatures2KHR;
+import static org.lwjgl.vulkan.KHRMaintenance2.VK_KHR_MAINTENANCE2_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 import static org.lwjgl.vulkan.KHRSurface.vkDestroySurfaceKHR;
@@ -33,7 +42,7 @@ import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.vkCmdCopyBuffer;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
+import static org.lwjgl.vulkan.VK13.*;
 
 public abstract class VulkanRendererBase extends RenderingEngine {
 
@@ -74,7 +83,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     public List<Long> drawFences;
     public List<Long> drawCommandPools;
     public List<VkCommandBuffer> drawCmds;
-    public long renderPass;
+    public long renderPass = VK_NULL_HANDLE;
     public long pipelineLayout;
     public long graphicsPipeline;
     public DescriptorAllocator descriptorAllocator = new DescriptorAllocator();
@@ -83,7 +92,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     public Set<String> DEVICE_EXTENSIONS =
             Stream.of(
                             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                            VK_KHR_MULTIVIEW_EXTENSION_NAME)
+                            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
                     .collect(toSet());
     public List<Renderable> renderables = new ArrayList<>();
     public AllocatedBuffer mergedVertexBuffer;
@@ -143,12 +152,47 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         createSwapChainImageViews();
 
         initDrawCmdPoolsAndBuffers();
+        initSingleTimeCommandContexts();
         initSyncObjects();
 
         initRenderPasses();
-        initDrawFrameBuffers();
 
         initRenderer();
+    }
+
+    public void initSingleTimeCommandContexts() {
+        try (var stack = stackPush()) {
+            // Create fence and commandPool/buffer for immediate Graphics context
+            singleTimeGraphicsCommandContext = new SingleTimeCommandContext();
+            singleTimeGraphicsCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeGraphicsCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.graphicsFamily, 0, stack), stack);
+            singleTimeGraphicsCommandContext.queue = graphicsQueue;
+            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeGraphicsCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeGraphicsCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+
+            // Create fence and commandPool/buffer for immediate transfer context
+            singleTimeTransferCommandContext = new SingleTimeCommandContext();
+            singleTimeTransferCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeTransferCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.transferFamily, 0, stack), stack);
+            singleTimeTransferCommandContext.queue = transferQueue;
+            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeTransferCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeTransferCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+
+            // Create fence and commandPool/buffer for immediate compute context
+            singleTimeComputeCommandContext = new SingleTimeCommandContext();
+            singleTimeComputeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
+            singleTimeComputeCommandContext.commandPool =  createCommandPool(device,
+                    createCommandPoolCreateInfo(queueFamilyIndices.computeFamily, 0, stack), stack);
+            singleTimeComputeCommandContext.queue = computeQueue;
+            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeComputeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
+            singleTimeComputeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+
+            deletionQueue.add(() -> singleTimeGraphicsCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeComputeCommandContext.cleanUp(device));
+            deletionQueue.add(() -> singleTimeTransferCommandContext.cleanUp(device));
+        }
     }
 
     public void initSyncObjects() {
@@ -231,37 +275,6 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         }
     }
 
-    public void initDrawFrameBuffers() {
-        try(MemoryStack stack = stackPush()) {
-
-            frameBuffers = new ArrayList<>(swapChainAttachments.size());
-
-            var attachments = stack.longs(VK_NULL_HANDLE);
-
-            LongBuffer pFramebuffer = stack.mallocLong(1);
-
-            // Create one framebuffer per swapchain image available
-            VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
-            framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-            framebufferInfo.renderPass(renderPass);
-            framebufferInfo.width(swapChainExtent.width());
-            framebufferInfo.height(swapChainExtent.height());
-            framebufferInfo.layers(1);
-
-            for (int i = 0; i < swapChainAttachments.size(); i++) {
-
-                attachments.put(0, swapChainAttachments.get(i).swapChainImageView);
-                framebufferInfo.pAttachments(attachments);
-
-                if (vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create framebuffer");
-                }
-
-                frameBuffers.add(pFramebuffer.get(0));
-            }
-        }
-    }
-
     public void createLogicalDevice() {
         try(MemoryStack stack = stackPush()) {
 
@@ -297,12 +310,17 @@ public abstract class VulkanRendererBase extends RenderingEngine {
             physicalDevice12Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
             physicalDevice12Features.timelineSemaphore(true);
 
+            var device13Features = VkPhysicalDeviceVulkan13Features.calloc(stack);
+            device13Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
+            device13Features.dynamicRendering(true);
+
             VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
             createInfo.pQueueCreateInfos(queueCreateInfos);
             createInfo.pNext(vkPhysicalDeviceVulkan11Features);
             createInfo.pNext(physicalDevice12Features);
+            createInfo.pNext(device13Features);
             // queueCreateInfoCount is automatically set
             createInfo.pEnabledFeatures(deviceFeatures);
 
@@ -697,13 +715,5 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     }
 
     @Override
-    public void cleanUp() {
-
-        // Wait for the device to complete all operations before release resources
-        vkDeviceWaitIdle(device);
-
-        for(int i = deletionQueue.size()-1; i >= 0; i--) {
-            deletionQueue.get(i).run();
-        }
-    }
+    public abstract void cleanUp();
 }

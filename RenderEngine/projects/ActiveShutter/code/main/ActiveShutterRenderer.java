@@ -16,11 +16,13 @@ import java.util.function.Consumer;
 
 import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
-import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logPerSec;
+import static Kurama.utils.Logger.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
+import static org.lwjgl.vulkan.KHRDynamicRendering.*;
+import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
+import static org.lwjgl.vulkan.KHRSynchronization2.VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.*;
@@ -38,7 +40,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         public List<MultiViewRenderPassFrame> frames;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
-        public long renderPass;
+        public long renderPass = VK_NULL_HANDLE;
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSetLayout;
         public long computeDescriptorSetLayout;
@@ -64,6 +66,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public ActiveShutterRenderer(Game game) {
         super(game);
+        DEVICE_EXTENSIONS.add(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     }
 
     public void render() {
@@ -163,8 +166,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
 
         initPipelines();
-
-        deletionQueue.add(() -> cleanupSwapChainAndRelatedObjects());
     }
 
     public void initBuffers() {
@@ -247,27 +248,41 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 
-            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
-            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
+            if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to begin recording command buffer");
+            }
+//
+            insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(currentDisplayBufferIndex).swapChainImage,
+                    0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VkImageSubresourceRange.calloc(stack)
+                            .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                            .baseMipLevel(0)
+                            .levelCount(1)
+                            .layerCount(1)
+                            .baseArrayLayer(0));
 
-            renderPassInfo.renderPass(renderPass);
+            var colorAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
+            colorAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
+            colorAttachment.imageView(swapChainAttachments.get(currentDisplayBufferIndex).swapChainImageView);
+            colorAttachment.imageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachment.clearValue().color(VkClearValue.calloc(stack).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 0.0f)));
 
             VkRect2D renderArea = VkRect2D.calloc(stack);
             renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
             renderArea.extent(swapChainExtent);
-            renderPassInfo.renderArea(renderArea);
 
-            VkClearValue.Buffer clearValues = VkClearValue.calloc(1, stack);
-            clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
-            renderPassInfo.pClearValues(clearValues);
+            var renderingInfo = VkRenderingInfo.calloc(stack);
+            renderingInfo.sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR);
+            renderingInfo.renderArea(renderArea);
+            renderingInfo.layerCount(1);
+            renderingInfo.pColorAttachments(colorAttachment);
 
-            if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to begin recording command buffer");
-            }
+            vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
 
-            renderPassInfo.framebuffer(frameBuffers.get(currentDisplayBufferIndex));
-
-            vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
                 // Bind color Attachment from previous multiview Renderpass as input
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -286,8 +301,18 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 vkCmdDraw(commandBuffer, 3, 1,0, 0);
 
             }
-            vkCmdEndRenderPass(commandBuffer);
+            vkCmdEndRenderingKHR(commandBuffer);
 
+            insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(currentDisplayBufferIndex).swapChainImage,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                    VkImageSubresourceRange.calloc(stack)
+                            .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                            .baseMipLevel(0)
+                            .levelCount(1)
+                            .layerCount(1)
+                            .baseArrayLayer(0));
 
             if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to record command buffer");
@@ -390,6 +415,37 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
+
+            // Color attachment
+//            var colorAttachment = attachments.get(0);
+//            colorAttachment.format(swapChainImageFormat);
+//            colorAttachment.samples(numOfSamples);
+//            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+//            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+//            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+//            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+//
+//            var colorAttachmentRef = attachmentRefs.get(0);
+//            colorAttachmentRef.attachment(0);
+//            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+//
+//            // Depth-Stencil attachments
+//            VkAttachmentDescription depthAttachment = attachments.get(1);
+//            depthAttachment.format(findDepthFormat(physicalDevice));
+//            depthAttachment.samples(numOfSamples);
+//            depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+//            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//            depthAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+//            depthAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+//            depthAttachment.finalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+//
+//            VkAttachmentReference depthAttachmentRef = attachmentRefs.get(1);
+//            depthAttachmentRef.attachment(1);
+//            depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
 
             // Acquire barrier
             // Add memory barrier to ensure that the indirect commands have been consumed before the compute shader updates them
@@ -602,7 +658,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public void initRenderPasses() {
         createMultiViewRenderPass();
-        createViewRenderPass();
     }
 
     @Override
@@ -726,7 +781,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     private void cleanupSwapChainAndRelatedObjects() {
-        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
+//        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
 
         vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
@@ -736,7 +791,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         vkDestroyPipelineLayout(device, pipelineLayout, null);
 
         vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null);
-        vkDestroyRenderPass(device, renderPass, null);
+//        vkDestroyRenderPass(device, renderPass, null);
 
         swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
 
@@ -758,7 +813,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
         initRenderPasses();
-        initDrawFrameBuffers();
         initMultiViewFrameBuffers();
         initPipelines();
 
@@ -913,51 +967,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
-    public void createViewRenderPass() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkAttachmentDescription.Buffer attachments;
-            VkAttachmentReference.Buffer attachmentRefs;
-
-            attachments = VkAttachmentDescription.calloc(1, stack);
-            attachmentRefs = VkAttachmentReference.calloc(1, stack);
-
-            // Color attachment
-            var colorAttachment = attachments.get(0);
-            colorAttachment.format(swapChainImageFormat);
-            colorAttachment.samples(numOfSamples);
-            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
-            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-            var colorAttachmentRef = attachmentRefs.get(0);
-            colorAttachmentRef.attachment(0);
-            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-            VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
-            subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            subpass.colorAttachmentCount(1);
-            subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
-
-            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
-            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-            renderPassInfo.pAttachments(attachments);
-            renderPassInfo.pSubpasses(subpass);
-
-            LongBuffer pRenderPass = stack.mallocLong(1);
-
-            if(vkCreateRenderPass(device, renderPassInfo, null, pRenderPass) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create render pass");
-            }
-
-            renderPass = pRenderPass.get(0);
-        }
-    }
-
     public void createComputePipeline() {
 
         var builder = new PipelineBuilder(PipelineBuilder.PipelineType.COMPUTE);
@@ -1010,8 +1019,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         builder.pushConstant = new PipelineBuilder.PushConstant(0, Float.BYTES, VK_SHADER_STAGE_FRAGMENT_BIT);
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
         builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-        var pipeLineCreateResults = builder.build(device, renderPass);
+        builder.colorAttachmentImageFormat = swapChainImageFormat;
+        
+        var pipeLineCreateResults = builder.build(device, null);
         pipelineLayout = pipeLineCreateResults.pipelineLayout();
         graphicsPipeline = pipeLineCreateResults.pipeline();
     }
@@ -1040,80 +1050,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             multiViewRenderPass.frameBuffer = pFramebuffer.get(0);
-        }
-    }
-
-    public void createLogicalDevice() {
-        try(MemoryStack stack = stackPush()) {
-
-            QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
-
-            queueFamilyIndices = indices;
-            int[] uniqueQueueFamilies = indices.unique();
-
-            VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
-
-            for(int i = 0;i < uniqueQueueFamilies.length;i++) {
-                VkDeviceQueueCreateInfo queueCreateInfo = queueCreateInfos.get(i);
-                queueCreateInfo.sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
-                queueCreateInfo.queueFamilyIndex(uniqueQueueFamilies[i]);
-                queueCreateInfo.pQueuePriorities(stack.floats(1.0f));
-            }
-
-            var deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
-            deviceFeatures.samplerAnisotropy(true);
-            if(msaaEnabled) {
-                deviceFeatures.sampleRateShading(true);
-            }
-            if(deviceFeatures.multiDrawIndirect()) {
-                deviceFeatures.multiDrawIndirect(true);
-            }
-
-            var vkPhysicalDeviceVulkan11Features = VkPhysicalDeviceVulkan11Features.calloc(stack);
-            vkPhysicalDeviceVulkan11Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
-            vkPhysicalDeviceVulkan11Features.shaderDrawParameters(true);
-            vkPhysicalDeviceVulkan11Features.multiview(true);
-
-            var physicalDevice12Features = VkPhysicalDeviceVulkan12Features.calloc(stack);
-            physicalDevice12Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
-            physicalDevice12Features.timelineSemaphore(true);
-
-            VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
-
-            createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
-            createInfo.pQueueCreateInfos(queueCreateInfos);
-            createInfo.pNext(vkPhysicalDeviceVulkan11Features);
-            createInfo.pNext(physicalDevice12Features);
-            // queueCreateInfoCount is automatically set
-            createInfo.pEnabledFeatures(deviceFeatures);
-
-            createInfo.ppEnabledExtensionNames(VulkanUtilities.asPointerBuffer(DEVICE_EXTENSIONS));
-            if(ENABLE_VALIDATION_LAYERS) {
-                createInfo.ppEnabledLayerNames(VulkanUtilities.asPointerBuffer(VALIDATION_LAYERS));
-            }
-
-            PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
-
-            if(vkCreateDevice(physicalDevice, createInfo, null, pDevice) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create logical device");
-            }
-
-            device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
-            deletionQueue.add(() -> vkDestroyDevice(device, null));
-
-            PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
-
-            vkGetDeviceQueue(device, indices.graphicsFamily, 0, pQueue);
-            graphicsQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
-            presentQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.computeFamily, 0, pQueue);
-            computeQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
-            transferQueue = new VkQueue(pQueue.get(0), device);
         }
     }
 
@@ -1347,37 +1283,17 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 vkCheck(vkCreateSemaphore(device, semaphoreInfo, null, timeLineSemaphore));
                 multiViewRenderPass.frames.get(i).timeLineSemaphore = timeLineSemaphore.get(0);
             }
+        }
+    }
 
-            // Create fence and commandPool/buffer for immediate Graphics context
-            singleTimeGraphicsCommandContext = new SingleTimeCommandContext();
-            singleTimeGraphicsCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeGraphicsCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.graphicsFamily, 0, stack), stack);
-            singleTimeGraphicsCommandContext.queue = graphicsQueue;
-            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeGraphicsCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeGraphicsCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+    @Override
+    public void cleanUp() {
+        // Wait for the device to complete all operations before release resources
+        vkDeviceWaitIdle(device);
 
-            // Create fence and commandPool/buffer for immediate transfer context
-            singleTimeTransferCommandContext = new SingleTimeCommandContext();
-            singleTimeTransferCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeTransferCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.transferFamily, 0, stack), stack);
-            singleTimeTransferCommandContext.queue = transferQueue;
-            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeTransferCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeTransferCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
-
-            // Create fence and commandPool/buffer for immediate compute context
-            singleTimeComputeCommandContext = new SingleTimeCommandContext();
-            singleTimeComputeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeComputeCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.computeFamily, 0, stack), stack);
-            singleTimeComputeCommandContext.queue = computeQueue;
-            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeComputeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeComputeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
-
-            deletionQueue.add(() -> singleTimeGraphicsCommandContext.cleanUp(device));
-            deletionQueue.add(() -> singleTimeComputeCommandContext.cleanUp(device));
-            deletionQueue.add(() -> singleTimeTransferCommandContext.cleanUp(device));
+        cleanupSwapChainAndRelatedObjects();
+        for(int i = deletionQueue.size()-1; i >= 0; i--) {
+            deletionQueue.get(i).run();
         }
     }
 

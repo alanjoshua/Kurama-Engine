@@ -68,6 +68,23 @@ public class VulkanUtilities {
         }
     }
 
+    public static void insertImageMemoryBarrier(VkCommandBuffer cmd, long image, int srcAccessMask, int dstAccessMask,
+                                                int oldImageLayout, int newImageLayout, int srcStageMask, int dstStageMask,
+                                                VkImageSubresourceRange subresourceRange) {
+        try (var stack = stackPush()) {
+            var imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+            imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+            imageBarrier.srcAccessMask(srcAccessMask);
+            imageBarrier.dstAccessMask(dstAccessMask);
+            imageBarrier.oldLayout(oldImageLayout);
+            imageBarrier.newLayout(newImageLayout);
+            imageBarrier.image(image);
+            imageBarrier.subresourceRange(subresourceRange);
+
+            vkCmdPipelineBarrier(cmd, srcStageMask, dstStageMask, 0, null, null, imageBarrier);
+        }
+    }
+
     public static void transitionImageLayout(long image, int format, int oldLayout, int newLayout, int mipLevels, int layerCount, VkCommandBuffer commandBuffer) {
         try(MemoryStack stack = stackPush()) {
             VkImageMemoryBarrier.Buffer barrier = VkImageMemoryBarrier.calloc(1, stack);

@@ -11,7 +11,9 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.*;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.KHRDynamicRendering.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class PipelineBuilder {
@@ -101,6 +103,7 @@ public class PipelineBuilder {
     public long[] descriptorSetLayouts;
     public PipelineType pipelineType;
     public enum PipelineType {COMPUTE, VERTEX_FRAGMENT};
+    public Integer colorAttachmentImageFormat = null;
 
     public PipelineBuilder(PipelineType pipelineType) {
         super();
@@ -111,7 +114,7 @@ public class PipelineBuilder {
         this.pipelineType = PipelineType.VERTEX_FRAGMENT;
     }
 
-    private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, long renderPass) {
+    private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, Long renderPass) {
         if(viewport == null) {
             throw new IllegalArgumentException("Viewport cannot be null");
         }
@@ -296,9 +299,19 @@ public class PipelineBuilder {
             pipelineInfo.pDepthStencilState(depthStencilInfo);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(pipelineLayout);
-            pipelineInfo.renderPass(renderPass);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
+
+            if(renderPass == null) {
+                var renderingInfo = VkPipelineRenderingCreateInfoKHR.calloc(stack);
+                renderingInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR);
+                renderingInfo.pColorAttachmentFormats(stack.ints(colorAttachmentImageFormat));
+                pipelineInfo.pNext(renderingInfo);
+                pipelineInfo.renderPass(VK_NULL_HANDLE);
+            }
+            else{
+                pipelineInfo.renderPass(renderPass);
+            }
 
             if(multiSample != null) {
                 pipelineInfo.pMultisampleState(multisampling);
