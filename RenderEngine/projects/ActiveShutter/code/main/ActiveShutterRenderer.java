@@ -31,7 +31,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public int MAXOBJECTS = 10000;
     public int MAXCOMMANDS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 2;
+    public static final int MAX_FRAMES_IN_FLIGHT = 1;
     public AllocatedBuffer gpuSceneBuffer;
     public List<Long> imageInputDescriptorSets;
 
@@ -60,7 +60,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     public GPUSceneData gpuSceneData;
     public ComputeUBOIn computeUBOIn = new ComputeUBOIn();
     public int multiViewNumLayers = 2;
-
     public boolean shouldUpdateGPUSceneBuffer = true;
     public int objectRenderCount;
 
@@ -94,10 +93,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             callCompute(curMultiViewFrame, stack);
-
-            prepareFrame();
             renderMultiViewFrame(curMultiViewFrame, stack);
 
+            prepareFrame();
             drawViewFrame(curMultiViewFrame.timeLineSemaphore, 0);
             submitFrame();
 
@@ -805,9 +803,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
             recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(i), i);
-        }
-        for(int i = 0; i < drawCmds.size(); i++) {
-            recordViewCommandBuffer(i);
         }
     }
 
