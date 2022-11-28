@@ -5,6 +5,7 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.LongBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.*;
@@ -34,6 +35,9 @@ public class PipelineBuilder {
         public ViewPort(float width, float height) {
             this(0f, 0f, width, height, 0f, 1f);
         }
+    }
+    public record ViewPortState(int viewPortCount, int scissorCount, int flags) {
+        public ViewPortState() {this(1,1,0);}
     }
     public record Scissor(int offsetX, int offsetY, VkExtent2D extent){
         public Scissor(VkExtent2D extent) {
@@ -93,8 +97,10 @@ public class PipelineBuilder {
     public VertexBindingDescription vertexBindingDescription;
     public List<VertexAttributeDescription> vertexAttributeDescriptions;
     public InputAssemblyCreateInfo inputAssemblyCreateInfo = new InputAssemblyCreateInfo();
-    public ViewPort viewport;
-    public Scissor scissor;
+    public ViewPort viewport = null;
+    public Scissor scissor = null;
+    public ViewPortState viewPortState = new ViewPortState();
+    public List<Integer> dynamicStates = new ArrayList<>();
     public PipelineRasterizationStateCreateInfo rasterizer = new PipelineRasterizationStateCreateInfo();
     public PipelineDepthStencilStateCreateInfo depthStencil = new PipelineDepthStencilStateCreateInfo();
     public PipelineColorBlendStateCreateInfo colorBlendAttach = new PipelineColorBlendStateCreateInfo();
@@ -115,12 +121,6 @@ public class PipelineBuilder {
     }
 
     private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, Long renderPass) {
-        if(viewport == null) {
-            throw new IllegalArgumentException("Viewport cannot be null");
-        }
-        if(scissor == null) {
-            throw new IllegalArgumentException("Scissor cannot be null");
-        }
 
         try(var stack = stackPush()) {
 
@@ -202,22 +202,42 @@ public class PipelineBuilder {
             inputAssembly.primitiveRestartEnable(inputAssemblyCreateInfo.primitiveRestartEnable);
 
             // VIEWPORT and SCISSOR
-            VkViewport.Buffer viewportBuffer = VkViewport.calloc(1, stack);
-            viewportBuffer.x(viewport.x);
-            viewportBuffer.y(viewport.y);
-            viewportBuffer.width(viewport.width);
-            viewportBuffer.height(viewport.height);
-            viewportBuffer.minDepth(viewport.minDepth);
-            viewportBuffer.maxDepth(viewport.maxDepth);
-
-            VkRect2D.Buffer scissorBuffer = VkRect2D.calloc(1, stack);
-            scissorBuffer.offset(VkOffset2D.calloc(stack).set(scissor.offsetX, scissor.offsetY));
-            scissorBuffer.extent(scissor.extent);
-
             VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
             viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            viewportState.pViewports(viewportBuffer);
-            viewportState.pScissors(scissorBuffer);
+            viewportState.flags(viewPortState.flags);
+
+            if(viewport != null) {
+                VkViewport.Buffer viewportBuffer = VkViewport.calloc(1, stack);
+                viewportBuffer.x(viewport.x);
+                viewportBuffer.y(viewport.y);
+                viewportBuffer.width(viewport.width);
+                viewportBuffer.height(viewport.height);
+                viewportBuffer.minDepth(viewport.minDepth);
+                viewportBuffer.maxDepth(viewport.maxDepth);
+
+                viewportState.pViewports(viewportBuffer);
+            }
+            else {
+                viewportState.viewportCount(viewPortState.viewPortCount);
+            }
+
+            if(scissor != null) {
+                VkRect2D.Buffer scissorBuffer = VkRect2D.calloc(1, stack);
+                scissorBuffer.offset(VkOffset2D.calloc(stack).set(scissor.offsetX, scissor.offsetY));
+                scissorBuffer.extent(scissor.extent);
+
+                viewportState.pScissors(scissorBuffer);
+            }
+            else {
+                viewportState.scissorCount(viewPortState.scissorCount);
+            }
+
+            VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = null;
+            if(dynamicStates.size() > 0) {
+                dynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo.calloc(stack);
+                dynamicStateCreateInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+                dynamicStateCreateInfo.pDynamicStates(stack.ints(dynamicStates.stream().mapToInt(i -> i).toArray()));
+            }
 
             // ===> RASTERIZATION STAGE <===
             var rasterizerInfo = VkPipelineRasterizationStateCreateInfo.calloc(stack);
@@ -301,6 +321,10 @@ public class PipelineBuilder {
             pipelineInfo.layout(pipelineLayout);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
+
+            if(dynamicStates.size() > 0) {
+                pipelineInfo.pDynamicState(dynamicStateCreateInfo);
+            }
 
             if(renderPass == null) {
                 var renderingInfo = VkPipelineRenderingCreateInfoKHR.calloc(stack);

@@ -283,6 +283,19 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
 
+            var viewportBuffer = VkViewport.calloc(1, stack);
+            viewportBuffer.width(swapChainExtent.width());
+            viewportBuffer.height(swapChainExtent.height());
+            viewportBuffer.minDepth(0);
+            viewportBuffer.maxDepth(1);
+
+            var scissorBuffer = VkRect2D.calloc(1, stack);
+            scissorBuffer.offset(VkOffset2D.calloc(stack).set(0, 0));
+            scissorBuffer.extent(swapChainExtent);
+
+            vkCmdSetViewport(commandBuffer, 0, viewportBuffer);
+            vkCmdSetScissor(commandBuffer, 0, scissorBuffer);
+
             {
                 // Bind color Attachment from previous multiview Renderpass as input
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -416,36 +429,18 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
-            // Color attachment
-//            var colorAttachment = attachments.get(0);
-//            colorAttachment.format(swapChainImageFormat);
-//            colorAttachment.samples(numOfSamples);
-//            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-//            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
-//            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-//            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-//
-//            var colorAttachmentRef = attachmentRefs.get(0);
-//            colorAttachmentRef.attachment(0);
-//            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-//
-//            // Depth-Stencil attachments
-//            VkAttachmentDescription depthAttachment = attachments.get(1);
-//            depthAttachment.format(findDepthFormat(physicalDevice));
-//            depthAttachment.samples(numOfSamples);
-//            depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-//            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//            depthAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
-//            depthAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-//            depthAttachment.finalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-//
-//            VkAttachmentReference depthAttachmentRef = attachmentRefs.get(1);
-//            depthAttachmentRef.attachment(1);
-//            depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            var viewportBuffer = VkViewport.calloc(1, stack);
+            viewportBuffer.width(swapChainExtent.width());
+            viewportBuffer.height(swapChainExtent.height());
+            viewportBuffer.minDepth(0);
+            viewportBuffer.maxDepth(1);
 
+            var scissorBuffer = VkRect2D.calloc(1, stack);
+            scissorBuffer.offset(VkOffset2D.calloc(stack).set(0, 0));
+            scissorBuffer.extent(swapChainExtent);
+
+            vkCmdSetViewport(commandBuffer, 0, viewportBuffer);
+            vkCmdSetScissor(commandBuffer, 0, scissorBuffer);
 
             // Acquire barrier
             // Add memory barrier to ensure that the indirect commands have been consumed before the compute shader updates them
@@ -781,17 +776,8 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     private void cleanupSwapChainAndRelatedObjects() {
-//        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
+
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
-
-        vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
-        vkDestroyPipeline(device, graphicsPipeline, null);
-
-        vkDestroyPipelineLayout(device, multiViewPipelineLayout, null);
-        vkDestroyPipelineLayout(device, pipelineLayout, null);
-
-        vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null);
-//        vkDestroyRenderPass(device, renderPass, null);
 
         swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
 
@@ -812,14 +798,16 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
-        initRenderPasses();
+
         initMultiViewFrameBuffers();
-        initPipelines();
 
         updateViewRenderPassImageInputDescriptorSet();
 
         for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
             recordMultiViewCommandBuffer(renderables, multiViewRenderPass.frames.get(i), i);
+        }
+        for(int i = 0; i < drawCmds.size(); i++) {
+            recordViewCommandBuffer(i);
         }
     }
 
@@ -964,6 +952,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             multiViewRenderPass.renderPass = pRenderPass.get(0);
+            deletionQueue.add(() -> vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null));
         }
     }
 
@@ -995,9 +984,11 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         builder.vertexAttributeDescriptions = attribs;
         builder.vertexBindingDescription = new PipelineBuilder.VertexBindingDescription(0, (3 + 2 + 3) * Float.BYTES, VK_VERTEX_INPUT_RATE_VERTEX);
-        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
-        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
+//        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
+//        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
         builder.inputAssemblyCreateInfo = new PipelineBuilder.InputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.vert", VK_SHADER_STAGE_VERTEX_BIT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -1006,12 +997,17 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
         multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
         multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
+
+        deletionQueue.add(() -> vkDestroyPipeline(device, multiViewGraphicsPipeline, null));
+        deletionQueue.add(() -> vkDestroyPipelineLayout(device, multiViewPipelineLayout, null));
     }
 
     public void createViewGraphicsPipeline() {
         var builder = new PipelineBuilder();
-        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
-        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
+//        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
+//        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.vert", VK_SHADER_STAGE_VERTEX_BIT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -1024,6 +1020,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         var pipeLineCreateResults = builder.build(device, null);
         pipelineLayout = pipeLineCreateResults.pipelineLayout();
         graphicsPipeline = pipeLineCreateResults.pipeline();
+
+        deletionQueue.add(() -> vkDestroyPipeline(device, graphicsPipeline, null));
+        deletionQueue.add(() -> vkDestroyPipelineLayout(device, pipelineLayout, null));
     }
 
     public void initMultiViewFrameBuffers() {
@@ -1292,6 +1291,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         vkDeviceWaitIdle(device);
 
         cleanupSwapChainAndRelatedObjects();
+
         for(int i = deletionQueue.size()-1; i >= 0; i--) {
             deletionQueue.get(i).run();
         }
