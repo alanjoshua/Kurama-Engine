@@ -372,7 +372,6 @@ public class VulkanUtilities {
     }
 
     public static VkCommandPoolCreateInfo createCommandPoolCreateInfo(int queueFamilyIndex, int flags, MemoryStack stack) {
-        log("queue family index queue;: "+ queueFamilyIndex);
         VkCommandPoolCreateInfo info = VkCommandPoolCreateInfo.calloc(stack);
         info.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
         info.queueFamilyIndex(queueFamilyIndex);

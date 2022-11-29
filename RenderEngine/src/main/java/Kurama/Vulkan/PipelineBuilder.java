@@ -335,13 +335,14 @@ public class PipelineBuilder {
             }
             else{
                 pipelineInfo.renderPass(renderPass);
+                pipelineInfo.pNext(VK_NULL_HANDLE);
             }
 
             if(multiSample != null) {
                 pipelineInfo.pMultisampleState(multisampling);
             }
 
-            LongBuffer pGraphicsPipeline = stack.mallocLong(1);
+            LongBuffer pGraphicsPipeline = stack.callocLong(1);
 
             if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create graphics pipeline");

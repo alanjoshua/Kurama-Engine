@@ -76,7 +76,6 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     public List<SwapChainAttachment> swapChainAttachments;
     public int swapChainImageFormat;
     public VkExtent2D swapChainExtent;
-    public List<Long> frameBuffers;
     public long presentCompleteSemaphore;
     public long renderCompleteSemaphore;
     public int currentDisplayBufferIndex;
@@ -92,7 +91,10 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     public Set<String> DEVICE_EXTENSIONS =
             Stream.of(
                             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+                            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                            VK_KHR_MAINTENANCE2_EXTENSION_NAME,
+                            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+                            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)
                     .collect(toSet());
     public List<Renderable> renderables = new ArrayList<>();
     public AllocatedBuffer mergedVertexBuffer;
@@ -154,7 +156,6 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         initDrawCmdPoolsAndBuffers();
         initSingleTimeCommandContexts();
         initSyncObjects();
-
         initRenderPasses();
 
         initRenderer();
@@ -401,9 +402,9 @@ public abstract class VulkanRendererBase extends RenderingEngine {
 
             appInfo.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
             appInfo.pApplicationName(stack.UTF8Safe(applicationName));
-            appInfo.applicationVersion(VK_MAKE_VERSION(1, 0, 0));
+//            appInfo.applicationVersion(VK_MAKE_VERSION(1, 0, 0));
             appInfo.pEngineName(stack.UTF8Safe(engineName));
-            appInfo.engineVersion(VK_MAKE_VERSION(1, 0, 0));
+//            appInfo.engineVersion(VK_MAKE_VERSION(1, 0, 0));
             appInfo.apiVersion(VK_API_VERSION_1_3);
 
             VkInstanceCreateInfo createInfo = VkInstanceCreateInfo.calloc(stack);
@@ -615,9 +616,10 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         vmaDestroyBuffer(vmaAllocator, vertexStagingBuffer.buffer, vertexStagingBuffer.allocation);
         vmaDestroyBuffer(vmaAllocator, indexStagingBuffer.buffer, indexStagingBuffer.allocation);
 
-        meshesMergedEvent();
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedVertexBuffer.buffer, mergedVertexBuffer.allocation));
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedIndexBuffer.buffer, mergedIndexBuffer.allocation));
+
+        meshesMergedEvent();
     }
 
     public long getTextureSampler(int maxLod) {
@@ -711,7 +713,17 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         }
 
         vkDeviceWaitIdle(device);
+
+        cleanUpSwapChainAndSwapImages();
+        createSwapChain();
+        createSwapChainImageViews();
+
         swapChainRecreatedEvent();
+    }
+
+    public void cleanUpSwapChainAndSwapImages() {
+        swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
+        vkDestroySwapchainKHR(device, swapChain, null);
     }
 
     @Override

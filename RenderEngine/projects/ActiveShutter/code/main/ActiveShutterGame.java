@@ -145,7 +145,6 @@ public class ActiveShutterGame extends Game {
         renderer.renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderer.renderables.forEach(r -> {
-//            renderer.uploadMeshData(r);
             renderer.prepareTexture((TextureVK) r.getMaterial().texture);
             r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
 

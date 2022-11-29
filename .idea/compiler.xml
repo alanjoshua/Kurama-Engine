@@ -15,7 +15,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="KuramaEngine" options="--add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED" />
+      <module name="KuramaEngine" options="" />
     </option>
   </component>
 </project>

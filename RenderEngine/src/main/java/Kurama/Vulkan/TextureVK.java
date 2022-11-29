@@ -176,7 +176,6 @@ public class TextureVK extends Texture {
 
             int mipWidth = texWidth;
             int mipHeight = texHeight;
-            log("mipmap levels: "+mipLevels);
 
             for(int i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange().baseMipLevel(i-1);
