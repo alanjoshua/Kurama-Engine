@@ -32,7 +32,7 @@
 <br>
 <br>
 
-### Project Board: https://github.com/users/alanjoshua/projects/1#card-50161872
+### Project Board: https://jira.external-share.com/issue/47753/kuramaengine
 
 <br>
 <br>
