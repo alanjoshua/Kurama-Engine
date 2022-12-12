@@ -378,16 +378,8 @@ public class PipelineBuilder {
                 var entryPoint = stack.UTF8(shader.entryPoint);
                 ShaderSPIRVUtils.ShaderKind shaderKind = null;
 
-                switch (shader.ShaderType) {
-                    case VK_SHADER_STAGE_VERTEX_BIT:
-                        shaderKind = VERTEX_SHADER;
-                        break;
-                    case VK_SHADER_STAGE_FRAGMENT_BIT:
-                        shaderKind = FRAGMENT_SHADER;
-                        break;
-                    case VK_SHADER_STAGE_COMPUTE_BIT:
-                        shaderKind = COMPUTE_SHADER;
-                        break;
+                if (shader.ShaderType == VK_SHADER_STAGE_COMPUTE_BIT) {
+                    shaderKind = COMPUTE_SHADER;
                 }
 
                 if(shaderKind == null) {

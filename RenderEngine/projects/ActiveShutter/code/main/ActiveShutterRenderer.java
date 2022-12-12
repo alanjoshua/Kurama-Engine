@@ -30,7 +30,6 @@ import static org.lwjgl.vulkan.VK12.*;
 public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public int MAXOBJECTS = 10000;
-    public int MAXCOMMANDS = 10000;
     public static final int MAX_FRAMES_IN_FLIGHT = 1;
     public AllocatedBuffer gpuSceneBuffer;
     public List<Long> imageInputDescriptorSets;
@@ -186,7 +185,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             frame.indirectCommandBuffer = createBufferVMA(
                     vmaAllocator,
-                    MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF,
+                    MAXOBJECTS * VkDrawIndexedIndirectCommand.SIZEOF,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
@@ -522,13 +521,13 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         logPerSec("Num of indirect Batches: " + indirectBatches.size());
 
+        int stride = VkDrawIndexedIndirectCommand.SIZEOF;
         for(var batch: indirectBatches) {
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
 
             long offset = batch.first * VkDrawIndexedIndirectCommand.SIZEOF;
-            int stride = VkDrawIndexedIndirectCommand.SIZEOF;
 
             vkCmdDrawIndexedIndirect(commandBuffer, currentFrame.indirectCommandBuffer.buffer,
                     offset, batch.count, stride);

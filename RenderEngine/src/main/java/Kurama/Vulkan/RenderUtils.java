@@ -32,7 +32,6 @@ public class RenderUtils {
 
         for(int i = 1; i < renderables.size(); i++) {
 
-            var sameMesh = renderables.get(i).mesh == lastDraw.mesh;
             var sameMaterial = renderables.get(i).getMaterial() == lastDraw.material;
 
             if(sameMaterial) {

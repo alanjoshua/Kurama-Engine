@@ -43,17 +43,16 @@ layout (binding = 3) buffer UBOOut
 
 layout (local_size_x = 16) in;
 
-bool frustumCheck(vec4 pos, float radius)
+bool isWithinFrustum(vec4 pos, float radius)
 {
     // Check sphere against frustum planes
-    for (int i = 0; i < 6; i++)
-    {
-        if (dot(pos, ubo.frustumPlanes[i]) + radius < 0.0)
-        {
+    for (int i = 0; i < 6; i++) {
+        if (dot(pos, ubo.frustumPlanes[i]) + radius < 0.0) {
             return false;
         }
     }
     return true;
+
 }
 
 void main() {
@@ -68,7 +67,7 @@ void main() {
     float radius = objectBuffer.objects[idx].radius.x;
 
     // Check if object is within current viewing frustum
-    if (frustumCheck(pos, radius)) {
+    if (isWithinFrustum(pos, radius)) {
         indirectDraws[idx].instanceCount = 1;
         // Increase number of indirect draw counts
         atomicAdd(uboOut.drawCount, 1);
