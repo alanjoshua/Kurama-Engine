@@ -345,8 +345,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 var frame = multiViewRenderPass.frames.get(i);
                 var commandBuffer = frame.computeCommandBuffer;
 
-//                vkCheck(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset compute command buffer");
-
                 VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
                 beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 

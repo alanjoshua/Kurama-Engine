@@ -5,15 +5,15 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.LongBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static Kurama.Vulkan.ShaderSPIRVUtils.ShaderKind.*;
 import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTMeshShader.VK_SHADER_STAGE_MESH_BIT_EXT;
+import static org.lwjgl.vulkan.EXTMeshShader.VK_SHADER_STAGE_TASK_BIT_EXT;
 import static org.lwjgl.vulkan.KHRDynamicRendering.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -108,7 +108,7 @@ public class PipelineBuilder {
     public PushConstant pushConstant;
     public long[] descriptorSetLayouts;
     public PipelineType pipelineType;
-    public enum PipelineType {COMPUTE, VERTEX_FRAGMENT};
+    public enum PipelineType {COMPUTE, GRAPHICS};
     public Integer colorAttachmentImageFormat = null;
 
     public PipelineBuilder(PipelineType pipelineType) {
@@ -117,7 +117,7 @@ public class PipelineBuilder {
     }
 
     public PipelineBuilder() {
-        this.pipelineType = PipelineType.VERTEX_FRAGMENT;
+        this.pipelineType = PipelineType.GRAPHICS;
     }
 
     private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, Long renderPass) {
@@ -142,6 +142,12 @@ public class PipelineBuilder {
                         break;
                     case VK_SHADER_STAGE_FRAGMENT_BIT:
                         shaderKind = FRAGMENT_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_MESH_BIT_EXT:
+                        shaderKind = MESH_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_TASK_BIT_EXT:
+                        shaderKind = TASK_SHADER;
                         break;
                 }
 
@@ -425,7 +431,7 @@ public class PipelineBuilder {
 
     public PipelineLayoutAndPipeline build(VkDevice device, Long renderPass) {
 
-        if(pipelineType == PipelineType.VERTEX_FRAGMENT) {
+        if(pipelineType == PipelineType.GRAPHICS) {
             return buildVertexFragPipeline(device, renderPass);
         }
 

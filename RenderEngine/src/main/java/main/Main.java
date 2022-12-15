@@ -22,7 +22,10 @@ public class Main {
 //		game = new AnaglyphGame("Anaglyph Renderer");
 //		game.start();
 //
-		game = new ActiveShutterGame("Active shutter Renderer");
+//		game = new ActiveShutterGame("Active shutter Renderer");
+//		game.start();
+
+		game = new PointCloudController("Point Cloud Renderer");
 		game.start();
 
 //		var app = new VulkanGame();

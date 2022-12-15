@@ -657,6 +657,7 @@ public class VulkanUtilities {
                     .collect(toSet())
                     .containsAll(deviceExtensions);
         }
+//        return true;
     }
 
     public record SwapChainSupportDetails (VkSurfaceCapabilitiesKHR capabilities, VkSurfaceFormatKHR.Buffer formats, IntBuffer presentModes) { }

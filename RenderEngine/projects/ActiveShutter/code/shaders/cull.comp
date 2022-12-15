@@ -24,12 +24,6 @@ layout(std430, binding = 1) writeonly buffer IndirectDraws {
     IndexedIndirectCommand indirectDraws[ ];
 };
 
-struct CameraData {
-    mat4 projview;
-    mat4 view;
-    mat4 proj;
-};
-
 layout(std140, binding = 2) uniform UBO {
     vec4 frustumPlanes[6];
     uint objectCount;

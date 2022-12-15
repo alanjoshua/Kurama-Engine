@@ -96,6 +96,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
                             VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
                             VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)
                     .collect(toSet());
+    public VkDeviceCreateInfo createInfo;
     public List<Renderable> renderables = new ArrayList<>();
     public AllocatedBuffer mergedVertexBuffer;
     public AllocatedBuffer mergedIndexBuffer;
@@ -108,6 +109,9 @@ public abstract class VulkanRendererBase extends RenderingEngine {
 
     public VulkanRendererBase(Game game) {
         super(game);
+
+        createInfo = VkDeviceCreateInfo.calloc();
+        deletionQueue.add(() -> createInfo.free());
     }
 
     public abstract void initRenderer();
@@ -314,8 +318,6 @@ public abstract class VulkanRendererBase extends RenderingEngine {
             var device13Features = VkPhysicalDeviceVulkan13Features.calloc(stack);
             device13Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
             device13Features.dynamicRendering(true);
-
-            VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
             createInfo.pQueueCreateInfos(queueCreateInfos);
