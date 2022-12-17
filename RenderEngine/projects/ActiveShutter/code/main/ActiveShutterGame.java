@@ -27,11 +27,6 @@ public class ActiveShutterGame extends Game {
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
 
-    // This is a temporary visual to manually swap the rendered image between the left and right images
-    public float viewSwapInterval = 0.5f;
-    public float swapDelta = 0;
-    public int currentViewImage = 0;
-
     public List<Model> models = new ArrayList<>();
     public ActiveShutterRenderer renderer;
 
@@ -188,14 +183,6 @@ public class ActiveShutterGame extends Game {
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
-
-            if(swapDelta >= viewSwapInterval) {
-                swapDelta = 0;
-                currentViewImage = (currentViewImage + 1) % 2;
-            }
-            else {
-                swapDelta += timeDelta;
-            }
 
         }
 

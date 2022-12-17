@@ -6,6 +6,7 @@ import Kurama.renderingEngine.RenderingEngine;
 import Kurama.scene.Scene;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
@@ -63,6 +64,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     }
     public DisplayVulkan display;
     public long vmaAllocator;
+    public FrameBufferAttachment depthAttachment;
     public long surface;
     public int numOfSamples = VK_SAMPLE_COUNT_1_BIT;
     public long minUniformBufferOffsetAlignment = 64;
@@ -245,10 +247,12 @@ public abstract class VulkanRendererBase extends RenderingEngine {
             poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
             poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-            drawCmds = new ArrayList<>(swapChainAttachments.size());
-            drawCommandPools = new ArrayList<>(swapChainAttachments.size());
+            int swapChainAttachmentsCount = swapChainAttachments.size();
+//            swapChainAttachmentsCount = 1;
+            drawCmds = new ArrayList<>(swapChainAttachmentsCount);
+            drawCommandPools = new ArrayList<>(swapChainAttachmentsCount);
 
-            for (int i = 0; i < swapChainAttachments.size(); i++) {
+            for (int i = 0; i < swapChainAttachmentsCount; i++) {
 
                 // Create command pool and command buffer for ViewRenderPass
                 LongBuffer pCommandPool = stack.mallocLong(1);
@@ -697,7 +701,79 @@ public abstract class VulkanRendererBase extends RenderingEngine {
             }
 
             currentDisplayBufferIndex = pImageIndex.get(0);
+        }
+    }
 
+    public void drawFrame() {
+        try(MemoryStack stack = stackPush()) {
+            vkWaitForFences(device, drawFences.get(currentDisplayBufferIndex), true, UINT64_MAX);
+            vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
+
+            // Submit rendering commands to GPU
+            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+            submitInfo.waitSemaphoreCount(1);
+
+            submitInfo.pWaitSemaphores(stack.longs(presentCompleteSemaphore));
+            submitInfo.pSignalSemaphores(stack.longs(renderCompleteSemaphore));
+            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
+            submitInfo.pCommandBuffers(stack.pointers(drawCmds.get(currentDisplayBufferIndex)));
+
+            int vkResult;
+            if((vkResult = vkQueueSubmit(graphicsQueue, submitInfo, drawFences.get(currentDisplayBufferIndex))) != VK_SUCCESS) {
+                vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
+                throw new RuntimeException("Failed to submit draw command buffer: " + vkResult);
+            }
+
+        }
+    }
+
+    public void createDepthAttachment() {
+        try(MemoryStack stack = stackPush()) {
+            var depthAttachment = new FrameBufferAttachment();
+
+            int depthFormat = findDepthFormat(physicalDevice);
+            var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
+
+            var imageInfo = createImageCreateInfo(
+                    depthFormat,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    extent,
+                    1,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    1,
+                    1,
+                    stack);
+
+            var memoryAllocInfo = VmaAllocationCreateInfo.calloc(stack)
+                    .usage(VMA_MEMORY_USAGE_GPU_ONLY)
+                    .requiredFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            depthAttachment.allocatedImage = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+
+            var viewInfo =
+                    createImageViewCreateInfo(
+                            depthFormat,
+                            depthAttachment.allocatedImage.image,
+                            VK_IMAGE_ASPECT_DEPTH_BIT,
+                            1,
+                            1,
+                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                            stack
+                    );
+
+            depthAttachment.imageView = createImageView(viewInfo, device);
+
+            // Explicitly transitioning the depth image
+            submitImmediateCommand((cmd) -> {
+                        transitionImageLayout(
+                                depthAttachment.allocatedImage.image, depthFormat,
+                                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                1,1, cmd);
+                    },
+                    singleTimeGraphicsCommandContext);
+
+            this.depthAttachment = depthAttachment;
         }
     }
 
