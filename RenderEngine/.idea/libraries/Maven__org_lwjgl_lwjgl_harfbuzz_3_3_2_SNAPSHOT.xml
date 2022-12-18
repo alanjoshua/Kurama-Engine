@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.lwjgl:lwjgl-harfbuzz:3.3.2-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-harfbuzz/3.3.2-SNAPSHOT/lwjgl-harfbuzz-3.3.2-20221218.004659-2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-harfbuzz/3.3.2-SNAPSHOT/lwjgl-harfbuzz-3.3.2-20221218.004659-2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-harfbuzz/3.3.2-SNAPSHOT/lwjgl-harfbuzz-3.3.2-20221218.004659-2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

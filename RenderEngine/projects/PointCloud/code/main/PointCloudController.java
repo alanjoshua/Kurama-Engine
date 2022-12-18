@@ -191,7 +191,7 @@ public class PointCloudController extends Game {
         if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
 
             float yawIncrease   = this.mouseXSensitivity * -this.timeDelta * this.input.getDelta().get(0);
-            float pitchIncrease = this.mouseYSensitivity * -this.timeDelta * this.input.getDelta().get(1);
+            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * this.input.getDelta().get(1);
 
             Vector currentAngle = this.mainCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;

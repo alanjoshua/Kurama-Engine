@@ -245,7 +245,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         var bw = new BufferWriter(vmaAllocator, ubo, alignment, bufferSize);
         bw.mapBuffer();
-
+        
         controller.mainCamera.getPerspectiveProjectionMatrix().setValuesToBuffer(bw.buffer);
         Matrix.getIdentityMatrix(4).setValuesToBuffer(bw.buffer);
         controller.mainCamera.worldToObject.setValuesToBuffer(bw.buffer);
