@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.NORMAL;
+import static Kurama.Mesh.Mesh.VERTATTRIB.TEXTURE;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -511,12 +513,12 @@ public class VulkanUtilities {
             buffer.putFloat(mesh.getVertices().get(i).get(1));
             buffer.putFloat(mesh.getVertices().get(i).get(2));
 
-            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
-            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(TEXTURE).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(TEXTURE).get(i).get(1));
 
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(0));
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(1));
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(2));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(2));
         }
     }
 

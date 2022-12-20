@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 //class Transformation {
@@ -302,7 +303,7 @@ public class AssimpAnimLoader {
     }
 
     public static Mesh processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath, List<Bone> bonesList) {
-        List<List<Vector>> vertAttribs = new ArrayList<>();
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
 
         List<Vector> verts = AssimpStaticLoader.processAttribute(aiMesh.mVertices());
         List<Vector> textures = AssimpStaticLoader.processTextureCoords(aiMesh.mTextureCoords(0));
@@ -315,7 +316,7 @@ public class AssimpAnimLoader {
         List<Vector> jointIndices = (List<Vector>) results.get(0);
         List<Vector> weight = (List<Vector>) results.get(1);
 
-        vertAttribs.add(verts);
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, verts);
 
         List<Material> meshMaterials = new ArrayList<>();
         var newMat = new Material();
@@ -326,12 +327,12 @@ public class AssimpAnimLoader {
         meshMaterials.add(newMat);
 
         var newMesh = new Mesh(indices, null, vertAttribs, meshMaterials, resourcePath, null);
-        newMesh.setAttribute(textures, Mesh.TEXTURE);
-        newMesh.setAttribute(normals, Mesh.NORMAL);
-        newMesh.setAttribute(tangents, Mesh.TANGENT);
-        newMesh.setAttribute(biTangents, Mesh.BITANGENT);
-        newMesh.setAttribute(jointIndices, Mesh.JOINTINDICESPERVERT);
-        newMesh.setAttribute(weight, Mesh.WEIGHTBIASESPERVERT);
+        newMesh.setAttribute(textures, TEXTURE);
+        newMesh.setAttribute(normals, NORMAL);
+        newMesh.setAttribute(tangents, TANGENT);
+        newMesh.setAttribute(biTangents, BITANGENT);
+        newMesh.setAttribute(jointIndices, JOINTINDICESPERVERT);
+        newMesh.setAttribute(weight, WEIGHTBIASESPERVERT);
 
         return newMesh;
     }

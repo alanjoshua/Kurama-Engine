@@ -19,6 +19,7 @@ import org.lwjgl.assimp.*;
 
 import java.util.*;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 
@@ -217,8 +218,9 @@ public class AssimpAnimLoader2 {
 
     }
 
-    public static Mesh processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath, Map<String, Bone> bonesList) {
-        List<List<Vector>> vertAttribs = new ArrayList<>();
+    public static Mesh
+    processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath, Map<String, Bone> bonesList) {
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
 
         List<Vector> verts = AssimpStaticLoader.processAttribute(aiMesh.mVertices());
         List<Vector> textures = AssimpStaticLoader.processTextureCoords(aiMesh.mTextureCoords(0));
@@ -232,7 +234,7 @@ public class AssimpAnimLoader2 {
         List<Vector> jointIndices = (List<Vector>) results.get(0);
         List<Vector> weight = (List<Vector>) results.get(1);
 
-        vertAttribs.add(verts);
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, verts);
 
         List<Material> meshMaterials = new ArrayList<>();
         var newMat = new Material();
@@ -247,13 +249,13 @@ public class AssimpAnimLoader2 {
         }
 
         var newMesh = new Mesh(indices, null, vertAttribs, meshMaterials, resourcePath, null);
-        newMesh.setAttribute(textures, Mesh.TEXTURE);
-        newMesh.setAttribute(normals, Mesh.NORMAL);
-        newMesh.setAttribute(tangents, Mesh.TANGENT);
-        newMesh.setAttribute(biTangents, Mesh.BITANGENT);
-        newMesh.setAttribute(matInds, Mesh.MATERIAL);
-        newMesh.setAttribute(jointIndices, Mesh.JOINTINDICESPERVERT);
-        newMesh.setAttribute(weight, Mesh.WEIGHTBIASESPERVERT);
+        newMesh.setAttribute(textures, TEXTURE);
+        newMesh.setAttribute(normals, NORMAL);
+        newMesh.setAttribute(tangents, TANGENT);
+        newMesh.setAttribute(biTangents, BITANGENT);
+        newMesh.setAttribute(matInds, MATERIAL);
+        newMesh.setAttribute(jointIndices, JOINTINDICESPERVERT);
+        newMesh.setAttribute(weight, WEIGHTBIASESPERVERT);
 
         return newMesh;
     }

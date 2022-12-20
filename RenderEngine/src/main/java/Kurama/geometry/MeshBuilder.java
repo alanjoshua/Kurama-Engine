@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static org.lwjgl.opengl.GL11.GL_LINES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 
@@ -43,11 +44,11 @@ public class MeshBuilder {
 		else {
 			if (hints.shouldRotate != 0) {
 				Quaternion rot = Quaternion.getAxisAsQuat(new Vector(0, 1, 0), hints.shouldRotate);
-				List<Vector> listVerts = resMesh.getAttributeList(Mesh.POSITION);
+				List<Vector> listVerts = resMesh.getAttributeList(POSITION);
 				Matrix listAsMat = new Matrix(listVerts);
 
 				List<Vector> newVertices = rot.getRotationMatrix().matMul(listAsMat).convertToColumnVectorList();
-				resMesh.setAttribute(newVertices, Mesh.POSITION);
+				resMesh.setAttribute(newVertices, POSITION);
 			}
 
 			if(hints.shouldTriangulate) {
@@ -186,13 +187,13 @@ public class MeshBuilder {
 			return mesh;
 		}
 
-		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
+		var newVertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
 		List<Integer> indices = new ArrayList<>();
 		List<Face> newFaces = new ArrayList<>();
 		int counter = 0;
 
-		for(int i = 0;i < mesh.vertAttributes.size();i++) {
-			newVertAttribs.add(new ArrayList<Vector>());
+		for(var key: mesh.vertAttributes.keySet()) {
+			newVertAttribs.put(key, new ArrayList<>());
 		}
 
 		for(Face f: mesh.faces) {
@@ -208,7 +209,7 @@ public class MeshBuilder {
 					Integer at = v.getAttribute(i);
 					if(at != null) {
 						try {
-							newVertAttribs.get(i).add(mesh.getAttributeList(i).get(at));
+							newVertAttribs.get(Mesh.attribMapping.get(i)).add(mesh.getAttributeList(Mesh.attribMapping.get(i)).get(at));
 						}catch(Exception e) {
 							newVertAttribs.get(i).add(null);
 						}
@@ -250,12 +251,12 @@ public class MeshBuilder {
 	public static Mesh bakeMesh(Mesh mesh, MeshBuilderHints hints) {
 
 		List<Integer> indexList = new ArrayList<>();
-		List<List<Vector>> newVertAttribs = new ArrayList<>(mesh.vertAttributes.size());
+		var newVertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
 		Map<Vertex, Integer> uniqueVertices = new HashMap();
 		List<Face> newFaces = new ArrayList<>();
 
-		for(int i = 0;i < mesh.vertAttributes.size();i++) {
-			newVertAttribs.add(new ArrayList<>());
+		for(var key: mesh.vertAttributes.keySet()) {
+			newVertAttribs.put(key, new ArrayList<>());
 		}
 
 //		Loop through all Vertices in faces, and add each unique vertex to unique vertices list
@@ -282,7 +283,7 @@ public class MeshBuilder {
 					for(int i =0;i < newVertAttribs.size();i++) {
 						Integer ind = v.getAttribute(i);
 						if(ind!=null) {
-							newVertAttribs.get(i).add(mesh.getAttributeList(i).get(ind));
+							newVertAttribs.get(Mesh.attribMapping.get(i)).add(mesh.getAttributeList(Mesh.attribMapping.get(i)).get(ind));
 						}
 						else {
 							newVertAttribs.get(i).add(null);
@@ -317,7 +318,7 @@ public class MeshBuilder {
 	}
 
 	public static Mesh generateTangentAndBiTangentVectors(Mesh inMesh, MeshBuilderHints hints) {
-		if(inMesh.getAttributeList(Mesh.TEXTURE) == null) {
+		if(inMesh.getAttributeList(TEXTURE) == null) {
 			throw new RuntimeException("Cannot generate tangent and biTangent vectors if texture coordinates are not present: "+inMesh.meshIdentifier);
 		}
 
@@ -353,8 +354,8 @@ public class MeshBuilder {
 			Vector edge1 = inMesh.getVertices().get(v1.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
 			Vector edge2 = inMesh.getVertices().get(v2.getAttribute(Vertex.POSITION)).sub(inMesh.getVertices().get(v0.getAttribute(Vertex.POSITION)));
 
-			Vector deltaUV1 = inMesh.getAttributeList(Mesh.TEXTURE).get(v1.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
-			Vector deltaUV2 = inMesh.getAttributeList(Mesh.TEXTURE).get(v2.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(Mesh.TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
+			Vector deltaUV1 = inMesh.getAttributeList(TEXTURE).get(v1.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
+			Vector deltaUV2 = inMesh.getAttributeList(TEXTURE).get(v2.getAttribute(Vertex.TEXTURE)).sub(inMesh.getAttributeList(TEXTURE).get(v0.getAttribute(Vertex.TEXTURE)));
 
 			Vector tangent;
 			Vector biTangent;
@@ -384,10 +385,10 @@ public class MeshBuilder {
 			v2.setAttribute(biTangents.size()-1,Vertex.BITANGENT);
 		}
 
-		List<List<Vector>> newVertAttribs = new ArrayList<>(inMesh.vertAttributes);
+		var newVertAttribs = new HashMap<>(inMesh.vertAttributes);
 		Mesh retMesh = new Mesh(inMesh.indices,faces,newVertAttribs,inMesh.materials, inMesh.meshLocation, hints);
-		retMesh.setAttribute(tangents,Mesh.TANGENT);
-		retMesh.setAttribute(biTangents,Mesh.BITANGENT);
+		retMesh.setAttribute(tangents,TANGENT);
+		retMesh.setAttribute(biTangents,BITANGENT);
 		retMesh.meshIdentifier = inMesh.meshIdentifier;
 		retMesh.drawMode = inMesh.drawMode;
 		retMesh.isModified = true;
@@ -395,12 +396,12 @@ public class MeshBuilder {
 	}
 
 	public static Mesh reverseNormals(Mesh inMesh, MeshBuilderHints hints) {
-		List<List<Vector>> vertList = inMesh.vertAttributes;
+		var vertList = inMesh.vertAttributes;
 		List<Vector> newNormals = new ArrayList<>();
-		for(Vector n:inMesh.getAttributeList(Mesh.NORMAL)) {
+		for(Vector n:inMesh.getAttributeList(NORMAL)) {
 			newNormals.add(n.scalarMul(-1));
 		}
-		vertList.set(Mesh.NORMAL,newNormals);
+		vertList.put(NORMAL,newNormals);
 		Mesh res = new Mesh(inMesh.indices,inMesh.faces,vertList,inMesh.materials, inMesh.meshLocation, hints);
 		res.drawMode = inMesh.drawMode;
 		res.meshIdentifier = inMesh.meshIdentifier;
@@ -740,13 +741,13 @@ public class MeshBuilder {
 				facesListObj.add(tempFace);
 			}
 
-			List<List<Vector>> vertAttributes = new ArrayList<>(3);
-			vertAttributes.add(Mesh.POSITION, new ArrayList<>(Arrays.asList(vertArr)));
-			vertAttributes.add(Mesh.TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
-			vertAttributes.add(Mesh.NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
+			var vertAttributes = new HashMap<Mesh.VERTATTRIB, List<Vector>>(3);
+			vertAttributes.put(POSITION, new ArrayList<>(Arrays.asList(vertArr)));
+			vertAttributes.put(TEXTURE, new ArrayList<>(Arrays.asList(vtArray)));
+			vertAttributes.put(NORMAL, new ArrayList<>(Arrays.asList(vnArray)));
 
 			resMesh = new Mesh(null,facesListObj, vertAttributes,matList, loc, hints);
-			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),Mesh.MATERIAL);
+			resMesh.setAttribute(new ArrayList<>(Arrays.asList(matArray)),MATERIAL);
 			resMesh.meshIdentifier = loc;
 			resMesh.isModified = true;
 			return resMesh;
@@ -916,7 +917,7 @@ public class MeshBuilder {
 			}
 		}
 
-		inMesh.setAttribute(colors,Mesh.COLOR);
+		inMesh.setAttribute(colors, COLOR);
 		inMesh.isModified = true;
 		return inMesh;
 
@@ -935,7 +936,7 @@ public class MeshBuilder {
 			}
 		}
 
-		inMesh.setAttribute(colors,Mesh.COLOR);
+		inMesh.setAttribute(colors, COLOR);
 		inMesh.isModified = true;
 		return inMesh;
 
@@ -1123,8 +1124,8 @@ public class MeshBuilder {
 			facesListObj.add(new Face(tempVertList));
 		}
 
-		List<List<Vector>> vertAttributes = new ArrayList<>(1);
-		vertAttributes.add(Mesh.POSITION, Arrays.asList(vertices));
+		var vertAttributes = new HashMap<Mesh.VERTATTRIB, List<Vector>>(1);
+		vertAttributes.put(POSITION, Arrays.asList(vertices));
 
 		resMesh = new Mesh(null,facesListObj, vertAttributes,null, null, null);
 		resMesh.meshIdentifier = "grid";
@@ -1228,11 +1229,11 @@ public class MeshBuilder {
 		tempFace.addVertex(v1);
 		faces.add(tempFace);
 
-		List<List<Vector>> attribs = new ArrayList<>();
-		attribs.add(vertices);
+		var attribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+		attribs.put(POSITION, vertices);
 
 		Mesh ret = new Mesh(indices,faces,attribs,null, null, null);
-		ret.setAttribute(colors,Mesh.COLOR);
+		ret.setAttribute(colors, COLOR);
 		ret.drawMode = GL_LINES;
 //		ret.initOpenGLMeshData();
 
@@ -1400,10 +1401,9 @@ public class MeshBuilder {
 			}
 		}
 
-		List<List<Vector>> vertAttribs = new ArrayList<>(3);
-		vertAttribs.add(vertices);
-		vertAttribs.add(null);
-		vertAttribs.add(normals);
+		var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>(3);
+		vertAttribs.put(POSITION, vertices);
+		vertAttribs.put(NORMAL, normals);
 
 		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null, null);
 		resMesh = triangulate(resMesh,false, hints);
@@ -1498,8 +1498,8 @@ public class MeshBuilder {
 			faces.add(tempFace);
 		}
 
-		List<List<Vector>> vertAttribs = new ArrayList<>();
-		vertAttribs.add(vertices);
+		var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>(3);
+		vertAttribs.put(POSITION, vertices);
 
 		Mesh resMesh = new Mesh(null,faces,vertAttribs,null, null, null);
 
@@ -1546,9 +1546,9 @@ public class MeshBuilder {
 		indices.add(1);
 		indices.add(3);
 
-		List<List<Vector>> attribs = new ArrayList<>();
-		attribs.add(pos);
-		attribs.add(tex);
+		var attribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>(3);
+		attribs.put(POSITION, pos);
+		attribs.put(TEXTURE, tex);
 
 		Mesh res = new Mesh(indices, null, attribs, null, null, null);
 		res.meshIdentifier = Kurama.utils.Utils.getUniqueID();

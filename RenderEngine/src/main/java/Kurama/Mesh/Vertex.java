@@ -3,6 +3,8 @@ package Kurama.Mesh;
 import java.util.ArrayList;
 import java.util.List;
 
+import static Kurama.Mesh.MeshletGen.getMortonCode;
+
 public class Vertex {
 
     public static final int POSITION = 0;

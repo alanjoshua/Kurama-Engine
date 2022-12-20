@@ -28,6 +28,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.util.*;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
+
 public class SceneUtils {
 
     public static RenderPipeline getRenderPipeline(String  renderPipelineClass_name, Game game) {
@@ -847,17 +849,15 @@ public class SceneUtils {
                     materials.add(m);
                 }
 
-                List<List<Vector>> vertAttributes = new ArrayList<>();
-                for(int i = 0;i < 7; i++) {
-                    vertAttributes.add(null);
-                }
-                vertAttributes.set(Mesh.POSITION, pos);
-                vertAttributes.set(Mesh.TEXTURE, tex);
-                vertAttributes.set(Mesh.NORMAL, normals);
-                vertAttributes.set(Mesh.COLOR, colors);
-                vertAttributes.set(Mesh.TANGENT, tangents);
-                vertAttributes.set(Mesh.BITANGENT, bitangents);
-                vertAttributes.set(Mesh.MATERIAL, materialInds);
+                var vertAttributes = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+
+                vertAttributes.put(POSITION, pos);
+                vertAttributes.put(TEXTURE, tex);
+                vertAttributes.put(NORMAL, normals);
+                vertAttributes.put(COLOR, colors);
+                vertAttributes.put(TANGENT, tangents);
+                vertAttributes.put(BITANGENT, bitangents);
+                vertAttributes.put(MATERIAL, materialInds);
 
                 List<Face> newFaces = new ArrayList<>();
 
@@ -1180,7 +1180,7 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("VERTEX POSITIONS\n");
-            for(Vector val: mesh.getAttributeList(Mesh.POSITION)) {
+            for(Vector val: mesh.getAttributeList(POSITION)) {
                 if (val != null) {
                     writer.write(val.toString());
                 }
@@ -1194,17 +1194,17 @@ public class SceneUtils {
             writer.write("TEXTURE POSITIONS\n");
 
             boolean nullsOnly;
-            if(mesh.getAttributeList(Mesh.TEXTURE) == null) {
+            if(mesh.getAttributeList(TEXTURE) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.TEXTURE).stream().allMatch(Objects::isNull);
+                nullsOnly = mesh.getAttributeList(TEXTURE).stream().allMatch(Objects::isNull);
             }
             if(nullsOnly) {  //To save space if all values are null
                 writer.write("ALL NULL\n");
             }
             else {
-                for (Vector val : mesh.getAttributeList(Mesh.TEXTURE)) {
+                for (Vector val : mesh.getAttributeList(TEXTURE)) {
                     if (val != null) {
                         writer.write(val.toString());
                     } else {
@@ -1216,18 +1216,18 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("NORMAL POSITIONS\n");
-            if(mesh.getAttributeList(Mesh.NORMAL) == null) {
+            if(mesh.getAttributeList(NORMAL) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.NORMAL).stream().allMatch(Objects::isNull);
+                nullsOnly = mesh.getAttributeList(NORMAL).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
                 writer.write("ALL NULL\n");
             }
             else {
-                for (Vector val : mesh.getAttributeList(Mesh.NORMAL)) {
+                for (Vector val : mesh.getAttributeList(NORMAL)) {
                     if (val != null) {
                         writer.write(val.toString());
                     } else {
@@ -1240,19 +1240,19 @@ public class SceneUtils {
 
 
             writer.write("COLORS\n");
-            if(mesh.getAttributeList(Mesh.COLOR) == null) {
+            if(null == mesh.getAttributeList(COLOR)) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.COLOR).stream().allMatch(Objects::isNull);
+                nullsOnly = mesh.getAttributeList(COLOR).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
                 writer.write("ALL NULL\n");
             }
             else {
-                if (mesh.getAttributeList(Mesh.COLOR) != null) {
-                    for (Vector val : mesh.getAttributeList(Mesh.COLOR)) {
+                if (mesh.getAttributeList(COLOR) != null) {
+                    for (Vector val : mesh.getAttributeList(COLOR)) {
                         if (val != null) {
                             writer.write(val.toString());
                         } else {
@@ -1266,19 +1266,19 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("TANGENTS\n");
-            if(mesh.getAttributeList(Mesh.TANGENT) == null) {
+            if(mesh.getAttributeList(TANGENT) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.TANGENT).stream().allMatch(x -> x==null);
+                nullsOnly = mesh.getAttributeList(TANGENT).stream().allMatch(x -> x==null);
             }
 
             if(nullsOnly) {  //To save space if all values are null
                 writer.write("ALL NULL\n");
             }
             else {
-                if (mesh.getAttributeList(Mesh.TANGENT) != null) {
-                    for (Vector val : mesh.getAttributeList(Mesh.TANGENT)) {
+                if (mesh.getAttributeList(TANGENT) != null) {
+                    for (Vector val : mesh.getAttributeList(TANGENT)) {
                         if (val != null) {
                             writer.write(val.toString());
                         } else {
@@ -1291,19 +1291,19 @@ public class SceneUtils {
             writer.newLine();
 
             writer.write("BI-TANGENTS\n");
-            if(mesh.getAttributeList(Mesh.BITANGENT) == null) {
+            if(mesh.getAttributeList(BITANGENT) == null) {
                 nullsOnly = true;
             }
             else {
-                nullsOnly = mesh.getAttributeList(Mesh.BITANGENT).stream().allMatch(Objects::isNull);
+                nullsOnly = mesh.getAttributeList(BITANGENT).stream().allMatch(Objects::isNull);
             }
 
             if(nullsOnly) {  //To save space if all values are null
                 writer.write("ALL NULL\n");
             }
             else {
-                if (mesh.getAttributeList(Mesh.BITANGENT) != null) {
-                    for (Vector val : mesh.getAttributeList(Mesh.BITANGENT)) {
+                if (mesh.getAttributeList(BITANGENT) != null) {
+                    for (Vector val : mesh.getAttributeList(BITANGENT)) {
                         if (val != null) {
                             writer.write(val.toString());
                         } else {
@@ -1317,7 +1317,7 @@ public class SceneUtils {
 
 
             writer.write("MATERIALS\n");
-            for(Vector val: mesh.getAttributeList(Mesh.MATERIAL)) {
+            for(Vector val: mesh.getAttributeList(MATERIAL)) {
                 if (val != null) {
                     writer.write(val.toString());
                 }

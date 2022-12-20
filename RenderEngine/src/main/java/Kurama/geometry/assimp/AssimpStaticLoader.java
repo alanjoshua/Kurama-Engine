@@ -15,8 +15,10 @@ import org.lwjgl.assimp.*;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 
@@ -60,7 +62,7 @@ public class AssimpStaticLoader {
 
     public static Mesh processMesh(AIMesh aiMesh, List<Material> materials, String resourcePath) {
 
-        List<List<Vector>> vertAttribs = new ArrayList<>();
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
 
         List<Vector> verts = processAttribute(aiMesh.mVertices());
         List<Vector> textures = processTextureCoords(aiMesh.mTextureCoords(0));
@@ -70,7 +72,7 @@ public class AssimpStaticLoader {
         List<Integer> indices = processIndices(aiMesh);
         List<Vector> matInds = new ArrayList<>();
 
-        vertAttribs.add(verts);
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, verts);
 
         List<Material> meshMaterials = new ArrayList<>();
         var newMat = new Material();
@@ -80,16 +82,16 @@ public class AssimpStaticLoader {
         }
         meshMaterials.add(newMat);
 
-        for(var ind: verts) {
+        for(var ignored : verts) {
             matInds.add(new Vector(new float[]{matInd}));
         }
 
         var newMesh = new Mesh(indices, null, vertAttribs, meshMaterials, resourcePath, null);
-        newMesh.setAttribute(textures, Mesh.TEXTURE);
-        newMesh.setAttribute(normals, Mesh.NORMAL);
-        newMesh.setAttribute(tangents, Mesh.TANGENT);
-        newMesh.setAttribute(biTangents, Mesh.BITANGENT);
-        newMesh.setAttribute(matInds, Mesh.MATERIAL);
+        newMesh.setAttribute(textures, TEXTURE);
+        newMesh.setAttribute(normals, NORMAL);
+        newMesh.setAttribute(tangents, TANGENT);
+        newMesh.setAttribute(biTangents, BITANGENT);
+        newMesh.setAttribute(matInds, MATERIAL);
 
         return newMesh;
     }

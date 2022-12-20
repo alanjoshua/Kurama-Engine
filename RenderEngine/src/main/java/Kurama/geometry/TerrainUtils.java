@@ -6,6 +6,7 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Vertex;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class TerrainUtils {
@@ -96,10 +97,10 @@ public class TerrainUtils {
             }
         }
 
-        List<List<Vector>> vertAttribs = new ArrayList<>();
-        vertAttribs.add(positions);
-        vertAttribs.add(texCoords);
-        vertAttribs.add(calcNormals(positions,w,h));
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, positions);
+        vertAttribs.put(Mesh.VERTATTRIB.TEXTURE, texCoords);
+        vertAttribs.put(Mesh.VERTATTRIB.NORMAL, calcNormals(positions,w,h));
 
         Mesh resMesh = new Mesh(indices,faces,vertAttribs,null, null, null);
         resMesh = MeshBuilder.generateTangentAndBiTangentVectors(resMesh, null);

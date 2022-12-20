@@ -15,6 +15,7 @@ import Kurama.inputs.InputLWJGL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static Kurama.Mesh.MeshletGen.sortMeshVertices;
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -104,9 +105,11 @@ public class ActiveShutterGame extends Game {
             for(var m: meshes) {
                 m.materials.get(0).texture = tex;
                 m.boundingRadius = 50;
+                sortMeshVertices(m, 0, 0, 0);
             }
         }
         catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalArgumentException("Could not load mesh");
         }
 
@@ -122,6 +125,7 @@ public class ActiveShutterGame extends Game {
             var tex = Texture.createTexture(textureDir + "viking_room.png");
             for(var m: meshes2) {
                 m.materials.get(0).texture = tex;
+                sortMeshVertices(m, 0, 0, 0);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

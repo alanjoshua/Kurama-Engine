@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.POSITION;
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11C.glBlendFunc;
 import static org.lwjgl.opengl.GL15.*;
@@ -316,7 +317,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             offsets.add(0);
 
             for(int i = 0;i < defaultVals.size();i++) {
-                Vector curr = mesh.isAttributePresent(i) ?
+                Vector curr = mesh.isAttributePresent(Mesh.attribMapping.get(i)) ?
                         (mesh.vertAttributes.get(i).get(0) == null?
                                 defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
                 int numberOfElements = curr.getNumberOfDimensions();
@@ -335,7 +336,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 FloatBuffer tempBuffer = null;
 
-                if(mesh.isAttributePresent(i) && mesh.vertAttributes.get(i)!=null) {
+                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(i)!=null) {
                     tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
                     for (Vector v : mesh.vertAttributes.get(i)) {
                         if (v != null) {
@@ -347,8 +348,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 }
                 else {
-                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.POSITION).size());
-                    for(var temp: mesh.vertAttributes.get(Mesh.POSITION)) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(POSITION).size());
+                    for(var temp: mesh.vertAttributes.get(POSITION)) {
                         defaultVals.get(i).setValuesToBuffer(tempBuffer);
                     }
                 }
@@ -414,7 +415,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 //        Calculate stride and offset
             offsets.add(0);
             for(int i = 0;i < defaultVals.size();i++) {
-                Vector curr = mesh.isAttributePresent(i) ?
+                Vector curr = mesh.isAttributePresent(Mesh.attribMapping.get(i)) ?
                         (mesh.vertAttributes.get(i).get(0) == null?
                                 defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
                 int numberOfElements = curr.getNumberOfDimensions();
@@ -435,7 +436,7 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 FloatBuffer tempBuffer = null;
 
-                if(mesh.isAttributePresent(i) && mesh.vertAttributes.get(i)!=null) {
+                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(i)!=null) {
                     tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
                     for (Vector v : mesh.vertAttributes.get(i)) {
                         if (v != null) {
@@ -447,8 +448,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 }
                 else {
-                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.POSITION).size());
-                    for(var temp: mesh.vertAttributes.get(Mesh.POSITION)) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(POSITION).size());
+                    for(var temp: mesh.vertAttributes.get(POSITION)) {
                         defaultVals.get(i).setValuesToBuffer(tempBuffer);
                     }
                 }
