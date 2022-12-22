@@ -7,15 +7,46 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
 
-layout (binding = 0) uniform UBO
+layout (set = 0, binding = 0) uniform CameraBuffer
 {
-	mat4 projection;
-	mat4 model;
+	mat4 projview;
 	mat4 view;
-} ubo;
+	mat4 proj;
+} camera;
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(triangles, max_vertices = 3, max_primitives = 1) out;
+struct Vertex {
+    vec4 pos;
+    vec4 color;
+};
+
+layout(std140, set = 0, binding = 1) readonly buffer VertexBuffer {
+    Vertex vertices[];
+}vertexBuffer;
+
+struct ObjectData {
+    mat4 model;
+    float radius;
+};
+
+layout(std140, set = 0, binding = 2) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+struct Meshlet {
+    // x = int primitiveCount;
+    // y = int vertexCount;
+    // z = int indexBegin;
+    // w = int vertexBegin;
+    vec4 info;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+}
+
+layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} MeshletBuffer;
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(triangles, max_vertices = 64, max_primitives = 126) out;
 
 layout(location = 0) out VertexOutput
 {

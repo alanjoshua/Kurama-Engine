@@ -1,14 +1,15 @@
 package Kurama.Mesh;
 
+import Kurama.Math.Vector;
+
 import java.util.List;
 
 public class Meshlet {
     public int primitiveCount;
-    int[] primitiveIndices;
-    int[] vertIndices;
-    List<Vertex> vertices;
+    public int vertexCount;
+    public int indexBegin;
+    public int vertexBegin;
 
-    public Meshlet() {
-
-    }
+    public Vector pos;
+    public float boundRadius;
 }
