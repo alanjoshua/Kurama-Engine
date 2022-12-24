@@ -14,7 +14,6 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static Kurama.Mesh.Mesh.VERTATTRIB.NORMAL;
 import static Kurama.Mesh.Mesh.VERTATTRIB.TEXTURE;
@@ -23,13 +22,10 @@ import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
-import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
-import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 

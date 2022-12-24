@@ -2,8 +2,6 @@ package Kurama.Vulkan;
 
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 
@@ -49,6 +47,12 @@ public class BufferWriter {
 
     public void put(float data) {
         buffer.putFloat(data);
+    }
+
+    public void put(Vector data) {
+        for(var v: data.getData()) {
+            buffer.putFloat(v);
+        }
     }
 
     public void put(float[][] data) {

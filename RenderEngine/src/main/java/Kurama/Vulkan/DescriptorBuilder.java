@@ -9,7 +9,6 @@ import java.util.List;
 
 import static Kurama.Vulkan.VulkanUtilities.createWriteDescriptorSet;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 

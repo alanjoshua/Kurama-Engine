@@ -13,7 +13,6 @@ import static Kurama.Vulkan.VulkanUtilities.vkCheck;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 
 public class DescriptorSetLayoutCache {
 

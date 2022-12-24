@@ -3,9 +3,11 @@ package main;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
+import Kurama.Vulkan.Renderable;
+import Kurama.Vulkan.TextureVK;
 import Kurama.Mesh.Mesh;
+import Kurama.Mesh.Meshlet;
 import Kurama.Mesh.Texture;
-import Kurama.Vulkan.*;
 import Kurama.camera.StereoCamera;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
@@ -97,6 +99,7 @@ public class ActiveShutterGame extends Game {
         var textureDir = "projects/ActiveShutter/models/textures/";
 
         List<Mesh> meshes;
+        List<Meshlet> meshlets = new ArrayList<>();
 
         try {
             meshes = AssimpStaticLoader.load(location, textureDir);
@@ -108,7 +111,8 @@ public class ActiveShutterGame extends Game {
                 m.boundingRadius = 50;
                 log("Creating meshlets");
                 var results = generateMeshlets(m, 3, 64, 126);
-                log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                meshlets.addAll(results.meshlets());
             }
         }
         catch (Exception e) {
@@ -131,7 +135,9 @@ public class ActiveShutterGame extends Game {
                 log("Creating meshlets");
                 var results = generateMeshlets(m, 3, 64, 126);
                 log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                meshlets.addAll(results.meshlets());
             }
+            log("total num of meshlets in this scene = "+ meshlets.size());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

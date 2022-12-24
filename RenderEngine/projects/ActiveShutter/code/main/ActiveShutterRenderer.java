@@ -1101,7 +1101,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     public void updateSceneGPUDataInMemory(int currentFrame) {
-
         var alignment = (int)padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
         int bufferSize = alignment * MAX_FRAMES_IN_FLIGHT;
 

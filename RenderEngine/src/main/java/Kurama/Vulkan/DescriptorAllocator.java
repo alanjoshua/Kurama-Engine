@@ -5,9 +5,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.LongBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 
-import static Kurama.Vulkan.VulkanUtilities.device;
 import static Kurama.Vulkan.VulkanUtilities.vkCheck;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
@@ -78,7 +76,7 @@ public class DescriptorAllocator {
                 allocinfo.descriptorPool(currentPool);
 
                 // throw error if allocation still fails
-                vkCheck(vkAllocateDescriptorSets(device, allocinfo, pDescriptorSet));
+                VulkanUtilities.vkCheck(vkAllocateDescriptorSets(device, allocinfo, pDescriptorSet));
 
                 return pDescriptorSet.get(0);
             }
@@ -132,7 +130,7 @@ public class DescriptorAllocator {
             poolInfo.flags(descriptorPoolCreateFlags);
 
             LongBuffer pDescriptorPool = stack.mallocLong(1);
-            vkCheck(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool));
+            VulkanUtilities.vkCheck(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool));
 
             return pDescriptorPool.get(0);
         }

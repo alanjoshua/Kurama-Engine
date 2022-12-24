@@ -9,5 +9,5 @@
 
 void main()
 {
-	EmitMeshTasksEXT(6, 1, 1);
+	EmitMeshTasksEXT(1, 1, 1);
 }

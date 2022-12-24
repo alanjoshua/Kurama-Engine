@@ -38,10 +38,11 @@ public class MeshletGen {
     }
 
     public static MeshletGenOutput generateMeshlets(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives) {
-        return generateMeshlets(mesh, vertsPerPrimitive, maxVerts, maxPrimitives, 0);
+        return generateMeshlets(mesh, vertsPerPrimitive, maxVerts, maxPrimitives, 0, 0, 0);
     }
 
-    public static MeshletGenOutput generateMeshlets(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives, int globalVertsBufferPos) {
+    public static MeshletGenOutput generateMeshlets(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives,
+                                                    int globalVertsBufferPos, int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
 
         if(maxVerts == 0 || maxPrimitives == 0 || maxVerts < vertsPerPrimitive) {
             throw new IllegalArgumentException("Invalid meshlet generation arguments");
@@ -55,7 +56,8 @@ public class MeshletGen {
         log("Num of prims "+ sortedPrimitives.size()/vertsPerPrimitive);
 
         var curMeshlet = new Meshlet();
-        curMeshlet.indexBegin = 0;
+        curMeshlet.indexBegin = globalLocalIndexBufferPos;
+        curMeshlet.vertexBegin = globalVertsIndexBufferPos;
 
         var curUniqueVerts = new ArrayList<Integer>();
         var curIndexList = new ArrayList<Integer>();
@@ -82,8 +84,8 @@ public class MeshletGen {
                 curIndexList.clear();
 
                 curMeshlet = new Meshlet();
-                curMeshlet.indexBegin = localPrimitiveIndices.size();
-                curMeshlet.vertexBegin = vertexIndices.size();
+                curMeshlet.indexBegin = globalLocalIndexBufferPos + localPrimitiveIndices.size();
+                curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertexIndices.size();
             }
 
             var lastPrimitiveIndices = new ArrayList<Integer>();
@@ -149,8 +151,8 @@ public class MeshletGen {
                 curIndexList.clear();
 
                 curMeshlet = new Meshlet();
-                curMeshlet.indexBegin = localPrimitiveIndices.size();
-                curMeshlet.vertexBegin = vertexIndices.size();
+                curMeshlet.indexBegin = globalLocalIndexBufferPos + localPrimitiveIndices.size();
+                curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertexIndices.size();
 
                 // Do not increment to next primitive here so that it could be added to the next meshlet
             }

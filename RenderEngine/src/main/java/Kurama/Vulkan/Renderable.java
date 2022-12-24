@@ -7,8 +7,6 @@ import Kurama.Mesh.Mesh;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.lwjgl.util.vma.Vma.*;
-
 // A renderable object will contain one mesh, one model, and the relevant vulkan specific render attributes
 public class Renderable {
 
