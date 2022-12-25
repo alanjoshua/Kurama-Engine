@@ -111,7 +111,7 @@ public class MeshletGen {
 
                 // Calculate meshlet pos and bounds
                 for(int vertsThisPrim: uniqueVertsAddedThisPrim) {
-                    var v = mesh.getVertices().get(vertsThisPrim);
+                    var v = mesh.getVertices().get(vertsThisPrim - globalVertsBufferPos);
                     curMeshletPos = curMeshletPos.add(v);
 
                     if (v.get(0) > curBounds.maxx)
@@ -167,6 +167,24 @@ public class MeshletGen {
         curMeshlet.pos = curMeshletPos;
         curMeshlet.boundRadius = calculateBoundRadius(curBounds);
         meshlets.add(curMeshlet);
+
+        // Set random colors to each meshlet
+        mesh.vertAttributes.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>());
+        var colorAttrib = mesh.vertAttributes.get(Mesh.VERTATTRIB.COLOR);
+
+        var rand = new Random();
+        for(var meshlet: meshlets) {
+            Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,255),
+                    new Vector(255,255,255,255), rand);
+
+            for(int i = (meshlet.vertexBegin - globalVertsIndexBufferPos); i < (meshlet.vertexBegin - globalVertsIndexBufferPos) + meshlet.vertexCount; i++) {
+                if(i >= colorAttrib.size()) {
+                    for(int j = colorAttrib.size(); j <= i; j++) {
+                        colorAttrib.add(randomColor);
+                    }
+                }
+            }
+        }
 
         return new MeshletGenOutput(meshlets, mesh, vertexIndices, localPrimitiveIndices);
     }

@@ -31,49 +31,84 @@ struct Meshlet {
     // y = int vertexCount;
     // z = int indexBegin;
     // w = int vertexBegin;
-    vec4 info;
+    uvec4 info;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-}
+    uint objectId; //
+    uvec3 padding;
+};
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
-} MeshletBuffer;
+} meshletBuffer;
 
-layout(std140
+struct Index {
+    uvec4 indicesInner;
+};
+
+layout(std140, set = 1, binding = 1) readonly buffer VertexIndexBuffer {
+    Index indicesOuter[];
+} vertexIndexBuffer;
+
+layout(std140, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
+    Index indicesOuter[];
+} localIndexBuffer;
+
 
 layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
-layout(triangles, max_vertices = 64, max_primitives = 126) out;
+layout(triangles, max_vertices = 64, max_primitives = 124) out;
 
 layout(location = 0) out VertexOutput
 {
 	vec4 color;
-} vertexOutput[];
+} OUT[];
 
-const vec4[3] positions = {
-	vec4( 0.0, -1.0, 0.0, 1.0),
-	vec4(-1.0,  1.0, 0.0, 1.0),
-	vec4( 1.0,  1.0, 0.0, 1.0)
-};
 
-const vec4[3] colors = {
-	vec4(0.0, 1.0, 0.0, 1.0),
-	vec4(0.0, 0.0, 1.0, 1.0),
-	vec4(1.0, 0.0, 0.0, 1.0)
+// Task shader payload
+struct Task {
+  uint baseID;
+  uint subIDs[32];
 };
+taskPayloadSharedEXT Task task;
 
 void main()
 {
-	uint iid = gl_LocalInvocationID.x;
+	uint meshletID = task.baseID + task.subIDs[gl_WorkGroupID.x];
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
 
-	vec4 offset = vec4(0.0, 0.0, gl_GlobalInvocationID.x, 0.0);
+    ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
 
-	SetMeshOutputsEXT(3, 1);
-	mat4 mvp = ubo.projection * ubo.view * ubo.model;
-	gl_MeshVerticesEXT[0].gl_Position = mvp * (positions[0] + offset);
-	gl_MeshVerticesEXT[1].gl_Position = mvp * (positions[1] + offset);
-	gl_MeshVerticesEXT[2].gl_Position = mvp * (positions[2] + offset);
-	vertexOutput[0].color = colors[0];
-	vertexOutput[1].color = colors[1];
-	vertexOutput[2].color = colors[2];
-	gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationIndex] =  uvec3(0, 1, 2);
+    uint primitiveCount = uint(curMeshlet.info.x);
+    uint vertexCount = uint(curMeshlet.info.y);
+    uint indexBegin = uint(curMeshlet.info.z);
+    uint vertexBegin = uint(curMeshlet.info.w);
+
+	SetMeshOutputsEXT(vertexCount, primitiveCount);
+
+	mat4 mvp = camera.projview * relatedModel.model;
+
+	for(int i = 0; i < vertexCount; i++) {
+	    uint baseId = vertexBegin + i;
+	    uint outerVertIndex = baseId / 4;
+	    uint innerVertIndex = baseId % 4;
+        uint finalVertId = vertexIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex];
+
+        gl_MeshVerticesEXT[i].gl_Position = mvp * vertexBuffer.vertices[finalVertId].pos;
+        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+	}
+
+	for (uint i = 0; i < primitiveCount; i++) {
+
+        uint baseId = indexBegin + (i*3);
+	    uint outerVertIndex = baseId / 4;
+	    uint innerVertIndex = baseId % 4;
+
+        uvec3 finalInds = uvec3(
+        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 0],
+        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 1],
+        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 2]
+        );
+
+        gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
+	}
+
 }

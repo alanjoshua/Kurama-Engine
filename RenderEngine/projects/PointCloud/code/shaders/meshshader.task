@@ -6,8 +6,41 @@
 
 #version 450
 #extension GL_EXT_mesh_shader : require
+#extension GL_KHR_shader_subgroup_ballot : require
 
-void main()
-{
-	EmitMeshTasksEXT(1, 1, 1);
+struct Meshlet {
+    // x = int primitiveCount;
+    // y = int vertexCount;
+    // z = int indexBegin;
+    // w = int vertexBegin;
+    uvec4 info;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    uint objectId; //
+    uvec3 padding;
+};
+
+layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+layout(local_size_x=32) in;
+
+struct Task {
+  uint baseID;
+  uint subIDs[32];
+};
+taskPayloadSharedEXT Task task;
+
+void main() {
+
+    bool doRender = true; // Replace with frustum culling
+
+    uvec4 vote = subgroupBallot(doRender);
+    uint numMeshlets = subgroupBallotBitCount(vote);
+
+    uint idxOffset = subgroupBallotExclusiveBitCount(vote);
+    task.subIDs[idxOffset] = uint(gl_LocalInvocationID);
+
+	task.baseID = gl_WorkGroupID.x * 32;
+	EmitMeshTasksEXT(numMeshlets, 1, 1);
 }

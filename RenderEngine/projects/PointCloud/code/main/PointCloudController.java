@@ -14,7 +14,9 @@ import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static Kurama.Mesh.MeshletGen.generateMeshlets;
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
@@ -31,7 +33,7 @@ public class PointCloudController extends Game {
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>();
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, Mesh.VERTATTRIB.COLOR));
 
     public List<Model> models = new ArrayList<>();
     public Camera mainCamera;
@@ -131,10 +133,11 @@ public class PointCloudController extends Game {
                 m.boundingRadius = 50;
 
                 log("Creating meshlets");
-                var results = generateMeshlets(m, 3, 64, 126,
+                var results = generateMeshlets(m, 3, 64, 124,
                         renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
                 log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
 
+                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
                 renderer.meshlets.addAll(results.meshlets());
                 for(var key: meshAttribsToLoad) {
                     if(!m.vertAttributes.containsKey(key)) {
@@ -165,10 +168,11 @@ public class PointCloudController extends Game {
                 m.materials.get(0).texture = tex;
 
                 log("Creating meshlets");
-                var results = generateMeshlets(m, 3, 64, 126,
+                var results = generateMeshlets(m, 3, 64, 124,
                         renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
                 log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
 
+                results.meshlets().forEach(meshlet -> meshlet.objectId = 1);
                 renderer.meshlets.addAll(results.meshlets());
                 for(var key: meshAttribsToLoad) {
                     if(!m.vertAttributes.containsKey(key)) {

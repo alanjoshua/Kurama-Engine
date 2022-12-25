@@ -6,14 +6,15 @@
 
 #version 450
 
-layout (location = 0) in VertexInput {
-    vec4 color;
-} vertexInput;
+//layout (location = 0) in VertexOutput {
+//    vec4 color;
+//} vertexOutput;
 
 layout(location = 0) out vec4 outFragColor;
 
 
 void main()
 {
-    outFragColor = vertexInput.color;
+//    outFragColor = vertexOutput.color;
+    outFragColor = vec4(255,255,255,255);
 }

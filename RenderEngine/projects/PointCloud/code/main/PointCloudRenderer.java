@@ -7,11 +7,13 @@ import Kurama.Vulkan.*;
 import Kurama.game.Game;
 import org.lwjgl.vulkan.*;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -29,7 +31,8 @@ import static org.lwjgl.vulkan.VK10.*;
 public class PointCloudRenderer extends VulkanRendererBase {
 
     public boolean windowResized = false;
-    public long descriptorSetLayout;
+    public long descriptorSet1Layout;
+    public long meshletDescriptorSetLayout;
 
     public PointCloudController controller;
     public int MAXOBJECTS = 10000;
@@ -51,7 +54,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
         public AllocatedBuffer meshletVertexBuffer;
         public AllocatedBuffer meshletVertexLocalIndexBuffer;
         public AllocatedBuffer meshletDescBuffer;
-        public long descriptorSet;
+        public long descriptorSet1;
+        public long meshletDescriptorSet;
     }
 
     public PointCloudRenderer(Game game) {
@@ -171,10 +175,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout, 0,
-                            stack.longs(frames.get(i).descriptorSet), null);
+                            stack.longs(frames.get(i).descriptorSet1), null);
 
-                    vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout, 1,
+                            stack.longs(frames.get(i).meshletDescriptorSet), null);
 
+                    vkCmdDrawMeshTasksEXT(commandBuffer, meshlets.size(), 1, 1);
                 }
 
                 vkCmdEndRenderingKHR(commandBuffer);
@@ -236,6 +243,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 bw.put(meshlets.get(i).vertexBegin);
                 bw.put(meshlets.get(i).pos);
                 bw.put(meshlets.get(i).boundRadius);
+
+                bw.put(meshlets.get(i).objectId);
+                bw.put(0);
+                bw.put(0);
+                bw.put(0);
             }
             bw.unmapBuffer();
         }
@@ -244,24 +256,70 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void updateVertexAndIndexBuffers() {
 
         try (var stack = stackPush()) {
+            var data = stack.mallocPointer(1);
+            ByteBuffer byteBuffer = null;
 
+            // Meshlet Vert indices
+            int meshletVertsBufferSize = meshletVertexIndexBuffer.size() * Integer.BYTES;
             var meshletVerticesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
-                    Integer.BYTES * MAXVERTICES,
+                    meshletVertsBufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
+            vmaMapMemory(vmaAllocator, meshletVerticesStagingBuffer.allocation, data);
+            byteBuffer = data.getByteBuffer(0, meshletVertsBufferSize);
+            VulkanUtilities.memcpyInt(byteBuffer, meshletVertexIndexBuffer);
+            // For the remaining padding
+            int remainder = meshletVertsBufferSize % 4;
+            for(int i = 0; i < remainder; i++) {
+                byteBuffer.putInt(0);
+            }
+            vmaUnmapMemory(vmaAllocator, meshletVerticesStagingBuffer.allocation);
+
+            // Meshlet local indices indices
+            int meshletLocalIndicesBufferSize = meshletLocalIndexBuffer.size() * Integer.BYTES;
             var  meshletIndicesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
-                    MAXVERTICES * Integer.BYTES,
+                    meshletLocalIndicesBufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-            var  verticesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
-                    MAXVERTICES * VERTEX_SIZE,
+            vmaMapMemory(vmaAllocator, meshletIndicesStagingBuffer.allocation, data);
+            byteBuffer = data.getByteBuffer(0, meshletLocalIndicesBufferSize);
+            VulkanUtilities.memcpyInt(byteBuffer, meshletLocalIndexBuffer);
+            // For the remaining padding
+            remainder = meshletLocalIndicesBufferSize % 4;
+            for(int i = 0; i < remainder; i++) {
+                byteBuffer.putInt(0);
+            }
+            vmaUnmapMemory(vmaAllocator, meshletIndicesStagingBuffer.allocation);
+
+            // GLOBAL VERTEX BUFFER
+            var globalVertexBufferSize = globalVertAttribs.get(POSITION).size() * VERTEX_SIZE;
+            var  globalVerticesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
+                    globalVertexBufferSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+            vmaMapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation, data);
+            byteBuffer = data.getByteBuffer(0, globalVertexBufferSize);
+
+            for(int i = 0; i < globalVertAttribs.get(POSITION).size(); i++) {
+                //pos
+                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(0));
+                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(1));
+                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(2));
+                byteBuffer.putFloat(1f);
+
+                // Color - each meshlet will have a random colour
+                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
+                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
+                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
+                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
+            }
+            vmaUnmapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation);
 
         }
 
@@ -303,15 +361,26 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
                     .build();
 
-            descriptorSetLayout = results.layout();
-            frame.descriptorSet = results.descriptorSet();
+            descriptorSet1Layout = results.layout();
+            frame.descriptorSet1 = results.descriptorSet();
+
+            results = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
+                    .bindBuffer(0, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletDescBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
+                    .bindBuffer(1, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletVertexBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
+                    .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletVertexLocalIndexBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
+                    .build();
+
+            meshletDescriptorSetLayout = results.layout();
+            frame.meshletDescriptorSet = results.descriptorSet();
+
         }
     }
 
     @Override
     public void initBuffers() {
-        var objectBufferSize = GPUObjectData_SIZEOF * MAXOBJECTS;
-        var vertexBufferSize = VERTEX_SIZE * MAXVERTICES;
 
         for(var frame: frames) {
             frame.cameraBuffer = createBufferVMA(
@@ -324,7 +393,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
             frame.objectBuffer = createBufferVMA(
                     vmaAllocator,
-                    objectBufferSize,
+                    GPUObjectData_SIZEOF * MAXOBJECTS,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -372,7 +441,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
         builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
         builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
         builder.colorAttachmentImageFormat = swapChainImageFormat;
-        builder.descriptorSetLayouts = new long[]{descriptorSetLayout};
+        builder.descriptorSetLayouts = new long[]{descriptorSet1Layout, meshletDescriptorSetLayout};
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.task", VK_SHADER_STAGE_TASK_BIT_EXT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.mesh", VK_SHADER_STAGE_MESH_BIT_EXT));
