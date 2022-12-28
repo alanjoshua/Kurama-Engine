@@ -174,8 +174,8 @@ public class MeshletGen {
 
         var rand = new Random();
         for(var meshlet: meshlets) {
-            Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,255),
-                    new Vector(255,255,255,255), rand);
+            Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
+                    new Vector(1,1,1,1), rand);
 
             for(int i = (meshlet.vertexBegin - globalVertsIndexBufferPos); i < (meshlet.vertexBegin - globalVertsIndexBufferPos) + meshlet.vertexCount; i++) {
                 if(i >= colorAttrib.size()) {

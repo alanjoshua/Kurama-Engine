@@ -40,16 +40,24 @@ layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
-struct Index {
-    uvec4 indicesInner;
-};
+//struct Index {
+//    uvec4 indicesInner;
+//};
+//
+//layout(std140, set = 1, binding = 1) readonly buffer VertexIndexBuffer {
+//    Index indicesOuter[];
+//} vertexIndexBuffer;
+//
+//layout(std140, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
+//    Index indicesOuter[];
+//} localIndexBuffer;
 
 layout(std140, set = 1, binding = 1) readonly buffer VertexIndexBuffer {
-    Index indicesOuter[];
+    uint indices[];
 } vertexIndexBuffer;
 
 layout(std140, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
-    Index indicesOuter[];
+    uint indices[];
 } localIndexBuffer;
 
 
@@ -90,25 +98,30 @@ void main()
 
 	for(int i = 0; i < vertexCount; i++) {
 	    uint baseId = vertexBegin + i;
-	    uint outerVertIndex = baseId / 4;
-	    uint innerVertIndex = baseId % 4;
-        uint finalVertId = vertexIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex];
+//	    uint outerVertIndex = baseId / 4;
+//	    uint innerVertIndex = baseId % 4;
+//      uint finalVertId = vertexIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex];
 
+        uint finalVertId = vertexIndexBuffer.indices[baseId];
         gl_MeshVerticesEXT[i].gl_Position = mvp * vertexBuffer.vertices[finalVertId].pos;
-        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+        OUT[i].color = vertexBuffer.vertices[baseId].color;
 	}
 //
 	for (uint i = 0; i < primitiveCount; i++) {
 
         uint baseId = indexBegin + (i*3);
-	    uint outerVertIndex = baseId / 4;
-	    uint innerVertIndex = baseId % 4;
+//	    uint outerVertIndex = baseId / 4;
+//	    uint innerVertIndex = baseId % 4;
+//
+//        uvec3 finalInds = uvec3(
+//        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 0],
+//        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 1],
+//        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 2]
+//        );
 
-        uvec3 finalInds = uvec3(
-        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 0],
-        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 1],
-        localIndexBuffer.indicesOuter[outerVertIndex].indicesInner[innerVertIndex + 2]
-        );
+        uvec3 finalInds = uvec3(localIndexBuffer.indices[baseId],
+        localIndexBuffer.indices[baseId + 1],
+        localIndexBuffer.indices[baseId + 2]);
 
         gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
 	}
