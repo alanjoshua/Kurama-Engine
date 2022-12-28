@@ -13,10 +13,10 @@ struct Meshlet {
     // y = int vertexCount;
     // z = int indexBegin;
     // w = int vertexBegin;
-    uvec4 info;
+    vec4 info;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-    uint objectId; //
-    uvec3 padding;
+    float objectId; //
+    vec3 padding;
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
@@ -26,9 +26,10 @@ layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
 layout(local_size_x=32) in;
 
 struct Task {
-  uint baseID;
-  uint subIDs[32];
+    uint baseID;
+    uint subIDs[32];
 };
+
 taskPayloadSharedEXT Task task;
 
 void main() {
@@ -41,6 +42,6 @@ void main() {
     uint idxOffset = subgroupBallotExclusiveBitCount(vote);
     task.subIDs[idxOffset] = uint(gl_LocalInvocationID);
 
-	task.baseID = gl_WorkGroupID.x * 32;
+	task.baseID = gl_WorkGroupID.x;
 	EmitMeshTasksEXT(numMeshlets, 1, 1);
 }

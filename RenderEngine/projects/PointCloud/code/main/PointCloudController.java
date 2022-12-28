@@ -123,40 +123,40 @@ public class PointCloudController extends Game {
 
         List<Mesh> meshes;
 
-        try {
-            meshes = AssimpStaticLoader.load(location, textureDir);
+//        try {
+//            meshes = AssimpStaticLoader.load(location, textureDir);
+//
+//            // TODO: Temporary because of bug KE:16
+//            var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
+//            for(var m: meshes) {
+//                m.materials.get(0).texture = tex;
+//                m.boundingRadius = 50;
+//
+//                log("Creating meshlets");
+//                var results = generateMeshlets(m, 3, 64, 124,
+//                        renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
+//                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+//
+//                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
+//                renderer.meshlets.addAll(results.meshlets());
+//                for(var key: meshAttribsToLoad) {
+//                    if(!m.vertAttributes.containsKey(key)) {
+//                        throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
+//                    }
+//                    renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
+//                }
+//                renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
+//                renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+//            }
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//            throw new IllegalArgumentException("Could not load mesh");
+//        }
 
-            // TODO: Temporary because of bug KE:16
-            var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
-            for(var m: meshes) {
-                m.materials.get(0).texture = tex;
-                m.boundingRadius = 50;
-
-                log("Creating meshlets");
-                var results = generateMeshlets(m, 3, 64, 124,
-                        renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
-                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
-
-                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
-                renderer.meshlets.addAll(results.meshlets());
-                for(var key: meshAttribsToLoad) {
-                    if(!m.vertAttributes.containsKey(key)) {
-                        throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
-                    }
-                    renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
-                }
-                renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-                renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException("Could not load mesh");
-        }
-
-        var lostEmpire = new Model(this, meshes, "Lost Empire");
-        lostEmpire.setScale(1f);
-        lostEmpire.setPos(new Vector(5, -10, 0));
+//        var lostEmpire = new Model(this, meshes, "Lost Empire");
+//        lostEmpire.setScale(1f);
+//        lostEmpire.setPos(new Vector(5, -10, 0));
 
         List<Mesh> meshes2;
         try {
@@ -172,7 +172,7 @@ public class PointCloudController extends Game {
                         renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
                 log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
 
-                results.meshlets().forEach(meshlet -> meshlet.objectId = 1);
+                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
                 renderer.meshlets.addAll(results.meshlets());
                 for(var key: meshAttribsToLoad) {
                     if(!m.vertAttributes.containsKey(key)) {
@@ -191,14 +191,16 @@ public class PointCloudController extends Game {
 
         //Add texture loc
         var vikingRoom = new Model(this, meshes2, "vikingRoom");
-        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
-        vikingRoom.setPos(new Vector(0, 50, 0));
+//        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+//        vikingRoom.setPos(new Vector(0, 50, 0));
         vikingRoom.setScale(10);
 
-        models.add(lostEmpire);
+        log("num of meshes in viking room: "+ vikingRoom.meshes.size());
+
+//        models.add(lostEmpire);
         models.add(vikingRoom);
 
-        renderer.renderables.addAll(getRenderablesFromModel(lostEmpire));
+//        renderer.renderables.addAll(getRenderablesFromModel(lostEmpire));
         renderer.renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderer.renderables.forEach(r -> {
@@ -208,7 +210,9 @@ public class PointCloudController extends Game {
             renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
         });
 
-        renderer.generateMeshBuffers();
+//        renderer.generateMeshBuffers();
+        models.forEach(m -> m.tick(null, input, timeDelta, false));
+        renderer.meshesMergedEvent();
     }
 
     public void cameraUpdates(float timeDelta) {
