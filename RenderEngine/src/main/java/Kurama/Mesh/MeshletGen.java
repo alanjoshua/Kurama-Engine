@@ -54,8 +54,9 @@ public class MeshletGen {
         List<Integer> localPrimitiveIndices = new ArrayList<>();
         var meshlets = new ArrayList<Meshlet>();
 
-        var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
-//        var sortedPrimitives = mesh.indices;
+        log("Num of prims before sort"+ mesh.indices.size()/vertsPerPrimitive);
+//        var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
+        var sortedPrimitives = mesh.indices;
         log("Num of prims "+ sortedPrimitives.size()/vertsPerPrimitive);
 
         var curMeshlet = new Meshlet();

@@ -125,83 +125,84 @@ public class PointCloudController extends Game {
         var location = "projects/ActiveShutter/models/meshes/lost_empire.obj";
         var textureDir = "projects/ActiveShutter/models/textures/";
 
-//        List<Mesh> meshes;
-//
-//        try {
-//            meshes = AssimpStaticLoader.load(location, textureDir);
-//
-//            // TODO: Temporary because of bug KE:16
-//            var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
-//            for(var m: meshes) {
-//                m.materials.get(0).texture = tex;
-//                m.boundingRadius = 50;
-//
-//                log("Creating meshlets");
-//                var results = generateMeshlets(m, 3, 64, 124,
-//                        renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
-//                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
-//
-//                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
-//                renderer.meshlets.addAll(results.meshlets());
-//                for(var key: meshAttribsToLoad) {
-//                    if(!m.vertAttributes.containsKey(key)) {
-//                        throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
-//                    }
-//                    renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
-//                }
-//                renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-//                renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
-//            }
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            throw new IllegalArgumentException("Could not load mesh");
-//        }
-//
-//        var lostEmpire = new Model(this, meshes, "Lost Empire");
-//        lostEmpire.setScale(1f);
-//        lostEmpire.setPos(new Vector(5, -10, 0));
+        List<Mesh> meshes;
 
-        List<Mesh> meshes2;
-        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
-            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
+        try {
+            meshes = AssimpStaticLoader.load(location, textureDir);
 
             // TODO: Temporary because of bug KE:16
-            var tex = Texture.createTexture(textureDir + "viking_room.png");
-            for(var m: meshes2) {
+            var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
+            for(var m: meshes) {
                 m.materials.get(0).texture = tex;
+                m.boundingRadius = 50;
 
                 log("Creating meshlets");
                 var results = generateMeshlets(m, 3, 64, 124,
-                        renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
-                log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                        renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
+                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
 
                 results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
                 renderer.meshlets.addAll(results.meshlets());
-
                 for(var key: meshAttribsToLoad) {
                     if(!m.vertAttributes.containsKey(key)) {
                         throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
                     }
                     renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
                 }
-
                 renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
                 renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+//                break;
             }
-
-            log("total num of meshlets in this scene = "+ renderer.meshlets.size());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException("Could not load mesh");
         }
 
-        //Add texture loc
-        var vikingRoom = new Model(this, meshes2, "vikingRoom");
-        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
-//        vikingRoom.setPos(new Vector(0, 50, 0));
-        vikingRoom.setScale(10);
+        var lostEmpire = new Model(this, meshes, "Lost Empire");
+        lostEmpire.setScale(1f);
+        lostEmpire.setPos(new Vector(5, -10, 0));
 
-        log("num of meshes in viking room: "+ vikingRoom.meshes.size());
+//        List<Mesh> meshes2;
+//        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
+//            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
+//
+//            // TODO: Temporary because of bug KE:16
+//            var tex = Texture.createTexture(textureDir + "viking_room.png");
+//            for(var m: meshes2) {
+//                m.materials.get(0).texture = tex;
+//
+//                log("Creating meshlets");
+//                var results = generateMeshlets(m, 3, 64, 124,
+//                        renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
+//                log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+//
+//                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
+//                renderer.meshlets.addAll(results.meshlets());
+//
+//                for(var key: meshAttribsToLoad) {
+//                    if(!m.vertAttributes.containsKey(key)) {
+//                        throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
+//                    }
+//                    renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
+//                }
+//
+//                renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
+//                renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+//            }
+//
+//            log("total num of meshlets in this scene = "+ renderer.meshlets.size());
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        //Add texture loc
+//        var vikingRoom = new Model(this, meshes2, "vikingRoom");
+//        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+////        vikingRoom.setPos(new Vector(0, 50, 0));
+//        vikingRoom.setScale(10);
+//
+//        log("num of meshes in viking room: "+ vikingRoom.meshes.size());
 
 //        List<Mesh> meshes3;
 //        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
@@ -243,8 +244,8 @@ public class PointCloudController extends Game {
 
 //        log("num of meshes in cube: "+ cube.meshes.size());
 
-//        models.add(lostEmpire);
-        models.add(vikingRoom);
+        models.add(lostEmpire);
+//        models.add(vikingRoom);
 //        models.add(cube);
 
 //        renderer.renderables.forEach(r -> {
@@ -265,7 +266,7 @@ public class PointCloudController extends Game {
 //            log();
 
         models.forEach(m -> m.tick(null, input, timeDelta, false));
-        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
+        setMeshletColors(PerTriangle, renderer.meshlets,renderer.globalVertAttribs,
                 renderer.meshletVertexIndexBuffer);
         renderer.meshesMergedEvent();
     }
