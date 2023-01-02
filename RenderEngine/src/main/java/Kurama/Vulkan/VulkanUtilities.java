@@ -497,6 +497,15 @@ public class VulkanUtilities {
         }
     }
 
+    public static void memcpyIntWithPadding(ByteBuffer buffer, List<Integer> indices) {
+        for(int index : indices) {
+            buffer.putInt(index);
+            buffer.putInt(0);
+            buffer.putInt(0);
+            buffer.putInt(0);
+        }
+    }
+
     public static void memcpy(ByteBuffer dst, ByteBuffer src, long size) {
         src.limit((int)size);
         dst.put(src);

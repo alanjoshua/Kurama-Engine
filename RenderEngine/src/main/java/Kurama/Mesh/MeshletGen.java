@@ -4,6 +4,8 @@ import Kurama.Math.Vector;
 
 import java.util.*;
 
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerTriangle;
 import static Kurama.utils.Logger.log;
 
 public class MeshletGen {
@@ -53,6 +55,7 @@ public class MeshletGen {
         var meshlets = new ArrayList<Meshlet>();
 
         var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
+//        var sortedPrimitives = mesh.indices;
         log("Num of prims "+ sortedPrimitives.size()/vertsPerPrimitive);
 
         var curMeshlet = new Meshlet();
@@ -70,7 +73,7 @@ public class MeshletGen {
             // We have reached the limit for the number of primitives a meshlet could have
             // We assume that the number of verts is still within the limit
             // We create a new meshlet here
-            if(curIndexList.size() / vertsPerPrimitive > maxPrimitives) {
+            if((curIndexList.size() / vertsPerPrimitive) > maxPrimitives) {
                 vertexIndices.addAll(curUniqueVerts);
                 localPrimitiveIndices.addAll(curIndexList);
 
@@ -92,7 +95,8 @@ public class MeshletGen {
             var uniqueVertsAddedThisPrim = new ArrayList<Integer>();
 
             for(int i = 0; i < vertsPerPrimitive; i++) {
-                int curVIndex = sortedPrimitives.get(primInd * vertsPerPrimitive + i) + globalVertsBufferPos;
+                int baseInd = primInd * vertsPerPrimitive;
+                int curVIndex = sortedPrimitives.get(baseInd + i) + globalVertsBufferPos;
                 var localIndex = curUniqueVerts.indexOf(curVIndex);
 
                 if(localIndex == -1) {
@@ -168,25 +172,43 @@ public class MeshletGen {
         curMeshlet.boundRadius = calculateBoundRadius(curBounds);
         meshlets.add(curMeshlet);
 
-        // Set random colors to each meshlet
-        mesh.vertAttributes.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>());
-        var colorAttrib = mesh.vertAttributes.get(Mesh.VERTATTRIB.COLOR);
+        return new MeshletGenOutput(meshlets, mesh, vertexIndices, localPrimitiveIndices);
+    }
 
+    public enum MeshletColorMode {PerTriangle, PerMeshlet}
+
+    public static void setMeshletColors(MeshletColorMode colorMode, List<Meshlet> meshlets, Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs,
+                                        List<Integer> meshletVertexIndexBuffer) {
+
+        globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>());
+        var colorAttrib = globalVertAttribs.get(Mesh.VERTATTRIB.COLOR);
+        var tempColorHashMap = new HashMap<Integer, Vector>();
         var rand = new Random();
-        for(var meshlet: meshlets) {
-            Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
-                    new Vector(1,1,1,1), rand);
 
-            for(int i = (meshlet.vertexBegin - globalVertsIndexBufferPos); i < (meshlet.vertexBegin - globalVertsIndexBufferPos) + meshlet.vertexCount; i++) {
-                if(i >= colorAttrib.size()) {
-                    for(int j = colorAttrib.size(); j <= i; j++) {
-                        colorAttrib.add(randomColor);
-                    }
+        if(colorMode == PerMeshlet) {
+            for(var meshlet: meshlets) {
+
+                Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
+                        new Vector(1,1,1,1), rand);
+
+                for(int i = meshlet.vertexBegin; i < meshlet.vertexBegin + meshlet.vertexCount; i++) {
+                    var vertInd = meshletVertexIndexBuffer.get(i);
+                    tempColorHashMap.put(vertInd, randomColor);
                 }
             }
+            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>(tempColorHashMap.values()));
+
+            log("Num of pos verts: "+ globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
+            log("Num of colors: "+ tempColorHashMap.values().size());
         }
 
-        return new MeshletGenOutput(meshlets, mesh, vertexIndices, localPrimitiveIndices);
+        else {
+            for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
+                Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
+                        new Vector(1,1,1,1), rand);
+                colorAttrib.add(randomColor);
+            }
+        }
     }
 
     private static float calculateBoundRadius(BoundValues boundvalues) {

@@ -45,6 +45,10 @@ public class BufferWriter {
         buffer.putInt(data);
     }
 
+    public void putFloat(float data) {
+        buffer.putFloat(data);
+    }
+
     public void put(float data) {
         buffer.putFloat(data);
     }

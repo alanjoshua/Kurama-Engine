@@ -4,6 +4,7 @@ import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
+import Kurama.Mesh.MeshletGen;
 import Kurama.Mesh.Texture;
 import Kurama.Vulkan.Renderable;
 import Kurama.Vulkan.TextureVK;
@@ -18,7 +19,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerTriangle;
 import static Kurama.Mesh.MeshletGen.generateMeshlets;
+import static Kurama.Mesh.MeshletGen.setMeshletColors;
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
@@ -33,7 +37,7 @@ public class PointCloudController extends Game {
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, Mesh.VERTATTRIB.COLOR));
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
 
     public List<Model> models = new ArrayList<>();
     public Camera mainCamera;
@@ -121,8 +125,8 @@ public class PointCloudController extends Game {
         var location = "projects/ActiveShutter/models/meshes/lost_empire.obj";
         var textureDir = "projects/ActiveShutter/models/textures/";
 
-        List<Mesh> meshes;
-
+//        List<Mesh> meshes;
+//
 //        try {
 //            meshes = AssimpStaticLoader.load(location, textureDir);
 //
@@ -153,13 +157,13 @@ public class PointCloudController extends Game {
 //            e.printStackTrace();
 //            throw new IllegalArgumentException("Could not load mesh");
 //        }
-
+//
 //        var lostEmpire = new Model(this, meshes, "Lost Empire");
 //        lostEmpire.setScale(1f);
 //        lostEmpire.setPos(new Vector(5, -10, 0));
 
         List<Mesh> meshes2;
-        try {
+        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
             meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
 
             // TODO: Temporary because of bug KE:16
@@ -169,17 +173,19 @@ public class PointCloudController extends Game {
 
                 log("Creating meshlets");
                 var results = generateMeshlets(m, 3, 64, 124,
-                        renderer.globalVertAttribs.size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
+                        renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
                 log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
 
                 results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
                 renderer.meshlets.addAll(results.meshlets());
+
                 for(var key: meshAttribsToLoad) {
                     if(!m.vertAttributes.containsKey(key)) {
                         throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
                     }
                     renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
                 }
+
                 renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
                 renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
             }
@@ -191,27 +197,76 @@ public class PointCloudController extends Game {
 
         //Add texture loc
         var vikingRoom = new Model(this, meshes2, "vikingRoom");
-//        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
 //        vikingRoom.setPos(new Vector(0, 50, 0));
         vikingRoom.setScale(10);
 
         log("num of meshes in viking room: "+ vikingRoom.meshes.size());
 
+//        List<Mesh> meshes3;
+//        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
+//            meshes3 = AssimpStaticLoader.load("projects/PointCloud/models/meshes/cube.obj", textureDir);
+//
+//            // TODO: Temporary because of bug KE:16
+//            for(var m: meshes3) {
+//
+//                log("Creating meshlets");
+//                var results = generateMeshlets(m, 3, 64, 124,
+//                        renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(), renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
+//                log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+//
+//                results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
+//                renderer.meshlets.addAll(results.meshlets());
+//
+//                for(var key: meshAttribsToLoad) {
+//                    if(!m.vertAttributes.containsKey(key)) {
+//                        throw new RuntimeException("Mesh "+ m.meshLocation + " does not have the required vertex attribute: "+ key);
+//                    }
+//                    renderer.globalVertAttribs.get(key).addAll(m.vertAttributes.get(key));
+//                }
+//
+//                renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
+//                renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+//            }
+//
+//
+//            log("total num of meshlets in this scene = "+ renderer.meshlets.size());
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+
+        //Add texture loc
+//        var cube = new Model(this, meshes3, "cube");
+//        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+//        vikingRoom.setPos(new Vector(0, 50, 0));
+//        cube.setScale(1);
+
+//        log("num of meshes in cube: "+ cube.meshes.size());
+
 //        models.add(lostEmpire);
         models.add(vikingRoom);
+//        models.add(cube);
 
-//        renderer.renderables.addAll(getRenderablesFromModel(lostEmpire));
-        renderer.renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
+//        renderer.renderables.forEach(r -> {
+//            renderer.prepareTexture((TextureVK) r.getMaterial().texture);
+//            r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
+//
+//            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
+//        });
 
-        renderer.renderables.forEach(r -> {
-            renderer.prepareTexture((TextureVK) r.getMaterial().texture);
-            r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
+            log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
 
-            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
-        });
+            log("meshlet vertex buffer (size): " + renderer.meshletVertexIndexBuffer.size());
+//            renderer.meshletVertexIndexBuffer.forEach(v -> log(v));
+//            log();
 
-//        renderer.generateMeshBuffers();
+            log("meshlet local index buffer (size): "+ renderer.meshletLocalIndexBuffer.size());
+//            renderer.meshletLocalIndexBuffer.forEach(v -> log(v));
+//            log();
+
         models.forEach(m -> m.tick(null, input, timeDelta, false));
+        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
+                renderer.meshletVertexIndexBuffer);
         renderer.meshesMergedEvent();
     }
 
@@ -306,7 +361,7 @@ public class PointCloudController extends Game {
         if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
 
             float yawIncrease   = this.mouseXSensitivity * -this.timeDelta * this.input.getDelta().get(0);
-            float pitchIncrease = this.mouseYSensitivity * this.timeDelta * this.input.getDelta().get(1);
+            float pitchIncrease = this.mouseYSensitivity * -this.timeDelta * this.input.getDelta().get(1);
 
             Vector currentAngle = this.mainCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;

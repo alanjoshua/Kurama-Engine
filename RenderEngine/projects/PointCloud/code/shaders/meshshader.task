@@ -8,20 +8,20 @@
 #extension GL_EXT_mesh_shader : require
 #extension GL_KHR_shader_subgroup_ballot : require
 
-struct Meshlet {
-    // x = int primitiveCount;
-    // y = int vertexCount;
-    // z = int indexBegin;
-    // w = int vertexBegin;
-    vec4 info;
-    vec4 bound; //vec3 = pos, w = bound sphere radius
-    float objectId; //
-    vec3 padding;
-};
-
-layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
-    Meshlet meshlets[];
-} meshletBuffer;
+//struct Meshlet {
+//    // x = int primitiveCount;
+//    // y = int vertexCount;
+//    // z = int indexBegin;
+//    // w = int vertexBegin;
+//    vec4 info;
+//    vec4 bound; //vec3 = pos, w = bound sphere radius
+//    float objectId; //
+//    vec3 padding;
+//};
+//
+//layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+//    Meshlet meshlets[];
+//} meshletBuffer;
 
 layout(local_size_x=32) in;
 
