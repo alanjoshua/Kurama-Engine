@@ -80,6 +80,8 @@ public class MeshletGen {
         curMeshlet.vertexBegin = globalVertsIndexBufferPos;
         curMeshlet.indexBegin = globalLocalIndexBufferPos;
 
+        int numTimesVertLimitReached = 0;
+        int numPrimLimitReached = 0;
 
         for(int pid = 0; pid < sortedPrimitives.size(); pid++) {
             var p = sortedPrimitives.get(pid);
@@ -89,6 +91,7 @@ public class MeshletGen {
             // Check whether max prim limit would be reached if the current primitive is added to the current meshlet
             if(curMeshletLocalIndices.size()/vertsPerPrimitive + 1 > maxPrimitives) {
                 isMaxPrimsReached = true;
+                numPrimLimitReached++;
             }
 
             // Check whether max vert limit would be reached if the current primitive is added to the current meshlet
@@ -109,6 +112,7 @@ public class MeshletGen {
 
                 if (uniqueVertCount + curMeshletVertIndices.size() > maxVerts) {
                     isMaxVertsReached = true;
+                    numTimesVertLimitReached++;
                 }
             }
 
@@ -159,6 +163,8 @@ public class MeshletGen {
         primIndices.addAll(curMeshletLocalIndices);
 
         meshlets.add(curMeshlet);
+
+        log("Num of times vert limit reached: " + numTimesVertLimitReached + " prim limit reached: "+ numPrimLimitReached);;
 
         return new MeshletGenOutput(meshlets, mesh, vertIndices, primIndices);
     }
