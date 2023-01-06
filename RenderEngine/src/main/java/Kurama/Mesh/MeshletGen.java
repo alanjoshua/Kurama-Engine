@@ -5,7 +5,6 @@ import Kurama.Math.Vector;
 import java.util.*;
 
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
-import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerTriangle;
 import static Kurama.utils.Logger.log;
 
 public class MeshletGen {
@@ -43,7 +42,128 @@ public class MeshletGen {
         return generateMeshlets(mesh, vertsPerPrimitive, maxVerts, maxPrimitives, 0, 0, 0);
     }
 
+    record Primitive(Integer... indices){}
+    static List<Primitive> convertToPrimitives(List<Integer> indices, int vertsPerPrimitive) {
+        if(indices.size() % vertsPerPrimitive != 0)
+            throw new IllegalArgumentException("The index array must be divisible by the number of vertices per primitive");
+
+        var results = new ArrayList<Primitive>();
+
+        for(int i = 0; i < indices.size(); i+=vertsPerPrimitive) {
+            results.add(new Primitive(indices.subList(i, i + vertsPerPrimitive).toArray(new Integer[0])));
+        }
+
+        return results;
+    }
+
     public static MeshletGenOutput generateMeshlets(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives,
+                                                    int globalVertsBufferPos, int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
+
+        if(maxVerts == 0 || maxPrimitives == 0 || maxVerts < vertsPerPrimitive) {
+            throw new IllegalArgumentException("Invalid meshlet generation arguments");
+        }
+
+        var sortedPrimitives = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
+
+        var meshlets = new ArrayList<Meshlet>();
+        var vertIndices = new ArrayList<Integer>();
+        var primIndices = new ArrayList<Integer>();
+
+        boolean isMaxVertsReached = false;
+        boolean isMaxPrimsReached = false;
+
+        var curMeshletVertIndices = new LinkedHashSet<Integer>();
+        var curMeshletVertMapping = new HashMap<Integer, Integer>();
+        var curMeshletLocalIndices = new ArrayList<Integer>();
+
+        var curMeshlet = new Meshlet();
+        curMeshlet.vertexBegin = globalVertsIndexBufferPos;
+        curMeshlet.indexBegin = globalLocalIndexBufferPos;
+
+
+        for(int pid = 0; pid < sortedPrimitives.size(); pid++) {
+            var p = sortedPrimitives.get(pid);
+            List<Integer> indexLocsToBeInserted = null;
+            List<Integer> uniqueVertsToBeAdded = null;
+
+            // Check whether max prim limit would be reached if the current primitive is added to the current meshlet
+            if(curMeshletLocalIndices.size()/vertsPerPrimitive + 1 > maxPrimitives) {
+                isMaxPrimsReached = true;
+            }
+
+            // Check whether max vert limit would be reached if the current primitive is added to the current meshlet
+            // Check only when max prim limit has not yet been reached
+            if(!isMaxPrimsReached) {
+                indexLocsToBeInserted = new ArrayList<>();
+                uniqueVertsToBeAdded = new ArrayList<>();
+                int uniqueVertCount = 0;
+
+                for (var v : p.indices()) {
+                    if (!curMeshletVertIndices.contains(v)) {
+                        uniqueVertsToBeAdded.add(v);
+                        curMeshletVertMapping.put(v, curMeshletVertIndices.size() + uniqueVertCount);
+                        uniqueVertCount++;
+                    }
+                    indexLocsToBeInserted.add(curMeshletVertMapping.get(v));
+                }
+
+                if (uniqueVertCount + curMeshletVertIndices.size() > maxVerts) {
+                    isMaxVertsReached = true;
+                }
+            }
+
+            // If either of the limits have been reached, add to meshlet list, and create a new meshlet
+            if(isMaxVertsReached || isMaxPrimsReached) {
+                curMeshlet.primitiveCount = curMeshletLocalIndices.size()/vertsPerPrimitive;
+                curMeshlet.vertexCount = curMeshletVertIndices.size();
+                curMeshlet.pos = new Vector(0,0,0); // temporary
+                curMeshlet.boundRadius = 1;
+
+                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
+
+                vertIndices.addAll(curMeshletVertIndices);
+                primIndices.addAll(curMeshletLocalIndices);
+
+                meshlets.add(curMeshlet);
+                curMeshletVertIndices.clear();
+                curMeshletLocalIndices.clear();
+                curMeshletVertMapping.clear();
+                isMaxVertsReached = false;
+                isMaxPrimsReached = false;
+
+                curMeshlet = new Meshlet();
+                curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertIndices.size();
+                curMeshlet.indexBegin = globalLocalIndexBufferPos + primIndices.size();
+
+                //Add current primitive to new meshlet
+                for (int i = 0; i < p.indices().length; i++) {
+                    curMeshletVertIndices.add(p.indices[i] + globalVertsBufferPos);
+                    curMeshletVertMapping.put(p.indices[i], i);
+                    curMeshletLocalIndices.add(i);
+                }
+                continue;
+            }
+
+            //Else, add current primitive to meshlet
+            curMeshletVertIndices.addAll(uniqueVertsToBeAdded.stream().map(i -> i + globalVertsBufferPos).toList());
+            curMeshletLocalIndices.addAll(indexLocsToBeInserted);
+        }
+
+        //Add last meshlet
+        curMeshlet.primitiveCount = curMeshletLocalIndices.size()/vertsPerPrimitive;
+        curMeshlet.vertexCount = curMeshletVertIndices.size();
+        curMeshlet.pos = new Vector(0,0,0);
+        curMeshlet.boundRadius = 1;
+
+        vertIndices.addAll(curMeshletVertIndices);
+        primIndices.addAll(curMeshletLocalIndices);
+
+        meshlets.add(curMeshlet);
+
+        return new MeshletGenOutput(meshlets, mesh, vertIndices, primIndices);
+    }
+
+    public static MeshletGenOutput generateMeshletsTemp(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives,
                                                     int globalVertsBufferPos, int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
 
         if(maxVerts == 0 || maxPrimitives == 0 || maxVerts < vertsPerPrimitive) {
@@ -55,8 +175,8 @@ public class MeshletGen {
         var meshlets = new ArrayList<Meshlet>();
 
         log("Num of prims before sort"+ mesh.indices.size()/vertsPerPrimitive);
-//        var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
-        var sortedPrimitives = mesh.indices;
+        var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
+//        var sortedPrimitives = mesh.indices;
         log("Num of prims "+ sortedPrimitives.size()/vertsPerPrimitive);
 
         var curMeshlet = new Meshlet();
@@ -108,7 +228,7 @@ public class MeshletGen {
                 lastPrimitiveIndices.add(localIndex);
             }
 
-            // If max vert limit has not been reached
+            // If max vert limit has not been reached, and by definition max prim has also not been reached
             if(curUniqueVerts.size() <= maxVerts) {
                 // add the primitive to the primitive index list
                 curIndexList.addAll(lastPrimitiveIndices);
@@ -176,19 +296,47 @@ public class MeshletGen {
         return new MeshletGenOutput(meshlets, mesh, vertexIndices, localPrimitiveIndices);
     }
 
-    public enum MeshletColorMode {PerTriangle, PerMeshlet}
+    public static Mesh mergeMeshes(List<Mesh> meshes) {
+        var keys = meshes.get(0).vertAttributes.keySet();
+        var newVertAttributes = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+        var newIndices = new ArrayList<Integer>();
 
-    public static void setMeshletColors(MeshletColorMode colorMode, List<Meshlet> meshlets, Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs,
-                                        List<Integer> meshletVertexIndexBuffer) {
+        for(var k: keys) {
+            newVertAttributes.put(k, new ArrayList<>());
+        }
+
+        for(var mesh: meshes) {
+            if(keys.equals(mesh.vertAttributes.keySet())) {
+                int prevSize = newVertAttributes.get(Mesh.VERTATTRIB.POSITION).size();
+
+                for(var k: keys) {
+                    newVertAttributes.get(k).addAll(mesh.vertAttributes.get(k));
+                }
+                newIndices.addAll(mesh.indices.stream().map(i -> i + prevSize).toList());
+            }
+            else {
+                throw new IllegalArgumentException("Vert attributes must be the same when merging meshes");
+            }
+        }
+
+        return new Mesh(newIndices, null, newVertAttributes, null, meshes.get(0).meshLocation, null);
+    }
+
+    public enum MeshletColorMode {PerPrimitive, PerMeshlet}
+
+    public static void setMeshletColors(MeshletColorMode colorMode, List<Meshlet> meshlets,
+                                        Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs,
+                                        List<Integer> meshletVertexIndexBuffer,
+                                        List<Integer> meshletLocalIndexBuffer, int vertsPerPrimitive) {
 
         globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>());
         var colorAttrib = globalVertAttribs.get(Mesh.VERTATTRIB.COLOR);
-        var tempColorHashMap = new HashMap<Integer, Vector>();
+        var tempColorHashMap = new TreeMap<Integer, Vector>();
         var rand = new Random();
 
         if(colorMode == PerMeshlet) {
-            for(var meshlet: meshlets) {
 
+            for(var meshlet: meshlets) {
                 Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
                         new Vector(1,1,1,1), rand);
 
@@ -196,11 +344,9 @@ public class MeshletGen {
                     var vertInd = meshletVertexIndexBuffer.get(i);
                     tempColorHashMap.put(vertInd, randomColor);
                 }
+
             }
             globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>(tempColorHashMap.values()));
-
-            log("Num of pos verts: "+ globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
-            log("Num of colors: "+ tempColorHashMap.values().size());
         }
 
         else {

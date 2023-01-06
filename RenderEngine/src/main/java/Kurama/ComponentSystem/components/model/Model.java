@@ -27,17 +27,19 @@ public class Model extends SceneComponent {
 			this.meshes = new ArrayList<>();
 		}
 
-		for(Mesh mesh: meshes) {
+		for (Mesh mesh : this.meshes) {
 			materials.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
 			matAtlasOffset.putIfAbsent(mesh.meshIdentifier, new ArrayList<>());
-			if(mesh.materials.size() > 4) {
+
+			if (mesh.materials.size() > 4) {
 				throw new IllegalArgumentException("A mesh could only have a maximum of 8 materials");
 			}
-			for(Material mat: mesh.materials) {
+			for (Material mat : mesh.materials) {
 				materials.get(mesh.meshIdentifier).add(mat);
 				matAtlasOffset.get(mesh.meshIdentifier).add(0);
 			}
 		}
+
 	}
 
 	public Model(Game game, Component parent, List<Mesh> meshes, String identifier) {
