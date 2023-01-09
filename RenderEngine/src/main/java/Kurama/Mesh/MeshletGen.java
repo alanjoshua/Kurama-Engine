@@ -63,7 +63,7 @@ public class MeshletGen {
             throw new IllegalArgumentException("Invalid meshlet generation arguments");
         }
 
-        var sortedPrimitives = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
+        var sortedPrimitives    = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
 
         var meshlets = new ArrayList<Meshlet>();
         var vertIndices = new ArrayList<Integer>();
