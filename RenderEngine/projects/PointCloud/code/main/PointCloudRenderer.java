@@ -319,10 +319,20 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 byteBuffer.putFloat(1f);
 
                 // Color - each meshlet will have a random colour
-                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
-                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
-                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
-                byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
+                // error condition
+//                if(globalVertAttribs.get(COLOR).size() <= i) {
+//                    byteBuffer.putFloat(1f);
+//                    byteBuffer.putFloat(1f);
+//                    byteBuffer.putFloat(1f);
+//                    byteBuffer.putFloat(1f);
+//                }
+//                else {
+                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
+                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
+                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
+                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
+//                }
+
             }
             vmaUnmapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation);
 

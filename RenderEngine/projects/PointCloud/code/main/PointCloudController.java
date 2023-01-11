@@ -118,12 +118,12 @@ public class PointCloudController extends Game {
     public void loadScene() {
 
 //           createMinecraftWorld();
-           createRoom();
+//           createRoom();
            createMinecraftWorld();
 
         log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
 
-        log("meshlet vertex buffer (size): " + renderer.meshletVertexIndexBuffer.size());
+        log("meshlet verts index buffer (size): " + renderer.meshletVertexIndexBuffer.size());
 //            renderer.meshletVertexIndexBuffer.forEach(v -> log(v));
 //            log();
 
@@ -135,11 +135,12 @@ public class PointCloudController extends Game {
 
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
                 renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 3);
+
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
+        log("total num of meshlets: "+renderer.meshlets.size());
         renderer.meshesMergedEvent();
     }
     public void createRoom() {
-        var location = "projects/ActiveShutter/models/meshes/lost_empire.obj";
         var textureDir = "projects/ActiveShutter/models/textures/";
 
         List<Mesh> meshes2;
@@ -151,14 +152,14 @@ public class PointCloudController extends Game {
             meshes2.get(0).materials.get(0).texture = tex;
 
             log("Creating meshlets");
-            var results = generateMeshlets(meshes2.get(0), 3, 100, 124,
+            var results = generateMeshlets(meshes2.get(0), 3, 64, 124,
                     renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
                     renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
 //            var results = generateMeshlets(meshes2.get(0), 3, 64, 124);
             log("Finished creating meshlets. Num of meshlets: "+ results.meshlets().size() + " for num of prims: "
                     + meshes2.get(0).indices.size()/3 + " for num of verts: "+ meshes2.get(0).vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = 1);
+            results.meshlets().forEach(meshlet -> meshlet.objectId = renderer.meshlets.size());
             renderer.meshlets.addAll(results.meshlets());
 
             for(var key: meshAttribsToLoad) {
@@ -191,7 +192,7 @@ public class PointCloudController extends Game {
         var location = "projects/ActiveShutter/models/meshes/lost_empire.obj";
         var textureDir = "projects/ActiveShutter/models/textures/";
 
-        List<Mesh> meshes = null;
+        List<Mesh> meshes;
 
         try {
             meshes = AssimpStaticLoader.load(location, textureDir);
@@ -209,7 +210,7 @@ public class PointCloudController extends Game {
                     " for num of prims: "+ mergedMesh.indices.size()/3 +
                     " num of verts: "+ mergedMesh.vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = 0);
+            results.meshlets().forEach(meshlet -> meshlet.objectId = renderer.meshlets.size());
             renderer.meshlets.addAll(results.meshlets());
             for(var key: meshAttribsToLoad) {
                 if(!mergedMesh.vertAttributes.containsKey(key)) {

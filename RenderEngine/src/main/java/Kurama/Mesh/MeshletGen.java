@@ -123,7 +123,7 @@ public class MeshletGen {
                 curMeshlet.pos = new Vector(0,0,0); // temporary
                 curMeshlet.boundRadius = 1;
 
-                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
+//                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
 
                 vertIndices.addAll(curMeshletVertIndices);
                 primIndices.addAll(curMeshletLocalIndices);
@@ -335,8 +335,7 @@ public class MeshletGen {
                                         List<Integer> meshletVertexIndexBuffer,
                                         List<Integer> meshletLocalIndexBuffer, int vertsPerPrimitive) {
 
-        globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>());
-        var colorAttrib = globalVertAttribs.get(Mesh.VERTATTRIB.COLOR);
+        var colorAttrib = new ArrayList<Vector>();
         var tempColorHashMap = new TreeMap<Integer, Vector>();
         var rand = new Random();
 
@@ -350,9 +349,18 @@ public class MeshletGen {
                     var vertInd = meshletVertexIndexBuffer.get(i);
                     tempColorHashMap.put(vertInd, randomColor);
                 }
-
             }
-            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>(tempColorHashMap.values()));
+            // shouldn't be required
+
+            for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
+                if(tempColorHashMap.containsKey(i)) {
+                    colorAttrib.add(tempColorHashMap.get(i));
+                }
+                else {
+                    colorAttrib.add(new Vector(1,1,1,1));
+                }
+            }
+            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, colorAttrib);
         }
 
         else {
@@ -360,7 +368,10 @@ public class MeshletGen {
                 Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
                         new Vector(1,1,1,1), rand);
                 colorAttrib.add(randomColor);
+//                tempColorHashMap.put(i, randomColor);
             }
+            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, colorAttrib);
+//            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>(tempColorHashMap.values()));
         }
     }
 
