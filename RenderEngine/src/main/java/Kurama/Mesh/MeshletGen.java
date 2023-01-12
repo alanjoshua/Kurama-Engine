@@ -63,7 +63,9 @@ public class MeshletGen {
             throw new IllegalArgumentException("Invalid meshlet generation arguments");
         }
 
-        var sortedPrimitives    = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
+//        var sortedPrimitives    = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
+        var sortedPrimitives    = convertToPrimitives(mesh.indices, vertsPerPrimitive);
+
 
         var meshlets = new ArrayList<Meshlet>();
         var vertIndices = new ArrayList<Integer>();
@@ -87,6 +89,8 @@ public class MeshletGen {
             var p = sortedPrimitives.get(pid);
             List<Integer> indexLocsToBeInserted = null;
             List<Integer> uniqueVertsToBeAdded = null;
+            isMaxVertsReached = false;
+            isMaxPrimsReached = false;
 
             // Check whether max prim limit would be reached if the current primitive is added to the current meshlet
             if(curMeshletLocalIndices.size()/vertsPerPrimitive + 1 > maxPrimitives) {
@@ -102,12 +106,17 @@ public class MeshletGen {
                 int uniqueVertCount = 0;
 
                 for (var v : p.indices()) {
-                    if (!curMeshletVertIndices.contains(v)) {
-                        uniqueVertsToBeAdded.add(v);
-                        curMeshletVertMapping.put(v, curMeshletVertIndices.size() + uniqueVertCount);
+
+                    if (!curMeshletVertMapping.containsKey(v + globalVertsBufferPos)) {
+                        uniqueVertsToBeAdded.add(v + globalVertsBufferPos);
+                        curMeshletVertMapping.put(v + globalVertsBufferPos, curMeshletVertIndices.size() + uniqueVertCount);
                         uniqueVertCount++;
                     }
-                    indexLocsToBeInserted.add(curMeshletVertMapping.get(v));
+                    var indToInsert = curMeshletVertMapping.get(v + globalVertsBufferPos);
+                    if (indToInsert == null) {
+                       throw new RuntimeException("Index to be inserted was null, which shouldnt happen, for vertInd: ");
+                    }
+                    indexLocsToBeInserted.add(curMeshletVertMapping.get(v + globalVertsBufferPos));
                 }
 
                 if (uniqueVertCount + curMeshletVertIndices.size() > maxVerts) {
@@ -123,7 +132,7 @@ public class MeshletGen {
                 curMeshlet.pos = new Vector(0,0,0); // temporary
                 curMeshlet.boundRadius = 1;
 
-//                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
+                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
 
                 vertIndices.addAll(curMeshletVertIndices);
                 primIndices.addAll(curMeshletLocalIndices);
@@ -132,8 +141,6 @@ public class MeshletGen {
                 curMeshletVertIndices.clear();
                 curMeshletLocalIndices.clear();
                 curMeshletVertMapping.clear();
-                isMaxVertsReached = false;
-                isMaxPrimsReached = false;
 
                 curMeshlet = new Meshlet();
                 curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertIndices.size();
@@ -142,15 +149,17 @@ public class MeshletGen {
                 //Add current primitive to new meshlet
                 for (int i = 0; i < p.indices().length; i++) {
                     curMeshletVertIndices.add(p.indices[i] + globalVertsBufferPos);
-                    curMeshletVertMapping.put(p.indices[i], i);
+                    curMeshletVertMapping.put(p.indices[i] + globalVertsBufferPos, i);
                     curMeshletLocalIndices.add(i);
                 }
                 continue;
             }
 
-            //Else, add current primitive to meshlet
-            curMeshletVertIndices.addAll(uniqueVertsToBeAdded.stream().map(i -> i + globalVertsBufferPos).toList());
-            curMeshletLocalIndices.addAll(indexLocsToBeInserted);
+            else {
+                //Else, add current primitive to meshlet
+                curMeshletVertIndices.addAll(uniqueVertsToBeAdded);
+                curMeshletLocalIndices.addAll(indexLocsToBeInserted);
+            }
         }
 
         //Add last meshlet

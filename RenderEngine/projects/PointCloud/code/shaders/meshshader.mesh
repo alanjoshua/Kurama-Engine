@@ -73,6 +73,14 @@ void main()
 	uint meshletID = (task.baseID * 32) + task.subIDs[gl_WorkGroupID.x];
 
     // Ensure we don't read past the meshlet buffer bounds
+//    if(meshletID >= meshletCount.count - 7536) {
+//        return;
+//    }
+
+//    if(meshletID >= 69) {
+//        return;
+//    }
+
     if(meshletID >= meshletCount.count) {
         return;
     }

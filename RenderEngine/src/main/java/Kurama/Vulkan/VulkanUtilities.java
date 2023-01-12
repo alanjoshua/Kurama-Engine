@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import static Kurama.Mesh.Mesh.VERTATTRIB.NORMAL;
 import static Kurama.Mesh.Mesh.VERTATTRIB.TEXTURE;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
@@ -492,8 +493,16 @@ public class VulkanUtilities {
 
 
     public static void memcpyInt(ByteBuffer buffer, List<Integer> indices) {
-        for(int index : indices) {
-            buffer.putInt(index);
+        int id = 0;
+        try {
+            for(int index : indices) {
+                buffer.putInt(index);
+                id++;
+            }
+        }
+        catch (RuntimeException e) {
+            logError("memcpyInt failed at index: "+id);
+            throw e;
         }
     }
 

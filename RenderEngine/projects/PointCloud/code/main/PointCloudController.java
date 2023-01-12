@@ -63,7 +63,7 @@ public class PointCloudController extends Game {
 
         mainCamera = new Camera(this,null, null,
                 new Vector(new float[] {0,0,0}),60,
-                0.001f, 1000.0f,
+                0.1f, 10000.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
                 false, "playerCam");
 
@@ -117,9 +117,9 @@ public class PointCloudController extends Game {
 
     public void loadScene() {
 
-//           createMinecraftWorld();
-//           createRoom();
            createMinecraftWorld();
+           createRoom();
+//           createMinecraftWorld();
 
         log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
 
@@ -138,6 +138,25 @@ public class PointCloudController extends Game {
 
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
+
+//        log("meshlet 67: " + renderer.meshlets.get(67));
+//        log("meshlet 68: " + renderer.meshlets.get(68));
+//        log();
+//        var m68 = renderer.meshlets.get(67);
+//        for(int i = m68.vertexBegin; i < m68.vertexBegin + m68.vertexCount; i++) {
+//            int vertIndex = renderer.meshletVertexIndexBuffer.get(i);
+//            log("vert ind: " + vertIndex +
+//                    " pos: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).get(vertIndex) +
+//                    " color: " + renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).get(vertIndex));
+//        }
+//        log("Indices: ");
+//        for(int i = 0; i < m68.primitiveCount; i++) {
+//            int base = m68.indexBegin + (i * 3);
+//            log(renderer.meshletLocalIndexBuffer.get(base + 0) + " " +
+//                    renderer.meshletLocalIndexBuffer.get(base + 1) + " " +
+//                    renderer.meshletLocalIndexBuffer.get(base + 2));
+//        }
+
         renderer.meshesMergedEvent();
     }
     public void createRoom() {
@@ -159,7 +178,7 @@ public class PointCloudController extends Game {
             log("Finished creating meshlets. Num of meshlets: "+ results.meshlets().size() + " for num of prims: "
                     + meshes2.get(0).indices.size()/3 + " for num of verts: "+ meshes2.get(0).vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = renderer.meshlets.size());
+            results.meshlets().forEach(meshlet -> meshlet.objectId = models.size());
             renderer.meshlets.addAll(results.meshlets());
 
             for(var key: meshAttribsToLoad) {
@@ -205,12 +224,14 @@ public class PointCloudController extends Game {
             }
             var mergedMesh = mergeMeshes(meshes);
             log("Creating meshlets");
-            var results = generateMeshlets(mergedMesh, 3, 64, 124);
+            var results = generateMeshlets(mergedMesh, 3, 64, 124,
+                    renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
+                    renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
             log("Finished creating meshlets. Num of meshlets: " + results.meshlets().size() +
                     " for num of prims: "+ mergedMesh.indices.size()/3 +
                     " num of verts: "+ mergedMesh.vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = renderer.meshlets.size());
+            results.meshlets().forEach(meshlet -> meshlet.objectId = models.size());
             renderer.meshlets.addAll(results.meshlets());
             for(var key: meshAttribsToLoad) {
                 if(!mergedMesh.vertAttributes.containsKey(key)) {

@@ -14,4 +14,11 @@ public class Meshlet {
     public float boundRadius;
     public int objectId;
 
+    @Override
+    public String toString() {
+        return "primitive Count: " + primitiveCount + " vertex Count: "+ vertexCount
+                + " index begin: "+ indexBegin + " vertex begin: " + vertexBegin
+                + " objectId: " + objectId + " pos: "+ pos + " bound radius: " + boundRadius;
+    }
+
 }
