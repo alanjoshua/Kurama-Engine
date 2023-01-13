@@ -726,6 +726,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
             var depthAttachment = new FrameBufferAttachment();
 
             int depthFormat = VulkanUtilities.findDepthFormat(physicalDevice);
+
             var extent = VkExtent3D.calloc(stack).width(swapChainExtent.width()).height(swapChainExtent.height()).depth(1);
 
             var imageInfo = VulkanUtilities.createImageCreateInfo(

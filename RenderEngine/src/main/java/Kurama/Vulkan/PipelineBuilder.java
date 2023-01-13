@@ -202,10 +202,13 @@ public class PipelineBuilder {
             }
 
             // ASSEMBLY STAGE
-            var inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
-            inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            inputAssembly.topology(inputAssemblyCreateInfo.topology);
-            inputAssembly.primitiveRestartEnable(inputAssemblyCreateInfo.primitiveRestartEnable);
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly = null;
+            if(inputAssemblyCreateInfo != null) {
+                inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
+                inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+                inputAssembly.topology(inputAssemblyCreateInfo.topology);
+                inputAssembly.primitiveRestartEnable(inputAssemblyCreateInfo.primitiveRestartEnable);
+            }
 
             // VIEWPORT and SCISSOR
             VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
@@ -318,8 +321,20 @@ public class PipelineBuilder {
             VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
             pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             pipelineInfo.pStages(shaderStagesBuffer);
-            pipelineInfo.pVertexInputState(vertexInputInfo);
-            pipelineInfo.pInputAssemblyState(inputAssembly);
+
+            if(vertexBindingDescription != null) {
+                pipelineInfo.pVertexInputState(vertexInputInfo);
+            }
+            else {
+                pipelineInfo.pVertexInputState(null);
+            }
+            if(inputAssemblyCreateInfo!= null) {
+                pipelineInfo.pInputAssemblyState(inputAssembly);
+            }
+            else {
+                pipelineInfo.pInputAssemblyState(null);
+            }
+
             pipelineInfo.pViewportState(viewportState);
             pipelineInfo.pRasterizationState(rasterizerInfo);
             pipelineInfo.pDepthStencilState(depthStencilInfo);

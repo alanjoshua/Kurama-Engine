@@ -492,7 +492,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void initPipelines() {
         var builder = new PipelineBuilder(PipelineBuilder.PipelineType.GRAPHICS);
 
-        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
         builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
         builder.colorAttachmentImageFormat = swapChainImageFormat;
@@ -503,7 +502,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
 
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
-        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        builder.inputAssemblyCreateInfo = null;
 
         var pipeLineCreateResults = builder.build(device, null);
         pipelineLayout = pipeLineCreateResults.pipelineLayout();
