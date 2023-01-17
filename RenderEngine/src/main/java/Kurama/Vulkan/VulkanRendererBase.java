@@ -752,7 +752,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
                             VK_IMAGE_ASPECT_DEPTH_BIT,
                             1,
                             1,
-                            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                            VK_IMAGE_VIEW_TYPE_2D,
                             stack
                     );
 

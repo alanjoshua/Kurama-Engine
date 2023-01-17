@@ -980,6 +980,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
         multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
+        multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
         multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
 
         deletionQueue.add(() -> vkDestroyPipeline(device, multiViewGraphicsPipeline, null));

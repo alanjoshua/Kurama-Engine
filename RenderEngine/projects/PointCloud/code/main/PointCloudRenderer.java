@@ -5,9 +5,11 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
 import Kurama.Vulkan.*;
 import Kurama.game.Game;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +30,7 @@ import static org.lwjgl.vulkan.KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 import static org.lwjgl.vulkan.KHRSynchronization2.VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
 import static org.lwjgl.vulkan.NVMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 
 public class PointCloudRenderer extends VulkanRendererBase {
 
@@ -51,6 +54,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public class Frame {
         public AllocatedBuffer cameraBuffer;
         public AllocatedBuffer objectBuffer;
+        public long frameBuffer;
         public AllocatedBuffer vertexBuffer;
         public AllocatedBuffer meshletVertexBuffer;
         public AllocatedBuffer meshletVertexLocalIndexBuffer;
@@ -83,11 +87,43 @@ public class PointCloudRenderer extends VulkanRendererBase {
         for(int i = 0; i < drawCmds.size(); i++) {
             frames.add(new Frame());
         }
-
         initBuffers();
         initDescriptorSets();
         createDepthAttachment();
+        initFrameBuffers();
         initPipelines();
+    }
+
+    public void initFrameBuffers() {
+
+        try(MemoryStack stack = stackPush()) {
+
+            int i = 0;
+            for(var swapchainAttach: swapChainAttachments) {
+
+                var attachments = stack.longs(VK_NULL_HANDLE);
+                LongBuffer pFramebuffer = stack.mallocLong(1);
+
+                VkFramebufferCreateInfo framebufferInfo = VkFramebufferCreateInfo.calloc(stack);
+                framebufferInfo.sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
+                framebufferInfo.renderPass(renderPass);
+                framebufferInfo.width(swapChainExtent.width());
+                framebufferInfo.height(swapChainExtent.height());
+                framebufferInfo.layers(1);
+
+                // Create single frameBuffer for multiview renderpass
+                framebufferInfo.renderPass(renderPass);
+                attachments = stack.longs(swapchainAttach.swapChainImageView, depthAttachment.imageView);
+                framebufferInfo.pAttachments(attachments);
+
+                if (vkCreateFramebuffer(device, framebufferInfo, null, pFramebuffer) != VK_SUCCESS) {
+                    throw new RuntimeException("Failed to create framebuffer");
+                }
+
+                frames.get(i).frameBuffer = pFramebuffer.get(0);
+                i++;
+            }
+        }
     }
 
     public void recordCommandBuffers() {
@@ -104,59 +140,75 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                 vkCheck(vkBeginCommandBuffer(commandBuffer, beginInfo), "Failed to begin recording command buffer");
 
-                // For dynamic Rendering
-                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
-                        0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                        VkImageSubresourceRange.calloc(stack)
-                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                                .baseMipLevel(0)
-                                .levelCount(1)
-                                .layerCount(1)
-                                .baseArrayLayer(0));
+                VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
+                renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
 
-                insertImageMemoryBarrier(commandBuffer, depthAttachment.allocatedImage.image,
-                        0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                        VkImageSubresourceRange.calloc(stack)
-                                .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                .baseMipLevel(0)
-                                .levelCount(1)
-                                .layerCount(1)
-                                .baseArrayLayer(0));
-
-                var colorAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
-                colorAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
-                colorAttachment.imageView(swapChainAttachments.get(i).swapChainImageView);
-                colorAttachment.imageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
-                colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-                colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-                colorAttachment.clearValue().color(VkClearValue.calloc(stack).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 0.0f)));
-
-                var depthStencilAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
-                depthStencilAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
-                depthStencilAttachment.imageView(depthAttachment.imageView);
-                depthStencilAttachment.imageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-                depthStencilAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-                depthStencilAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-                depthStencilAttachment.clearValue().depthStencil(VkClearDepthStencilValue.calloc(stack).set(1f, 0));
+                renderPassInfo.renderPass(renderPass);
 
                 VkRect2D renderArea = VkRect2D.calloc(stack);
                 renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
                 renderArea.extent(swapChainExtent);
+                renderPassInfo.renderArea(renderArea);
 
-                var renderingInfo = VkRenderingInfo.calloc(stack);
-                renderingInfo.sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR);
-                renderingInfo.renderArea(renderArea);
-                renderingInfo.layerCount(1);
-                renderingInfo.pColorAttachments(colorAttachment);
-                renderingInfo.pDepthAttachment(depthStencilAttachment.get(0));
-                renderingInfo.pStencilAttachment(depthStencilAttachment.get(0));
+                VkClearValue.Buffer clearValues = VkClearValue.calloc(2, stack);
+                clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
+                clearValues.get(1).depthStencil().set(1.0f, 0);
 
-                vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
+                renderPassInfo.pClearValues(clearValues);
+
+//                // For dynamic Rendering
+//                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
+//                        0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+//                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+//                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+//                        VkImageSubresourceRange.calloc(stack)
+//                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+//                                .baseMipLevel(0)
+//                                .levelCount(1)
+//                                .layerCount(1)
+//                                .baseArrayLayer(0));
+//
+//                insertImageMemoryBarrier(commandBuffer, depthAttachment.allocatedImage.image,
+//                        0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+//                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+//                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+//                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+//                        VkImageSubresourceRange.calloc(stack)
+//                                .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
+//                                .baseMipLevel(0)
+//                                .levelCount(1)
+//                                .layerCount(1)
+//                                .baseArrayLayer(0));
+//
+//                var colorAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
+//                colorAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
+//                colorAttachment.imageView(swapChainAttachments.get(i).swapChainImageView);
+//                colorAttachment.imageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+//                colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//                colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+//                colorAttachment.clearValue().color(VkClearValue.calloc(stack).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 0.0f)));
+//
+//                var depthStencilAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
+//                depthStencilAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
+//                depthStencilAttachment.imageView(depthAttachment.imageView);
+//                depthStencilAttachment.imageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+//                depthStencilAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+//                depthStencilAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+//                depthStencilAttachment.clearValue().depthStencil(VkClearDepthStencilValue.calloc(stack).set(1f, 0));
+//
+//                VkRect2D renderArea = VkRect2D.calloc(stack);
+//                renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
+//                renderArea.extent(swapChainExtent);
+//
+//                var renderingInfo = VkRenderingInfo.calloc(stack);
+//                renderingInfo.sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR);
+//                renderingInfo.renderArea(renderArea);
+//                renderingInfo.layerCount(1);
+//                renderingInfo.pColorAttachments(colorAttachment);
+//                renderingInfo.pDepthAttachment(depthStencilAttachment.get(0));
+//                renderingInfo.pStencilAttachment(depthStencilAttachment.get(0));
+//
+//                vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
 
                 var viewportBuffer = VkViewport.calloc(1, stack);
                 viewportBuffer.width(swapChainExtent.width());
@@ -173,6 +225,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                 log("num of task shader work groups launched: "+ (meshlets.size() /32 + 1));
 
+                renderPassInfo.framebuffer(frames.get(i).frameBuffer);
+                vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
                 {
                     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -187,18 +242,19 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     vkCmdDrawMeshTasksEXT(commandBuffer, meshlets.size()/32 + 1, 1, 1);
                 }
 
-                vkCmdEndRenderingKHR(commandBuffer);
+//                vkCmdEndRenderingKHR(commandBuffer);
+                vkCmdEndRenderPass(commandBuffer);
 
-                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
-                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                        VkImageSubresourceRange.calloc(stack)
-                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                                .baseMipLevel(0)
-                                .levelCount(1)
-                                .layerCount(1)
-                                .baseArrayLayer(0));
+//                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
+//                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
+//                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+//                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+//                        VkImageSubresourceRange.calloc(stack)
+//                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+//                                .baseMipLevel(0)
+//                                .levelCount(1)
+//                                .layerCount(1)
+//                                .baseArrayLayer(0));
 
                 if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to record command buffer");
@@ -485,7 +541,89 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     @Override
     public void initRenderPasses() {
+        try(MemoryStack stack = stackPush()) {
 
+            VkAttachmentDescription.Buffer attachments;
+            VkAttachmentReference.Buffer attachmentRefs;
+
+            attachments = VkAttachmentDescription.calloc(2, stack);
+            attachmentRefs = VkAttachmentReference.calloc(2, stack);
+
+            // Color attachment
+            var colorAttachment = attachments.get(0);
+            colorAttachment.format(swapChainImageFormat);
+            colorAttachment.samples(numOfSamples);
+            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+            var colorAttachmentRef = attachmentRefs.get(0);
+            colorAttachmentRef.attachment(0);
+            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            // Depth-Stencil attachments
+            VkAttachmentDescription depthAttachment = attachments.get(1);
+            depthAttachment.format(findDepthFormat(physicalDevice));
+            depthAttachment.samples(numOfSamples);
+            depthAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            depthAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            depthAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            depthAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
+            depthAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+            depthAttachment.finalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+            VkAttachmentReference depthAttachmentRef = attachmentRefs.get(1);
+            depthAttachmentRef.attachment(1);
+            depthAttachmentRef.layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+            VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
+            subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            subpass.colorAttachmentCount(1);
+            subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
+            subpass.pDepthStencilAttachment(depthAttachmentRef);
+
+            VkSubpassDependency.Buffer dependencies = VkSubpassDependency.calloc(2, stack);
+
+            var dependency1 = dependencies.get(0);
+            dependency1.srcSubpass(VK_SUBPASS_EXTERNAL);
+            dependency1.dstSubpass(0);
+
+            dependency1.srcStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+            dependency1.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+            dependency1.srcAccessMask(VK_ACCESS_MEMORY_READ_BIT);
+            dependency1.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency1.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
+
+            var dependency2 = dependencies.get(1);
+            dependency2.srcSubpass(0);
+            dependency2.dstSubpass(VK_SUBPASS_EXTERNAL);
+
+            dependency2.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            dependency2.dstStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+
+            dependency2.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+            dependency2.dstAccessMask(VK_ACCESS_MEMORY_READ_BIT);
+            dependency2.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
+
+            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
+            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
+            renderPassInfo.pAttachments(attachments);
+            renderPassInfo.pSubpasses(subpass);
+            renderPassInfo.pDependencies(dependencies);
+
+            LongBuffer pRenderPass = stack.mallocLong(1);
+
+            if(vkCreateRenderPass(device, renderPassInfo, null, pRenderPass) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create render pass");
+            }
+
+            renderPass = pRenderPass.get(0);
+            deletionQueue.add(() -> vkDestroyRenderPass(device, renderPass, null));
+        }
     }
 
     @Override
@@ -502,10 +640,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
 
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
-        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+//        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         builder.inputAssemblyCreateInfo = null;
 
-        var pipeLineCreateResults = builder.build(device, null);
+        var pipeLineCreateResults = builder.build(device, renderPass);
         pipelineLayout = pipeLineCreateResults.pipelineLayout();
         graphicsPipeline = pipeLineCreateResults.pipeline();
 
