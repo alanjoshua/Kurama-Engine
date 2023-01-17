@@ -156,60 +156,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                 renderPassInfo.pClearValues(clearValues);
 
-//                // For dynamic Rendering
-//                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
-//                        0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-//                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-//                        VkImageSubresourceRange.calloc(stack)
-//                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-//                                .baseMipLevel(0)
-//                                .levelCount(1)
-//                                .layerCount(1)
-//                                .baseArrayLayer(0));
-//
-//                insertImageMemoryBarrier(commandBuffer, depthAttachment.allocatedImage.image,
-//                        0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-//                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-//                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-//                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-//                        VkImageSubresourceRange.calloc(stack)
-//                                .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-//                                .baseMipLevel(0)
-//                                .levelCount(1)
-//                                .layerCount(1)
-//                                .baseArrayLayer(0));
-//
-//                var colorAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
-//                colorAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
-//                colorAttachment.imageView(swapChainAttachments.get(i).swapChainImageView);
-//                colorAttachment.imageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
-//                colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//                colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-//                colorAttachment.clearValue().color(VkClearValue.calloc(stack).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 0.0f)));
-//
-//                var depthStencilAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
-//                depthStencilAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
-//                depthStencilAttachment.imageView(depthAttachment.imageView);
-//                depthStencilAttachment.imageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-//                depthStencilAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-//                depthStencilAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-//                depthStencilAttachment.clearValue().depthStencil(VkClearDepthStencilValue.calloc(stack).set(1f, 0));
-//
-//                VkRect2D renderArea = VkRect2D.calloc(stack);
-//                renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
-//                renderArea.extent(swapChainExtent);
-//
-//                var renderingInfo = VkRenderingInfo.calloc(stack);
-//                renderingInfo.sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR);
-//                renderingInfo.renderArea(renderArea);
-//                renderingInfo.layerCount(1);
-//                renderingInfo.pColorAttachments(colorAttachment);
-//                renderingInfo.pDepthAttachment(depthStencilAttachment.get(0));
-//                renderingInfo.pStencilAttachment(depthStencilAttachment.get(0));
-//
-//                vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
-
                 var viewportBuffer = VkViewport.calloc(1, stack);
                 viewportBuffer.width(swapChainExtent.width());
                 viewportBuffer.height(swapChainExtent.height());
@@ -242,19 +188,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     vkCmdDrawMeshTasksEXT(commandBuffer, meshlets.size()/32 + 1, 1, 1);
                 }
 
-//                vkCmdEndRenderingKHR(commandBuffer);
                 vkCmdEndRenderPass(commandBuffer);
-
-//                insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(i).swapChainImage,
-//                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
-//                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-//                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-//                        VkImageSubresourceRange.calloc(stack)
-//                                .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-//                                .baseMipLevel(0)
-//                                .levelCount(1)
-//                                .layerCount(1)
-//                                .baseArrayLayer(0));
 
                 if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
                     throw new RuntimeException("Failed to record command buffer");
@@ -585,35 +519,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
             subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
             subpass.pDepthStencilAttachment(depthAttachmentRef);
 
-            VkSubpassDependency.Buffer dependencies = VkSubpassDependency.calloc(2, stack);
-
-            var dependency1 = dependencies.get(0);
-            dependency1.srcSubpass(VK_SUBPASS_EXTERNAL);
-            dependency1.dstSubpass(0);
-
-            dependency1.srcStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-            dependency1.dstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-
-            dependency1.srcAccessMask(VK_ACCESS_MEMORY_READ_BIT);
-            dependency1.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            dependency1.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
-
-            var dependency2 = dependencies.get(1);
-            dependency2.srcSubpass(0);
-            dependency2.dstSubpass(VK_SUBPASS_EXTERNAL);
-
-            dependency2.srcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-            dependency2.dstStageMask(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-
-            dependency2.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            dependency2.dstAccessMask(VK_ACCESS_MEMORY_READ_BIT);
-            dependency2.dependencyFlags(VK_DEPENDENCY_BY_REGION_BIT);
-
             VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
             renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
             renderPassInfo.pAttachments(attachments);
             renderPassInfo.pSubpasses(subpass);
-            renderPassInfo.pDependencies(dependencies);
 
             LongBuffer pRenderPass = stack.mallocLong(1);
 
