@@ -82,6 +82,9 @@ public class MeshletGen {
         curMeshlet.vertexBegin = globalVertsIndexBufferPos;
         curMeshlet.indexBegin = globalLocalIndexBufferPos;
 
+        var curMeshletPos = new Vector(0,0,0);
+        var curBounds = new BoundValues();
+
         int numTimesVertLimitReached = 0;
         int numPrimLimitReached = 0;
 
@@ -129,8 +132,9 @@ public class MeshletGen {
             if(isMaxVertsReached || isMaxPrimsReached) {
                 curMeshlet.primitiveCount = curMeshletLocalIndices.size()/vertsPerPrimitive;
                 curMeshlet.vertexCount = curMeshletVertIndices.size();
-                curMeshlet.pos = new Vector(0,0,0); // temporary
-                curMeshlet.boundRadius = 1;
+                curMeshletPos = curMeshletPos.scalarMul(1f/curMeshletVertIndices.size());
+                curMeshlet.pos = curMeshletPos; // temporary
+                curMeshlet.boundRadius = calculateBoundRadius(curBounds);
 
                 log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
 
@@ -141,6 +145,8 @@ public class MeshletGen {
                 curMeshletVertIndices.clear();
                 curMeshletLocalIndices.clear();
                 curMeshletVertMapping.clear();
+                curMeshletPos = new Vector(0,0,0);
+                curBounds = new BoundValues();
 
                 curMeshlet = new Meshlet();
                 curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertIndices.size();
@@ -159,14 +165,35 @@ public class MeshletGen {
                 //Else, add current primitive to meshlet
                 curMeshletVertIndices.addAll(uniqueVertsToBeAdded);
                 curMeshletLocalIndices.addAll(indexLocsToBeInserted);
+
+                // Calculate meshlet pos and bounds
+                for(int vertsThisPrim: uniqueVertsToBeAdded) {
+                    var v = mesh.getVertices().get(vertsThisPrim - globalVertsBufferPos);
+                    curMeshletPos = curMeshletPos.add(v);
+
+                    if (v.get(0) > curBounds.maxx)
+                        curBounds.maxx = v.get(0);
+                    if (v.get(1) > curBounds.maxy)
+                        curBounds.maxy = v.get(1);
+                    if (v.get(2) > curBounds.maxz)
+                        curBounds.maxz = v.get(2);
+
+                    if (v.get(0) < curBounds.minx)
+                        curBounds.minx = v.get(0);
+                    if (v.get(1) < curBounds.miny)
+                        curBounds.miny = v.get(1);
+                    if (v.get(2) < curBounds.minz)
+                        curBounds.minz = v.get(2);
+                }
             }
         }
 
         //Add last meshlet
         curMeshlet.primitiveCount = curMeshletLocalIndices.size()/vertsPerPrimitive;
         curMeshlet.vertexCount = curMeshletVertIndices.size();
-        curMeshlet.pos = new Vector(0,0,0);
-        curMeshlet.boundRadius = 1;
+        curMeshletPos = curMeshletPos.scalarMul(1f/curMeshletVertIndices.size());
+        curMeshlet.pos = curMeshletPos;
+        curMeshlet.boundRadius = calculateBoundRadius(curBounds);
 
         vertIndices.addAll(curMeshletVertIndices);
         primIndices.addAll(curMeshletLocalIndices);

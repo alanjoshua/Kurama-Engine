@@ -8,20 +8,43 @@
 #extension GL_EXT_mesh_shader : require
 #extension GL_KHR_shader_subgroup_ballot : require
 
-//struct Meshlet {
-//    // x = int primitiveCount;
-//    // y = int vertexCount;
-//    // z = int indexBegin;
-//    // w = int vertexBegin;
-//    vec4 info;
-//    vec4 bound; //vec3 = pos, w = bound sphere radius
-//    float objectId; //
-//    vec3 padding;
-//};
-//
-//layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
-//    Meshlet meshlets[];
-//} meshletBuffer;
+
+struct ObjectData {
+    mat4 model;
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+layout (set = 0, binding = 0) uniform CameraBuffer
+{
+    mat4 projview;
+    mat4 view;
+    mat4 proj;
+    vec4 frustumPlanes[6];
+} camera;
+
+
+struct Meshlet {
+// x = int primitiveCount;
+// y = int vertexCount;
+// z = int indexBegin;
+// w = int vertexBegin;
+    vec4 info;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    vec4 objectId; //yzw are padding
+};
+
+layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer UBOOut
+{
+    uint meshletDrawCount;
+} uboOut;
 
 layout(local_size_x=32) in;
 
@@ -32,16 +55,62 @@ struct Task {
 
 taskPayloadSharedEXT Task task;
 
+bool isWithinFrustum(vec4 pos, float radius) {
+    // Check sphere against frustum planes
+    for (int i = 0; i < 6; i++) {
+//        return false;
+        float dotProd = dot(pos, camera.frustumPlanes[i]);
+        if (dotProd + radius < 0.0) {
+//            return true;
+            return false;
+        }
+
+//        if (dot(vec4(1,1,1,1), vec4(1,1,1,1)) < 0.0) {
+//            //            return true;
+//            return false;
+//        }
+    }
+    return true;
+
+}
+
+bool shouldRender(uint localId) {
+
+    uint meshletID = (gl_WorkGroupID.x * 32) + localId;
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId.x)];
+
+    vec3 pos = curMeshlet.bound.xyz;
+    float radius = curMeshlet.bound.w; // Assume radius is already scaled from CPU
+
+    mat4 mvp = camera.projview * relatedModel.model;
+    vec4 transfPos = vec4((mvp * vec4(pos.xyz, 1.0)).xyz, 1.0);
+    transfPos = vec4(0,0,0,0);
+//    return true;
+//    return false;
+    return isWithinFrustum(transfPos, radius);
+}
+
 void main() {
 
-    bool doRender = true; // Replace with frustum culling
+    // Clear stats on first invocation
+    if (gl_GlobalInvocationID.x == 0) {
+        atomicExchange(uboOut.meshletDrawCount, 0);
+    }
+
+    bool doRender = shouldRender(gl_LocalInvocationID.x); // Replace with frustum culling
 
     uvec4 vote = subgroupBallot(doRender);
     uint numMeshlets = subgroupBallotBitCount(vote);
 
-    uint idxOffset = subgroupBallotExclusiveBitCount(vote);
-    task.subIDs[idxOffset] = uint(gl_LocalInvocationID);
+    if(gl_LocalInvocationID.x == 0) {
+        EmitMeshTasksEXT(numMeshlets, 1, 1);
+    }
 
-	task.baseID = gl_WorkGroupID.x;
-	EmitMeshTasksEXT(numMeshlets, 1, 1);
+    if(doRender) {
+        uint idxOffset = subgroupBallotExclusiveBitCount(vote);
+        task.subIDs[idxOffset] = uint(gl_LocalInvocationID);
+        task.baseID = gl_WorkGroupID.x;
+    }
+
 }

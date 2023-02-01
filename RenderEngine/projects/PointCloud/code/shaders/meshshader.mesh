@@ -6,6 +6,7 @@ layout (set = 0, binding = 0) uniform CameraBuffer
 	mat4 projview;
 	mat4 view;
 	mat4 proj;
+    vec4 frustumPlanes[6];
 } camera;
 
 struct ObjectData {
@@ -24,6 +25,12 @@ struct Vertex {
 layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
     Vertex vertices[];
 }vertexBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer UBOOut
+{
+    uint meshletDrawCount;
+} uboOut;
 
 struct Meshlet {
     // x = int primitiveCount;
@@ -70,6 +77,8 @@ taskPayloadSharedEXT Task task;
 
 void main()
 {
+    atomicAdd(uboOut.meshletDrawCount, 1);
+
 	uint meshletID = (task.baseID * 32) + task.subIDs[gl_WorkGroupID.x];
 
     // Ensure we don't read past the meshlet buffer bounds
