@@ -14,6 +14,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static Kurama.Mesh.Mesh.VERTATTRIB.*;
+import static Kurama.Mesh.MeshletGen.generateMeshlets;
+import static Kurama.Mesh.MeshletGen.mergeMeshes;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logPerSec;
@@ -46,6 +48,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
     public List<Integer> meshletVertexIndexBuffer = new ArrayList<>();
     public List<Integer> meshletLocalIndexBuffer = new ArrayList<>();
 
@@ -78,6 +81,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
         createInfo.pNext(meshShaderFeatures);
 
         this.controller = (PointCloudController) game;
+
+        for(var key: meshAttribsToLoad) {
+            globalVertAttribs.put(key, new ArrayList<>());
+        }
     }
 
     @Override
@@ -221,6 +228,39 @@ public class PointCloudRenderer extends VulkanRendererBase {
     @Override
     public void swapChainRecreatedEvent() {
         recordCommandBuffers();
+    }
+
+    public void createMeshlets() {
+
+        for(int modelInd = 0; modelInd < controller.models.size(); modelInd++) {
+            var model = controller.models.get(modelInd);
+
+            var results = generateMeshlets(model.meshes.get(0), 3, 64, 124,
+                    globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
+                    meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
+
+//            log("Finished creating meshlets. Num of meshlets: " + results.meshlets().size() +
+//                    " for num of prims: "+ mergedMesh.indices.size()/3 +
+//                    " num of verts: "+ mergedMesh.vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
+
+            int ind = modelInd;
+            results.meshlets().forEach(meshlet -> meshlet.objectId = ind);
+            log("meshlet model ind: "+ind);
+            meshlets.addAll(results.meshlets());
+
+            for(var key: meshAttribsToLoad) {
+                if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
+                    throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+                }
+                globalVertAttribs.get(key).addAll(model.meshes.get(0).vertAttributes.get(key));
+            }
+            meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
+            meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+
+            log(" num of total verts: "+ globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
+
+        }
+
     }
 
     @Override
@@ -612,11 +652,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
             projView.setValuesToBuffer(bw.buffer);
 
 //            log("dot products:");
-//            var pos = new Vector(1,1,1,1);
-//            for(var f: frustumPlanes) {
-//                f.setValuesToBuffer(bw.buffer);
+            var pos = new Vector(1,1,1,1);
+            for(var f: frustumPlanes) {
+                f.setValuesToBuffer(bw.buffer);
 //                log(f + "=" +pos.dot(f));
-//            }
+            }
 
             bw.unmapBuffer();
         }

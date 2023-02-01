@@ -83,11 +83,9 @@ bool shouldRender(uint localId) {
     vec3 pos = curMeshlet.bound.xyz;
     float radius = curMeshlet.bound.w; // Assume radius is already scaled from CPU
 
-    mat4 mvp = camera.projview * relatedModel.model;
+    mat4 mvp = relatedModel.model;
     vec4 transfPos = vec4((mvp * vec4(pos.xyz, 1.0)).xyz, 1.0);
-    transfPos = vec4(0,0,0,0);
-//    return true;
-//    return false;
+
     return isWithinFrustum(transfPos, radius);
 }
 

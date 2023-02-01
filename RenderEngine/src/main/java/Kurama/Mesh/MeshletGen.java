@@ -420,7 +420,7 @@ public class MeshletGen {
         float max1 = Math.max(xRange, yRange);
         float max2 = Math.max(max1, zRange);
 
-        return max2 * 1.5f;
+        return max2/2.0f;
     }
 
     public static SortedVertAttribs sortMeshVertices(Map<Mesh.VERTATTRIB, List<Vector>> vertAttribs, List<Integer> indices) {

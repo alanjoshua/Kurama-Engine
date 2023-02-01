@@ -32,7 +32,6 @@ public class PointCloudController extends Game {
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
 
     public List<Model> models = new ArrayList<>();
     public Camera mainCamera;
@@ -51,9 +50,6 @@ public class PointCloudController extends Game {
 
         renderingEngine.init(null);
 
-        for(var key: meshAttribsToLoad) {
-            renderer.globalVertAttribs.put(key, new ArrayList<>());
-        }
         loadScene();
 
         this.setTargetFPS(Integer.MAX_VALUE);
@@ -63,7 +59,7 @@ public class PointCloudController extends Game {
 
         mainCamera = new Camera(this,null, null,
                 new Vector(new float[] {0,0,0}),60,
-                0.1f, 10000.0f,
+                0.1f, 500.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
                 false, "playerCam");
 
@@ -117,8 +113,16 @@ public class PointCloudController extends Game {
 
     public void loadScene() {
 
-           createMinecraftWorld();
-           createRoom();
+        createMinecraftWorld();
+        createRoom();
+        renderer.createMeshlets();
+
+        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
+                renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 3);
+
+        models.forEach(m -> m.tick(null, input, timeDelta, false));
+        renderer.meshesMergedEvent();
+
 //           createMinecraftWorld();
 
         log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
@@ -131,79 +135,36 @@ public class PointCloudController extends Game {
 //            renderer.meshletLocalIndexBuffer.forEach(v -> log(v));
 //            log();
 
-        models.forEach(m -> m.tick(null, input, timeDelta, false));
-
-        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
-                renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 3);
-
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
 
-//        log("meshlet 67: " + renderer.meshlets.get(67));
-//        log("meshlet 68: " + renderer.meshlets.get(68));
-//        log();
-//        var m68 = renderer.meshlets.get(67);
-//        for(int i = m68.vertexBegin; i < m68.vertexBegin + m68.vertexCount; i++) {
-//            int vertIndex = renderer.meshletVertexIndexBuffer.get(i);
-//            log("vert ind: " + vertIndex +
-//                    " pos: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).get(vertIndex) +
-//                    " color: " + renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).get(vertIndex));
-//        }
-//        log("Indices: ");
-//        for(int i = 0; i < m68.primitiveCount; i++) {
-//            int base = m68.indexBegin + (i * 3);
-//            log(renderer.meshletLocalIndexBuffer.get(base + 0) + " " +
-//                    renderer.meshletLocalIndexBuffer.get(base + 1) + " " +
-//                    renderer.meshletLocalIndexBuffer.get(base + 2));
-//        }
-
-        renderer.meshesMergedEvent();
     }
     public void createRoom() {
         var textureDir = "projects/ActiveShutter/models/textures/";
 
-        List<Mesh> meshes2;
+        List<Mesh> meshes;
         try {//projects/VulkanTestProject/models/meshes/viking_room.obj
-            meshes2 = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
+            meshes = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/viking_room.obj", textureDir);
 
             // TODO: Temporary because of bug KE:16
             var tex = Texture.createTexture(textureDir + "viking_room.png");
-            meshes2.get(0).materials.get(0).texture = tex;
 
-            log("Creating meshlets");
-            var results = generateMeshlets(meshes2.get(0), 3, 64, 124,
-                    renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
-                    renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
-//            var results = generateMeshlets(meshes2.get(0), 3, 64, 124);
-            log("Finished creating meshlets. Num of meshlets: "+ results.meshlets().size() + " for num of prims: "
-                    + meshes2.get(0).indices.size()/3 + " for num of verts: "+ meshes2.get(0).vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
+            var mergedMesh = mergeMeshes(meshes);;
+            mergedMesh.materials.get(0).texture = tex;
+            mergedMesh.boundingRadius = 50;
+            meshes.clear();
+            meshes.add(mergedMesh);
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = models.size());
-            renderer.meshlets.addAll(results.meshlets());
-
-            for(var key: meshAttribsToLoad) {
-                if(!meshes2.get(0).vertAttributes.containsKey(key)) {
-                    throw new RuntimeException("Mesh "+ meshes2.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
-                }
-                renderer.globalVertAttribs.get(key).addAll(meshes2.get(0).vertAttributes.get(key));
-            }
-
-            renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-            renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
-
-
-            log("total num of meshlets in this scene = "+ renderer.meshlets.size());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         //Add texture loc
-        var vikingRoom = new Model(this, meshes2, "vikingRoom");
+        var vikingRoom = new Model(this, meshes, "vikingRoom");
         vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
         vikingRoom.setPos(new Vector(0, 50, 0));
         vikingRoom.setScale(10);
 
-        log("num of meshes in viking room: "+ vikingRoom.meshes.size());
         models.add(vikingRoom);
     }
 
@@ -218,31 +179,12 @@ public class PointCloudController extends Game {
 
             // TODO: Temporary because of bug KE:16
             var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
-            for(var m: meshes) {
-                m.materials.get(0).texture = tex;
-                m.boundingRadius = 50;
-            }
-            var mergedMesh = mergeMeshes(meshes);
-            log("Creating meshlets");
-            var results = generateMeshlets(mergedMesh, 3, 64, 124,
-                    renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
-                    renderer.meshletVertexIndexBuffer.size(), renderer.meshletLocalIndexBuffer.size());
-            log("Finished creating meshlets. Num of meshlets: " + results.meshlets().size() +
-                    " for num of prims: "+ mergedMesh.indices.size()/3 +
-                    " num of verts: "+ mergedMesh.vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
 
-            results.meshlets().forEach(meshlet -> meshlet.objectId = models.size());
-            renderer.meshlets.addAll(results.meshlets());
-            for(var key: meshAttribsToLoad) {
-                if(!mergedMesh.vertAttributes.containsKey(key)) {
-                    throw new RuntimeException("Mesh "+ mergedMesh.meshLocation + " does not have the required vertex attribute: "+ key);
-                }
-                renderer.globalVertAttribs.get(key).addAll(mergedMesh.vertAttributes.get(key));
-            }
-            renderer.meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-            renderer.meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
-
-            log(" num of total verts: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
+            var mergedMesh = mergeMeshes(meshes);;
+            mergedMesh.materials.get(0).texture = tex;
+            mergedMesh.boundingRadius = 50;
+            meshes.clear();
+            meshes.add(mergedMesh);
 
         }
         catch (Exception e) {
