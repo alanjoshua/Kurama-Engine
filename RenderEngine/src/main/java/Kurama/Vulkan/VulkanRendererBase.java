@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static Kurama.Vulkan.VulkanUtilities.device;
 import static Kurama.utils.Logger.log;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -768,6 +769,8 @@ public abstract class VulkanRendererBase extends RenderingEngine {
                     singleTimeGraphicsCommandContext);
 
             this.depthAttachment = depthAttachment;
+            deletionQueue.add(() -> vkDestroyImageView(device, depthAttachment.imageView, null));
+            deletionQueue.add(() -> vmaDestroyImage(vmaAllocator, depthAttachment.allocatedImage.image, depthAttachment.allocatedImage.allocation));
         }
     }
 

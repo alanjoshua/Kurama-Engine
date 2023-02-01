@@ -91,17 +91,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
         createDepthAttachment();
         initFrameBuffers();
         initPipelines();
-
-        deletionQueue.add(() -> frames.forEach(f -> {
-            vmaDestroyBuffer(vmaAllocator, f.cameraBuffer.buffer, f.cameraBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.objectBuffer.buffer, f.objectBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.vertexBuffer.buffer, f.vertexBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.meshletDescBuffer.buffer, f.meshletDescBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.meshletVertexBuffer.buffer, f.meshletVertexBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.meshletVertexLocalIndexBuffer.buffer, f.meshletVertexLocalIndexBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.meshletDrawCountBuffer.buffer, f.meshletDrawCountBuffer.allocation);
-            vmaDestroyBuffer(vmaAllocator, f.meshletCountBuffer.buffer, f.meshletCountBuffer.allocation);
-        }));
     }
 
     public void initFrameBuffers() {
@@ -133,6 +122,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 frames.get(i).frameBuffer = pFramebuffer.get(0);
                 i++;
             }
+
+            frames.forEach(f -> deletionQueue.add(() -> vkDestroyFramebuffer(device, f.frameBuffer, null)));
+
         }
     }
 
@@ -372,10 +364,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 };
 
                 VulkanUtilities.submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
-
-                deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, frame.vertexBuffer.buffer, frame.vertexBuffer.allocation));
-                deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, frame.meshletVertexLocalIndexBuffer.buffer, frame.meshletVertexLocalIndexBuffer.allocation));
-                deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, frame.meshletVertexBuffer.buffer, frame.meshletVertexBuffer.allocation));
             }
 
         vmaDestroyBuffer(vmaAllocator, globalVerticesStagingBuffer.buffer, globalVerticesStagingBuffer.allocation);
@@ -502,6 +490,17 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
+
+            deletionQueue.add(() -> {
+                vmaDestroyBuffer(vmaAllocator, frame.cameraBuffer.buffer, frame.cameraBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.objectBuffer.buffer, frame.objectBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.vertexBuffer.buffer, frame.vertexBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletDescBuffer.buffer, frame.meshletDescBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletVertexBuffer.buffer, frame.meshletVertexBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletVertexLocalIndexBuffer.buffer, frame.meshletVertexLocalIndexBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletDrawCountBuffer.buffer, frame.meshletDrawCountBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletCountBuffer.buffer, frame.meshletCountBuffer.allocation);
+            });
         }
     }
 
@@ -627,6 +626,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void cleanUp() {
         // Wait for the device to complete all operations before release resources
         vkDeviceWaitIdle(device);
+
+        cleanUpSwapChainAndSwapImages();
 
         for(int i = deletionQueue.size()-1; i >= 0; i--) {
             deletionQueue.get(i).run();
