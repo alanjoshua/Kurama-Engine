@@ -116,6 +116,10 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
+    public void tick() {
+
+    }
+
     // Update frustum whenever camera is updated
     public void cameraUpdatedEvent() {
         for(var frame: multiViewRenderPass.frames) {
@@ -125,7 +129,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         computeUBOIn.frustumPlanes = Arrays.asList(((ActiveShutterGame)game).mainCamera.frustumIntersection.planes);
     }
 
-    public void meshesMergedEvent() {
+    public void geometryUpdatedEvent() {
         computeUBOIn.objectCount = renderables.size();
         recordComputeCommandBuffers();
         int i = 0;

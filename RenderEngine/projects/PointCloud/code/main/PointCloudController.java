@@ -5,20 +5,16 @@ import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Texture;
-import Kurama.Vulkan.TextureVK;
 import Kurama.camera.Camera;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
-import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerPrimitive;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
@@ -32,8 +28,6 @@ public class PointCloudController extends Game {
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
-
-    public List<Model> models = new ArrayList<>();
     public Camera mainCamera;
 
     public PointCloudController(String name) {
@@ -100,8 +94,8 @@ public class PointCloudController extends Game {
 
             mainCamera.tick(null, input, timeDelta, false);
             // Call tick on all models
-            models.forEach(m -> m.tick(null, input, timeDelta, false));
-
+            renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
+            renderer.tick();
         }
 
         if(glfwWindowShouldClose(((DisplayVulkan)display).window)) {
@@ -120,8 +114,8 @@ public class PointCloudController extends Game {
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
                 renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 3);
 
-        models.forEach(m -> m.tick(null, input, timeDelta, false));
-        renderer.meshesMergedEvent();
+        renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
+        renderer.geometryUpdatedEvent();
 
 //           createMinecraftWorld();
 
@@ -165,7 +159,7 @@ public class PointCloudController extends Game {
         vikingRoom.setPos(new Vector(0, 50, 0));
         vikingRoom.setScale(10);
 
-        models.add(vikingRoom);
+        renderer.addModel(vikingRoom);
     }
 
     public void createMinecraftWorld() {
@@ -196,7 +190,7 @@ public class PointCloudController extends Game {
         lostEmpire.setScale(1f);
         lostEmpire.setPos(new Vector(5, -10, 0));
 
-        models.add(lostEmpire);
+        renderer.addModel(lostEmpire);
     }
 
     public void cameraUpdates(float timeDelta) {
@@ -270,14 +264,6 @@ public class PointCloudController extends Game {
         if(input.keyDownOnce(input.LEFT_CONTROL)) {
             if(this.speedMultiplier == 1) this.speedMultiplier = this.speedIncreaseMultiplier;
             else this.speedMultiplier = 1;
-        }
-
-        if(input.keyDown(input.LEFT_ARROW)) {
-            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -90 * timeDelta));
-        }
-
-        if(input.keyDown(input.RIGHT_ARROW)) {
-            models.get(0).orientation = models.get(0).orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, 90 * timeDelta));
         }
 
         this.mainCamera.velocity = velocity;

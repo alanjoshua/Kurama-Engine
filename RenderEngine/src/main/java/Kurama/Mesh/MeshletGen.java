@@ -416,7 +416,6 @@ public class MeshletGen {
         float yRange = boundvalues.maxy - boundvalues.miny;
         float zRange = boundvalues.maxz - boundvalues.minz;
 
-        // temp, return 1.5x largest dimension
         float max1 = Math.max(xRange, yRange);
         float max2 = Math.max(max1, zRange);
 

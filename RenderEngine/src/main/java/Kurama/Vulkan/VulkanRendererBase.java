@@ -115,7 +115,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
     // Event callback when swapchain is recreated
     public abstract void swapChainRecreatedEvent();
     // Event callback
-    public abstract void meshesMergedEvent();
+    public abstract void geometryUpdatedEvent();
     public abstract void cameraUpdatedEvent();
 
     public abstract void initDescriptorSets();
@@ -619,7 +619,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedVertexBuffer.buffer, mergedVertexBuffer.allocation));
         deletionQueue.add(() -> vmaDestroyBuffer(vmaAllocator, mergedIndexBuffer.buffer, mergedIndexBuffer.allocation));
 
-        meshesMergedEvent();
+        geometryUpdatedEvent();
     }
 
     public long getTextureSampler(int maxLod) {

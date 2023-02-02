@@ -1,5 +1,8 @@
 package main;
 
+import Kurama.ComponentSystem.components.model.Model;
+import Kurama.Math.DataAnalysis;
+import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
@@ -47,10 +50,16 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MESHLETSIZE = (Float.BYTES * 4 * 3);
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
+    int previousMeshletCount = -1;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
     public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
     public List<Integer> meshletVertexIndexBuffer = new ArrayList<>();
     public List<Integer> meshletLocalIndexBuffer = new ArrayList<>();
+
+    public List<MeshletUpdateInfo> meshletsToBeUpdated = new ArrayList<>();
+    public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();
+    public record ObjectDataUpdate(int index, Model model){}
+    public record MeshletUpdateInfo(int index, Vector info, Vector bounds, Integer objectId, Meshlet meshlet){}
 
     public class Frame {
         public AllocatedBuffer cameraBuffer;
@@ -98,6 +107,16 @@ public class PointCloudRenderer extends VulkanRendererBase {
         createDepthAttachment();
         initFrameBuffers();
         initPipelines();
+    }
+
+    @Override
+    public void tick() {
+
+        if(previousMeshletCount != meshlets.size()) {
+            recordCommandBuffers();
+        }
+
+        checkAndPerformBufferUpdates();
     }
 
     public void initFrameBuffers() {
@@ -230,23 +249,45 @@ public class PointCloudRenderer extends VulkanRendererBase {
         recordCommandBuffers();
     }
 
+    public void addMeshlet(int ind, Meshlet meshlet) {
+
+        var meshletUpdateInfo = new MeshletUpdateInfo(ind,
+                new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
+                new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
+                meshlet.objectId, meshlet);
+
+        meshletsToBeUpdated.add(meshletUpdateInfo);
+        meshlets.add(meshlet);
+    }
+
+    public void addModel(int ind, Model model) {
+        var objectUpdateInfo = new ObjectDataUpdate(ind, model);
+        models.remove(ind);
+        models.add(ind, model);
+        objectInfoToBeUpdated.add(objectUpdateInfo);
+    }
+    public void addModel(Model model) {
+        var objectUpdateInfo = new ObjectDataUpdate(models.size(), model);
+        models.add(model);
+        objectInfoToBeUpdated.add(objectUpdateInfo);
+    }
+
+
     public void createMeshlets() {
 
-        for(int modelInd = 0; modelInd < controller.models.size(); modelInd++) {
-            var model = controller.models.get(modelInd);
+        for(int modelInd = 0; modelInd < models.size(); modelInd++) {
+            var model = models.get(modelInd);
 
             var results = generateMeshlets(model.meshes.get(0), 3, 64, 124,
                     globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
                     meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
 
-//            log("Finished creating meshlets. Num of meshlets: " + results.meshlets().size() +
-//                    " for num of prims: "+ mergedMesh.indices.size()/3 +
-//                    " num of verts: "+ mergedMesh.vertAttributes.get(Mesh.VERTATTRIB.POSITION).size());
-
             int ind = modelInd;
             results.meshlets().forEach(meshlet -> meshlet.objectId = ind);
-            log("meshlet model ind: "+ind);
-            meshlets.addAll(results.meshlets());
+
+            for(var meshlet: results.meshlets()) {
+                addMeshlet(meshlets.size(), meshlet);
+            }
 
             for(var key: meshAttribsToLoad) {
                 if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
@@ -264,49 +305,80 @@ public class PointCloudRenderer extends VulkanRendererBase {
     }
 
     @Override
-    public void meshesMergedEvent() {
-        updateObjectBufferDataInMemory();
+    public void geometryUpdatedEvent() {
         updateVertexAndIndexBuffers();
-        updateMeshletInfoBuffer();
-        recordCommandBuffers();
+    }
+
+    public void checkAndPerformBufferUpdates() {
+
+        if(previousMeshletCount != meshlets.size()) {
+            previousMeshletCount = meshlets.size();
+            for(var frame: frames) {
+                var bw = new BufferWriter(vmaAllocator, frame.meshletCountBuffer, Integer.SIZE, Integer.SIZE);
+                bw.mapBuffer();
+                bw.setPosition(0);
+                bw.put(meshlets.size());
+                bw.unmapBuffer();
+            }
+        }
+
+        if(objectInfoToBeUpdated.size() > 0) {
+
+            var alignmentSize = GPUObjectData_SIZEOF;
+            int bufferSize = alignmentSize * models.size();
+
+            for(var frame: frames) {
+                var bw = new BufferWriter(vmaAllocator, frame.objectBuffer, alignmentSize, bufferSize);
+                bw.mapBuffer();
+                for(var data: objectInfoToBeUpdated) {
+                    bw.setPosition(data.index);
+                    bw.put(data.model.objectToWorldMatrix);
+                }
+                bw.unmapBuffer();
+            }
+            objectInfoToBeUpdated.clear();
+        }
+
+        if(meshletsToBeUpdated.size() > 0) {
+
+            for(var frame: frames) {
+                var bw = new BufferWriter(vmaAllocator, frame.meshletDescBuffer, MESHLETSIZE, MESHLETSIZE * meshlets.size());
+                bw.mapBuffer();
+
+                for(var data: meshletsToBeUpdated) {
+                    bw.setPosition(data.index);
+
+                    if(data.info != null) {
+                        bw.put(data.info);
+                    }
+                    else {
+                        bw.buffer.position(data.index * MESHLETSIZE + Float.BYTES * 4);
+                    }
+
+                    if(data.bounds != null) {
+                        bw.put(data.bounds);
+                    }
+                    else {
+                        bw.buffer.position(data.index * MESHLETSIZE + Float.BYTES * 8);
+                    }
+
+                    if(data.objectId != null) {
+                        bw.put(data.objectId);
+                        bw.put(0);
+                        bw.put(0);
+                        bw.put(0);
+                    }
+
+                }
+                bw.unmapBuffer();
+            }
+            meshletsToBeUpdated.clear();
+        }
     }
 
     @Override
     public void cameraUpdatedEvent() {
         updateCameraBuffer();
-    }
-
-    // TODO: This must be based on updating portions of the list instead of entire portions
-    public void updateMeshletInfoBuffer() {
-
-        for(var frame: frames) {
-            // Update meshlets desc buffer
-            var bw = new BufferWriter(vmaAllocator, frame.meshletDescBuffer, MESHLETSIZE, MESHLETSIZE * meshlets.size());
-            bw.mapBuffer();
-            for(int i = 0; i < meshlets.size(); i++) {
-                bw.setPosition(i);
-                bw.put((float)meshlets.get(i).primitiveCount);
-                bw.put((float)meshlets.get(i).vertexCount);
-                bw.put((float)meshlets.get(i).indexBegin);
-                bw.put((float)meshlets.get(i).vertexBegin);
-
-                bw.put(meshlets.get(i).pos);
-                bw.put(meshlets.get(i).boundRadius);
-
-                bw.putFloat(meshlets.get(i).objectId);
-                bw.putFloat(0);
-                bw.putFloat(0);
-                bw.putFloat(0);
-
-            }
-            bw.unmapBuffer();
-
-            bw = new BufferWriter(vmaAllocator, frame.meshletCountBuffer, Integer.SIZE, Integer.SIZE);
-            bw.mapBuffer();
-            bw.setPosition(0);
-            bw.put(meshlets.size());
-            bw.unmapBuffer();
-        }
     }
 
     public void updateVertexAndIndexBuffers() {
@@ -412,29 +484,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         }
 
-    }
-
-    public void updateObjectBufferDataInMemory() {
-        // TODO: Check whether buffer must be resized
-
-        var alignmentSize = GPUObjectData_SIZEOF;
-        int bufferSize = alignmentSize * controller.models.size();
-
-        for(var frame: frames) {
-
-            var bw = new BufferWriter(vmaAllocator, frame.objectBuffer, alignmentSize, bufferSize);
-            bw.mapBuffer();
-            for (int i = 0; i < controller.models.size(); i++) {
-                var model = controller.models.get(i);
-//                if (renderable.isDirty) {
-                    bw.setPosition(i);
-                    bw.put(model.objectToWorldMatrix);
-//                    renderable.isDirty = false;
-//                }
-            }
-
-            bw.unmapBuffer();
-        }
     }
 
     @Override
