@@ -8,6 +8,7 @@
 
 layout (location = 0) in VertexOutput {
     vec4 color;
+    vec2 tex;
 } vertexOutput;
 
 layout(location = 0) out vec4 outFragColor;

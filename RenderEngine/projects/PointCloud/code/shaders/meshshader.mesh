@@ -20,6 +20,8 @@ layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
 struct Vertex {
     vec4 pos;
     vec4 color;
+    vec2 tex;
+    vec2 _padding;
 };
 
 layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
@@ -65,6 +67,7 @@ layout(triangles, max_vertices = 64, max_primitives = 124) out;
 layout(location = 0) out VertexOutput
 {
 	vec4 color;
+    vec2 tex;
 } OUT[];
 
 struct Task {
@@ -82,14 +85,6 @@ void main()
 	uint meshletID = (task.baseID * 32) + task.subIDs[gl_WorkGroupID.x];
 
     // Ensure we don't read past the meshlet buffer bounds
-//    if(meshletID >= meshletCount.count - 7536) {
-//        return;
-//    }
-
-//    if(meshletID >= 69) {
-//        return;
-//    }
-
     if(meshletID >= meshletCount.count) {
         return;
     }
@@ -105,11 +100,12 @@ void main()
 	mat4 mvp = camera.projview * relatedModel.model;
 
 	for(int i = 0; i < vertexCount; i++) {
-	    int baseId = vertexBegin + i;
+        int baseId = vertexBegin + i;
         int finalVertId = vertexIndexBuffer.indices[baseId];
-
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+//        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
 	}
 
 	for (uint i = 0; i < primitiveCount; i++) {

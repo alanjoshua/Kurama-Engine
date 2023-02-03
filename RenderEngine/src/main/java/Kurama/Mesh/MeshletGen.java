@@ -136,8 +136,6 @@ public class MeshletGen {
                 curMeshlet.pos = curMeshletPos; // temporary
                 curMeshlet.boundRadius = calculateBoundRadius(curBounds);
 
-                log("Num of verts: "+curMeshlet.vertexCount + " prims: "+curMeshlet.primitiveCount);
-
                 vertIndices.addAll(curMeshletVertIndices);
                 primIndices.addAll(curMeshletLocalIndices);
 

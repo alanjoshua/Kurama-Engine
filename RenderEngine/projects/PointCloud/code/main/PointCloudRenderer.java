@@ -46,13 +46,14 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MAXVERTICES = 1000000;
     public int MAXMESHLETS = 1000000;
     public int GPUObjectData_SIZEOF = Float.BYTES * 16;
-    public int VERTEX_SIZE = Float.BYTES * 8;
+    public int VERTEX_SIZE = Float.BYTES * (4 + 4 + 4);
     public int MESHLETSIZE = (Float.BYTES * 4 * 3);
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
     int previousMeshletCount = -1;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, TEXTURE));
+    public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR, TEXTURE));
     public List<Integer> meshletVertexIndexBuffer = new ArrayList<>();
     public List<Integer> meshletLocalIndexBuffer = new ArrayList<>();
 
@@ -260,6 +261,17 @@ public class PointCloudRenderer extends VulkanRendererBase {
         meshlets.add(meshlet);
     }
 
+    public void addMeshlet(Meshlet meshlet) {
+
+        var meshletUpdateInfo = new MeshletUpdateInfo(meshlets.size(),
+                new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
+                new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
+                meshlet.objectId, meshlet);
+
+        meshletsToBeUpdated.add(meshletUpdateInfo);
+        meshlets.add(meshlet);
+    }
+
     public void addModel(int ind, Model model) {
         var objectUpdateInfo = new ObjectDataUpdate(ind, model);
         models.remove(ind);
@@ -276,17 +288,16 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void createMeshlets() {
 
         for(int modelInd = 0; modelInd < models.size(); modelInd++) {
+            log("model ind: "+modelInd);
             var model = models.get(modelInd);
 
             var results = generateMeshlets(model.meshes.get(0), 3, 64, 124,
                     globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
                     meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
 
-            int ind = modelInd;
-            results.meshlets().forEach(meshlet -> meshlet.objectId = ind);
-
             for(var meshlet: results.meshlets()) {
-                addMeshlet(meshlets.size(), meshlet);
+                meshlet.objectId = modelInd;
+                addMeshlet(meshlet);
             }
 
             for(var key: meshAttribsToLoad) {
@@ -363,10 +374,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     if(data.objectId != null) {
-                        bw.put(data.objectId);
-                        bw.put(0);
-                        bw.put(0);
-                        bw.put(0);
+                        bw.put((float)data.objectId);
                     }
 
                 }
@@ -423,15 +431,32 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-            vmaMapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation, data);
-            byteBuffer = data.getByteBuffer(0, globalVertexBufferSize);
+            var bw = new BufferWriter(vmaAllocator, globalVerticesStagingBuffer, VERTEX_SIZE, globalVertexBufferSize);
+            bw.mapBuffer();
 
             for(int i = 0; i < globalVertAttribs.get(POSITION).size(); i++) {
-                //pos
-                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(0));
-                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(1));
-                byteBuffer.putFloat(globalVertAttribs.get(POSITION).get(i).get(2));
-                byteBuffer.putFloat(1f);
+                bw.setPosition(i);
+
+                for(var vertAttrib: meshAttribsToRender){
+                    if(vertAttrib == POSITION) {
+                        bw.putFloat(globalVertAttribs.get(vertAttrib).get(i).get(0));
+                        bw.putFloat(globalVertAttribs.get(vertAttrib).get(i).get(1));
+                        bw.putFloat(globalVertAttribs.get(vertAttrib).get(i).get(2));
+                        bw.putFloat(1f);
+                    }
+
+                    else if(vertAttrib == TEXTURE) {
+                        bw.putFloat(globalVertAttribs.get(vertAttrib).get(i).get(0));
+                        bw.putFloat(globalVertAttribs.get(vertAttrib).get(i).get(1));
+                        bw.putFloat(0);
+                        bw.putFloat(0);
+                    }
+
+                    else {
+                        bw.put(globalVertAttribs.get(vertAttrib).get(i));
+                    }
+
+                }
 
                 // Color - each meshlet will have a random colour
                 // error condition
@@ -442,14 +467,15 @@ public class PointCloudRenderer extends VulkanRendererBase {
 //                    byteBuffer.putFloat(1f);
 //                }
 //                else {
-                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
-                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
-                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
-                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
+//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
+//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
+//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
+//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
 //                }
 
             }
-            vmaUnmapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation);
+            bw.unmapBuffer();
+//            vmaUnmapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation);
 
             var vertexCopy = VkBufferCopy.calloc(1, stack);
             var localIndexCopy = VkBufferCopy.calloc(1, stack);
