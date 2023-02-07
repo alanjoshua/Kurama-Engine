@@ -8,6 +8,7 @@ import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
 import Kurama.Vulkan.*;
 import Kurama.game.Game;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -34,6 +35,9 @@ import static org.lwjgl.vulkan.KHRSynchronization2.VK_IMAGE_LAYOUT_ATTACHMENT_OP
 import static org.lwjgl.vulkan.NVMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
+import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
 public class PointCloudRenderer extends VulkanRendererBase {
 
@@ -108,6 +112,87 @@ public class PointCloudRenderer extends VulkanRendererBase {
         createDepthAttachment();
         initFrameBuffers();
         initPipelines();
+    }
+
+    @Override
+    public void createLogicalDevice() {
+        try(MemoryStack stack = stackPush()) {
+
+            QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
+
+            queueFamilyIndices = indices;
+            int[] uniqueQueueFamilies = indices.unique();
+
+            VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
+
+            for(int i = 0;i < uniqueQueueFamilies.length;i++) {
+                VkDeviceQueueCreateInfo queueCreateInfo = queueCreateInfos.get(i);
+                queueCreateInfo.sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
+                queueCreateInfo.queueFamilyIndex(uniqueQueueFamilies[i]);
+                queueCreateInfo.pQueuePriorities(stack.floats(1.0f));
+            }
+
+            var deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
+            deviceFeatures.samplerAnisotropy(true);
+            if(msaaEnabled) {
+                deviceFeatures.sampleRateShading(true);
+            }
+            if(deviceFeatures.multiDrawIndirect()) {
+                deviceFeatures.multiDrawIndirect(true);
+            }
+
+            var vkPhysicalDeviceVulkan11Features = VkPhysicalDeviceVulkan11Features.calloc(stack);
+            vkPhysicalDeviceVulkan11Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
+            vkPhysicalDeviceVulkan11Features.shaderDrawParameters(true);
+            vkPhysicalDeviceVulkan11Features.multiview(true);
+
+            var physicalDevice12Features = VkPhysicalDeviceVulkan12Features.calloc(stack);
+            physicalDevice12Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
+            physicalDevice12Features.timelineSemaphore(true);
+            physicalDevice12Features.descriptorIndexing(true);
+            physicalDevice12Features.descriptorBindingPartiallyBound(true);
+            physicalDevice12Features.runtimeDescriptorArray(true);
+
+            var device13Features = VkPhysicalDeviceVulkan13Features.calloc(stack);
+            device13Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
+            device13Features.dynamicRendering(true);
+
+            createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
+            createInfo.pQueueCreateInfos(queueCreateInfos);
+            createInfo.pNext(vkPhysicalDeviceVulkan11Features);
+            createInfo.pNext(physicalDevice12Features);
+            createInfo.pNext(device13Features);
+            // queueCreateInfoCount is automatically set
+            createInfo.pEnabledFeatures(deviceFeatures);
+
+            createInfo.ppEnabledExtensionNames(VulkanUtilities.asPointerBuffer(DEVICE_EXTENSIONS));
+            if(ENABLE_VALIDATION_LAYERS) {
+                createInfo.ppEnabledLayerNames(VulkanUtilities.asPointerBuffer(VALIDATION_LAYERS));
+            }
+
+            PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
+
+            if(vkCreateDevice(physicalDevice, createInfo, null, pDevice) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to create logical device");
+            }
+
+            VulkanUtilities.device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
+            deletionQueue.add(() -> vkDestroyDevice(VulkanUtilities.device, null));
+
+            PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
+
+            vkGetDeviceQueue(VulkanUtilities.device, indices.graphicsFamily, 0, pQueue);
+            graphicsQueue = new VkQueue(pQueue.get(0), VulkanUtilities.device);
+
+            vkGetDeviceQueue(VulkanUtilities.device, indices.presentFamily, 0, pQueue);
+            presentQueue = new VkQueue(pQueue.get(0), VulkanUtilities.device);
+
+            vkGetDeviceQueue(VulkanUtilities.device, indices.computeFamily, 0, pQueue);
+            computeQueue = new VkQueue(pQueue.get(0), VulkanUtilities.device);
+
+            vkGetDeviceQueue(VulkanUtilities.device, indices.transferFamily, 0, pQueue);
+            transferQueue = new VkQueue(pQueue.get(0), VulkanUtilities.device);
+        }
     }
 
     @Override
