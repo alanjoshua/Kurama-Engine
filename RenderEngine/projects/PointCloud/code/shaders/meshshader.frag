@@ -9,6 +9,7 @@
 layout (location = 0) in VertexOutput {
     vec4 color;
     vec2 tex;
+    vec2 _padding;
 } vertexOutput;
 
 layout(location = 0) out vec4 outFragColor;

@@ -62,12 +62,14 @@ layout(std140, set = 1, binding = 3) uniform MeshletCount {
 
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(triangles, max_vertices = 64, max_primitives = 124) out;
+//layout(triangles, max_vertices = 64, max_primitives = 124) out;
+layout(points, max_vertices = 64, max_primitives = 64) out;
 
 layout(location = 0) out VertexOutput
 {
 	vec4 color;
     vec2 tex;
+    vec2 _padding;
 } OUT[];
 
 struct Task {
@@ -103,22 +105,26 @@ void main()
         int baseId = vertexBegin + i;
         int finalVertId = vertexIndexBuffer.indices[baseId];
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+        gl_MeshVerticesEXT[i].gl_PointSize = 2;
 
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
-//        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
+        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
+        OUT[i]._padding = vertexBuffer.vertices[finalVertId]._padding;
+
+        gl_PrimitivePointIndicesEXT[i] = finalVertId;
 	}
 
-	for (uint i = 0; i < primitiveCount; i++) {
-        uint baseId = indexBegin + (i*3);
-
-        uvec3 finalInds = uvec3(
-            localIndexBuffer.indices[baseId + 0],
-            localIndexBuffer.indices[baseId + 1],
-            localIndexBuffer.indices[baseId + 2]
-        );
-
-        gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
-	}
+//	for (uint i = 0; i < primitiveCount; i++) {
+//        uint baseId = indexBegin + (i*3);
+//
+//        uvec3 finalInds = uvec3(
+//            localIndexBuffer.indices[baseId + 0],
+//            localIndexBuffer.indices[baseId + 1],
+//            localIndexBuffer.indices[baseId + 2]
+//        );
+//
+//        gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
+//	}
 
     SetMeshOutputsEXT(vertexCount, primitiveCount);
 

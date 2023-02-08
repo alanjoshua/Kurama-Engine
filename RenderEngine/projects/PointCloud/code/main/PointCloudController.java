@@ -11,6 +11,7 @@ import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static Kurama.Mesh.MeshletGen.*;
@@ -109,10 +110,10 @@ public class PointCloudController extends Game {
 
         createMinecraftWorld();
         createRoom();
-        renderer.createMeshlets();
+        renderer.createMeshlets(1, 64, 64);
 
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
-                renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 3);
+                renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 1);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.geometryUpdatedEvent();
@@ -143,7 +144,12 @@ public class PointCloudController extends Game {
             // TODO: Temporary because of bug KE:16
             var tex = Texture.createTexture(textureDir + "viking_room.png");
 
-            var mergedMesh = mergeMeshes(meshes);;
+            var mergedMesh = mergeMeshes(meshes);
+            var indices = new ArrayList<Integer>();;
+            for(int i = 0; i < mergedMesh.getVertices().size(); i++) {
+                indices.add(i);
+            }
+            mergedMesh.indices = indices;
             mergedMesh.materials.get(0).texture = tex;
             mergedMesh.boundingRadius = 50;
             meshes.clear();
@@ -174,7 +180,13 @@ public class PointCloudController extends Game {
             // TODO: Temporary because of bug KE:16
             var tex = Texture.createTexture(textureDir + "lost_empire-RGB.png");
 
-            var mergedMesh = mergeMeshes(meshes);;
+            var mergedMesh = mergeMeshes(meshes);
+            var indices = new ArrayList<Integer>();;
+            for(int i = 0; i < mergedMesh.getVertices().size(); i++) {
+                indices.add(i);
+            }
+            mergedMesh.indices = indices;
+
             mergedMesh.materials.get(0).texture = tex;
             mergedMesh.boundingRadius = 50;
             meshes.clear();

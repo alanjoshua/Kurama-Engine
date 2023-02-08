@@ -370,13 +370,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
     }
 
 
-    public void createMeshlets() {
+    public void createMeshlets(int vertsPerPrimitive, int maxVerts, int maxPrimitives) {
 
         for(int modelInd = 0; modelInd < models.size(); modelInd++) {
             log("model ind: "+modelInd);
             var model = models.get(modelInd);
 
-            var results = generateMeshlets(model.meshes.get(0), 3, 64, 124,
+            var results = generateMeshlets(model.meshes.get(0), vertsPerPrimitive, maxVerts, maxPrimitives,
                     globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
                     meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
 

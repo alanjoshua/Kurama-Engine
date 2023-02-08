@@ -9,17 +9,18 @@ import java.util.LinkedList;
 import static Kurama.Vulkan.VulkanUtilities.vkCheck;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.EXTDescriptorIndexing.VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+import static org.lwjgl.vulkan.EXTDescriptorIndexing.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 import static org.lwjgl.vulkan.VK11.VK_ERROR_OUT_OF_POOL_MEMORY;
 
 public class DescriptorAllocator {
 
-    VkDevice device;
+    protected VkDevice device;
     public LinkedList<Long> freePools = new LinkedList<>();
     public LinkedList<Long> usedPools = new LinkedList<>();
 
-    private Long currentPool = null;
+    protected Long currentPool = null;
 
     public HashMap<Integer, Float> poolSizes = new HashMap<>();
 
@@ -28,7 +29,7 @@ public class DescriptorAllocator {
 
     public DescriptorAllocator() {
         poolSizes.put(VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f);
-        poolSizes.put(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100f);
+        poolSizes.put(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4f);
         poolSizes.put(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4f);
         poolSizes.put(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1f);
         poolSizes.put(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1f);
@@ -91,13 +92,14 @@ public class DescriptorAllocator {
 
     }
 
-    private long grabPool() {
+    protected long grabPool() {
 
         if(freePools.size() > 0) {
             return freePools.removeLast();
         }
 
         else {
+            // VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT is required for supporting bindless textures
             return createPool(device, poolSizes, poolDescriptorCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
         }
     }
