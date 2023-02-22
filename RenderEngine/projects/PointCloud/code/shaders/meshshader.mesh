@@ -11,6 +11,8 @@ layout (set = 0, binding = 0) uniform CameraBuffer
 
 struct ObjectData {
     mat4 model;
+    float scale;
+    vec3 _padding;
 };
 
 layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
@@ -20,8 +22,8 @@ layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
 struct Vertex {
     vec4 pos;
     vec4 color;
-    vec2 tex;
-    vec2 _padding;
+//    vec2 tex;
+//    vec2 _padding;
 };
 
 layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
@@ -31,7 +33,8 @@ layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
 // Binding 3: Indirect draw stats
 layout (set = 0, binding = 3) buffer UBOOut
 {
-    uint meshletDrawCount;
+    int meshletDrawCount;
+    int meshletUpdateCount;
 } uboOut;
 
 struct Meshlet {
@@ -56,9 +59,18 @@ layout(std430, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
     int indices[];
 } localIndexBuffer;
 
-layout(std140, set = 1, binding = 3) uniform MeshletCount {
-    int count;
-} meshletCount;
+layout(set = 1, binding = 3) buffer UboIn {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+} uboIn;
+
+layout(std140, set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+layout(std140, set = 1, binding = 5) writeonly buffer MeshletUpdateInfo {
+    int array[];
+} meshletUpdateInfo;
 
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -68,8 +80,8 @@ layout(points, max_vertices = 64, max_primitives = 64) out;
 layout(location = 0) out VertexOutput
 {
 	vec4 color;
-    vec2 tex;
-    vec2 _padding;
+//    vec2 tex;
+//    vec2 _padding;
 } OUT[];
 
 struct Task {
@@ -82,14 +94,7 @@ taskPayloadSharedEXT Task task;
 
 void main()
 {
-    atomicAdd(uboOut.meshletDrawCount, 1);
-
-	uint meshletID = (task.baseID * 32) + task.subIDs[gl_WorkGroupID.x];
-
-    // Ensure we don't read past the meshlet buffer bounds
-    if(meshletID >= meshletCount.count) {
-        return;
-    }
+    uint meshletID = task.subIDs[gl_WorkGroupID.x];
 
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
     ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId.x)];
@@ -108,8 +113,8 @@ void main()
         gl_MeshVerticesEXT[i].gl_PointSize = 2;
 
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
-        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
-        OUT[i]._padding = vertexBuffer.vertices[finalVertId]._padding;
+//        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
+//        OUT[i]._padding = vertexBuffer.vertices[finalVertId]._padding;
 
         gl_PrimitivePointIndicesEXT[i] = finalVertId;
 	}

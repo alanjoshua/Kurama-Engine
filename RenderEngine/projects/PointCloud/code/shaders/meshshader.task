@@ -11,11 +11,9 @@
 
 struct ObjectData {
     mat4 model;
+    float scale;
+    vec3 _padding;
 };
-
-layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
-    ObjectData objects[];
-}objectBuffer;
 
 layout (set = 0, binding = 0) uniform CameraBuffer
 {
@@ -25,6 +23,29 @@ layout (set = 0, binding = 0) uniform CameraBuffer
     vec4 frustumPlanes[6];
 } camera;
 
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) writeonly buffer UBOOut
+{
+    int meshletDrawCount;
+    int meshletUpdateCount;
+} uboOut;
+
+layout(set = 1, binding = 3) buffer UboIn {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+} uboIn;
+
+layout(set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+layout(set = 1, binding = 5) writeonly buffer MeshletUpdateInfo {
+    int array[];
+} meshletUpdateInfo;
 
 struct Meshlet {
 // x = int primitiveCount;
@@ -40,12 +61,6 @@ layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
-// Binding 3: Indirect draw stats
-layout (set = 0, binding = 3) buffer UBOOut
-{
-    uint meshletDrawCount;
-} uboOut;
-
 layout(local_size_x=32) in;
 
 struct Task {
@@ -58,30 +73,24 @@ taskPayloadSharedEXT Task task;
 bool isWithinFrustum(vec4 pos, float radius) {
     // Check sphere against frustum planes
     for (int i = 0; i < 6; i++) {
-//        return false;
+
         float dotProd = dot(pos, camera.frustumPlanes[i]);
         if (dotProd + radius < 0.0) {
-//            return true;
+
             return false;
         }
 
-//        if (dot(vec4(1,1,1,1), vec4(1,1,1,1)) < 0.0) {
-//            //            return true;
-//            return false;
-//        }
     }
     return true;
-
 }
 
-bool shouldRender(uint localId) {
+bool shouldRender(uint meshletID) {
 
-    uint meshletID = (gl_WorkGroupID.x * 32) + localId;
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
     ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId.x)];
 
     vec3 pos = curMeshlet.bound.xyz;
-    float radius = curMeshlet.bound.w; // Assume radius is already scaled from CPU
+    float radius = curMeshlet.bound.w * relatedModel.scale;
 
     mat4 mvp = relatedModel.model;
     vec4 transfPos = vec4((mvp * vec4(pos.xyz, 1.0)).xyz, 1.0);
@@ -91,13 +100,19 @@ bool shouldRender(uint localId) {
 
 void main() {
 
-    // Clear stats on first invocation
-    if (gl_GlobalInvocationID.x == 0) {
-        atomicExchange(uboOut.meshletDrawCount, 0);
+    int localId = int(gl_GlobalInvocationID.x);
+    if(localId >= uboIn.meshletCount) {
+        return;
     }
 
-    bool doRender = shouldRender(gl_LocalInvocationID.x); // Replace with frustum culling
+    // Clear stats on first invocation
+    if (localId == 0) {
+        atomicExchange(uboOut.meshletDrawCount, 0);
+        atomicExchange(uboOut.meshletUpdateCount, 0);
+    }
 
+    int meshletID = meshletsToBeDrawn.indices[localId];
+    bool doRender = shouldRender(meshletID);
     uvec4 vote = subgroupBallot(doRender);
     uint numMeshlets = subgroupBallotBitCount(vote);
 
@@ -107,8 +122,17 @@ void main() {
 
     if(doRender) {
         uint idxOffset = subgroupBallotExclusiveBitCount(vote);
-        task.subIDs[idxOffset] = uint(gl_LocalInvocationID);
+        task.subIDs[idxOffset] = uint(meshletsToBeDrawn.indices[localId]);
         task.baseID = gl_WorkGroupID.x;
+
+        atomicAdd(uboOut.meshletDrawCount, 1);
     }
+    else {
+        int offset = atomicAdd(uboOut.meshletUpdateCount, 1);
+        if (offset < uboIn.maxMeshletsToUpdate) {
+            meshletUpdateInfo.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
+        }
+    }
+
 
 }

@@ -10,9 +10,13 @@ import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
 import Kurama.geometry.assimp.AssimpStaticLoader;
 import Kurama.inputs.InputLWJGL;
+import com.github.mreutegg.laszip4j.LASReader;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
@@ -54,10 +58,11 @@ public class PointCloudController extends Game {
 
         mainCamera = new Camera(this,null, null,
                 new Vector(new float[] {0,0,0}),60,
-                0.1f, 500.0f,
+                0.1f, 50000.0f,
                 renderer.swapChainExtent.width(), renderer.swapChainExtent.height(),
                 false, "playerCam");
 
+//        mainCamera.pos = new Vector(-199748,-622242,31061);
         mainCamera.shouldUpdateValues = true;
 
         display.resizeEvents.add(() -> {
@@ -108,14 +113,22 @@ public class PointCloudController extends Game {
 
     public void loadScene() {
 
-        createMinecraftWorld();
-        createRoom();
+//        createMinecraftWorld();
+//        createRoom();
+
+        Vector tl = new Vector(627772.4f, 1013350.6f);
+        Vector tr = new Vector(627906.9f, 1013343.1f);
+        Vector br = new Vector(627918.4f, 1013175.5f);
+        Vector bl = new Vector(627739.8f, 1013185.0f);
+
+        loadLidar(100000, tl, tr, br, bl);
         renderer.createMeshlets(1, 64, 64);
 
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
                 renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 1);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
+        renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, renderer.meshlets.size()-1).boxed().toList());
         renderer.geometryUpdatedEvent();
 
 //           createMinecraftWorld();
@@ -132,8 +145,88 @@ public class PointCloudController extends Game {
 
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
-
     }
+
+    public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {
+        log("Loading LAZ file: ");
+        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
+//        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-15 lidar two\\YS-20220915-132041-20221122-144832.copc.laz"));
+
+        var lidarPoints = new ArrayList<Vector>(numVerticesToLoad);
+        var indices = new ArrayList<Integer>(numVerticesToLoad);
+        log("Total lidar points: "+lasReader.getHeader().getNumberOfPointRecords());
+
+        var offset = new Vector((float) lasReader.getHeader().getXOffset(),
+                (float) lasReader.getHeader().getYOffset(),
+                (float) lasReader.getHeader().getZOffset());
+
+        var scale = new Vector((float) lasReader.getHeader().getXScaleFactor(),
+                (float)lasReader.getHeader().getYScaleFactor(),
+                (float)lasReader.getHeader().getZScaleFactor());
+        log("scale: "+scale);
+        log("offset: "+offset);
+
+
+        log("min-max x: "+lasReader.getHeader().getMinX()+":"+lasReader.getHeader().getMaxX() +" y: " +
+                lasReader.getHeader().getMinY()+":"+lasReader.getHeader().getMaxY() +" z: " +
+                lasReader.getHeader().getMinZ()+":"+lasReader.getHeader().getMaxZ());
+
+//        var offsetvec2 = offset.removeDimensionFromVec(2);
+//        tl = tl.sub(offsetvec2);
+//        tr = tr.sub(offsetvec2);
+//        br = br.sub(offsetvec2);
+//        bl = bl.sub(offsetvec2);
+
+        float xmin = Math.min(tl.get(0), bl.get(0));
+        float xmax = Math.max(tr.get(0), br.get(0));
+        float ymin = Math.min(bl.get(1), br.get(1));
+        float ymax = Math.max(tl.get(1), tr.get(1));
+
+        log("gathering points from range: x: "+ xmin + " - "+xmax + " y: "+ ymin + " - " + ymax);
+
+        int counter = 0;
+        var avgPos = new Vector(0,0,0);
+        try {
+            for (var p : lasReader.getPoints()) {
+
+//                var pos = new Vector(p.getX(), p.getY(), p.getZ()).add(new Vector((float) lasReader.getHeader().getMinX(), (float) lasReader.getHeader().getMinY(), (float) lasReader.getHeader().getMinZ()));
+//                var pos = new Vector(p.getX(), p.getY(), p.getZ());
+                var pos = new Vector(p.getX(), p.getY(), p.getZ()).sub(new Vector(-132932.45f, -596958.6f, 27277.133f));
+
+                avgPos = avgPos.add(pos);
+//                if(pos.get(0) >= xmin && pos.get(0) <= xmax && pos.get(1) >= ymin && pos.get(1) <= ymax) {
+//                    log("accepted "+pos);
+                    indices.add(counter);
+                    lidarPoints.add(pos);
+                    counter++;
+
+                    if (counter >= numVerticesToLoad) {
+                        lidarPoints.get(0).display();
+                        break;
+                    }
+//                }
+            }
+            avgPos = avgPos.scalarMul(1f/(float)lidarPoints.size());
+            log("avg pos: "+avgPos);
+        }
+        catch (Exception e) {
+            log("crashing after loading these many points: "+lidarPoints.size());
+            throw new RuntimeException("Ran outof memory");
+        }
+
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, lidarPoints);
+
+        var lidarMesh = new Mesh(indices, null, vertAttribs, null, "lidar", null);
+        lidarMesh.boundingRadius = 100000;
+
+        var lidarModel = new Model(this, lidarMesh, "lidarPointCloud");
+        lidarModel.setScale(scale);
+//        lidarModel.setPos(avgPos.scalarMul(1));
+        lidarModel.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+        renderer.addModel(lidarModel);
+    }
+
     public void createRoom() {
         var textureDir = "projects/ActiveShutter/models/textures/";
 
@@ -287,8 +380,8 @@ public class PointCloudController extends Game {
     private void calculate3DCamMovement() {
         if (this.input.getDelta().getNorm() != 0 && this.isGameRunning) {
 
-            float yawIncrease   = this.mouseXSensitivity * -this.timeDelta * this.input.getDelta().get(0);
-            float pitchIncrease = this.mouseYSensitivity * -this.timeDelta * this.input.getDelta().get(1);
+            float yawIncrease   = this.mouseXSensitivity * this.input.getDelta().get(0) * -this.timeDelta;
+            float pitchIncrease = this.mouseYSensitivity * this.input.getDelta().get(1) * -this.timeDelta;
 
             Vector currentAngle = this.mainCamera.getOrientation().getPitchYawRoll();
             float currentPitch = currentAngle.get(0) + pitchIncrease;

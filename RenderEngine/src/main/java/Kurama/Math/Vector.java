@@ -15,7 +15,7 @@ public class Vector {
 		return numberOfDimensions;
 	}
 
-	public Vector(float[] data) {
+	public Vector(float... data) {
 		this.data = data;
 		this.numberOfDimensions = data.length;
 	}
@@ -605,4 +605,20 @@ public class Vector {
 		return res;
 	}
 
+	public float getMax() {
+		float curMax = Float.NEGATIVE_INFINITY;
+		for(var v: data) {
+			if (v > curMax)
+				curMax = v;
+		}
+		return curMax;
+	}
+	public float getMin() {
+		float curMin = Float.POSITIVE_INFINITY;
+		for(var v: data) {
+			if (v < curMin)
+				curMin = v;
+		}
+		return curMin;
+	}
 }

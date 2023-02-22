@@ -21,6 +21,26 @@ public class Logger {
             System.out.println(text);
         }
     }
+    public static void logPerSec(int text) {
+        if(showLogs && Game.isOneSecond) {
+            System.out.println(text);
+        }
+    }
+    public static void logPerSec(float text) {
+        if(showLogs && Game.isOneSecond) {
+            System.out.println(text);
+        }
+    }
+    public static void logPerSec(double text) {
+        if(showLogs && Game.isOneSecond) {
+            System.out.println(text);
+        }
+    }
+    public static void logPerSec(long text) {
+        if(showLogs && Game.isOneSecond) {
+            System.out.println(text);
+        }
+    }
 
     public static void logPerSec() {
         if(showLogs && Game.isOneSecond) {

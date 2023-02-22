@@ -1,8 +1,12 @@
 package Kurama.Mesh;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.NORMAL;
+import static Kurama.Mesh.Mesh.VERTATTRIB.TEXTURE;
 import static Kurama.Mesh.MeshletGen.getMortonCode;
 
 public class Vertex {
@@ -16,6 +20,19 @@ public class Vertex {
     public static final int MATERIAL = 6;
     public static final int WEIGHTBIASESPERVERT = 7;
     public static final int JOINTINDICESPERVERT = 8;
+
+    private static Map<Mesh.VERTATTRIB, Integer> attribToIntMapping = new HashMap<>();
+    {
+        attribToIntMapping.put(Mesh.VERTATTRIB.POSITION, 0);
+        attribToIntMapping.put(Mesh.VERTATTRIB.TEXTURE, 1);
+        attribToIntMapping.put(Mesh.VERTATTRIB.NORMAL, 2);
+        attribToIntMapping.put(Mesh.VERTATTRIB.COLOR, 3);
+        attribToIntMapping.put(Mesh.VERTATTRIB.TANGENT, 4);
+        attribToIntMapping.put(Mesh.VERTATTRIB.BITANGENT, 5);
+        attribToIntMapping.put(Mesh.VERTATTRIB.MATERIAL, 6);
+        attribToIntMapping.put(Mesh.VERTATTRIB.WEIGHTBIASESPERVERT, 7);
+        attribToIntMapping.put(Mesh.VERTATTRIB.JOINTINDICESPERVERT, 8);
+    }
 
     public List<Integer> vertAttributes;
 
@@ -51,6 +68,16 @@ public class Vertex {
     public Integer getAttribute(int key) {
         try {
             Integer val = vertAttributes.get(key);
+            return val;
+        }
+        catch(Exception e) {
+            return null;
+        }
+    }
+
+    public Integer getAttribute(Mesh.VERTATTRIB key) {
+        try {
+            Integer val = vertAttributes.get(attribToIntMapping.get(key));
             return val;
         }
         catch(Exception e) {

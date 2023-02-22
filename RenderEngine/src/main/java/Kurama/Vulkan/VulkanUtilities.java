@@ -492,11 +492,24 @@ public class VulkanUtilities {
     }
 
 
-    public static void memcpyInt(ByteBuffer buffer, List<Integer> indices) {
+    public static void memcpyInt(ByteBuffer buffer, List<Integer> data) {
         int id = 0;
         try {
-            for(int index : indices) {
-                buffer.putInt(index);
+            for(int val : data) {
+                buffer.putInt(val);
+                id++;
+            }
+        }
+        catch (RuntimeException e) {
+            logError("memcpyInt failed at index: "+id);
+            throw e;
+        }
+    }
+    public static void memcpyInt(ByteBuffer buffer, int[] data) {
+        int id = 0;
+        try {
+            for(int val : data) {
+                buffer.putInt(val);
                 id++;
             }
         }

@@ -769,8 +769,6 @@ public abstract class VulkanRendererBase extends RenderingEngine {
                     singleTimeGraphicsCommandContext);
 
             this.depthAttachment = depthAttachment;
-            deletionQueue.add(() -> vkDestroyImageView(device, depthAttachment.imageView, null));
-            deletionQueue.add(() -> vmaDestroyImage(vmaAllocator, depthAttachment.allocatedImage.image, depthAttachment.allocatedImage.allocation));
         }
     }
 

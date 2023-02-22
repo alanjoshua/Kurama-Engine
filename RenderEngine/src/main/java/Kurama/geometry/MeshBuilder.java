@@ -280,13 +280,14 @@ public class MeshBuilder {
 					lastIndexVal++;
 					indexList.add(lastIndexVal - 1);
 
-					for(int i =0;i < newVertAttribs.size();i++) {
-						Integer ind = v.getAttribute(i);
+					for(var attrib: mesh.vertAttributes.keySet()) {
+						Integer ind = v.getAttribute(attrib);
+
 						if(ind!=null) {
-							newVertAttribs.get(Mesh.attribMapping.get(i)).add(mesh.getAttributeList(Mesh.attribMapping.get(i)).get(ind));
+							newVertAttribs.get(attrib).add(mesh.getAttributeList(attrib).get(ind));
 						}
 						else {
-							newVertAttribs.get(i).add(null);
+							newVertAttribs.get(attrib).add(null);
 						}
 					}
 

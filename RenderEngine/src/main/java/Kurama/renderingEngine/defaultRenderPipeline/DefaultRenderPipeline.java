@@ -1,6 +1,5 @@
 package Kurama.renderingEngine.defaultRenderPipeline;
 
-import Kurama.Math.FrustumIntersection;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Material;
 import Kurama.Mesh.Mesh;
@@ -318,8 +317,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
             for(int i = 0;i < defaultVals.size();i++) {
                 Vector curr = mesh.isAttributePresent(Mesh.attribMapping.get(i)) ?
-                        (mesh.vertAttributes.get(i).get(0) == null?
-                                defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
+                        (mesh.vertAttributes.get(Mesh.attribMapping.get(i)).get(0) == null?
+                                defaultVals.get(i): mesh.vertAttributes.get(Mesh.attribMapping.get(i)).get(0)): defaultVals.get(i);
                 int numberOfElements = curr.getNumberOfDimensions();
                 int size = numberOfElements * sizeOfFloat;
                 stride += size;
@@ -336,9 +335,9 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 FloatBuffer tempBuffer = null;
 
-                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(i)!=null) {
-                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
-                    for (Vector v : mesh.vertAttributes.get(i)) {
+                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(Mesh.attribMapping.get(i))!=null) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.attribMapping.get(i)).size());
+                    for (Vector v : mesh.vertAttributes.get(Mesh.attribMapping.get(i))) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
                         } else {    //Hack to handle nulls
@@ -416,8 +415,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             offsets.add(0);
             for(int i = 0;i < defaultVals.size();i++) {
                 Vector curr = mesh.isAttributePresent(Mesh.attribMapping.get(i)) ?
-                        (mesh.vertAttributes.get(i).get(0) == null?
-                                defaultVals.get(i): mesh.vertAttributes.get(i).get(0)): defaultVals.get(i);
+                        (mesh.vertAttributes.get(Mesh.attribMapping.get(i)).get(0) == null?
+                                defaultVals.get(i): mesh.vertAttributes.get(Mesh.attribMapping.get(i)).get(0)): defaultVals.get(i);
                 int numberOfElements = curr.getNumberOfDimensions();
                 int size = numberOfElements * sizeOfFloat;
                 stride += size;
@@ -436,9 +435,9 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
 
                 FloatBuffer tempBuffer = null;
 
-                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(i)!=null) {
-                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(i).size());
-                    for (Vector v : mesh.vertAttributes.get(i)) {
+                if(mesh.isAttributePresent(Mesh.attribMapping.get(i)) && mesh.vertAttributes.get(Mesh.attribMapping.get(i))!=null) {
+                    tempBuffer = MemoryUtil.memAllocFloat(sizePerAttrib.get(i) * mesh.vertAttributes.get(Mesh.attribMapping.get(i)).size());
+                    for (Vector v : mesh.vertAttributes.get(Mesh.attribMapping.get(i))) {
                         if (v != null) {
                             tempBuffer.put(v.getData());
                         } else {    //Hack to handle nulls
@@ -520,8 +519,8 @@ public class DefaultRenderPipeline extends Kurama.renderingEngine.RenderPipeline
             e.printStackTrace();
             System.exit(1);
         }finally{
-
         }
 
     }
+
 }

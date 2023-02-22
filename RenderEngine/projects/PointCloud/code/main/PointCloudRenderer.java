@@ -1,8 +1,7 @@
 package main;
 
+import Kurama.ComponentSystem.automations.Log;
 import Kurama.ComponentSystem.components.model.Model;
-import Kurama.Math.DataAnalysis;
-import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
@@ -19,22 +18,17 @@ import java.util.function.Consumer;
 
 import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 import static Kurama.Mesh.MeshletGen.generateMeshlets;
-import static Kurama.Mesh.MeshletGen.mergeMeshes;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logPerSec;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTMeshShader.*;
-import static org.lwjgl.vulkan.KHRDynamicRendering.*;
-import static org.lwjgl.vulkan.KHRDynamicRendering.vkCmdEndRenderingKHR;
 import static org.lwjgl.vulkan.KHRShaderFloatControls.VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSpirv14.VK_KHR_SPIRV_1_4_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-import static org.lwjgl.vulkan.KHRSynchronization2.VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
 import static org.lwjgl.vulkan.NVMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -47,22 +41,24 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public PointCloudController controller;
     public int MAXOBJECTS = 10000;
-    public int MAXVERTICES = 1000000;
+    public int MAXVERTICES = 40000000;
     public int MAXMESHLETS = 1000000;
-    public int GPUObjectData_SIZEOF = Float.BYTES * 16;
-    public int VERTEX_SIZE = Float.BYTES * (4 + 4 + 4);
+    public int MAXMESHLETUPDATESPERFRAME = 1568;
+    public int MAXMESHLETSPERFRAME = MAXMESHLETS;
+    public int GPUObjectData_SIZEOF = Float.BYTES * (16+4);
+    public int VERTEX_SIZE = Float.BYTES * (4 + 4);
     public int MESHLETSIZE = (Float.BYTES * 4 * 3);
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
-    int previousMeshletCount = -1;
+    int previousMeshletsDrawnCount = -1;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, TEXTURE));
-    public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR, TEXTURE));
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
+    public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
     public List<Integer> meshletVertexIndexBuffer = new ArrayList<>();
     public List<Integer> meshletLocalIndexBuffer = new ArrayList<>();
-
     public List<MeshletUpdateInfo> meshletsToBeUpdated = new ArrayList<>();
     public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();
+    public ArrayList<Integer> curFrameMeshletsDrawIndices = new ArrayList<>();
     public record ObjectDataUpdate(int index, Model model){}
     public record MeshletUpdateInfo(int index, Vector info, Vector bounds, Integer objectId, Meshlet meshlet){}
 
@@ -73,9 +69,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
         public AllocatedBuffer vertexBuffer;
         public AllocatedBuffer meshletVertexBuffer;
         public AllocatedBuffer meshletVertexLocalIndexBuffer;
-        public AllocatedBuffer meshletCountBuffer;
-        public AllocatedBuffer meshletDrawCountBuffer;
+        public AllocatedBuffer renderConfigBuffer;
+        public AllocatedBuffer renderOutputStatsBuffer;
         public AllocatedBuffer meshletDescBuffer;
+        public AllocatedBuffer meshletsToBeDrawn;
+        public AllocatedBuffer meshletsInfoUpdateBuffer;
         public long descriptorSet1;
         public long meshletDescriptorSet;
     }
@@ -198,11 +196,27 @@ public class PointCloudRenderer extends VulkanRendererBase {
     @Override
     public void tick() {
 
-        if(previousMeshletCount != meshlets.size()) {
-            recordCommandBuffers();
-        }
-
         checkAndPerformBufferUpdates();
+        updateMeshletDrawIndicesBuffer();
+
+        if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size()) {
+            recordCommandBuffers();
+            previousMeshletsDrawnCount = curFrameMeshletsDrawIndices.size();
+        }
+    }
+
+    public void updateMeshletDrawIndicesBuffer() {
+
+        for (var frame : frames) {
+
+            var bw = new BufferWriter(vmaAllocator, frame.meshletsToBeDrawn, Integer.BYTES, Integer.BYTES*MAXMESHLETSPERFRAME);
+            bw.mapBuffer();
+            for(int i = 0; i < curFrameMeshletsDrawIndices.size(); i++) {
+//                bw.setPosition(i);
+                bw.put(curFrameMeshletsDrawIndices.get(i));
+            }
+            bw.unmapBuffer();
+        }
     }
 
     public void initFrameBuffers() {
@@ -234,9 +248,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 frames.get(i).frameBuffer = pFramebuffer.get(0);
                 i++;
             }
-
-            frames.forEach(f -> deletionQueue.add(() -> vkDestroyFramebuffer(device, f.frameBuffer, null)));
-
         }
     }
 
@@ -299,7 +310,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             pipelineLayout, 1,
                             stack.longs(frames.get(i).meshletDescriptorSet), null);
 
-                    vkCmdDrawMeshTasksEXT(commandBuffer, meshlets.size()/32 + 1, 1, 1);
+                    vkCmdDrawMeshTasksEXT(commandBuffer, curFrameMeshletsDrawIndices.size()/32 + 1, 1, 1);
                 }
 
                 vkCmdEndRenderPass(commandBuffer);
@@ -316,22 +327,54 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void render() {
         prepareFrame();
         drawFrame();
+        submitFrame();
 
-        var bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletDrawCountBuffer,
-                Integer.BYTES, Integer.BYTES);
+        var bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).renderOutputStatsBuffer,
+                Integer.BYTES, Integer.BYTES*2);
         bufferReader.mapBuffer();
-
         var meshletRenderCount = bufferReader.buffer.getInt();
-
+        bufferReader.setPosition(1);
+        var meshletUpdateCount = bufferReader.buffer.getInt();
         bufferReader.unmapBuffer();
 
-        logPerSec("Rendered object count: " + meshletRenderCount);
+        int numUpdates;
+        if(meshletUpdateCount < MAXMESHLETUPDATESPERFRAME) {
+            numUpdates = meshletUpdateCount;
+        }
+        else {
+            numUpdates = MAXMESHLETUPDATESPERFRAME;
+        }
 
-        submitFrame();
+        bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsInfoUpdateBuffer,
+                Integer.BYTES, Integer.BYTES*(numUpdates));
+        bufferReader.mapBuffer();
+
+        var meshletsToBeUpdated = new ArrayList<Integer>();
+        for(int i = 0; i < numUpdates; i++) {
+            bufferReader.setPosition(i);
+            int value = bufferReader.buffer.getInt();
+            meshletsToBeUpdated.add(value);
+            var removed = curFrameMeshletsDrawIndices.remove((Integer)value);
+            if(!removed) {
+                logPerSec("Couldnt remove "+value);
+            }
+        }
+        bufferReader.unmapBuffer();
+
+        logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletUpdateCount);
     }
 
     @Override
     public void swapChainRecreatedEvent() {
+        for(var fb: frames) {
+            vkDestroyFramebuffer(device, fb.frameBuffer, null);
+        }
+
+        vkDestroyImageView(device, depthAttachment.imageView, null);
+        vmaDestroyImage(vmaAllocator, depthAttachment.allocatedImage.image, depthAttachment.allocatedImage.allocation);
+
+        createDepthAttachment();
+        initFrameBuffers();
         recordCommandBuffers();
     }
 
@@ -407,13 +450,12 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public void checkAndPerformBufferUpdates() {
 
-        if(previousMeshletCount != meshlets.size()) {
-            previousMeshletCount = meshlets.size();
+        if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size()) {
             for(var frame: frames) {
-                var bw = new BufferWriter(vmaAllocator, frame.meshletCountBuffer, Integer.SIZE, Integer.SIZE);
+                var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, Integer.SIZE, Integer.SIZE*2);
                 bw.mapBuffer();
-                bw.setPosition(0);
-                bw.put(meshlets.size());
+                bw.put(curFrameMeshletsDrawIndices.size());
+                bw.put(MAXMESHLETUPDATESPERFRAME);
                 bw.unmapBuffer();
             }
         }
@@ -429,6 +471,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 for(var data: objectInfoToBeUpdated) {
                     bw.setPosition(data.index);
                     bw.put(data.model.objectToWorldMatrix);
+                    bw.putFloat(data.model.scale.getMax());
+                    bw.putFloat(0);
+                    bw.putFloat(0);
+                    bw.putFloat(0);
                 }
                 bw.unmapBuffer();
             }
@@ -607,7 +653,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
                     .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.vertexBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletDrawCountBuffer.buffer),
+                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.renderOutputStatsBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
                     .build();
 
@@ -621,8 +667,12 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
                     .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletVertexLocalIndexBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletCountBuffer.buffer),
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
+                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.renderConfigBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                    .bindBuffer(4, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeDrawn.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                    .bindBuffer(5, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsInfoUpdateBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
                     .build();
 
             meshletDescriptorSetLayout = results.layout();
@@ -652,6 +702,24 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
 
+            frame.meshletsToBeDrawn = createBufferVMA(
+                    vmaAllocator,
+                    Integer.BYTES * MAXMESHLETSPERFRAME,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
+            );
+
+            frame.meshletsInfoUpdateBuffer = createBufferVMA(
+                    vmaAllocator,
+                    Integer.BYTES * MAXMESHLETUPDATESPERFRAME,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                            VMA_ALLOCATION_CREATE_MAPPED_BIT
+            );
+
             frame.vertexBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
                     MAXVERTICES * VERTEX_SIZE,
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -668,13 +736,14 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
-            frame.meshletCountBuffer = createBufferVMA(vmaAllocator, Integer.SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            frame.renderConfigBuffer = createBufferVMA(vmaAllocator, Integer.SIZE*2,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
-            frame.meshletDrawCountBuffer = createBufferVMA(
+            frame.renderOutputStatsBuffer = createBufferVMA(
                     vmaAllocator,
-                    Integer.BYTES,
+                    Integer.BYTES*2,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -698,8 +767,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 vmaDestroyBuffer(vmaAllocator, frame.meshletDescBuffer.buffer, frame.meshletDescBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.meshletVertexBuffer.buffer, frame.meshletVertexBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.meshletVertexLocalIndexBuffer.buffer, frame.meshletVertexLocalIndexBuffer.allocation);
-                vmaDestroyBuffer(vmaAllocator, frame.meshletDrawCountBuffer.buffer, frame.meshletDrawCountBuffer.allocation);
-                vmaDestroyBuffer(vmaAllocator, frame.meshletCountBuffer.buffer, frame.meshletCountBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.renderOutputStatsBuffer.buffer, frame.renderOutputStatsBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.renderConfigBuffer.buffer, frame.renderConfigBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletsInfoUpdateBuffer.buffer, frame.meshletsInfoUpdateBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletsToBeDrawn.buffer, frame.meshletsToBeDrawn.allocation);
             });
         }
     }
@@ -811,11 +882,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
             projMat.setValuesToBuffer(bw.buffer);
             projView.setValuesToBuffer(bw.buffer);
 
-//            log("dot products:");
-            var pos = new Vector(1,1,1,1);
             for(var f: frustumPlanes) {
                 f.setValuesToBuffer(bw.buffer);
-//                log(f + "=" +pos.dot(f));
             }
 
             bw.unmapBuffer();
@@ -828,6 +896,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
         vkDeviceWaitIdle(device);
 
         cleanUpSwapChainAndSwapImages();
+        frames.forEach(f -> vkDestroyFramebuffer(device, f.frameBuffer, null));
+
+        vkDestroyImageView(device, depthAttachment.imageView, null);
+        vmaDestroyImage(vmaAllocator, depthAttachment.allocatedImage.image, depthAttachment.allocatedImage.allocation);
 
         for(int i = deletionQueue.size()-1; i >= 0; i--) {
             deletionQueue.get(i).run();

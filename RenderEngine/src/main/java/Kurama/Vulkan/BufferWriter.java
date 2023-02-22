@@ -3,7 +3,9 @@ package Kurama.Vulkan;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.vmaMapMemory;

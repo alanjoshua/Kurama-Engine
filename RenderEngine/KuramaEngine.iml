@@ -11,7 +11,10 @@
       <sourceFolder url="file://$MODULE_DIR$/projects/Anaglyph/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/ActiveShutter/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/PointCloud/code" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/libraries/laszip4j/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/res" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/libraries/laszip4j/src/test/java/com/github/mreutegg/laszip4j" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

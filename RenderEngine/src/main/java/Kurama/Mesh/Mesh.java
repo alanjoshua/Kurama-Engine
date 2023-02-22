@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
 public class Mesh {
 
     public enum VERTATTRIB {
-        POSITION, TEXTURE, NORMAL, COLOR, TANGENT, BITANGENT, MATERIAL, WEIGHTBIASESPERVERT, JOINTINDICESPERVERT
+        POSITION, TEXTURE, NORMAL, COLOR, TANGENT, BITANGENT, MATERIAL, WEIGHTBIASESPERVERT, JOINTINDICESPERVERT;
     }
     // from Legacy reasons
     public static Map<Integer, VERTATTRIB> attribMapping = new HashMap<>();
