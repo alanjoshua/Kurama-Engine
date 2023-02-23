@@ -13,7 +13,7 @@ public class Meshlet {
     public Vector pos;
     public float boundRadius;
     public int objectId;
-
+    public float density = 0;
     @Override
     public String toString() {
         return "primitive Count: " + primitiveCount + " vertex Count: "+ vertexCount

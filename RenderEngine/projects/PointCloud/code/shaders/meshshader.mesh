@@ -44,7 +44,10 @@ struct Meshlet {
     // w = int vertexBegin;
     vec4 info;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-    vec4 objectId; //yzw are padding
+//    vec4 objectId; //yzw are padding
+    float objectId;
+    float density;
+    vec2 _; // padding
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
@@ -67,10 +70,6 @@ layout(set = 1, binding = 3) buffer UboIn {
 layout(std140, set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
     int indices[];
 } meshletsToBeDrawn;
-
-layout(std140, set = 1, binding = 5) writeonly buffer MeshletUpdateInfo {
-    int array[];
-} meshletUpdateInfo;
 
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -97,7 +96,7 @@ void main()
     uint meshletID = task.subIDs[gl_WorkGroupID.x];
 
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
-    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId.x)];
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
     int primitiveCount = int(curMeshlet.info.x);
     int vertexCount = int( curMeshlet.info.y);

@@ -71,8 +71,8 @@ public class MeshletGen {
         var vertIndices = new ArrayList<Integer>();
         var primIndices = new ArrayList<Integer>();
 
-        boolean isMaxVertsReached = false;
-        boolean isMaxPrimsReached = false;
+        boolean isMaxVertsReached;
+        boolean isMaxPrimsReached;
 
         var curMeshletVertIndices = new LinkedHashSet<Integer>();
         var curMeshletVertMapping = new HashMap<Integer, Integer>();
@@ -135,6 +135,7 @@ public class MeshletGen {
                 curMeshletPos = curMeshletPos.scalarMul(1f/curMeshletVertIndices.size());
                 curMeshlet.pos = curMeshletPos; // temporary
                 curMeshlet.boundRadius = calculateBoundRadius(curBounds);
+                curMeshlet.density = calculatePointCloudDensity(curMeshlet.boundRadius, curMeshlet.vertexCount);
 
                 vertIndices.addAll(curMeshletVertIndices);
                 primIndices.addAll(curMeshletLocalIndices);
@@ -192,6 +193,7 @@ public class MeshletGen {
         curMeshletPos = curMeshletPos.scalarMul(1f/curMeshletVertIndices.size());
         curMeshlet.pos = curMeshletPos;
         curMeshlet.boundRadius = calculateBoundRadius(curBounds);
+        curMeshlet.density = calculatePointCloudDensity(curMeshlet.boundRadius, curMeshlet.vertexCount);
 
         vertIndices.addAll(curMeshletVertIndices);
         primIndices.addAll(curMeshletLocalIndices);
@@ -201,6 +203,10 @@ public class MeshletGen {
         log("Num of times vert limit reached: " + numTimesVertLimitReached + " prim limit reached: "+ numPrimLimitReached);;
 
         return new MeshletGenOutput(meshlets, mesh, vertIndices, primIndices);
+    }
+
+    public static float calculatePointCloudDensity(float radius, int numPoints) {
+        return (float) (numPoints/((4.0/3.0) * Math.PI * Math.pow(radius, 3)));
     }
 
     public static MeshletGenOutput generateMeshletsTemp(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives,

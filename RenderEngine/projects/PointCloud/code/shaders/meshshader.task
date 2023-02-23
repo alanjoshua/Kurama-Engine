@@ -28,24 +28,26 @@ layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
 }objectBuffer;
 
 // Binding 3: Indirect draw stats
-layout (set = 0, binding = 3) writeonly buffer UBOOut
+layout (set = 0, binding = 3) buffer UBOOut
 {
     int meshletDrawCount;
-    int meshletUpdateCount;
+    int meshletRemovedCount;
+    int meshletChildAddedCount;
 } uboOut;
 
 layout(set = 1, binding = 3) buffer UboIn {
     int meshletCount;
     int maxMeshletsToUpdate;
+    float desiredDensity;
 } uboIn;
 
 layout(set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
     int indices[];
 } meshletsToBeDrawn;
 
-layout(set = 1, binding = 5) writeonly buffer MeshletUpdateInfo {
+layout(set = 1, binding = 5) writeonly buffer MeshletsToBeRemoved {
     int array[];
-} meshletUpdateInfo;
+} meshletsToBeRemoved;
 
 struct Meshlet {
 // x = int primitiveCount;
@@ -54,7 +56,10 @@ struct Meshlet {
 // w = int vertexBegin;
     vec4 info;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-    vec4 objectId; //yzw are padding
+//    vec4 objectId; //yzw are padding
+    float objectId;
+    float density;
+    vec2 _; //padding
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
@@ -87,7 +92,7 @@ bool isWithinFrustum(vec4 pos, float radius) {
 bool shouldRender(uint meshletID) {
 
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
-    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId.x)];
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
     vec3 pos = curMeshlet.bound.xyz;
     float radius = curMeshlet.bound.w * relatedModel.scale;
@@ -108,7 +113,7 @@ void main() {
     // Clear stats on first invocation
     if (localId == 0) {
         atomicExchange(uboOut.meshletDrawCount, 0);
-        atomicExchange(uboOut.meshletUpdateCount, 0);
+        atomicExchange(uboOut.meshletRemovedCount, 0);
     }
 
     int meshletID = meshletsToBeDrawn.indices[localId];
@@ -128,9 +133,9 @@ void main() {
         atomicAdd(uboOut.meshletDrawCount, 1);
     }
     else {
-        int offset = atomicAdd(uboOut.meshletUpdateCount, 1);
-        if (offset < uboIn.maxMeshletsToUpdate) {
-            meshletUpdateInfo.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
+        if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
+            int offset = atomicAdd(uboOut.meshletRemovedCount, 1);
+            meshletsToBeRemoved.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
         }
     }
 

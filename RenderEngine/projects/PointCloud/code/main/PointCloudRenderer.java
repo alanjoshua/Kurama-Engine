@@ -1,6 +1,5 @@
 package main;
 
-import Kurama.ComponentSystem.automations.Log;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -50,6 +49,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MESHLETSIZE = (Float.BYTES * 4 * 3);
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
+    public int RENDERCONFIGSIZE = (Integer.BYTES * 2) + (Float.BYTES * 1);
+    public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 3);
     int previousMeshletsDrawnCount = -1;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
     public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
@@ -60,7 +61,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();
     public ArrayList<Integer> curFrameMeshletsDrawIndices = new ArrayList<>();
     public record ObjectDataUpdate(int index, Model model){}
-    public record MeshletUpdateInfo(int index, Vector info, Vector bounds, Integer objectId, Meshlet meshlet){}
+    public record MeshletUpdateInfo(int index, Vector info, Vector bounds, Integer objectId, Float density, Meshlet meshlet){}
 
     public class Frame {
         public AllocatedBuffer cameraBuffer;
@@ -73,7 +74,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
         public AllocatedBuffer renderOutputStatsBuffer;
         public AllocatedBuffer meshletDescBuffer;
         public AllocatedBuffer meshletsToBeDrawn;
-        public AllocatedBuffer meshletsInfoUpdateBuffer;
+        public AllocatedBuffer meshletsToBeRemovedBuffer;
+        public AllocatedBuffer meshletsChildToBeAddedBuffer;
         public long descriptorSet1;
         public long meshletDescriptorSet;
     }
@@ -294,7 +296,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 vkCmdSetViewport(commandBuffer, 0, viewportBuffer);
                 vkCmdSetScissor(commandBuffer, 0, scissorBuffer);
 
-                log("num of task shader work groups launched: "+ (meshlets.size() /32 + 1));
+                int numTaskShadersToLaunch = (curFrameMeshletsDrawIndices.size() /32 + 1);
+
+                log("num of task shader work groups launched: "+ numTaskShadersToLaunch);
 
                 renderPassInfo.framebuffer(frames.get(i).frameBuffer);
                 vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -310,7 +314,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             pipelineLayout, 1,
                             stack.longs(frames.get(i).meshletDescriptorSet), null);
 
-                    vkCmdDrawMeshTasksEXT(commandBuffer, curFrameMeshletsDrawIndices.size()/32 + 1, 1, 1);
+                    vkCmdDrawMeshTasksEXT(commandBuffer, numTaskShadersToLaunch, 1, 1);
                 }
 
                 vkCmdEndRenderPass(commandBuffer);
@@ -325,43 +329,41 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     @Override
     public void render() {
-        prepareFrame();
-        drawFrame();
-        submitFrame();
 
-        var bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).renderOutputStatsBuffer,
-                Integer.BYTES, Integer.BYTES*2);
-        bufferReader.mapBuffer();
-        var meshletRenderCount = bufferReader.buffer.getInt();
-        bufferReader.setPosition(1);
-        var meshletUpdateCount = bufferReader.buffer.getInt();
-        bufferReader.unmapBuffer();
+        if(curFrameMeshletsDrawIndices.size() > 0) {
+            prepareFrame();
+            drawFrame();
+            submitFrame();
 
-        int numUpdates;
-        if(meshletUpdateCount < MAXMESHLETUPDATESPERFRAME) {
-            numUpdates = meshletUpdateCount;
+            var bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).renderOutputStatsBuffer,
+                    Integer.BYTES, RENDERSTATSOUTPUTSIZE);
+            bufferReader.mapBuffer();
+            var meshletRenderCount = bufferReader.buffer.getInt();
+            bufferReader.setPosition(1);
+            var meshletUpdateCount = bufferReader.buffer.getInt();
+            bufferReader.unmapBuffer();
+
+            bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsToBeRemovedBuffer,
+                    Integer.BYTES, Integer.BYTES*meshletUpdateCount);
+            bufferReader.mapBuffer();
+
+            var meshletsToBeUpdated = new ArrayList<Integer>();
+            for(int i = 0; i < meshletUpdateCount; i++) {
+                bufferReader.setPosition(i);
+                int value = bufferReader.buffer.getInt();
+                meshletsToBeUpdated.add(value);
+                var removed = curFrameMeshletsDrawIndices.remove((Integer)value);
+                if(!removed) {
+                    logPerSec("Couldnt remove "+value + " num of meshlets being rendered: "+ curFrameMeshletsDrawIndices.size());
+                }
+            }
+            bufferReader.unmapBuffer();
+
+            logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletUpdateCount);
         }
         else {
-            numUpdates = MAXMESHLETUPDATESPERFRAME;
+            logPerSec("Currently not rendering anything");
         }
-
-        bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsInfoUpdateBuffer,
-                Integer.BYTES, Integer.BYTES*(numUpdates));
-        bufferReader.mapBuffer();
-
-        var meshletsToBeUpdated = new ArrayList<Integer>();
-        for(int i = 0; i < numUpdates; i++) {
-            bufferReader.setPosition(i);
-            int value = bufferReader.buffer.getInt();
-            meshletsToBeUpdated.add(value);
-            var removed = curFrameMeshletsDrawIndices.remove((Integer)value);
-            if(!removed) {
-                logPerSec("Couldnt remove "+value);
-            }
-        }
-        bufferReader.unmapBuffer();
-
-        logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletUpdateCount);
     }
 
     @Override
@@ -383,7 +385,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
         var meshletUpdateInfo = new MeshletUpdateInfo(ind,
                 new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet);
+                meshlet.objectId, meshlet.density, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -394,7 +396,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
         var meshletUpdateInfo = new MeshletUpdateInfo(meshlets.size(),
                 new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet);
+                meshlet.objectId, meshlet.density, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -452,7 +454,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size()) {
             for(var frame: frames) {
-                var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, Integer.SIZE, Integer.SIZE*2);
+                var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, Integer.SIZE, RENDERCONFIGSIZE);
                 bw.mapBuffer();
                 bw.put(curFrameMeshletsDrawIndices.size());
                 bw.put(MAXMESHLETUPDATESPERFRAME);
@@ -506,6 +508,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                     if(data.objectId != null) {
                         bw.put((float)data.objectId);
+                    }
+                    else {
+                        bw.put(-1.0f);
+                    }
+
+                    if(data.density != null) {
+                        bw.put(data.density);
                     }
 
                 }
@@ -671,8 +680,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
                     .bindBuffer(4, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeDrawn.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
-                    .bindBuffer(5, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsInfoUpdateBuffer.buffer),
-                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
+                    .bindBuffer(5, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeRemovedBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  VK_SHADER_STAGE_TASK_BIT_EXT)
+                    .bindBuffer(6, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsChildToBeAddedBuffer.buffer),
+                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT)
                     .build();
 
             meshletDescriptorSetLayout = results.layout();
@@ -711,7 +722,15 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT
             );
 
-            frame.meshletsInfoUpdateBuffer = createBufferVMA(
+            frame.meshletsToBeRemovedBuffer = createBufferVMA(
+                    vmaAllocator,
+                    Integer.BYTES * MAXMESHLETUPDATESPERFRAME,
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_AUTO,
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                            VMA_ALLOCATION_CREATE_MAPPED_BIT
+            );
+            frame.meshletsChildToBeAddedBuffer = createBufferVMA(
                     vmaAllocator,
                     Integer.BYTES * MAXMESHLETUPDATESPERFRAME,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -736,14 +755,14 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
-            frame.renderConfigBuffer = createBufferVMA(vmaAllocator, Integer.SIZE*2,
+            frame.renderConfigBuffer = createBufferVMA(vmaAllocator, RENDERCONFIGSIZE,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 
             frame.renderOutputStatsBuffer = createBufferVMA(
                     vmaAllocator,
-                    Integer.BYTES*2,
+                    RENDERSTATSOUTPUTSIZE,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -769,7 +788,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 vmaDestroyBuffer(vmaAllocator, frame.meshletVertexLocalIndexBuffer.buffer, frame.meshletVertexLocalIndexBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.renderOutputStatsBuffer.buffer, frame.renderOutputStatsBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.renderConfigBuffer.buffer, frame.renderConfigBuffer.allocation);
-                vmaDestroyBuffer(vmaAllocator, frame.meshletsInfoUpdateBuffer.buffer, frame.meshletsInfoUpdateBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletsToBeRemovedBuffer.buffer, frame.meshletsToBeRemovedBuffer.allocation);
+                vmaDestroyBuffer(vmaAllocator, frame.meshletsChildToBeAddedBuffer.buffer, frame.meshletsChildToBeAddedBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.meshletsToBeDrawn.buffer, frame.meshletsToBeDrawn.allocation);
             });
         }
