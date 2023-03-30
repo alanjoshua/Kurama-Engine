@@ -3,18 +3,36 @@ package Kurama.Mesh;
 import Kurama.Math.Vector;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 
 public class MeshletGen {
 
     public record SortedVertAttribs(Map<Mesh.VERTATTRIB, List<Vector>> sortedVertAttribs, List<Integer> indices, BoundValues boundValues){}
     public static class BoundValues {
         public BoundValues(){}
+        public void calculateRanges() {
+            xRange = maxx - minx;
+            yRange = maxy - miny;
+            zRange = maxz - minz;
+        }
+        public Vector scalePoint(Vector p) {
+            float newX, newY, newZ;
+
+            newX = (p.get(0) - minx) / xRange;
+            newY = (p.get(1) - miny) / yRange;
+            newZ = (p.get(2) - minz) / zRange;
+
+            return new Vector(newX, newY, newZ);
+        }
         public float minx = Float.POSITIVE_INFINITY, maxx = Float.NEGATIVE_INFINITY,
                 miny = Float.POSITIVE_INFINITY,maxy = Float.NEGATIVE_INFINITY,
-                minz = Float.POSITIVE_INFINITY, maxz = Float.NEGATIVE_INFINITY;
+                minz = Float.POSITIVE_INFINITY, maxz = Float.NEGATIVE_INFINITY,
+        xRange, yRange, zRange;
     }
 
     public record MeshletGenOutput(List<Meshlet> meshlets, Mesh mesh, List<Integer> vertexIndexBuffer, List<Integer> localIndexBuffer){}
@@ -22,11 +40,11 @@ public class MeshletGen {
     public record PosWrapper(Vector v, int prevIndex, BoundValues boundValues) implements Comparable {
         @Override
         public int compareTo(Object o) {
-            var v1 = (Vector) v;
-            var v2 = ((PosWrapper) o).v;
+            var v1 = boundValues.scalePoint(v);
+            var v2 = boundValues.scalePoint(((PosWrapper) o).v);
 
-            var morton1 = getMortonCode((long) (v1.get(0) - boundValues.minx), (long) (v1.get(1) - boundValues.miny), (long) (v1.get(2) - boundValues.minz));
-            var morton2 = getMortonCode((long) (v2.get(0) - boundValues.minx), (long) (v2.get(1) - boundValues.miny), (long) (v2.get(2) - boundValues.minz));
+            var morton1 = getMortonCode(v1);
+            var morton2 = getMortonCode(v2);
 
             if (morton1 < morton2)
                 return -1;
@@ -63,8 +81,8 @@ public class MeshletGen {
             throw new IllegalArgumentException("Invalid meshlet generation arguments");
         }
 
-//        var sortedPrimitives    = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null), vertsPerPrimitive);
-        var sortedPrimitives    = convertToPrimitives(mesh.indices, vertsPerPrimitive);
+        var sortedPrimitives    = convertToPrimitives(sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive), vertsPerPrimitive);
+//        var sortedPrimitives    = convertToPrimitives(mesh.indices, vertsPerPrimitive);
 
 
         var meshlets = new ArrayList<Meshlet>();
@@ -209,137 +227,159 @@ public class MeshletGen {
         return (float) (numPoints/((4.0/3.0) * Math.PI * Math.pow(radius, 3)));
     }
 
-    public static MeshletGenOutput generateMeshletsTemp(Mesh mesh, int vertsPerPrimitive, int maxVerts, int maxPrimitives,
-                                                    int globalVertsBufferPos, int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
+    public static MeshletGenOutput genHierLODPointCloud(Mesh mesh, int maxVertsPerMeshlet, int maxChildrenPerLevel, int globalVertsBufferPos,
+                                                        int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
 
-        if(maxVerts == 0 || maxPrimitives == 0 || maxVerts < vertsPerPrimitive) {
-            throw new IllegalArgumentException("Invalid meshlet generation arguments");
+        var sortedPoints= new ArrayList<PosWrapper>();
+        var boundValues = new BoundValues();
+
+        int ind = 0;
+        for(var v: mesh.getVertices()) {
+            if (v.get(0) > boundValues.maxx)
+                boundValues.maxx = v.get(0);
+            if (v.get(1) > boundValues.maxy)
+                boundValues.maxy = v.get(1);
+            if (v.get(2) > boundValues.maxz)
+                boundValues.maxz = v.get(2);
+
+            if (v.get(0) < boundValues.minx)
+                boundValues.minx = v.get(0);
+            if (v.get(1) < boundValues.miny)
+                boundValues.miny = v.get(1);
+            if (v.get(2) < boundValues.minz)
+                boundValues.minz = v.get(2);
+
+            sortedPoints.add(new PosWrapper(v, ind, boundValues));
+            ind++;
+        }
+        boundValues.calculateRanges();
+        Collections.sort(sortedPoints);
+
+        int curVertPos = globalVertsBufferPos;
+
+        // Index list of the sorted points
+        var remainingVertIndices = sortedPoints.stream().map(p -> p.prevIndex).collect(Collectors.toList());
+
+        var rootMeshlet = new Meshlet();
+        rootMeshlet.parent = null;
+        rootMeshlet.treeDepth = 0;
+
+        // Recursively creates the hierarchy LOD structure, and all the info is stored in 'rootMeshlet'
+        createHierarchyStructure(remainingVertIndices, rootMeshlet, maxChildrenPerLevel, maxVertsPerMeshlet, 0);
+        log("Num meshlets in hierarchy = "+ getNumMeshlets(rootMeshlet) + " num verts in hier: "+getNumVertsInHierarchy(rootMeshlet));
+        return null;
+    }
+
+    public static int getNumMeshlets(Meshlet root) {
+        if(root.children == null || root.children.size() == 0) {
+            return 1;
         }
 
-        List<Integer> vertexIndices = new ArrayList<>();
-        List<Integer> localPrimitiveIndices = new ArrayList<>();
-        var meshlets = new ArrayList<Meshlet>();
+        else {
+            int subtreeSize = 1;
+            for(var child: root.children) {
+                subtreeSize += getNumMeshlets(child);
+            }
+            return subtreeSize;
+        }
 
-        log("Num of prims before sort"+ mesh.indices.size()/vertsPerPrimitive);
-        var sortedPrimitives = sortMeshIndices(mesh.getVertices(), mesh.indices, vertsPerPrimitive, null);
-//        var sortedPrimitives = mesh.indices;
-        log("Num of prims "+ sortedPrimitives.size()/vertsPerPrimitive);
+    }
 
-        var curMeshlet = new Meshlet();
-        curMeshlet.indexBegin = globalLocalIndexBufferPos;
-        curMeshlet.vertexBegin = globalVertsIndexBufferPos;
+    public static int getNumVertsInHierarchy(Meshlet root) {
+        if(root.children == null || root.children.size() == 0) {
+            return root.vertIndices.size();
+        }
 
-        var curUniqueVerts = new ArrayList<Integer>();
-        var curIndexList = new ArrayList<Integer>();
-        var curMeshletPos = new Vector(0,0,0);
-        var curBounds = new BoundValues();
+        else {
+            int subtreeSize = root.vertIndices.size();
+            for(var child: root.children) {
+                subtreeSize += getNumVertsInHierarchy(child);
+            }
+            return subtreeSize;
+        }
 
-        int primInd = 0;
-        while (primInd < sortedPrimitives.size()/vertsPerPrimitive) {
+    }
 
-            // We have reached the limit for the number of primitives a meshlet could have
-            // We assume that the number of verts is still within the limit
-            // We create a new meshlet here
-            if((curIndexList.size() / vertsPerPrimitive) > maxPrimitives) {
-                vertexIndices.addAll(curUniqueVerts);
-                localPrimitiveIndices.addAll(curIndexList);
+    // Recursively creates the hierarchy LOD structure, and all the info is stored in 'rootMeshlet'
+    public static Meshlet createHierarchyStructure(List<Integer> sortedRemainingVertices, Meshlet rootMeshlet, int maxNumChildren, int maxVertsPerChild, int curDepth) {
 
-                curMeshlet.primitiveCount = curIndexList.size() / vertsPerPrimitive;
-                curMeshlet.vertexCount = curUniqueVerts.size();
-                curMeshlet.pos = curMeshletPos;
-                curMeshlet.boundRadius = calculateBoundRadius(curBounds);
-                meshlets.add(curMeshlet);
+        // Reached leaf node, so just add all remaining vertices to curNode, and return
+        if(sortedRemainingVertices.size() <= maxVertsPerChild) {
+            rootMeshlet.vertIndices = new ArrayList<>();
+            rootMeshlet.vertIndices.addAll(sortedRemainingVertices);
+            return rootMeshlet;
+        }
 
-                curUniqueVerts.clear();
-                curIndexList.clear();
+        else {
 
-                curMeshlet = new Meshlet();
-                curMeshlet.indexBegin = globalLocalIndexBufferPos + localPrimitiveIndices.size();
-                curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertexIndices.size();
+            // Randomly sample 'M' nodes from the remaining verts, and add it to the current meshlet
+            List<Integer> randomSelection = IntStream.rangeClosed(0, sortedRemainingVertices.size()-1).boxed().collect(Collectors.toList());
+            Collections.shuffle(randomSelection);
+            rootMeshlet.vertIndices = new ArrayList<>();
+            rootMeshlet.children = new ArrayList<>();
+
+            for(int i = 0; i < maxVertsPerChild; i++) {
+                rootMeshlet.vertIndices.add(sortedRemainingVertices.get(randomSelection.get(i)));
             }
 
-            var lastPrimitiveIndices = new ArrayList<Integer>();
-            var uniqueVertsAddedThisPrim = new ArrayList<Integer>();
+            // Now remove the vertices that were added to the current meshlet from the "sortedRemainingVertices" list
+            sortedRemainingVertices.removeAll(rootMeshlet.vertIndices);
 
-            for(int i = 0; i < vertsPerPrimitive; i++) {
-                int baseInd = primInd * vertsPerPrimitive;
-                int curVIndex = sortedPrimitives.get(baseInd + i) + globalVertsBufferPos;
-                var localIndex = curUniqueVerts.indexOf(curVIndex);
+            int numChildrenPossible = sortedRemainingVertices.size() / maxVertsPerChild;
 
-                if(localIndex == -1) {
-                    curUniqueVerts.add(curVIndex);
-                    uniqueVertsAddedThisPrim.add(curVIndex);
-                    localIndex = curUniqueVerts.size() - 1;
+            // In case there are enough vertices available to make all children
+            if(numChildrenPossible >= maxNumChildren) {
+                int numVertsSubDivision = sortedRemainingVertices.size()/maxNumChildren;
+
+                for(int i = 0; i < maxNumChildren; i++) {
+
+                    var cMeshlet = new Meshlet();
+                    cMeshlet.parent = rootMeshlet;
+                    cMeshlet.treeDepth = curDepth + 1;
+                    rootMeshlet.children.add(cMeshlet);
+                    List<Integer> childVerts;
+
+                    if(i < (maxNumChildren-1)) {
+                        childVerts = new ArrayList<>(sortedRemainingVertices.subList(i * numVertsSubDivision, (i + 1) * numVertsSubDivision));
+                    }
+                    else {
+                        childVerts = new ArrayList<>(sortedRemainingVertices.subList(i * numVertsSubDivision, sortedRemainingVertices.size()));
+                    }
+
+                    createHierarchyStructure(childVerts, cMeshlet, maxNumChildren, maxVertsPerChild, curDepth+1);
                 }
-                lastPrimitiveIndices.add(localIndex);
             }
 
-            // If max vert limit has not been reached, and by definition max prim has also not been reached
-            if(curUniqueVerts.size() <= maxVerts) {
-                // add the primitive to the primitive index list
-                curIndexList.addAll(lastPrimitiveIndices);
-                lastPrimitiveIndices.clear();
-
-                // Calculate meshlet pos and bounds
-                for(int vertsThisPrim: uniqueVertsAddedThisPrim) {
-                    var v = mesh.getVertices().get(vertsThisPrim - globalVertsBufferPos);
-                    curMeshletPos = curMeshletPos.add(v);
-
-                    if (v.get(0) > curBounds.maxx)
-                        curBounds.maxx = v.get(0);
-                    if (v.get(1) > curBounds.maxy)
-                        curBounds.maxy = v.get(1);
-                    if (v.get(2) > curBounds.maxz)
-                        curBounds.maxz = v.get(2);
-
-                    if (v.get(0) < curBounds.minx)
-                        curBounds.minx = v.get(0);
-                    if (v.get(1) < curBounds.miny)
-                        curBounds.miny = v.get(1);
-                    if (v.get(2) < curBounds.minz)
-                        curBounds.minz = v.get(2);
-                }
-
-                // increment to the next primitive
-                primInd++;
-            }
-
-            // If max vertex per meshlet limit is reached, create a new meshlet
+            // There are barely any vertices left, so the next level would just be leaf nodes
             else {
-                // Remove the verts that were added during this primitive
-                curUniqueVerts.removeAll(uniqueVertsAddedThisPrim);
+                for(int i = 0; i < maxNumChildren; i++) {
 
-                vertexIndices.addAll(curUniqueVerts);
-                localPrimitiveIndices.addAll(curIndexList);
+                    var cMeshlet = new Meshlet();
+                    cMeshlet.parent = rootMeshlet;
+                    cMeshlet.treeDepth = curDepth + 1;
+                    rootMeshlet.children.add(cMeshlet);
+                    List<Integer> childVerts;
 
-                curMeshlet.primitiveCount = curIndexList.size() / vertsPerPrimitive;
-                curMeshlet.vertexCount = curUniqueVerts.size();
-                curMeshlet.pos = curMeshletPos;
-                curMeshlet.boundRadius = calculateBoundRadius(curBounds);
-                meshlets.add(curMeshlet);
+                    int startPos = i * maxVertsPerChild;
 
-                curUniqueVerts.clear();
-                curIndexList.clear();
+                    // Last child
+                    if ((sortedRemainingVertices.size() - startPos) < maxVertsPerChild) {
+                        childVerts = new ArrayList<>(sortedRemainingVertices.subList(startPos, sortedRemainingVertices.size()));
+                        createHierarchyStructure(childVerts, cMeshlet, maxNumChildren, maxVertsPerChild, curDepth+1);
+                        break;
+                    }
 
-                curMeshlet = new Meshlet();
-                curMeshlet.indexBegin = globalLocalIndexBufferPos + localPrimitiveIndices.size();
-                curMeshlet.vertexBegin = globalVertsIndexBufferPos + vertexIndices.size();
-
-                // Do not increment to next primitive here so that it could be added to the next meshlet
+                    else {
+                        childVerts = new ArrayList<>(sortedRemainingVertices.subList(startPos, startPos + maxVertsPerChild));
+                        createHierarchyStructure(childVerts, cMeshlet, maxNumChildren, maxVertsPerChild, curDepth+1);
+                        break;
+                    }
+                }
             }
+
         }
 
-        // Add last meshlet
-        vertexIndices.addAll(curUniqueVerts);
-        localPrimitiveIndices.addAll(curIndexList);
-
-        curMeshlet.primitiveCount = curIndexList.size() / vertsPerPrimitive;
-        curMeshlet.vertexCount = curUniqueVerts.size();
-        curMeshlet.pos = curMeshletPos;
-        curMeshlet.boundRadius = calculateBoundRadius(curBounds);
-        meshlets.add(curMeshlet);
-
-        return new MeshletGenOutput(meshlets, mesh, vertexIndices, localPrimitiveIndices);
+        return rootMeshlet;
     }
 
     public static Mesh mergeMeshes(List<Mesh> meshes) {
@@ -428,7 +468,7 @@ public class MeshletGen {
 
     public static SortedVertAttribs sortMeshVertices(Map<Mesh.VERTATTRIB, List<Vector>> vertAttribs, List<Integer> indices) {
 
-        var sorted = new ArrayList<PosWrapper>();
+        var sorted = new LinkedList<PosWrapper>();
         var boundValues = new BoundValues();
         var verts = vertAttribs.get(Mesh.VERTATTRIB.POSITION);
 
@@ -482,11 +522,11 @@ public class MeshletGen {
     public record PrimitiveWrapper(Vector pos, BoundValues boundValues, Integer... prevIndex) implements Comparable {
         @Override
         public int compareTo(Object o) {
-            var v1 = (Vector) pos;
-            var v2 = ((PrimitiveWrapper) o).pos;
+            var v1 = boundValues.scalePoint(pos);
+            var v2 = boundValues.scalePoint(((PrimitiveWrapper) o).pos);
 
-            var morton1 = getMortonCode((long) (v1.get(0) - boundValues.minx), (long) (v1.get(1) - boundValues.miny), (long) (v1.get(2) - boundValues.minz));
-            var morton2 = getMortonCode((long) (v2.get(0) - boundValues.minx), (long) (v2.get(1) - boundValues.miny), (long) (v2.get(2) - boundValues.minz));
+            var morton1 = getMortonCode(v1);
+            var morton2 = getMortonCode(v2);
 
             if (morton1 < morton2)
                 return -1;
@@ -504,7 +544,7 @@ public class MeshletGen {
 
         public static List<Integer> sortMeshIndices(List<Vector> verts, List<Integer> indices, int vertsPerPrimitive, BoundValues boundedValues) {
 
-        var sorted = new ArrayList<PrimitiveWrapper>();
+        var sorted = new LinkedList<PrimitiveWrapper>();
         var shouldCalcBounds = boundedValues == null? true: false;
         var boundValues = new BoundValues();
 
@@ -541,6 +581,7 @@ public class MeshletGen {
             primAveragePos = primAveragePos.scalarMul(1.0f/((float)vertsPerPrimitive));
             sorted.add(new PrimitiveWrapper(primAveragePos, boundValues, curIndices));
         }
+            boundValues.calculateRanges();
         Collections.sort(sorted);
 
         var sortedIndices = new ArrayList<Integer>();
@@ -553,6 +594,14 @@ public class MeshletGen {
 
         // Modified from https://github.com/johnsietsma/InfPoints/blob/master/com.infpoints/Runtime/Morton.cs
     public static long getMortonCode(Long x, Long y, Long z) {
+        checkRange(x, y, z);
+        return part1By2(z << 2) + part1By2(y << 1) + part1By2(x);
+    }
+
+    public static long getMortonCode(Vector v) {
+        Long x = (long)v.get(0);
+        Long y = (long)v.get(1);
+        Long z = (long)v.get(2);
         checkRange(x, y, z);
         return part1By2(z << 2) + part1By2(y << 1) + part1By2(x);
     }

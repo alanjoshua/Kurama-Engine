@@ -113,8 +113,8 @@ public class PointCloudController extends Game {
 
     public void loadScene() {
 
-//        createMinecraftWorld();
-//        createRoom();
+        createMinecraftWorld();
+        createRoom();
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
@@ -213,6 +213,7 @@ public class PointCloudController extends Game {
             log("crashing after loading these many points: "+lidarPoints.size());
             throw new RuntimeException("Ran outof memory");
         }
+        log("Num of lidar points loaded: "+lidarPoints.size());
 
         var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
         vertAttribs.put(Mesh.VERTATTRIB.POSITION, lidarPoints);
@@ -225,6 +226,8 @@ public class PointCloudController extends Game {
 //        lidarModel.setPos(avgPos.scalarMul(1));
         lidarModel.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
         renderer.addModel(lidarModel);
+
+        genHierLODPointCloud(lidarMesh, 64, 4, 0, 0, 0);
     }
 
     public void createRoom() {
@@ -407,5 +410,6 @@ public class PointCloudController extends Game {
     @Override
     public void render() {
         renderer.render();
+        System.exit(1);
     }
 }
