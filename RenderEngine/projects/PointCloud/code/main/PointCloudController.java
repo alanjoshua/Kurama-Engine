@@ -1,6 +1,7 @@
 package main;
 
 import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.components.model.PointCloud;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
@@ -113,8 +114,8 @@ public class PointCloudController extends Game {
 
     public void loadScene() {
 
-        createMinecraftWorld();
-        createRoom();
+//        createMinecraftWorld();
+//        createRoom();
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
@@ -221,13 +222,11 @@ public class PointCloudController extends Game {
         var lidarMesh = new Mesh(indices, null, vertAttribs, null, "lidar", null);
         lidarMesh.boundingRadius = 100000;
 
-        var lidarModel = new Model(this, lidarMesh, "lidarPointCloud");
+        var lidarModel = new PointCloud(this, lidarMesh, "lidarPointCloud");
         lidarModel.setScale(scale);
 //        lidarModel.setPos(avgPos.scalarMul(1));
         lidarModel.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
         renderer.addModel(lidarModel);
-
-        genHierLODPointCloud(lidarMesh, 64, 4, 0, 0, 0);
     }
 
     public void createRoom() {
@@ -410,6 +409,6 @@ public class PointCloudController extends Game {
     @Override
     public void render() {
         renderer.render();
-        System.exit(1);
+//        System.exit(1);
     }
 }

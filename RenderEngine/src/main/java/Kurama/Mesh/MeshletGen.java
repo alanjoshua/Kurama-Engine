@@ -227,8 +227,7 @@ public class MeshletGen {
         return (float) (numPoints/((4.0/3.0) * Math.PI * Math.pow(radius, 3)));
     }
 
-    public static MeshletGenOutput genHierLODPointCloud(Mesh mesh, int maxVertsPerMeshlet, int maxChildrenPerLevel, int globalVertsBufferPos,
-                                                        int globalVertsIndexBufferPos, int globalLocalIndexBufferPos) {
+    public static Meshlet genHierLODPointCloud(Mesh mesh, int maxVertsPerMeshlet, int maxChildrenPerLevel) {
 
         var sortedPoints= new ArrayList<PosWrapper>();
         var boundValues = new BoundValues();
@@ -255,8 +254,6 @@ public class MeshletGen {
         boundValues.calculateRanges();
         Collections.sort(sortedPoints);
 
-        int curVertPos = globalVertsBufferPos;
-
         // Index list of the sorted points
         var remainingVertIndices = sortedPoints.stream().map(p -> p.prevIndex).collect(Collectors.toList());
 
@@ -265,9 +262,24 @@ public class MeshletGen {
         rootMeshlet.treeDepth = 0;
 
         // Recursively creates the hierarchy LOD structure, and all the info is stored in 'rootMeshlet'
-        createHierarchyStructure(remainingVertIndices, rootMeshlet, maxChildrenPerLevel, maxVertsPerMeshlet, 0);
-        log("Num meshlets in hierarchy = "+ getNumMeshlets(rootMeshlet) + " num verts in hier: "+getNumVertsInHierarchy(rootMeshlet));
-        return null;
+        return createHierarchyStructure(remainingVertIndices, rootMeshlet, maxChildrenPerLevel, maxVertsPerMeshlet, 0);
+    }
+
+    public static List<Meshlet> getMeshletsInBFOrder(Meshlet root) {
+
+        List<Meshlet> meshlets = new ArrayList<>();
+        var queue = new LinkedList<Meshlet>();
+        queue.add(root);
+
+        while(!queue.isEmpty()) {
+            var cur = queue.remove();
+            meshlets.add(cur);
+            if(cur.children != null) {
+                queue.addAll(cur.children);
+            }
+        }
+
+        return meshlets;
     }
 
     public static int getNumMeshlets(Meshlet root) {
@@ -455,7 +467,7 @@ public class MeshletGen {
         }
     }
 
-    private static float calculateBoundRadius(BoundValues boundvalues) {
+    public static float calculateBoundRadius(BoundValues boundvalues) {
         float xRange = boundvalues.maxx - boundvalues.minx;
         float yRange = boundvalues.maxy - boundvalues.miny;
         float zRange = boundvalues.maxz - boundvalues.minz;

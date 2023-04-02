@@ -1,9 +1,11 @@
 package main;
 
 import Kurama.ComponentSystem.components.model.Model;
+import Kurama.ComponentSystem.components.model.PointCloud;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
+import Kurama.Mesh.MeshletGen;
 import Kurama.Vulkan.*;
 import Kurama.game.Game;
 import org.lwjgl.PointerBuffer;
@@ -16,7 +18,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static Kurama.Mesh.Mesh.VERTATTRIB.*;
-import static Kurama.Mesh.MeshletGen.generateMeshlets;
+import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static Kurama.utils.Logger.logPerSec;
@@ -343,21 +345,23 @@ public class PointCloudRenderer extends VulkanRendererBase {
             var meshletUpdateCount = bufferReader.buffer.getInt();
             bufferReader.unmapBuffer();
 
-            bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsToBeRemovedBuffer,
-                    Integer.BYTES, Integer.BYTES*meshletUpdateCount);
-            bufferReader.mapBuffer();
+            if(meshletUpdateCount > 0) {
+                bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsToBeRemovedBuffer,
+                        Integer.BYTES, Integer.BYTES * meshletUpdateCount);
+                bufferReader.mapBuffer();
 
-            var meshletsToBeUpdated = new ArrayList<Integer>();
-            for(int i = 0; i < meshletUpdateCount; i++) {
-                bufferReader.setPosition(i);
-                int value = bufferReader.buffer.getInt();
-                meshletsToBeUpdated.add(value);
-                var removed = curFrameMeshletsDrawIndices.remove((Integer)value);
-                if(!removed) {
-                    logPerSec("Couldnt remove "+value + " num of meshlets being rendered: "+ curFrameMeshletsDrawIndices.size());
+                var meshletsToBeUpdated = new ArrayList<Integer>();
+                for (int i = 0; i < meshletUpdateCount; i++) {
+                    bufferReader.setPosition(i);
+                    int value = bufferReader.buffer.getInt();
+                    meshletsToBeUpdated.add(value);
+                    var removed = curFrameMeshletsDrawIndices.remove((Integer) value);
+                    if (!removed) {
+                        logPerSec("Couldnt remove " + value + " num of meshlets being rendered: " + curFrameMeshletsDrawIndices.size());
+                    }
                 }
+                bufferReader.unmapBuffer();
             }
-            bufferReader.unmapBuffer();
 
             logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletUpdateCount);
         }
@@ -421,26 +425,100 @@ public class PointCloudRenderer extends VulkanRendererBase {
             log("model ind: "+modelInd);
             var model = models.get(modelInd);
 
-            var results = generateMeshlets(model.meshes.get(0), vertsPerPrimitive, maxVerts, maxPrimitives,
-                    globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
-                    meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
+            MeshletGen.MeshletGenOutput results = null;
+            if(model instanceof PointCloud) {
 
-            for(var meshlet: results.meshlets()) {
-                meshlet.objectId = modelInd;
-                addMeshlet(meshlet);
-            }
+                var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
+                var meshletsInOrder = getMeshletsInBFOrder(root);
 
-            for(var key: meshAttribsToLoad) {
-                if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
-                    throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+//                log("Num meshlets in hierarchy = "+ getNumMeshlets(root) + " num verts in hier: "+getNumVertsInHierarchy(root));
+
+                var newVertsList = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+                var keySetOrig = model.meshes.get(0).vertAttributes.keySet();
+
+                for(var key: meshAttribsToLoad) {
+                    if(!keySetOrig.contains(key)) {
+                        throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+                    }
+                    newVertsList.put(key, new ArrayList<>());
                 }
-                globalVertAttribs.get(key).addAll(model.meshes.get(0).vertAttributes.get(key));
+
+                int curVertOffset = globalVertAttribs.get(POSITION).size();
+                var vertIndexList = new ArrayList<Integer>(64);
+                var indexList = new ArrayList<Integer>(64);
+
+                for(var meshlet: meshletsInOrder) {
+
+                    meshlet.pos = new Vector(0,0,0);
+                    var curBounds = new BoundValues();
+
+                    for(int i = 0; i < meshlet.vertIndices.size(); i++) {
+                        var vertInd = meshlet.vertIndices.get(i);
+                        vertIndexList.add(curVertOffset);
+                        indexList.add(i);
+                        curVertOffset+=1;
+
+                        for(var key: meshAttribsToLoad) {
+                            globalVertAttribs.get(key).add(model.meshes.get(0).getAttributeList(key).get(vertInd));
+                        }
+                        var v = model.meshes.get(0).getAttributeList(POSITION).get(vertInd);
+                        meshlet.pos = meshlet.pos.add(v);
+
+                        if (v.get(0) > curBounds.maxx)
+                            curBounds.maxx = v.get(0);
+                        if (v.get(1) > curBounds.maxy)
+                            curBounds.maxy = v.get(1);
+                        if (v.get(2) > curBounds.maxz)
+                            curBounds.maxz = v.get(2);
+
+                        if (v.get(0) < curBounds.minx)
+                            curBounds.minx = v.get(0);
+                        if (v.get(1) < curBounds.miny)
+                            curBounds.miny = v.get(1);
+                        if (v.get(2) < curBounds.minz)
+                            curBounds.minz = v.get(2);
+                    }
+
+                    meshlet.vertexCount = meshlet.vertIndices.size();
+                    meshlet.vertexBegin = meshletVertexIndexBuffer.size();
+                    meshlet.indexBegin = meshletLocalIndexBuffer.size();
+                    meshlet.primitiveCount = meshlet.vertIndices.size();
+                    meshlet.pos = meshlet.pos.scalarMul(1f/meshlet.vertexCount);
+                    meshlet.boundRadius = calculateBoundRadius(curBounds);
+                    meshlet.density = calculatePointCloudDensity(meshlet.boundRadius, meshlet.vertexCount);
+
+                    meshlet.objectId = modelInd;
+                    addMeshlet(meshlet);
+
+                    meshletVertexIndexBuffer.addAll(vertIndexList);
+                    meshletLocalIndexBuffer.addAll(indexList);
+                    vertIndexList.clear();
+                    indexList.clear();
+                    meshlet.vertIndices = null;
+                }
             }
-            meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-            meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+            else {
+                results = generateMeshlets(model.meshes.get(0), vertsPerPrimitive, maxVerts, maxPrimitives,
+                        globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
+                        meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
+
+                for(var meshlet: results.meshlets()) {
+                    meshlet.objectId = modelInd;
+                    addMeshlet(meshlet);
+                }
+
+                for(var key: meshAttribsToLoad) {
+                    if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
+                        throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+                    }
+                    globalVertAttribs.get(key).addAll(model.meshes.get(0).vertAttributes.get(key));
+                }
+                meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
+                meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
+
+            }
 
             log(" num of total verts: "+ globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
-
         }
 
     }

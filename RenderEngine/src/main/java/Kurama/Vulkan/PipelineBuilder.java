@@ -271,10 +271,11 @@ public class PipelineBuilder {
 
             // ===> MULTISAMPLING <===
 
-            VkPipelineMultisampleStateCreateInfo multisampling = null;
+            var multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
+            multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+            multisampling.rasterizationSamples(1);
+
             if(multiSample != null) {
-                multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
-                multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
                 multisampling.sampleShadingEnable(multiSample.sampleShadingEnabled);
                 multisampling.rasterizationSamples(multiSample.rasterizationSamples);
                 multisampling.minSampleShading(multiSample.minSampleShading);
@@ -359,9 +360,7 @@ public class PipelineBuilder {
                 pipelineInfo.pNext(VK_NULL_HANDLE);
             }
 
-            if(multiSample != null) {
-                pipelineInfo.pMultisampleState(multisampling);
-            }
+            pipelineInfo.pMultisampleState(multisampling);
 
             LongBuffer pGraphicsPipeline = stack.callocLong(1);
 
