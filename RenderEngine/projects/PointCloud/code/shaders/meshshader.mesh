@@ -38,42 +38,32 @@ layout (set = 0, binding = 3) buffer UBOOut
 } uboOut;
 
 struct Meshlet {
-    // x = int primitiveCount;
-    // y = int vertexCount;
-    // z = int indexBegin;
-    // w = int vertexBegin;
-    vec4 info;
-    vec4 bound; //vec3 = pos, w = bound sphere radius
-//    vec4 objectId; //yzw are padding
+    float vertexBegin;
+    float vertexCount;
     float objectId;
     float density;
-    vec2 _; // padding
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    int treeDepth;
+    ivec3 __; // padding
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
-layout(std430, set = 1, binding = 1) readonly buffer VertexIndexBuffer {
-    int indices[];
-} vertexIndexBuffer;
-
-layout(std430, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
-    int indices[];
-} localIndexBuffer;
-
-layout(set = 1, binding = 3) buffer UboIn {
+layout(set = 1, binding = 1) buffer UboIn {
     int meshletCount;
     int maxMeshletsToUpdate;
+    float desiredDensity;
 } uboIn;
 
-layout(std140, set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
+layout(std140, set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
     int indices[];
 } meshletsToBeDrawn;
 
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-//layout(triangles, max_vertices = 64, max_primitives = 124) out;
+
 layout(points, max_vertices = 64, max_primitives = 64) out;
 
 layout(location = 0) out VertexOutput
@@ -94,20 +84,17 @@ taskPayloadSharedEXT Task task;
 void main()
 {
     uint meshletID = task.subIDs[gl_WorkGroupID.x];
-
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
     ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
-    int primitiveCount = int(curMeshlet.info.x);
-    int vertexCount = int( curMeshlet.info.y);
-    int indexBegin = int(curMeshlet.info.z);
-    int vertexBegin = int(curMeshlet.info.w);
+    int vertexCount = int(curMeshlet.vertexCount);
+    int vertexBegin = int(curMeshlet.vertexBegin);
 
 	mat4 mvp = camera.projview * relatedModel.model;
 
 	for(int i = 0; i < vertexCount; i++) {
-        int baseId = vertexBegin + i;
-        int finalVertId = vertexIndexBuffer.indices[baseId];
+        int finalVertId = vertexBegin + i;
+
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
         gl_MeshVerticesEXT[i].gl_PointSize = 2;
 
@@ -118,18 +105,6 @@ void main()
         gl_PrimitivePointIndicesEXT[i] = finalVertId;
 	}
 
-//	for (uint i = 0; i < primitiveCount; i++) {
-//        uint baseId = indexBegin + (i*3);
-//
-//        uvec3 finalInds = uvec3(
-//            localIndexBuffer.indices[baseId + 0],
-//            localIndexBuffer.indices[baseId + 1],
-//            localIndexBuffer.indices[baseId + 2]
-//        );
-//
-//        gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
-//	}
-
-    SetMeshOutputsEXT(vertexCount, primitiveCount);
+    SetMeshOutputsEXT(vertexCount, vertexCount);
 
 }

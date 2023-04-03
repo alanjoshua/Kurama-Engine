@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static Kurama.Mesh.MeshletGen.*;
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerHierarchyLevel;
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
@@ -116,17 +117,17 @@ public class PointCloudController extends Game {
 
 //        createMinecraftWorld();
 //        createRoom();
+        createHead();
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
         Vector br = new Vector(627918.4f, 1013175.5f);
         Vector bl = new Vector(627739.8f, 1013185.0f);
 
-        loadLidar(100000, tl, tr, br, bl);
-        renderer.createMeshlets(1, 64, 64);
+//        loadLidar(1000000, tl, tr, br, bl);
+        renderer.createMeshletsAndSyncGeoData( 64);
 
-        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs,
-                renderer.meshletVertexIndexBuffer, renderer.meshletLocalIndexBuffer, 1);
+        setMeshletColors(PerHierarchyLevel, renderer.meshlets,renderer.globalVertAttribs);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, renderer.meshlets.size()-1).boxed().toList());
@@ -135,14 +136,6 @@ public class PointCloudController extends Game {
 //           createMinecraftWorld();
 
         log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
-
-        log("meshlet verts index buffer (size): " + renderer.meshletVertexIndexBuffer.size());
-//            renderer.meshletVertexIndexBuffer.forEach(v -> log(v));
-//            log();
-
-        log("meshlet local index buffer (size): "+ renderer.meshletLocalIndexBuffer.size());
-//            renderer.meshletLocalIndexBuffer.forEach(v -> log(v));
-//            log();
 
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
@@ -153,8 +146,14 @@ public class PointCloudController extends Game {
         var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
 //        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-15 lidar two\\YS-20220915-132041-20221122-144832.copc.laz"));
 
-        var lidarPoints = new ArrayList<Vector>(numVerticesToLoad);
-        var indices = new ArrayList<Integer>(numVerticesToLoad);
+        List<Vector> lidarPoints;
+
+        if(numVerticesToLoad < 2147483647) { // Java array max size
+            lidarPoints = new ArrayList<>(numVerticesToLoad);
+        }
+        else {
+            lidarPoints = new ArrayList<>(2147483647);
+        }
         log("Total lidar points: "+lasReader.getHeader().getNumberOfPointRecords());
 
         var offset = new Vector((float) lasReader.getHeader().getXOffset(),
@@ -197,7 +196,6 @@ public class PointCloudController extends Game {
                 avgPos = avgPos.add(pos);
 //                if(pos.get(0) >= xmin && pos.get(0) <= xmax && pos.get(1) >= ymin && pos.get(1) <= ymax) {
 //                    log("accepted "+pos);
-                    indices.add(counter);
                     lidarPoints.add(pos);
                     counter++;
 
@@ -219,7 +217,7 @@ public class PointCloudController extends Game {
         var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
         vertAttribs.put(Mesh.VERTATTRIB.POSITION, lidarPoints);
 
-        var lidarMesh = new Mesh(indices, null, vertAttribs, null, "lidar", null);
+        var lidarMesh = new Mesh(null, null, vertAttribs, null, "lidar", null);
         lidarMesh.boundingRadius = 100000;
 
         var lidarModel = new PointCloud(this, lidarMesh, "lidarPointCloud");
@@ -261,6 +259,40 @@ public class PointCloudController extends Game {
         vikingRoom.setScale(10);
 
         renderer.addModel(vikingRoom);
+    }
+
+    public void createHead() {
+        var textureDir = "projects/ActiveShutter/models/textures/";
+
+        List<Mesh> meshes;
+        try {//projects/VulkanTestProject/models/meshes/viking_room.obj
+            meshes = AssimpStaticLoader.load("projects/VulkanTestProject/models/meshes/head_decimated.obj", textureDir);
+
+            // TODO: Temporary because of bug KE:16
+//            var tex = Texture.createTexture(textureDir + "viking_room.png");
+
+            var mergedMesh = mergeMeshes(meshes);
+            var indices = new ArrayList<Integer>();;
+            for(int i = 0; i < mergedMesh.getVertices().size(); i++) {
+                indices.add(i);
+            }
+            mergedMesh.indices = indices;
+//            mergedMesh.materials.get(0).texture = tex;
+            mergedMesh.boundingRadius = 50;
+            meshes.clear();
+            meshes.add(mergedMesh);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        //Add texture loc
+        var head = new PointCloud(this, meshes, "head");
+//        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+//        vikingRoom.setPos(new Vector(0, 50, 0));
+        head.setScale(10);
+
+        renderer.addModel(head);
     }
 
     public void createMinecraftWorld() {

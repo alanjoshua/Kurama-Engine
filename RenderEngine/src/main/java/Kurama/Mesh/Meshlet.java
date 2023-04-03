@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Meshlet {
-    public int primitiveCount;
     public int vertexCount;
-    public int indexBegin;
     public int vertexBegin;
 
     public Vector pos;
@@ -24,8 +22,8 @@ public class Meshlet {
 
     @Override
     public String toString() {
-        return "primitive Count: " + primitiveCount + " vertex Count: "+ vertexCount
-                + " index begin: "+ indexBegin + " vertex begin: " + vertexBegin
+        return" vertex Count: "+ vertexCount
+                + " vertex begin: " + vertexBegin
                 + " objectId: " + objectId + " pos: "+ pos + " bound radius: " + boundRadius;
     }
 

@@ -35,31 +35,28 @@ layout (set = 0, binding = 3) buffer UBOOut
     int meshletChildAddedCount;
 } uboOut;
 
-layout(set = 1, binding = 3) buffer UboIn {
+layout(set = 1, binding = 1) buffer UboIn {
     int meshletCount;
     int maxMeshletsToUpdate;
     float desiredDensity;
 } uboIn;
 
-layout(set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
+layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
     int indices[];
 } meshletsToBeDrawn;
 
-layout(set = 1, binding = 5) writeonly buffer MeshletsToBeRemoved {
+layout(set = 1, binding = 3) writeonly buffer MeshletsToBeRemoved {
     int array[];
 } meshletsToBeRemoved;
 
 struct Meshlet {
-// x = int primitiveCount;
-// y = int vertexCount;
-// z = int indexBegin;
-// w = int vertexBegin;
-    vec4 info;
-    vec4 bound; //vec3 = pos, w = bound sphere radius
-//    vec4 objectId; //yzw are padding
+    float vertexBegin;
+    float vertexCount;
     float objectId;
     float density;
-    vec2 _; //padding
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    int treeDepth;
+    ivec3 __; // padding
 };
 
 layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
@@ -89,18 +86,13 @@ bool isWithinFrustum(vec4 pos, float radius) {
     return true;
 }
 
-bool shouldRender(uint meshletID) {
-
-    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
-    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
-
-    vec3 pos = curMeshlet.bound.xyz;
-    float radius = curMeshlet.bound.w * relatedModel.scale;
-
-    mat4 mvp = relatedModel.model;
-    vec4 transfPos = vec4((mvp * vec4(pos.xyz, 1.0)).xyz, 1.0);
-
-    return isWithinFrustum(transfPos, radius);
+bool shouldRender(Meshlet curMeshlet, vec3 transfPos, float radius) {
+    if(isWithinFrustum(vec4(transfPos, 1.0), radius) && curMeshlet.treeDepth == 2) {
+        return true;
+    }
+    return false;
+//    return true;
+//    return isWithinFrustum(vec4(transfPos, 1.0), radius);
 }
 
 void main() {
@@ -117,7 +109,19 @@ void main() {
     }
 
     int meshletID = meshletsToBeDrawn.indices[localId];
-    bool doRender = shouldRender(meshletID);
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
+
+    vec3 pos = curMeshlet.bound.xyz;
+    float radius = curMeshlet.bound.w * relatedModel.scale;
+
+    mat4 mvp = relatedModel.model;
+    vec3 transfPos = (mvp * vec4(pos.xyz, 1.0)).xyz;
+
+    float distToCamera = length(transfPos);
+    float apparentDensity = radius * distToCamera; // Prob wrong
+
+    bool doRender = shouldRender(curMeshlet, transfPos, radius);
     uvec4 vote = subgroupBallot(doRender);
     uint numMeshlets = subgroupBallotBitCount(vote);
 
@@ -134,8 +138,8 @@ void main() {
     }
     else {
         if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
-            int offset = atomicAdd(uboOut.meshletRemovedCount, 1);
-            meshletsToBeRemoved.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
+//            int offset = atomicAdd(uboOut.meshletRemovedCount, 1);
+//            meshletsToBeRemoved.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
         }
     }
 

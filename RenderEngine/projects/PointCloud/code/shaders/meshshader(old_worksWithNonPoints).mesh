@@ -1,0 +1,135 @@
+#version 450
+#extension GL_EXT_mesh_shader : require
+
+layout (set = 0, binding = 0) uniform CameraBuffer
+{
+	mat4 projview;
+	mat4 view;
+	mat4 proj;
+    vec4 frustumPlanes[6];
+} camera;
+
+struct ObjectData {
+    mat4 model;
+    float scale;
+    vec3 _padding;
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+struct Vertex {
+    vec4 pos;
+    vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+};
+
+layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
+    Vertex vertices[];
+}vertexBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer UBOOut
+{
+    int meshletDrawCount;
+    int meshletUpdateCount;
+} uboOut;
+
+struct Meshlet {
+    // x = int primitiveCount;
+    // y = int vertexCount;
+    // z = int indexBegin;
+    // w = int vertexBegin;
+    vec4 info;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+//    vec4 objectId; //yzw are padding
+    float objectId;
+    float density;
+    vec2 _; // padding
+};
+
+layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+layout(std430, set = 1, binding = 1) readonly buffer VertexIndexBuffer {
+    int indices[];
+} vertexIndexBuffer;
+
+layout(std430, set = 1, binding = 2) readonly buffer LocalIndexBuffer {
+    int indices[];
+} localIndexBuffer;
+
+layout(set = 1, binding = 3) buffer UboIn {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+} uboIn;
+
+layout(std140, set = 1, binding = 4) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+//layout(triangles, max_vertices = 64, max_primitives = 124) out;
+layout(points, max_vertices = 64, max_primitives = 64) out;
+
+layout(location = 0) out VertexOutput
+{
+	vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+} OUT[];
+
+struct Task {
+  uint baseID;
+  uint subIDs[32];
+};
+
+taskPayloadSharedEXT Task task;
+
+
+void main()
+{
+    uint meshletID = task.subIDs[gl_WorkGroupID.x];
+
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
+
+    int primitiveCount = int(curMeshlet.info.x);
+    int vertexCount = int( curMeshlet.info.y);
+    int indexBegin = int(curMeshlet.info.z);
+    int vertexBegin = int(curMeshlet.info.w);
+
+	mat4 mvp = camera.projview * relatedModel.model;
+
+	for(int i = 0; i < vertexCount; i++) {
+        int baseId = vertexBegin + i;
+        int finalVertId = vertexIndexBuffer.indices[baseId];
+        gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+        gl_MeshVerticesEXT[i].gl_PointSize = 2;
+
+        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+//        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
+//        OUT[i]._padding = vertexBuffer.vertices[finalVertId]._padding;
+
+        gl_PrimitivePointIndicesEXT[i] = finalVertId;
+	}
+
+//	for (uint i = 0; i < primitiveCount; i++) {
+//        uint baseId = indexBegin + (i*3);
+//
+//        uvec3 finalInds = uvec3(
+//            localIndexBuffer.indices[baseId + 0],
+//            localIndexBuffer.indices[baseId + 1],
+//            localIndexBuffer.indices[baseId + 2]
+//        );
+//
+//        gl_PrimitiveTriangleIndicesEXT[i] = finalInds;
+//	}
+
+    SetMeshOutputsEXT(vertexCount, primitiveCount);
+
+}

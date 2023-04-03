@@ -48,30 +48,29 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MAXMESHLETSPERFRAME = MAXMESHLETS;
     public int GPUObjectData_SIZEOF = Float.BYTES * (16+4);
     public int VERTEX_SIZE = Float.BYTES * (4 + 4);
-    public int MESHLETSIZE = (Float.BYTES * 4 * 3);
+    public int MESHLETSIZE = (Float.BYTES * 4 * 2 + (Integer.BYTES * 4));
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
     public int RENDERCONFIGSIZE = (Integer.BYTES * 2) + (Float.BYTES * 1);
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 3);
     int previousMeshletsDrawnCount = -1;
+    public float desiredDensityThreshold = 100.0f;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
     public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
     public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
-    public List<Integer> meshletVertexIndexBuffer = new ArrayList<>();
-    public List<Integer> meshletLocalIndexBuffer = new ArrayList<>();
     public List<MeshletUpdateInfo> meshletsToBeUpdated = new ArrayList<>();
     public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();
     public ArrayList<Integer> curFrameMeshletsDrawIndices = new ArrayList<>();
     public record ObjectDataUpdate(int index, Model model){}
-    public record MeshletUpdateInfo(int index, Vector info, Vector bounds, Integer objectId, Float density, Meshlet meshlet){}
+    public record MeshletUpdateInfo(int index, Integer vertexBegin, Integer vertexCount, Vector bounds, Integer objectId, Float density, Integer treeDepth, Meshlet meshlet){}
 
     public class Frame {
         public AllocatedBuffer cameraBuffer;
         public AllocatedBuffer objectBuffer;
         public long frameBuffer;
         public AllocatedBuffer vertexBuffer;
-        public AllocatedBuffer meshletVertexBuffer;
-        public AllocatedBuffer meshletVertexLocalIndexBuffer;
+//        public AllocatedBuffer meshletVertexBuffer;
+//        public AllocatedBuffer meshletVertexLocalIndexBuffer;
         public AllocatedBuffer renderConfigBuffer;
         public AllocatedBuffer renderOutputStatsBuffer;
         public AllocatedBuffer meshletDescBuffer;
@@ -386,10 +385,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public void addMeshlet(int ind, Meshlet meshlet) {
 
-        var meshletUpdateInfo = new MeshletUpdateInfo(ind,
-                new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
+        var meshletUpdateInfo = new MeshletUpdateInfo(ind, meshlet.vertexBegin, meshlet.vertexCount,
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet.density, meshlet);
+                meshlet.objectId, meshlet.density, (int) meshlet.treeDepth, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -397,10 +395,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public void addMeshlet(Meshlet meshlet) {
 
-        var meshletUpdateInfo = new MeshletUpdateInfo(meshlets.size(),
-                new Vector(new float[]{meshlet.primitiveCount, meshlet.vertexCount, meshlet.indexBegin, meshlet.vertexBegin}),
+        var meshletUpdateInfo = new MeshletUpdateInfo(meshlets.size(), meshlet.vertexBegin, meshlet.vertexCount,
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet.density, meshlet);
+                meshlet.objectId, meshlet.density, (int) meshlet.treeDepth, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -419,44 +416,45 @@ public class PointCloudRenderer extends VulkanRendererBase {
     }
 
 
-    public void createMeshlets(int vertsPerPrimitive, int maxVerts, int maxPrimitives) {
+    public void createMeshletsAndSyncGeoData(int maxVerts) {
 
         for(int modelInd = 0; modelInd < models.size(); modelInd++) {
             log("model ind: "+modelInd);
             var model = models.get(modelInd);
 
+            for(var key: meshAttribsToLoad) {
+                if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
+                    throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+                }
+            }
+
             MeshletGen.MeshletGenOutput results = null;
             if(model instanceof PointCloud) {
 
+                log("Starting to generating LOD hierarchy");
                 var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
+                log("Getting meshlets in BF order");
                 var meshletsInOrder = getMeshletsInBFOrder(root);
+                log("done");
 
-//                log("Num meshlets in hierarchy = "+ getNumMeshlets(root) + " num verts in hier: "+getNumVertsInHierarchy(root));
+                log("Deepest tree level = " + deepestLevel(root, 0));
 
                 var newVertsList = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
-                var keySetOrig = model.meshes.get(0).vertAttributes.keySet();
 
                 for(var key: meshAttribsToLoad) {
-                    if(!keySetOrig.contains(key)) {
-                        throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
-                    }
                     newVertsList.put(key, new ArrayList<>());
                 }
 
-                int curVertOffset = globalVertAttribs.get(POSITION).size();
-                var vertIndexList = new ArrayList<Integer>(64);
-                var indexList = new ArrayList<Integer>(64);
+                int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
+                float averageDensity=0,averageRadius=0, minD=Float.POSITIVE_INFINITY, maxD=Float.NEGATIVE_INFINITY, minR=Float.POSITIVE_INFINITY, maxR=Float.NEGATIVE_INFINITY;
 
                 for(var meshlet: meshletsInOrder) {
-
+                    meshlet.vertexBegin = vertexIndexOffset;
                     meshlet.pos = new Vector(0,0,0);
                     var curBounds = new BoundValues();
 
                     for(int i = 0; i < meshlet.vertIndices.size(); i++) {
                         var vertInd = meshlet.vertIndices.get(i);
-                        vertIndexList.add(curVertOffset);
-                        indexList.add(i);
-                        curVertOffset+=1;
 
                         for(var key: meshAttribsToLoad) {
                             globalVertAttribs.get(key).add(model.meshes.get(0).getAttributeList(key).get(vertInd));
@@ -480,45 +478,64 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     meshlet.vertexCount = meshlet.vertIndices.size();
-                    meshlet.vertexBegin = meshletVertexIndexBuffer.size();
-                    meshlet.indexBegin = meshletLocalIndexBuffer.size();
-                    meshlet.primitiveCount = meshlet.vertIndices.size();
                     meshlet.pos = meshlet.pos.scalarMul(1f/meshlet.vertexCount);
                     meshlet.boundRadius = calculateBoundRadius(curBounds);
                     meshlet.density = calculatePointCloudDensity(meshlet.boundRadius, meshlet.vertexCount);
 
+                    averageDensity += meshlet.density;
+                    averageRadius += meshlet.boundRadius;
+
+                    if(meshlet.boundRadius < minR) {
+                        minR = meshlet.boundRadius;
+                    }
+                    if(meshlet.boundRadius > maxR) {
+                        maxR = meshlet.boundRadius;
+                    }
+                    if(meshlet.density < minD) {
+                        minD = meshlet.density;
+                    }
+                    if(meshlet.density > maxD) {
+                        maxD = meshlet.density;
+                    }
+
                     meshlet.objectId = modelInd;
                     addMeshlet(meshlet);
 
-                    meshletVertexIndexBuffer.addAll(vertIndexList);
-                    meshletLocalIndexBuffer.addAll(indexList);
-                    vertIndexList.clear();
-                    indexList.clear();
                     meshlet.vertIndices = null;
+                    vertexIndexOffset += meshlet.vertexCount;
                 }
+                averageDensity /= meshletsInOrder.size();
+                averageRadius /= meshletsInOrder.size();
+                log("Average/min/max density of meshlets in the point cloud: " + averageDensity+ " " + minD + " " + maxD);
+                log("Average radius of meshlets in the point cloud: " + averageRadius+ " " + minR + " " + maxR);
             }
             else {
-                results = generateMeshlets(model.meshes.get(0), vertsPerPrimitive, maxVerts, maxPrimitives,
-                        globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(),
-                        meshletVertexIndexBuffer.size(), meshletLocalIndexBuffer.size());
 
+                results = generateMeshlets(model.meshes.get(0), maxVerts);
+
+                var vertIndexOffset = globalVertAttribs.get(POSITION).size();
                 for(var meshlet: results.meshlets()) {
                     meshlet.objectId = modelInd;
+                    meshlet.vertexBegin += vertIndexOffset;
                     addMeshlet(meshlet);
                 }
 
-                for(var key: meshAttribsToLoad) {
-                    if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
-                        throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
+                for(var vInd: results.vertexIndexBuffer()) {
+                    for(var key: meshAttribsToLoad) {
+                        globalVertAttribs.get(key).add(model.meshes.get(0).vertAttributes.get(key).get(vInd));
                     }
-                    globalVertAttribs.get(key).addAll(model.meshes.get(0).vertAttributes.get(key));
                 }
-                meshletVertexIndexBuffer.addAll(results.vertexIndexBuffer());
-                meshletLocalIndexBuffer.addAll(results.localIndexBuffer());
 
             }
 
             log(" num of total verts: "+ globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
+
+            // Clear data from CPU RAM to save memory
+            // TODO: Use flag to denote whether or not to delete from RAM
+            for(var mesh: model.meshes) {
+                mesh.vertAttributes = null;
+                mesh.indices = null;
+            }
         }
 
     }
@@ -532,10 +549,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size()) {
             for(var frame: frames) {
-                var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, Integer.SIZE, RENDERCONFIGSIZE);
+                var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, RENDERCONFIGSIZE, RENDERCONFIGSIZE);
                 bw.mapBuffer();
                 bw.put(curFrameMeshletsDrawIndices.size());
                 bw.put(MAXMESHLETUPDATESPERFRAME);
+                bw.put(desiredDensityThreshold);
                 bw.unmapBuffer();
             }
         }
@@ -570,18 +588,17 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 for(var data: meshletsToBeUpdated) {
                     bw.setPosition(data.index);
 
-                    if(data.info != null) {
-                        bw.put(data.info);
+                    if(data.vertexBegin != null) {
+                        bw.put((float)data.vertexBegin);
                     }
                     else {
-                        bw.buffer.position(data.index * MESHLETSIZE + Float.BYTES * 4);
+                        bw.put(0f);
                     }
-
-                    if(data.bounds != null) {
-                        bw.put(data.bounds);
+                    if(data.vertexCount != null) {
+                        bw.put((float)data.vertexCount);
                     }
                     else {
-                        bw.buffer.position(data.index * MESHLETSIZE + Float.BYTES * 8);
+                        bw.put(0f);
                     }
 
                     if(data.objectId != null) {
@@ -594,7 +611,24 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     if(data.density != null) {
                         bw.put(data.density);
                     }
+                    else {
+                        bw.put(0.0f);
+                    }
 
+                    if(data.bounds != null) {
+                        bw.put(data.bounds);
+                    }
+                    else {
+                        bw.put((float)0);bw.put((float)0);bw.put((float)0);bw.put((float)0);
+                    }
+
+                    if(data.treeDepth != null) {
+                        bw.put(data.treeDepth);
+                    }
+                    else {
+                        bw.put(0);
+                    }
+                    bw.put(0);bw.put(0);bw.put(0); //padding
                 }
                 bw.unmapBuffer();
             }
@@ -610,36 +644,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public void updateVertexAndIndexBuffers() {
 
         try (var stack = stackPush()) {
-            var data = stack.mallocPointer(1);
-            ByteBuffer byteBuffer = null;
-
-            // Meshlet Vert indices
-            int meshletVertsBufferSize = meshletVertexIndexBuffer.size() * Integer.BYTES;
-
-            var meshletVerticesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
-                    meshletVertsBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            vmaMapMemory(vmaAllocator, meshletVerticesStagingBuffer.allocation, data);
-            byteBuffer = data.getByteBuffer(0, meshletVertsBufferSize);
-            VulkanUtilities.memcpyInt(byteBuffer, meshletVertexIndexBuffer);
-            vmaUnmapMemory(vmaAllocator, meshletVerticesStagingBuffer.allocation);
-
-            // Meshlet local indices indices
-            int meshletLocalIndicesBufferSize = meshletLocalIndexBuffer.size() * Integer.BYTES;
-            log("size of meshletLocalIndicesbuffer: "+meshletLocalIndicesBufferSize);
-            var  meshletIndicesStagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
-                    meshletLocalIndicesBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VMA_MEMORY_USAGE_AUTO,
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-            vmaMapMemory(vmaAllocator, meshletIndicesStagingBuffer.allocation, data);
-            byteBuffer = data.getByteBuffer(0, meshletLocalIndicesBufferSize);
-            VulkanUtilities.memcpyInt(byteBuffer, meshletLocalIndexBuffer);
-            vmaUnmapMemory(vmaAllocator, meshletIndicesStagingBuffer.allocation);
 
             // GLOBAL VERTEX BUFFER
             var globalVertexBufferSize = globalVertAttribs.get(POSITION).size() * VERTEX_SIZE;
@@ -676,28 +680,10 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
                 }
 
-                // Color - each meshlet will have a random colour
-                // error condition
-//                if(globalVertAttribs.get(COLOR).size() <= i) {
-//                    byteBuffer.putFloat(1f);
-//                    byteBuffer.putFloat(1f);
-//                    byteBuffer.putFloat(1f);
-//                    byteBuffer.putFloat(1f);
-//                }
-//                else {
-//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(0));
-//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(1));
-//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(2));
-//                    byteBuffer.putFloat(globalVertAttribs.get(COLOR).get(i).get(3));
-//                }
-
             }
             bw.unmapBuffer();
-//            vmaUnmapMemory(vmaAllocator, globalVerticesStagingBuffer.allocation);
 
             var vertexCopy = VkBufferCopy.calloc(1, stack);
-            var localIndexCopy = VkBufferCopy.calloc(1, stack);
-            var meshletVertexCopy = VkBufferCopy.calloc(1, stack);
 
             for(var frame: frames) {
 
@@ -707,25 +693,12 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     vertexCopy.size(globalVertexBufferSize);
                     vertexCopy.srcOffset(0);
                     vkCmdCopyBuffer(cmd, globalVerticesStagingBuffer.buffer, frame.vertexBuffer.buffer, vertexCopy);
-
-                    localIndexCopy.dstOffset(0);
-                    localIndexCopy.size(meshletLocalIndicesBufferSize);
-                    localIndexCopy.srcOffset(0);
-                    vkCmdCopyBuffer(cmd, meshletIndicesStagingBuffer.buffer, frame.meshletVertexLocalIndexBuffer.buffer, localIndexCopy);
-
-                    meshletVertexCopy.dstOffset(0);
-                    meshletVertexCopy.size(meshletVertsBufferSize);
-                    meshletVertexCopy.srcOffset(0);
-                    vkCmdCopyBuffer(cmd, meshletVerticesStagingBuffer.buffer, frame.meshletVertexBuffer.buffer, meshletVertexCopy);
                 };
 
                 VulkanUtilities.submitImmediateCommand(copyCmd, singleTimeTransferCommandContext);
             }
 
         vmaDestroyBuffer(vmaAllocator, globalVerticesStagingBuffer.buffer, globalVerticesStagingBuffer.allocation);
-        vmaDestroyBuffer(vmaAllocator, meshletIndicesStagingBuffer.buffer, meshletIndicesStagingBuffer.allocation);
-        vmaDestroyBuffer(vmaAllocator, meshletVerticesStagingBuffer.buffer, meshletVerticesStagingBuffer.allocation);
-
         }
 
     }
@@ -750,17 +723,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
             results = new DescriptorBuilder(descriptorSetLayoutCache, descriptorAllocator)
                     .bindBuffer(0, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletDescBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
-                    .bindBuffer(1, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletVertexBuffer.buffer),
-                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-                    .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletVertexLocalIndexBuffer.buffer),
-                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT)
-                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.renderConfigBuffer.buffer),
+                    .bindBuffer(1, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.renderConfigBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
-                    .bindBuffer(4, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeDrawn.buffer),
+                    .bindBuffer(2, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeDrawn.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)
-                    .bindBuffer(5, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeRemovedBuffer.buffer),
+                    .bindBuffer(3, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsToBeRemovedBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,  VK_SHADER_STAGE_TASK_BIT_EXT)
-                    .bindBuffer(6, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsChildToBeAddedBuffer.buffer),
+                    .bindBuffer(4, new DescriptorBufferInfo(0, VK_WHOLE_SIZE, frame.meshletsChildToBeAddedBuffer.buffer),
                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_TASK_BIT_EXT)
                     .build();
 
@@ -823,16 +792,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
             );
 
-            var meshletVertIndexBuffSize = Integer.BYTES * MAXVERTICES;
-
-            frame.meshletVertexBuffer = VulkanUtilities.createBufferVMA(vmaAllocator, meshletVertIndexBuffSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-
-            frame.meshletVertexLocalIndexBuffer = VulkanUtilities.createBufferVMA(vmaAllocator, meshletVertIndexBuffSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-
             frame.renderConfigBuffer = createBufferVMA(vmaAllocator, RENDERCONFIGSIZE,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -862,8 +821,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 vmaDestroyBuffer(vmaAllocator, frame.objectBuffer.buffer, frame.objectBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.vertexBuffer.buffer, frame.vertexBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.meshletDescBuffer.buffer, frame.meshletDescBuffer.allocation);
-                vmaDestroyBuffer(vmaAllocator, frame.meshletVertexBuffer.buffer, frame.meshletVertexBuffer.allocation);
-                vmaDestroyBuffer(vmaAllocator, frame.meshletVertexLocalIndexBuffer.buffer, frame.meshletVertexLocalIndexBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.renderOutputStatsBuffer.buffer, frame.renderOutputStatsBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.renderConfigBuffer.buffer, frame.renderConfigBuffer.allocation);
                 vmaDestroyBuffer(vmaAllocator, frame.meshletsToBeRemovedBuffer.buffer, frame.meshletsToBeRemovedBuffer.allocation);

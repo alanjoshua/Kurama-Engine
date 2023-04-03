@@ -110,7 +110,7 @@ public class ActiveShutterGame extends Game {
                 m.materials.get(0).texture = tex;
                 m.boundingRadius = 50;
                 log("Creating meshlets");
-                var results = generateMeshlets(m, 3, 64, 124);
+                var results = generateMeshlets(m, 64);
                 log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
                 meshlets.addAll(results.meshlets());
             }
@@ -133,8 +133,11 @@ public class ActiveShutterGame extends Game {
             for(var m: meshes2) {
                 m.materials.get(0).texture = tex;
                 log("Creating meshlets");
-                var results = generateMeshlets(m, 3, 64, 124);
+                var results = generateMeshlets(m, 64);
                 log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                for(var meshlet: results.meshlets()) {
+                    meshlet.vertexBegin += 124;
+                }
                 meshlets.addAll(results.meshlets());
             }
             log("total num of meshlets in this scene = "+ meshlets.size());
