@@ -117,14 +117,14 @@ public class PointCloudController extends Game {
 
 //        createMinecraftWorld();
 //        createRoom();
-        createHead();
+//        createHead();
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
         Vector br = new Vector(627918.4f, 1013175.5f);
         Vector bl = new Vector(627739.8f, 1013185.0f);
 
-//        loadLidar(1000000, tl, tr, br, bl);
+        loadLidar(10000000, tl, tr, br, bl);
         renderer.createMeshletsAndSyncGeoData( 64);
 
         setMeshletColors(PerHierarchyLevel, renderer.meshlets,renderer.globalVertAttribs);
@@ -346,6 +346,53 @@ public class PointCloudController extends Game {
             }
         }
 
+        // TOGGLE LOD tree rendering
+        if(input.keyDownOnce(input.ZERO)) {
+            renderer.numTreeDepthLevelsToRender = 0;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.ONE)) {
+            renderer.numTreeDepthLevelsToRender = 1;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.TWO)) {
+            renderer.numTreeDepthLevelsToRender = 2;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.THREE)) {
+            renderer.numTreeDepthLevelsToRender = 3;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.FOUR)) {
+            renderer.numTreeDepthLevelsToRender = 4;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.FIVE)) {
+            renderer.numTreeDepthLevelsToRender = 5;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.SIX)) {
+            renderer.numTreeDepthLevelsToRender = 6;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.SEVEN)) {
+            renderer.numTreeDepthLevelsToRender = 7;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.EIGHT)) {
+            renderer.numTreeDepthLevelsToRender = 8;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.NINE)) {
+            renderer.numTreeDepthLevelsToRender = 9;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+        if(input.keyDownOnce(input.U)) {
+            renderer.individualDepthLevelToggle = !renderer.individualDepthLevelToggle;
+            renderer.updateNumTreeDepthLevelsToRender = true;
+        }
+
+
         if(input.keyDown(input.W)) {
             float cameraSpeed = this.speed * this.speedMultiplier;
             Vector[] rotationMatrix = this.mainCamera.getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -382,7 +429,7 @@ public class PointCloudController extends Game {
             velocity = velocity.add(v.scalarMul(cameraSpeed));
         }
 
-        if(input.keyDown(input.F)) {
+        if(input.keyDownOnce(input.F)) {
             display.toggleWindowModes();
         }
 

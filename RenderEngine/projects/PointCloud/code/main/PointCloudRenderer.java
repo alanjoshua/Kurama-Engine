@@ -44,17 +44,20 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MAXOBJECTS = 10000;
     public int MAXVERTICES = 40000000;
     public int MAXMESHLETS = 1000000;
-    public int MAXMESHLETUPDATESPERFRAME = 1568;
+    public int MAXMESHLETUPDATESPERFRAME = 20000;
     public int MAXMESHLETSPERFRAME = MAXMESHLETS;
     public int GPUObjectData_SIZEOF = Float.BYTES * (16+4);
     public int VERTEX_SIZE = Float.BYTES * (4 + 4);
     public int MESHLETSIZE = (Float.BYTES * 4 * 2 + (Integer.BYTES * 4));
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
-    public int RENDERCONFIGSIZE = (Integer.BYTES * 2) + (Float.BYTES * 1);
+    public int RENDERCONFIGSIZE = (Integer.BYTES * 4) + (Float.BYTES * 1);
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 3);
     int previousMeshletsDrawnCount = -1;
     public float desiredDensityThreshold = 100.0f;
+    public int numTreeDepthLevelsToRender = 7;
+    public boolean individualDepthLevelToggle = false;
+    public boolean updateNumTreeDepthLevelsToRender = false;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
     public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
     public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
@@ -69,8 +72,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
         public AllocatedBuffer objectBuffer;
         public long frameBuffer;
         public AllocatedBuffer vertexBuffer;
-//        public AllocatedBuffer meshletVertexBuffer;
-//        public AllocatedBuffer meshletVertexLocalIndexBuffer;
         public AllocatedBuffer renderConfigBuffer;
         public AllocatedBuffer renderOutputStatsBuffer;
         public AllocatedBuffer meshletDescBuffer;
@@ -210,16 +211,17 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public void updateMeshletDrawIndicesBuffer() {
 
-        for (var frame : frames) {
+//        for (var frame : frames) {
 
-            var bw = new BufferWriter(vmaAllocator, frame.meshletsToBeDrawn, Integer.BYTES, Integer.BYTES*MAXMESHLETSPERFRAME);
+            var bw = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsToBeDrawn, Integer.BYTES, Integer.BYTES*MAXMESHLETSPERFRAME);
             bw.mapBuffer();
+            bw.setPosition(0);
             for(int i = 0; i < curFrameMeshletsDrawIndices.size(); i++) {
-//                bw.setPosition(i);
+                bw.setPosition(i);
                 bw.put(curFrameMeshletsDrawIndices.get(i));
             }
             bw.unmapBuffer();
-        }
+//        }
     }
 
     public void initFrameBuffers() {
@@ -341,28 +343,33 @@ public class PointCloudRenderer extends VulkanRendererBase {
             bufferReader.mapBuffer();
             var meshletRenderCount = bufferReader.buffer.getInt();
             bufferReader.setPosition(1);
-            var meshletUpdateCount = bufferReader.buffer.getInt();
+            var meshletRemoveCount = bufferReader.buffer.getInt();
             bufferReader.unmapBuffer();
 
-            if(meshletUpdateCount > 0) {
+            if(meshletRemoveCount > 0) {
                 bufferReader = new BufferWriter(vmaAllocator, frames.get(currentDisplayBufferIndex).meshletsToBeRemovedBuffer,
-                        Integer.BYTES, Integer.BYTES * meshletUpdateCount);
+                        Integer.BYTES, Integer.BYTES * meshletRemoveCount);
                 bufferReader.mapBuffer();
 
                 var meshletsToBeUpdated = new ArrayList<Integer>();
-                for (int i = 0; i < meshletUpdateCount; i++) {
-                    bufferReader.setPosition(i);
+                for (int i = 0; i < meshletRemoveCount; i++) {
+//                    bufferReader.setPosition(i);
                     int value = bufferReader.buffer.getInt();
+
                     meshletsToBeUpdated.add(value);
-                    var removed = curFrameMeshletsDrawIndices.remove((Integer) value);
-                    if (!removed) {
-                        logPerSec("Couldnt remove " + value + " num of meshlets being rendered: " + curFrameMeshletsDrawIndices.size());
-                    }
+
+                    // UNcomment after testing
+//                    var removed = curFrameMeshletsDrawIndices.remove((Integer) value);
+//                    if (!removed) {
+//                        logPerSec("Couldnt remove " + value + " num of meshlets being rendered: " + curFrameMeshletsDrawIndices.size());
+//                    }
                 }
+//                log("Mehslets being removed = " + meshletsToBeUpdated);
                 bufferReader.unmapBuffer();
+//                logPerSec("Num of 0s present: " + meshletsToBeUpdated.stream().filter(i -> i == 0).count() + " out of total=" + meshletsToBeUpdated);
             }
 
-            logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletUpdateCount);
+            logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletRemoveCount);
         }
         else {
             logPerSec("Currently not rendering anything");
@@ -387,7 +394,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         var meshletUpdateInfo = new MeshletUpdateInfo(ind, meshlet.vertexBegin, meshlet.vertexCount,
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet.density, (int) meshlet.treeDepth, meshlet);
+                meshlet.objectId, meshlet.density, meshlet.treeDepth, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -397,7 +404,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
         var meshletUpdateInfo = new MeshletUpdateInfo(meshlets.size(), meshlet.vertexBegin, meshlet.vertexCount,
                 new Vector(new float[]{meshlet.pos.get(0), meshlet.pos.get(1), meshlet.pos.get(2), meshlet.boundRadius}),
-                meshlet.objectId, meshlet.density, (int) meshlet.treeDepth, meshlet);
+                meshlet.objectId, meshlet.density, meshlet.treeDepth, meshlet);
 
         meshletsToBeUpdated.add(meshletUpdateInfo);
         meshlets.add(meshlet);
@@ -430,7 +437,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
             MeshletGen.MeshletGenOutput results = null;
             if(model instanceof PointCloud) {
-
+                log("Num of verts in this mesh before meshlet gen: "+ model.meshes.get(0).getVertices().size());
                 log("Starting to generating LOD hierarchy");
                 var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
                 log("Getting meshlets in BF order");
@@ -446,11 +453,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 }
 
                 int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
-                float averageDensity=0,averageRadius=0, minD=Float.POSITIVE_INFINITY, maxD=Float.NEGATIVE_INFINITY, minR=Float.POSITIVE_INFINITY, maxR=Float.NEGATIVE_INFINITY;
+                float avgNumVerts=0, averageDensity=0,averageRadius=0, minD=Float.POSITIVE_INFINITY, maxD=Float.NEGATIVE_INFINITY, minR=Float.POSITIVE_INFINITY, maxR=Float.NEGATIVE_INFINITY;
 
                 for(var meshlet: meshletsInOrder) {
                     meshlet.vertexBegin = vertexIndexOffset;
                     meshlet.pos = new Vector(0,0,0);
+                    meshlet.vertexCount = meshlet.vertIndices.size();
+                    avgNumVerts += meshlet.vertexCount;
                     var curBounds = new BoundValues();
 
                     for(int i = 0; i < meshlet.vertIndices.size(); i++) {
@@ -477,7 +486,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             curBounds.minz = v.get(2);
                     }
 
-                    meshlet.vertexCount = meshlet.vertIndices.size();
                     meshlet.pos = meshlet.pos.scalarMul(1f/meshlet.vertexCount);
                     meshlet.boundRadius = calculateBoundRadius(curBounds);
                     meshlet.density = calculatePointCloudDensity(meshlet.boundRadius, meshlet.vertexCount);
@@ -499,15 +507,20 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     meshlet.objectId = modelInd;
-                    addMeshlet(meshlet);
 
                     meshlet.vertIndices = null;
                     vertexIndexOffset += meshlet.vertexCount;
+                    addMeshlet(meshlet);
                 }
                 averageDensity /= meshletsInOrder.size();
                 averageRadius /= meshletsInOrder.size();
+                avgNumVerts /= meshlets.size();
                 log("Average/min/max density of meshlets in the point cloud: " + averageDensity+ " " + minD + " " + maxD);
                 log("Average radius of meshlets in the point cloud: " + averageRadius+ " " + minR + " " + maxR);
+                log("Avg num of verts per meshlet: " + avgNumVerts);
+
+//                log("Meshlet ID: 11456; depth= "+ meshlets.get(11456).treeDepth + " vertCount=" + meshlets.get(11456).vertexCount);
+                log("Ttoal num of meshlets = "+meshlets.size() + " other count=" + getNumMeshlets(root));
             }
             else {
 
@@ -547,15 +560,18 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
     public void checkAndPerformBufferUpdates() {
 
-        if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size()) {
+        if(previousMeshletsDrawnCount != curFrameMeshletsDrawIndices.size() || updateNumTreeDepthLevelsToRender) {
             for(var frame: frames) {
                 var bw = new BufferWriter(vmaAllocator, frame.renderConfigBuffer, RENDERCONFIGSIZE, RENDERCONFIGSIZE);
                 bw.mapBuffer();
                 bw.put(curFrameMeshletsDrawIndices.size());
                 bw.put(MAXMESHLETUPDATESPERFRAME);
+                bw.put(numTreeDepthLevelsToRender);
+                bw.put(individualDepthLevelToggle?1: 0);
                 bw.put(desiredDensityThreshold);
                 bw.unmapBuffer();
             }
+            updateNumTreeDepthLevelsToRender = false;
         }
 
         if(objectInfoToBeUpdated.size() > 0) {
@@ -612,21 +628,23 @@ public class PointCloudRenderer extends VulkanRendererBase {
                         bw.put(data.density);
                     }
                     else {
-                        bw.put(0.0f);
+                        bw.put(-1f);
                     }
 
                     if(data.bounds != null) {
                         bw.put(data.bounds);
                     }
                     else {
-                        bw.put((float)0);bw.put((float)0);bw.put((float)0);bw.put((float)0);
+                        bw.put(0f);bw.put(0f);bw.put(0f);bw.put(0f);
                     }
 
                     if(data.treeDepth != null) {
                         bw.put(data.treeDepth);
+//                        bw.put(1f);
                     }
                     else {
-                        bw.put(0);
+                        log("Tree depth is null");
+                        bw.put(-1);
                     }
                     bw.put(0);bw.put(0);bw.put(0); //padding
                 }
@@ -777,6 +795,15 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
                             VMA_ALLOCATION_CREATE_MAPPED_BIT
             );
+
+            // Initialize with negative values
+            var bw = new BufferWriter(vmaAllocator, frame.meshletsToBeRemovedBuffer, Integer.BYTES, Integer.BYTES*MAXMESHLETSPERFRAME);
+            bw.mapBuffer();
+            for(int i = 0; i < MAXMESHLETSPERFRAME; i++) {
+                bw.put(-1);
+            }
+            bw.unmapBuffer();
+
             frame.meshletsChildToBeAddedBuffer = createBufferVMA(
                     vmaAllocator,
                     Integer.BYTES * MAXMESHLETUPDATESPERFRAME,

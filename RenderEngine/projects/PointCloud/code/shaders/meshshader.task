@@ -38,6 +38,8 @@ layout (set = 0, binding = 3) buffer UBOOut
 layout(set = 1, binding = 1) buffer UboIn {
     int meshletCount;
     int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
     float desiredDensity;
 } uboIn;
 
@@ -59,7 +61,7 @@ struct Meshlet {
     ivec3 __; // padding
 };
 
-layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
@@ -86,30 +88,21 @@ bool isWithinFrustum(vec4 pos, float radius) {
     return true;
 }
 
-bool shouldRender(Meshlet curMeshlet, vec3 transfPos, float radius) {
-    if(isWithinFrustum(vec4(transfPos, 1.0), radius) && curMeshlet.treeDepth == 2) {
-        return true;
-    }
-    return false;
-//    return true;
-//    return isWithinFrustum(vec4(transfPos, 1.0), radius);
-}
-
 void main() {
 
-    int localId = int(gl_GlobalInvocationID.x);
-    if(localId >= uboIn.meshletCount) {
+    if(gl_GlobalInvocationID.x >= uboIn.meshletCount) {
         return;
     }
 
     // Clear stats on first invocation
-    if (localId == 0) {
+    if (gl_GlobalInvocationID.x == 0) {
         atomicExchange(uboOut.meshletDrawCount, 0);
         atomicExchange(uboOut.meshletRemovedCount, 0);
     }
 
-    int meshletID = meshletsToBeDrawn.indices[localId];
+    int meshletID = meshletsToBeDrawn.indices[int(gl_GlobalInvocationID.x)];
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+
     ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
     vec3 pos = curMeshlet.bound.xyz;
@@ -118,29 +111,38 @@ void main() {
     mat4 mvp = relatedModel.model;
     vec3 transfPos = (mvp * vec4(pos.xyz, 1.0)).xyz;
 
-    float distToCamera = length(transfPos);
-    float apparentDensity = radius * distToCamera; // Prob wrong
+//    float distToCamera = length(transfPos);
+//    float apparentDensity = radius * distToCamera; // Prob wrong
 
-    bool doRender = shouldRender(curMeshlet, transfPos, radius);
+//    bool doRender = shouldRender(curMeshlet, transfPos, radius);
+
+    bool doRender = false;
+    if (uboIn.shouldRenderIndividualDepthLevels) {
+        doRender = (curMeshlet.treeDepth == uboIn.numDepthLevelsToRender && isWithinFrustum(vec4(transfPos, 1.0), radius));
+    }
+    else {
+        doRender = (curMeshlet.treeDepth <= uboIn.numDepthLevelsToRender && isWithinFrustum(vec4(transfPos, 1.0), radius));
+    }
+
     uvec4 vote = subgroupBallot(doRender);
     uint numMeshlets = subgroupBallotBitCount(vote);
 
-    if(gl_LocalInvocationID.x == 0) {
-        EmitMeshTasksEXT(numMeshlets, 1, 1);
-    }
-
     if(doRender) {
         uint idxOffset = subgroupBallotExclusiveBitCount(vote);
-        task.subIDs[idxOffset] = uint(meshletsToBeDrawn.indices[localId]);
+        task.subIDs[idxOffset] = uint(meshletID);
         task.baseID = gl_WorkGroupID.x;
 
         atomicAdd(uboOut.meshletDrawCount, 1);
     }
     else {
         if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
-//            int offset = atomicAdd(uboOut.meshletRemovedCount, 1);
-//            meshletsToBeRemoved.array[offset] = meshletID;// This should be more complex to indicate what update should be done, such as removal, or should children be added
+            meshletsToBeRemoved.array[atomicAdd(uboOut.meshletRemovedCount, 1)] = meshletID; // This should be more complex to indicate what update should be done, such as removal, or should children be added
         }
+    }
+
+
+    if(gl_LocalInvocationID.x == 0) {
+        EmitMeshTasksEXT(numMeshlets, 1, 1);
     }
 
 

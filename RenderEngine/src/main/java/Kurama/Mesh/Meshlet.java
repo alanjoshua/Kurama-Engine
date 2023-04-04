@@ -13,7 +13,7 @@ public class Meshlet {
     public float boundRadius;
     public int objectId;
     public float density = 0;
-    public int treeDepth = 0;
+    public int treeDepth = -1;
     public Meshlet parent = null;
     public List<Meshlet> children = new ArrayList<>();
 

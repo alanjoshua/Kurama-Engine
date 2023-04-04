@@ -7,8 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.*;
-import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
+import static Kurama.utils.Logger.*;
 
 public class MeshletGen {
 
@@ -271,9 +270,10 @@ public class MeshletGen {
 
         // Reached leaf node, so just add all remaining vertices to curNode, and return
         if(sortedRemainingVertices.size() <= maxVertsPerChild) {
+            rootMeshlet.treeDepth = curDepth;
             rootMeshlet.vertIndices = new ArrayList<>();
             rootMeshlet.vertIndices.addAll(sortedRemainingVertices);
-            return rootMeshlet;
+//            log("Reached leaf node with num Verts: "+ rootMeshlet.vertIndices.size());
         }
 
         else {
@@ -281,6 +281,7 @@ public class MeshletGen {
             // Randomly sample 'M' nodes from the remaining verts, and add it to the current meshlet
             List<Integer> randomSelection = IntStream.rangeClosed(0, sortedRemainingVertices.size()-1).boxed().collect(Collectors.toList());
             Collections.shuffle(randomSelection);
+            rootMeshlet.treeDepth = curDepth;
             rootMeshlet.vertIndices = new ArrayList<>();
             rootMeshlet.children = new ArrayList<>();
 
@@ -338,7 +339,6 @@ public class MeshletGen {
                     else {
                         childVerts = new ArrayList<>(sortedRemainingVertices.subList(startPos, startPos + maxVertsPerChild));
                         createHierarchyStructure(childVerts, cMeshlet, maxNumChildren, maxVertsPerChild, curDepth+1);
-                        break;
                     }
                 }
             }
@@ -420,8 +420,9 @@ public class MeshletGen {
         else if(colorMode == PerHierarchyLevel) {
 
             var colorMap = new HashMap<Integer, Vector>();
+            colorMap.put(-1, new Vector(230f/255f, 25f/255f, 75f, 1)); //temp
             colorMap.put(0, new Vector(230f/255f, 25f/255f, 75f, 1));
-            colorMap.put(1, new Vector(60f/255f, 180f/255f, 75f/255f, 1));
+
             colorMap.put(2, new Vector(255f/255f, 225f/255f, 25f/255f, 1));
             colorMap.put(3, new Vector(0f/255f, 130f/255f, 200f/255f, 1));
             colorMap.put(4, new Vector(245f/255f, 130f/255f, 48f/255f, 1));
@@ -429,8 +430,11 @@ public class MeshletGen {
             colorMap.put(6, new Vector(70f/255f, 240f/255f, 240f/255f, 1));
             colorMap.put(7, new Vector(240f/255f, 50f/255f, 230f/255f, 1));
             colorMap.put(8, new Vector(210f/255f, 245f/255f, 60f/255f, 1));
+            colorMap.put(9, new Vector(230f/255f, 25f/255f, 75f, 1));
+            colorMap.put(10, new Vector(60f/255f, 180f/255f, 75f/255f, 1));
 
             var tally = new HashMap<Integer, Integer>();
+            tally.put(-1, 0);
             tally.put(0, 0);
             tally.put(1, 0);
             tally.put(2, 0);
@@ -440,6 +444,7 @@ public class MeshletGen {
             tally.put(6, 0);
             tally.put(7, 0);
             tally.put(8, 0);
+            tally.put(9, 0);
 
             for(var meshlet: meshlets) {
                 tally.put(meshlet.treeDepth, tally.get(meshlet.treeDepth) + 1);
@@ -450,7 +455,7 @@ public class MeshletGen {
             }
 //            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, tempColorHashMap.values().stream().toList());
             for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
-                if(tempColorHashMap.containsKey(i)) {
+                if(tempColorHashMap.containsKey(i) && tempColorHashMap.get(i) != null) {
                     colorAttrib.add(tempColorHashMap.get(i));
                 }
                 else {

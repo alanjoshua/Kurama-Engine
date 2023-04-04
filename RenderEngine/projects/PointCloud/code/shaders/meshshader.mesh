@@ -47,13 +47,15 @@ struct Meshlet {
     ivec3 __; // padding
 };
 
-layout(std140, set = 1, binding = 0) readonly buffer MeshletBuffer {
+layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
 layout(set = 1, binding = 1) buffer UboIn {
     int meshletCount;
     int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
     float desiredDensity;
 } uboIn;
 
@@ -96,7 +98,7 @@ void main()
         int finalVertId = vertexBegin + i;
 
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
-        gl_MeshVerticesEXT[i].gl_PointSize = 2;
+        gl_MeshVerticesEXT[i].gl_PointSize = 1;
 
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
 //        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
