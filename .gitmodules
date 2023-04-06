@@ -1,0 +1,3 @@
+[submodule "RenderEngine/libraries/laszip4j"]
+	path = RenderEngine/libraries/laszip4j
+	url = https://github.com/mreutegg/laszip4j.git
