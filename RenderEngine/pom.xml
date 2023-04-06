@@ -425,6 +425,12 @@
             <artifactId>joml</artifactId>
             <version>${joml.version}</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     
 </project>

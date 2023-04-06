@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: org.lwjgl:lwjgl-fmod:3.3.2-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20221218.004659-4.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20230401.145909-9.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20221218.004659-4-javadoc.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20230401.145909-9-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20221218.004659-4-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-fmod/3.3.2-SNAPSHOT/lwjgl-fmod-3.3.2-20230401.145909-9-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

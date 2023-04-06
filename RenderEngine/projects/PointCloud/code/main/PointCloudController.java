@@ -117,14 +117,15 @@ public class PointCloudController extends Game {
 
 //        createMinecraftWorld();
 //        createRoom();
-        createHead();
+
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
         Vector br = new Vector(627918.4f, 1013175.5f);
         Vector bl = new Vector(627739.8f, 1013185.0f);
 
-//        loadLidar(10000000, tl, tr, br, bl);
+        createHead();
+//        loadLidar(1000000, tl, tr, br, bl);
         renderer.createMeshletsAndSyncGeoData( 64);
 
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
@@ -143,7 +144,7 @@ public class PointCloudController extends Game {
 
     public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {
         log("Loading LAZ file: ");
-        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
+        var lasReader = new LASReader(new File("D:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
 //        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-15 lidar two\\YS-20220915-132041-20221122-144832.copc.laz"));
 
         List<Vector> lidarPoints;

@@ -98,7 +98,7 @@ void main()
         int finalVertId = vertexBegin + i;
 
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
-        gl_MeshVerticesEXT[i].gl_PointSize = max((8 - curMeshlet.treeDepth), 2);
+        gl_MeshVerticesEXT[i].gl_PointSize = max((10 - curMeshlet.treeDepth), 4);
 
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
 //        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;

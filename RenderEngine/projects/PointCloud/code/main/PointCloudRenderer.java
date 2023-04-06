@@ -55,8 +55,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 3);
     int previousMeshletsDrawnCount = -1;
     public float desiredDensityThreshold = 2.4f;
-    public int numTreeDepthLevelsToRender = 7;
-    public boolean individualDepthLevelToggle = false;
+    public int numTreeDepthLevelsToRender = 3;
+    public boolean individualDepthLevelToggle = true;
     public boolean updateNumTreeDepthLevelsToRender = false;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
     public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
