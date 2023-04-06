@@ -36,7 +36,7 @@ public class Main {
 //		game = new ActiveShutterGame("Active shutter Renderer");
 //		game.start();
 //
-		game = new PointCloudController("Point Cloud Renderer");
+		game = new PointCloudController("Point Cloud Renderer (work in progress)");
 		game.start();
 
 //		var app = new VulkanGame();

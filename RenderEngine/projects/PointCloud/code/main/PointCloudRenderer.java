@@ -54,7 +54,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int RENDERCONFIGSIZE = (Integer.BYTES * 4) + (Float.BYTES * 1);
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 3);
     int previousMeshletsDrawnCount = -1;
-    public float desiredDensityThreshold = 100.0f;
+    public float desiredDensityThreshold = 2.4f;
     public int numTreeDepthLevelsToRender = 7;
     public boolean individualDepthLevelToggle = false;
     public boolean updateNumTreeDepthLevelsToRender = false;
@@ -344,6 +344,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
             var meshletRenderCount = bufferReader.buffer.getInt();
             bufferReader.setPosition(1);
             var meshletRemoveCount = bufferReader.buffer.getInt();
+            bufferReader.setPosition(2);
+            var meshletChildAddedCount = bufferReader.buffer.getInt();
+
             bufferReader.unmapBuffer();
 
             if(meshletRemoveCount > 0) {
@@ -369,7 +372,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
 //                logPerSec("Num of 0s present: " + meshletsToBeUpdated.stream().filter(i -> i == 0).count() + " out of total=" + meshletsToBeUpdated);
             }
 
-            logPerSec("Rendered meshlet count: " + meshletRenderCount + " update count: "+ meshletRemoveCount);
+            logPerSec("Rendered meshlet count: " + meshletRenderCount + " remove count: "+ meshletRemoveCount + " add children count: " + meshletChildAddedCount);
         }
         else {
             logPerSec("Currently not rendering anything");

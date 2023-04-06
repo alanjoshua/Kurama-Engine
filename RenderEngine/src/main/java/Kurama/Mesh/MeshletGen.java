@@ -383,27 +383,44 @@ public class MeshletGen {
         var tempColorHashMap = new TreeMap<Integer, Vector>();
         var rand = new Random();
 
-        if(colorMode == PerMeshlet) {
+        var colorMap = new HashMap<Integer, Vector>();
+        colorMap.put(0, new Vector(230f/255f, 25f/255f, 75/255f, 1f));
+        colorMap.put(1, new Vector(60f/255f, 180f/255f, 75f/255f, 1f));
+        colorMap.put(2, new Vector(255f/255f, 225f/255f, 25f/255f, 1f));
+        colorMap.put(3, new Vector(0f/255f, 130f/255f, 200f/255f, 1f));
+        colorMap.put(4, new Vector(245f/255f, 130f/255f, 48f/255f, 1f));
+        colorMap.put(5, new Vector(145f/255f, 30f/255f, 180f/255f, 1f));
+        colorMap.put(6, new Vector(70f/255f, 240f/255f, 240f/255f, 1f));
+        colorMap.put(7, new Vector(240f/255f, 50f/255f, 230f/255f, 1f));
+        colorMap.put(8, new Vector(210f/255f, 245f/255f, 60f/255f, 1f));
 
+        if(colorMode == PerMeshlet) {
+            int curColorInd = 0;
             for(var meshlet: meshlets) {
                 Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
                         new Vector(1,1,1,1), rand);
+//                var color = colorMap.get(curColorInd%8);
+//                log("chosen color Index: "+curColorInd%8);
+//                if(color == null) {
+//                    throw new RuntimeException("Gotten color cannot be null. key is: "+ curColorInd);
+//                }
 
                 for(int i = meshlet.vertexBegin; i < meshlet.vertexBegin + meshlet.vertexCount; i++) {
                     var vertInd = i;
                     tempColorHashMap.put(vertInd, randomColor);
                 }
+                curColorInd++;
             }
             // shouldn't be required
-            for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
-                if(tempColorHashMap.containsKey(i)) {
-                    colorAttrib.add(tempColorHashMap.get(i));
-                }
-                else {
-                    colorAttrib.add(new Vector(1,1,1,1));
-                }
-            }
-            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, colorAttrib);
+//            for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
+//                if(tempColorHashMap.containsKey(i)) {
+//                    colorAttrib.add(tempColorHashMap.get(i));
+//                }
+//                else {
+//                    colorAttrib.add(new Vector(1,1,1,1));
+//                }
+//            }
+            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, tempColorHashMap.values().stream().toList());
         }
 
         else if (colorMode == PerPrimitive) {
@@ -418,20 +435,6 @@ public class MeshletGen {
         }
 
         else if(colorMode == PerHierarchyLevel) {
-
-            var colorMap = new HashMap<Integer, Vector>();
-            colorMap.put(-1, new Vector(230f/255f, 25f/255f, 75f, 1)); //temp
-            colorMap.put(0, new Vector(230f/255f, 25f/255f, 75f, 1));
-
-            colorMap.put(2, new Vector(255f/255f, 225f/255f, 25f/255f, 1));
-            colorMap.put(3, new Vector(0f/255f, 130f/255f, 200f/255f, 1));
-            colorMap.put(4, new Vector(245f/255f, 130f/255f, 48f/255f, 1));
-            colorMap.put(5, new Vector(145f/255f, 30f/255f, 180f/255f, 1));
-            colorMap.put(6, new Vector(70f/255f, 240f/255f, 240f/255f, 1));
-            colorMap.put(7, new Vector(240f/255f, 50f/255f, 230f/255f, 1));
-            colorMap.put(8, new Vector(210f/255f, 245f/255f, 60f/255f, 1));
-            colorMap.put(9, new Vector(230f/255f, 25f/255f, 75f, 1));
-            colorMap.put(10, new Vector(60f/255f, 180f/255f, 75f/255f, 1));
 
             var tally = new HashMap<Integer, Integer>();
             tally.put(-1, 0);

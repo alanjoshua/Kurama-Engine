@@ -51,6 +51,10 @@ layout(set = 1, binding = 3) writeonly buffer MeshletsToBeRemoved {
     int array[];
 } meshletsToBeRemoved;
 
+layout(set = 1, binding = 4) writeonly buffer MeshletsChildrenAdded {
+    int array[];
+} meshletsChildrenAdded;
+
 struct Meshlet {
     float vertexBegin;
     float vertexCount;
@@ -98,6 +102,7 @@ void main() {
     if (gl_GlobalInvocationID.x == 0) {
         atomicExchange(uboOut.meshletDrawCount, 0);
         atomicExchange(uboOut.meshletRemovedCount, 0);
+        atomicExchange(uboOut.meshletChildAddedCount, 0);
     }
 
     int meshletID = meshletsToBeDrawn.indices[int(gl_GlobalInvocationID.x)];
@@ -110,11 +115,6 @@ void main() {
 
     mat4 mvp = relatedModel.model;
     vec3 transfPos = (mvp * vec4(pos.xyz, 1.0)).xyz;
-
-//    float distToCamera = length(transfPos);
-//    float apparentDensity = radius * distToCamera; // Prob wrong
-
-//    bool doRender = shouldRender(curMeshlet, transfPos, radius);
 
     bool doRender = false;
     if (uboIn.shouldRenderIndividualDepthLevels) {
@@ -133,11 +133,19 @@ void main() {
         task.baseID = gl_WorkGroupID.x;
 
         atomicAdd(uboOut.meshletDrawCount, 1);
+
+        float distToCamera = length(transfPos) * 0.01;
+        float apparentDensity = radius * distToCamera; // Prob wrong
+
+        if(apparentDensity < uboIn.desiredDensity) {
+            int offset = atomicAdd(uboOut.meshletChildAddedCount, 1);
+            meshletsChildrenAdded.array[offset] = meshletID;
+        }
     }
     else {
-        if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
-            meshletsToBeRemoved.array[atomicAdd(uboOut.meshletRemovedCount, 1)] = meshletID; // This should be more complex to indicate what update should be done, such as removal, or should children be added
-        }
+//        if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
+            meshletsToBeRemoved.array[atomicAdd(uboOut.meshletRemovedCount, 1)] = meshletID;
+//        }
     }
 
 

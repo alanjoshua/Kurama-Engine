@@ -117,17 +117,17 @@ public class PointCloudController extends Game {
 
 //        createMinecraftWorld();
 //        createRoom();
-//        createHead();
+        createHead();
 
         Vector tl = new Vector(627772.4f, 1013350.6f);
         Vector tr = new Vector(627906.9f, 1013343.1f);
         Vector br = new Vector(627918.4f, 1013175.5f);
         Vector bl = new Vector(627739.8f, 1013185.0f);
 
-        loadLidar(10000000, tl, tr, br, bl);
+//        loadLidar(10000000, tl, tr, br, bl);
         renderer.createMeshletsAndSyncGeoData( 64);
 
-        setMeshletColors(PerHierarchyLevel, renderer.meshlets,renderer.globalVertAttribs);
+        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, renderer.meshlets.size()-1).boxed().toList());
