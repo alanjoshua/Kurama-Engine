@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: org.lwjgl:lwjgl-nuklear:natives-windows:3.3.2-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20221108.011435-7-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20230401.145909-13-natives-windows.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20221108.011435-7-javadoc.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20230401.145909-13-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20221108.011435-7-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-nuklear/3.3.2-SNAPSHOT/lwjgl-nuklear-3.3.2-20230401.145909-13-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

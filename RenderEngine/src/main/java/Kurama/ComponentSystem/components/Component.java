@@ -63,7 +63,7 @@ public abstract class Component {
     // WARNING: ALWAYS ADD SIZE CONSTRAINTS BEFORE POSITIONAL CONSTRAINTS
     public List<Automation> onResizeAutomations = new ArrayList<>();
     public List<Automation> globalResizeAutomations = new ArrayList<>();
-    protected boolean doesChildHaveInputAccess = false;
+    public boolean doesChildHaveInputAccess = false;
     public boolean allowParentComponentsInputAccess = false;
     public boolean allowMultipleComponentsClickTriggers = false;
 

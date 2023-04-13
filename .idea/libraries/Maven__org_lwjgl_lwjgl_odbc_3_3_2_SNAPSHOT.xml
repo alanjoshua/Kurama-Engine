@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: org.lwjgl:lwjgl-odbc:3.3.2-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20221108.011435-7.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20230401.145909-13.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20221108.011435-7-javadoc.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20230401.145909-13-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20221108.011435-7-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-odbc/3.3.2-SNAPSHOT/lwjgl-odbc-3.3.2-20230401.145909-13-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

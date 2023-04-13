@@ -1,0 +1,75 @@
+#version 460
+
+struct ObjectData {
+    mat4 model;
+    vec4 radius;
+};
+
+layout(std140, binding = 0) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+// Same layout as VkDrawIndexedIndirectCommand
+struct IndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    uint vertexOffset;
+    uint firstInstance;
+};
+
+// Binding 1: Multi draw output
+layout(std430, binding = 1) writeonly buffer IndirectDraws {
+    IndexedIndirectCommand indirectDraws[ ];
+};
+
+layout(std140, binding = 2) uniform UBO {
+    vec4 frustumPlanes[6];
+    uint objectCount;
+} ubo;
+
+// Binding 3: Indirect draw stats
+layout (binding = 3) buffer UBOOut
+{
+    uint drawCount;
+} uboOut;
+
+layout (local_size_x = 16) in;
+
+bool isWithinFrustum(vec4 pos, float radius)
+{
+    // Check sphere against frustum planes
+    for (int i = 0; i < 6; i++) {
+        if (dot(pos, ubo.frustumPlanes[i]) + radius < 0.0) {
+            return false;
+        }
+    }
+    return true;
+
+}
+
+void main() {
+    uint idx = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+
+    // Clear stats on first invocation
+    if (idx == 0) {
+        atomicExchange(uboOut.drawCount, 0);
+    }
+
+    vec4 pos = vec4(objectBuffer.objects[idx].model[3].xyz, 1.0);
+    float radius = objectBuffer.objects[idx].radius.x;
+
+    // Check if object is within current viewing frustum
+    if (true) {
+        indirectDraws[idx].instanceCount = 1;
+        // Increase number of indirect draw counts
+        atomicAdd(uboOut.drawCount, 1);
+    }
+    else {
+        indirectDraws[idx].instanceCount = 0;
+    }
+
+//    indirectDraws[idx].instanceCount = 0;
+
+}

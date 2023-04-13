@@ -13,8 +13,9 @@
       <sourceFolder url="file://$MODULE_DIR$/projects/PointCloud/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/libraries/laszip4j/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/res" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <sourceFolder url="file://$MODULE_DIR$/projects/LunarLander/code" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/libraries/laszip4j/src/test/java/com/github/mreutegg/laszip4j" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -100,5 +101,7 @@
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-yoga:natives-windows:3.3.2-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: org.lwjgl:lwjgl-zstd:natives-windows:3.3.2-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: org.joml:joml:1.10.5" level="project" />
+    <orderEntry type="library" name="Maven: junit:junit:4.13.2" level="project" />
+    <orderEntry type="library" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
   </component>
 </module>

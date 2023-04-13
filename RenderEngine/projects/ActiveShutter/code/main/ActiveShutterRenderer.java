@@ -1099,6 +1099,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         var bw = new BufferWriter(vmaAllocator, multiViewRenderPass.frames.get(currentFrame).cameraBuffer, alignment, bufferSize);
         bw.mapBuffer();
+
         GPUCameraData.memcpy(bw.buffer, gpuCameraDataLeft);
         bw.setPosition(1);
         GPUCameraData.memcpy(bw.buffer, gpuCameraDataRight);

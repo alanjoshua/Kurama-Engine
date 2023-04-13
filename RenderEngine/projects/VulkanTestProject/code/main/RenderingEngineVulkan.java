@@ -22,6 +22,7 @@
 //import java.util.function.Consumer;
 //import java.util.stream.Stream;
 //
+//import static Kurama.Vulkan.VulkanRendererBase.*;
 //import static Kurama.Vulkan.VulkanUtilities.*;
 //import static Kurama.utils.Logger.log;
 //import static java.util.stream.Collectors.toSet;
@@ -113,8 +114,8 @@
 //    }
 //
 //    public void initVulkan() {
-//        VulkanUtilities.createInstance("Vulkan game", "Kurama Engine");
-//        VulkanUtilities.setupDebugMessenger();
+//        createInstance("Vulkan game", "Kurama Engine");
+//        setupDebugMessenger();
 //
 //        surface = createSurface(instance, display.window);
 //        physicalDevice = pickPhysicalDevice(instance, surface, DEVICE_EXTENSIONS);
@@ -1417,6 +1418,11 @@
 //        for(int i = deletionQueue.size()-1; i >= 0; i--) {
 //            deletionQueue.get(i).run();
 //        }
+//    }
+//
+//    @Override
+//    public void tick() {
+//
 //    }
 //
 //    public class MeshPushConstants {

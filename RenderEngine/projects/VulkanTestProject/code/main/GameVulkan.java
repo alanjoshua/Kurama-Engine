@@ -16,7 +16,7 @@
 //import java.util.List;
 //
 //import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
-//import static Kurama.Vulkan.VulkanUtilities.deletionQueue;
+//import static Kurama.Vulkan.VulkanRendererBase.deletionQueue;
 //import static Kurama.utils.Logger.log;
 //import static Kurama.utils.Logger.logError;
 //import static org.lwjgl.glfw.GLFW.*;

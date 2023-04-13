@@ -1,11 +1,6 @@
 package main;
 
-import Kurama.Math.Vector;
 import Kurama.game.Game;
-import editor.Editor;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import static Kurama.utils.Logger.log;
 
@@ -33,11 +28,11 @@ public class Main {
 //		res.forEach(val -> log(val.v()));
 
 
-//		game = new ActiveShutterGame("Active shutter Renderer");
-//		game.start();
-//
-		game = new PointCloudController("Point Cloud Renderer (work in progress)");
+		game = new LunarLanderGame("Lunar Lander!");
 		game.start();
+//
+//		game = new PointCloudController("Point Cloud Renderer (work in progress)");
+//		game.start();
 
 //		var app = new VulkanGame();
 //		app.run();
