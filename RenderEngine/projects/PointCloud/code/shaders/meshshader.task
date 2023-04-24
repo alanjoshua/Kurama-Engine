@@ -28,20 +28,21 @@ layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
 }objectBuffer;
 
 // Binding 3: Indirect draw stats
-layout (set = 0, binding = 3) buffer UBOOut
+layout (set = 0, binding = 3) buffer RenderStats
 {
     int meshletDrawCount;
     int meshletRemovedCount;
     int meshletChildAddedCount;
-} uboOut;
+    int meshletChildrenRemovedCount;
+} renderStats;
 
-layout(set = 1, binding = 1) buffer UboIn {
+layout(set = 1, binding = 1) buffer RenderConfig {
     int meshletCount;
     int maxMeshletsToUpdate;
     int numDepthLevelsToRender;
     bool shouldRenderIndividualDepthLevels;
     float desiredDensity;
-} uboIn;
+} renderConfig;
 
 layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
     int indices[];
@@ -55,17 +56,23 @@ layout(set = 1, binding = 4) writeonly buffer MeshletsChildrenAdded {
     int array[];
 } meshletsChildrenAdded;
 
+layout(set = 1, binding = 5) writeonly buffer MeshletsChildrenToBeRemoved {
+    int array[];
+} meshletsChildrenToBeRemoved;
+
 struct Meshlet {
     float vertexBegin;
     float vertexCount;
     float objectId;
     float density;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-    int treeDepth;
-    ivec3 __; // padding
+    uint treeDepth;
+    float cumDensity; // cummulative upto here from previous frame
+    bool isChildrenRenderer;
+    uint parentInd;
 };
 
-layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
+layout(std430, set = 1, binding = 0) buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
@@ -92,60 +99,103 @@ bool isWithinFrustum(vec4 pos, float radius) {
     return true;
 }
 
+void removeChildren(int meshletID) {
+    int offset = atomicAdd(renderStats.meshletChildrenRemovedCount, 1);
+    meshletsChildrenToBeRemoved.array[offset] = meshletID;
+}
+
+void removeCurrentMeshlet(int meshletID) {
+    meshletsToBeRemoved.array[atomicAdd(renderStats.meshletRemovedCount, 1)] = meshletID;
+}
+
+void addChildren(int meshletID) {
+    int offset = atomicAdd(renderStats.meshletChildAddedCount, 1);
+    meshletsChildrenAdded.array[offset] = meshletID;
+}
+
 void main() {
 
-    if(gl_GlobalInvocationID.x >= uboIn.meshletCount) {
+    if(gl_GlobalInvocationID.x >= renderConfig.meshletCount) {
         return;
     }
 
     // Clear stats on first invocation
     if (gl_GlobalInvocationID.x == 0) {
-        atomicExchange(uboOut.meshletDrawCount, 0);
-        atomicExchange(uboOut.meshletRemovedCount, 0);
-        atomicExchange(uboOut.meshletChildAddedCount, 0);
+        atomicExchange(renderStats.meshletDrawCount, 0);
+        atomicExchange(renderStats.meshletRemovedCount, 0);
+        atomicExchange(renderStats.meshletChildAddedCount, 0);
+        atomicExchange(renderStats.meshletChildrenRemovedCount, 0);
     }
 
     int meshletID = meshletsToBeDrawn.indices[int(gl_GlobalInvocationID.x)];
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    Meshlet parentMeshlet = meshletBuffer.meshlets[curMeshlet.parentInd];
 
     ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
     vec3 pos = curMeshlet.bound.xyz;
     float radius = curMeshlet.bound.w * relatedModel.scale;
 
-    mat4 mvp = relatedModel.model;
-    vec3 transfPos = (mvp * vec4(pos.xyz, 1.0)).xyz;
+    mat4 mv = relatedModel.model;
+    vec4 transfPos = mv * vec4(pos.xyz, 1.0);
 
-    bool doRender = false;
-    if (uboIn.shouldRenderIndividualDepthLevels) {
-        doRender = (curMeshlet.treeDepth == uboIn.numDepthLevelsToRender && isWithinFrustum(vec4(transfPos, 1.0), radius));
-    }
-    else {
-        doRender = (curMeshlet.treeDepth <= uboIn.numDepthLevelsToRender && isWithinFrustum(vec4(transfPos, 1.0), radius));
-    }
+    bool shouldRender = false;
 
-    uvec4 vote = subgroupBallot(doRender);
+    shouldRender = isWithinFrustum(transfPos, radius);
+
+    uvec4 vote = subgroupBallot(shouldRender);
     uint numMeshlets = subgroupBallotBitCount(vote);
 
-    if(doRender) {
+    if(shouldRender) {
         uint idxOffset = subgroupBallotExclusiveBitCount(vote);
         task.subIDs[idxOffset] = uint(meshletID);
         task.baseID = gl_WorkGroupID.x;
 
-        atomicAdd(uboOut.meshletDrawCount, 1);
+        atomicAdd(renderStats.meshletDrawCount, 1);
 
-        float distToCamera = length(transfPos) * 0.01;
-        float apparentDensity = radius * distToCamera; // Prob wrong
+//        if((renderStats.meshletChildrenRemovedCount + renderStats.meshletChildAddedCount + renderStats.meshletRemovedCount) < renderConfig.maxMeshletsToUpdate) {
+            float distToCamera = length((camera.view * transfPos).xyz);
+            float apparentRadius = radius / distToCamera;
+            float apparentDensity = float(curMeshlet.vertexCount) / ((4.0/3.0) * 3.14 * apparentRadius * apparentRadius * apparentRadius);// Prob wrong
 
-        if(apparentDensity < uboIn.desiredDensity) {
-            int offset = atomicAdd(uboOut.meshletChildAddedCount, 1);
-            meshletsChildrenAdded.array[offset] = meshletID;
-        }
+            float parentCumDensity = 0.0;
+            // not root
+            if(meshletID > 0) {
+                parentCumDensity = parentMeshlet.cumDensity;
+            }
+
+            float cumulativeDensity = apparentDensity + parentCumDensity;
+            meshletBuffer.meshlets[meshletID].cumDensity = cumulativeDensity;
+
+            if (cumulativeDensity < renderConfig.desiredDensity) {
+                if (!curMeshlet.isChildrenRenderer) {
+                    addChildren(meshletID);
+                    meshletBuffer.meshlets[meshletID].isChildrenRenderer = true;
+                }
+            }
+            else {
+                if (curMeshlet.isChildrenRenderer) {
+                    removeChildren(meshletID);
+                    meshletBuffer.meshlets[meshletID].isChildrenRenderer = false;
+                }
+            }
+
+//        }
     }
     else {
-//        if (uboOut.meshletRemovedCount < uboIn.maxMeshletsToUpdate) {
-            meshletsToBeRemoved.array[atomicAdd(uboOut.meshletRemovedCount, 1)] = meshletID;
+//        if((renderStats.meshletChildrenRemovedCount + renderStats.meshletChildAddedCount + renderStats.meshletRemovedCount) < renderConfig.maxMeshletsToUpdate) {
+            // Dont remove root
+            if(meshletID != 0) {
+                removeCurrentMeshlet(meshletID);
+//                curMeshlet.isRendered = false;
+            }
+
+            if(curMeshlet.isChildrenRenderer) {
+                removeChildren(meshletID);
+                meshletBuffer.meshlets[meshletID].isChildrenRenderer = false;
+            }
 //        }
+
     }
 
 

@@ -42,6 +42,9 @@ public class BufferWriter {
     public void put(Matrix data) {
         put(data.getData());
     }
+    public void put(Boolean data) {
+        buffer.put((byte) (data ? 1 : 0));
+    }
 
     public void put(int data) {
         buffer.putInt(data);

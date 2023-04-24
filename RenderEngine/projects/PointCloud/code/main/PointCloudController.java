@@ -105,6 +105,9 @@ public class PointCloudController extends Game {
             renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
             renderer.tick();
         }
+        else {
+            renderer.tick();
+        }
 
         if(glfwWindowShouldClose(((DisplayVulkan)display).window)) {
             programRunning = false;
@@ -125,13 +128,15 @@ public class PointCloudController extends Game {
         Vector bl = new Vector(627739.8f, 1013185.0f);
 
         createHead();
-//        loadLidar(1000000, tl, tr, br, bl);
+//        loadLidar(10000000, tl, tr, br, bl);
         renderer.createMeshletsAndSyncGeoData( 64);
 
         setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
-        renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, renderer.meshlets.size()-1).boxed().toList());
+        renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, 0).boxed().toList());
+        renderer.curFrameMeshletsDrawIndices.forEach(i -> renderer.meshlets.get(i).isRendered = true);
+
         renderer.geometryUpdatedEvent();
 
 //           createMinecraftWorld();
@@ -144,7 +149,7 @@ public class PointCloudController extends Game {
 
     public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {
         log("Loading LAZ file: ");
-        var lasReader = new LASReader(new File("D:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
+        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
 //        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-15 lidar two\\YS-20220915-132041-20221122-144832.copc.laz"));
 
         List<Vector> lidarPoints;
@@ -347,52 +352,9 @@ public class PointCloudController extends Game {
             }
         }
 
-        // TOGGLE LOD tree rendering
-        if(input.keyDownOnce(input.ZERO)) {
-            renderer.numTreeDepthLevelsToRender = 0;
-            renderer.updateNumTreeDepthLevelsToRender = true;
+        if(input.keyDown(input.C)) {
+            mainCamera.pos = new Vector(0,0,0);
         }
-        if(input.keyDownOnce(input.ONE)) {
-            renderer.numTreeDepthLevelsToRender = 1;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.TWO)) {
-            renderer.numTreeDepthLevelsToRender = 2;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.THREE)) {
-            renderer.numTreeDepthLevelsToRender = 3;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.FOUR)) {
-            renderer.numTreeDepthLevelsToRender = 4;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.FIVE)) {
-            renderer.numTreeDepthLevelsToRender = 5;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.SIX)) {
-            renderer.numTreeDepthLevelsToRender = 6;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.SEVEN)) {
-            renderer.numTreeDepthLevelsToRender = 7;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.EIGHT)) {
-            renderer.numTreeDepthLevelsToRender = 8;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.NINE)) {
-            renderer.numTreeDepthLevelsToRender = 9;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-        if(input.keyDownOnce(input.U)) {
-            renderer.individualDepthLevelToggle = !renderer.individualDepthLevelToggle;
-            renderer.updateNumTreeDepthLevelsToRender = true;
-        }
-
 
         if(input.keyDown(input.W)) {
             float cameraSpeed = this.speed * this.speedMultiplier;

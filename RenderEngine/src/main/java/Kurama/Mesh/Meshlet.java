@@ -16,6 +16,8 @@ public class Meshlet {
     public int treeDepth = -1;
     public Meshlet parent = null;
     public List<Meshlet> children = new ArrayList<>();
+    public boolean isRendered = false;
+    public boolean areChildrenRendered = false;
 
     // Used only while creating the hierarchy structure, destroyed later
     public List<Integer> vertIndices;

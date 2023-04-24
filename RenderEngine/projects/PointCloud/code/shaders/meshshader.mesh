@@ -43,8 +43,10 @@ struct Meshlet {
     float objectId;
     float density;
     vec4 bound; //vec3 = pos, w = bound sphere radius
-    int treeDepth;
-    ivec3 __; // padding
+    uint treeDepth;
+        float calculateDensity;
+    bool isChildrenRenderer;
+    uint parentInd;
 };
 
 layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
@@ -98,7 +100,7 @@ void main()
         int finalVertId = vertexBegin + i;
 
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
-        gl_MeshVerticesEXT[i].gl_PointSize = max((10 - curMeshlet.treeDepth), 4);
+        gl_MeshVerticesEXT[i].gl_PointSize = 1;
 
         OUT[i].color = vertexBuffer.vertices[finalVertId].color;
 //        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;

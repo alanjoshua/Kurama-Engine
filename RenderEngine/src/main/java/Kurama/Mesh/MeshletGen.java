@@ -193,7 +193,7 @@ public class MeshletGen {
         var remainingVertIndices = priorityQueue.stream().map(p -> p.prevIndex).collect(Collectors.toList());
 
         var rootMeshlet = new Meshlet();
-        rootMeshlet.parent = null;
+        rootMeshlet.parent = rootMeshlet;
         rootMeshlet.treeDepth = 0;
 
         // Recursively creates the hierarchy LOD structure, and all the info is stored in 'rootMeshlet'
