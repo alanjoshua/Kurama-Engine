@@ -397,17 +397,17 @@ public class MeshletGen {
         if(colorMode == PerMeshlet) {
             int curColorInd = 0;
             for(var meshlet: meshlets) {
-                Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
-                        new Vector(1,1,1,1), rand);
-//                var color = colorMap.get(curColorInd%8);
-//                log("chosen color Index: "+curColorInd%8);
-//                if(color == null) {
-//                    throw new RuntimeException("Gotten color cannot be null. key is: "+ curColorInd);
-//                }
+//                Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
+//                        new Vector(1,1,1,1), rand);
+
+                var color = colorMap.get(curColorInd%8);
+                log("chosen color Index: "+curColorInd%8);
+                if(color == null) {
+                    throw new RuntimeException("Gotten color cannot be null. key is: "+ curColorInd);
+                }
 
                 for(int i = meshlet.vertexBegin; i < meshlet.vertexBegin + meshlet.vertexCount; i++) {
-                    var vertInd = i;
-                    tempColorHashMap.put(vertInd, randomColor);
+                    tempColorHashMap.put(i, color);
                 }
                 curColorInd++;
             }
@@ -424,14 +424,13 @@ public class MeshletGen {
         }
 
         else if (colorMode == PerPrimitive) {
+
             for(int i = 0; i < globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size(); i++) {
                 Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
                         new Vector(1,1,1,1), rand);
                 colorAttrib.add(randomColor);
-//                tempColorHashMap.put(i, randomColor);
             }
             globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, colorAttrib);
-//            globalVertAttribs.put(Mesh.VERTATTRIB.COLOR, new ArrayList<>(tempColorHashMap.values()));
         }
 
         else if(colorMode == PerHierarchyLevel) {

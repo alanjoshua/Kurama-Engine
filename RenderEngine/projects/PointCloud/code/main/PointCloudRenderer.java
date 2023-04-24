@@ -48,14 +48,14 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public int MAXMESHLETSPERFRAME = MAXMESHLETS;
     public int GPUObjectData_SIZEOF = Float.BYTES * (16+4);
     public int VERTEX_SIZE = Float.BYTES * (4 + 4);
-    public int MESHLETSIZE = (Float.BYTES * 9) + (Integer.BYTES * 3);
+    public int MESHLETSIZE = (Float.BYTES * 6) + (Integer.BYTES * 6);
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
     public HashMap<Meshlet, Integer> meshletToIndexMapping = new HashMap<>();
     public int RENDERCONFIGSIZE = (Integer.BYTES * 4) + (Float.BYTES * 1);
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 4);
     int previousMeshletsDrawnCount = -1;
-    public float desiredDensityThreshold = 10000;
+    public float desiredDensityThreshold = 2000;
     public int numTreeDepthLevelsToRender = 3;
     public boolean individualDepthLevelToggle = true;
     public boolean updateNumTreeDepthLevelsToRender = false;
@@ -746,29 +746,29 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     bw.setPosition(data.index);
 
                     if(data.vertexBegin != null) {
-                        bw.put((float)data.vertexBegin);
+                        bw.put(data.vertexBegin);
                     }
                     else {
 //                        bw.put(0f);
                     }
                     if(data.vertexCount != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (1 * Float.BYTES));
-                        bw.put((float)data.vertexCount);
+                        bw.buffer.position((bw.alignmentSize * data.index) + (1 * Integer.BYTES));
+                        bw.put(data.vertexCount);
                     }
                     else {
 //                        bw.put(0f);
                     }
 
                     if(data.objectId != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (2 * Float.BYTES));
-                        bw.put((float)data.objectId);
+                        bw.buffer.position((bw.alignmentSize * data.index) + (2 * Integer.BYTES));
+                        bw.put(data.objectId);
                     }
                     else {
 //                        bw.put(-1.0f);
                     }
 
                     if(data.density != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (3 * Float.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (3 * Integer.BYTES));
                         bw.put(data.density);
                     }
                     else {
@@ -776,7 +776,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     if(data.bounds != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (4 * Float.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (3 * Integer.BYTES) + (1 * Float.BYTES));
                         bw.put(data.bounds);
                     }
                     else {
@@ -784,7 +784,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     if(data.treeDepth != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (8 * Float.BYTES) + (0 * Integer.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (3 * Integer.BYTES) + (5 * Float.BYTES));
                         bw.put(data.treeDepth);
                     }
                     else {
@@ -793,17 +793,17 @@ public class PointCloudRenderer extends VulkanRendererBase {
                     }
 
                     if(data.cumDensity != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (8 * Float.BYTES) + (1 * Integer.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (4 * Integer.BYTES) + (5 * Float.BYTES));
                         bw.put(data.cumDensity);
                     }
 
                     if(data.childrenRendered != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (8 * Float.BYTES) + (2 * Integer.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (4 * Integer.BYTES) + (6 * Float.BYTES));
                         bw.put(data.childrenRendered);
                     }
 
                     if(data.parentId != null) {
-                        bw.buffer.position((bw.alignmentSize * data.index) + (8 * Float.BYTES) + (3 * Integer.BYTES));
+                        bw.buffer.position((bw.alignmentSize * data.index) + (5 * Integer.BYTES) + (6 * Float.BYTES));
                         bw.put(data.parentId);
                     }
                 }

@@ -61,9 +61,9 @@ layout(set = 1, binding = 5) writeonly buffer MeshletsChildrenToBeRemoved {
 } meshletsChildrenToBeRemoved;
 
 struct Meshlet {
-    float vertexBegin;
-    float vertexCount;
-    float objectId;
+    int vertexBegin;
+    int vertexCount;
+    int objectId;
     float density;
     vec4 bound; //vec3 = pos, w = bound sphere radius
     uint treeDepth;

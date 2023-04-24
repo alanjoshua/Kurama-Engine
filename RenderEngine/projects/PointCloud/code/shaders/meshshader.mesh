@@ -26,25 +26,35 @@ struct Vertex {
 //    vec2 _padding;
 };
 
-layout(std140, set = 0, binding = 2) readonly buffer VertexBuffer {
+layout(std430, set = 0, binding = 2) readonly buffer VertexBuffer {
     Vertex vertices[];
 }vertexBuffer;
 
 // Binding 3: Indirect draw stats
-layout (set = 0, binding = 3) buffer UBOOut
+layout (set = 0, binding = 3) buffer RenderStats
 {
     int meshletDrawCount;
-    int meshletUpdateCount;
-} uboOut;
+    int meshletRemovedCount;
+    int meshletChildAddedCount;
+    int meshletChildrenRemovedCount;
+} renderStats;
+
+layout(set = 1, binding = 1) buffer RenderConfig {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
+    float desiredDensity;
+} renderConfig;
 
 struct Meshlet {
-    float vertexBegin;
-    float vertexCount;
-    float objectId;
+    int vertexBegin;
+    int vertexCount;
+    int objectId;
     float density;
     vec4 bound; //vec3 = pos, w = bound sphere radius
     uint treeDepth;
-        float calculateDensity;
+    float calculateDensity;
     bool isChildrenRenderer;
     uint parentInd;
 };
@@ -53,15 +63,7 @@ layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
     Meshlet meshlets[];
 } meshletBuffer;
 
-layout(set = 1, binding = 1) buffer UboIn {
-    int meshletCount;
-    int maxMeshletsToUpdate;
-    int numDepthLevelsToRender;
-    bool shouldRenderIndividualDepthLevels;
-    float desiredDensity;
-} uboIn;
-
-layout(std140, set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
+layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
     int indices[];
 } meshletsToBeDrawn;
 
@@ -88,16 +90,14 @@ taskPayloadSharedEXT Task task;
 void main()
 {
     uint meshletID = task.subIDs[gl_WorkGroupID.x];
-    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
-    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
 
-    int vertexCount = int(curMeshlet.vertexCount);
-    int vertexBegin = int(curMeshlet.vertexBegin);
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
 
 	mat4 mvp = camera.projview * relatedModel.model;
 
-	for(int i = 0; i < vertexCount; i++) {
-        int finalVertId = vertexBegin + i;
+	for(int i = 0; i < curMeshlet.vertexCount; i++) {
+        int finalVertId = curMeshlet.vertexBegin + i;
 
         gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
         gl_MeshVerticesEXT[i].gl_PointSize = 1;
@@ -109,6 +109,6 @@ void main()
         gl_PrimitivePointIndicesEXT[i] = finalVertId;
 	}
 
-    SetMeshOutputsEXT(vertexCount, vertexCount);
+    SetMeshOutputsEXT(curMeshlet.vertexCount, curMeshlet.vertexCount);
 
 }

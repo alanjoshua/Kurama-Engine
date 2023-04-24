@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static Kurama.Mesh.MeshletGen.*;
-import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerHierarchyLevel;
-import static Kurama.Mesh.MeshletGen.MeshletColorMode.PerMeshlet;
+import static Kurama.Mesh.MeshletGen.MeshletColorMode.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
