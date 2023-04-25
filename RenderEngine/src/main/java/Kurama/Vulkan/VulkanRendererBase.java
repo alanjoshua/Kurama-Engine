@@ -44,7 +44,7 @@ public abstract class VulkanRendererBase extends RenderingEngine {
 
     public static VkPhysicalDevice physicalDevice;
     public static VkInstance instance;
-    public static final boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
+    public static boolean ENABLE_VALIDATION_LAYERS = DEBUG.get(true);
     public static long debugMessenger;
     public static List<Runnable> deletionQueue = new ArrayList<>();
     public static final Set<String> VALIDATION_LAYERS;

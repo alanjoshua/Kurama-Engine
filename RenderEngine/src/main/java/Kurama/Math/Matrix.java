@@ -61,7 +61,7 @@ public class Matrix {
 		if(randGenerator == null) {
 			Random random = new Random();
 			random.setSeed(System.nanoTime());
-			randGenerator = () -> random.nextFloat()*2 - 1;
+			randGenerator = () -> random.nextFloat();
 		}
 		float[][] data = new float[r][c];
 		for(int i = 0; i < r;i++) {

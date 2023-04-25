@@ -1,12 +1,10 @@
 package main;
 
 import Kurama.ComponentSystem.components.model.Model;
-import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
 import Kurama.Mesh.Texture;
-import Kurama.Vulkan.Renderable;
 import Kurama.Vulkan.TextureVK;
 import Kurama.camera.Camera;
 import Kurama.display.DisplayVulkan;
@@ -16,6 +14,7 @@ import Kurama.inputs.InputLWJGL;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static Kurama.Mesh.MeshletGen.generateMeshlets;
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
@@ -26,16 +25,26 @@ import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 public class LunarLanderGame extends Game {
     public Camera mainCamera;
     public boolean isGameRunning = true;
-    public float gravity = 0.01f;
-    public float thrustAccel = gravity * 2f;
-    public float turnVel = 90f;
+    public static float gravity = 0.001f;
+    public static float winMaxAngle = 5f;
+    public static float winMaxSpeed = 0.001f;
+    public float thrustAccel = gravity * 1.4f;
+    public float turnVel = 45f;
     public List<UFO> ufos = new ArrayList<>();
+    public Mesh ufoMesh;
 
     public List<Model> models = new ArrayList<>();
     public LunarLanderRenderer renderer;
 
+    public float timePerRun = 20f; //seconds
+    public int populationSize = 20;
+    public int[] layers = new int[]{6, 10, 3};
+    public float timeSinceStartedRun = 0f; //seconds
+    public int numGenerationsToRun = 100;
+
+    public Vector startingPos = new Vector(0, 0, -20);
     public float yTop = 12f;
-    public float yBottom = -10.5f;
+    public float yBottom = -10.1f;
     public float xLeft = -22f;
     public float xRight = 22f;
 
@@ -107,21 +116,11 @@ public class LunarLanderGame extends Game {
     }
 
     public void loadScene() {
-
-        createUFO();
+        loadUFOMesh();
         createLandingPad();
-
-        renderer.renderables.forEach(r -> {
-            renderer.prepareTexture((TextureVK) r.getMaterial().texture);
-            r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
-
-            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
-        });
-
-        renderer.generateMeshBuffers();
     }
 
-    public void createUFO() {
+    public void loadUFOMesh() {
         var location = "projects/LunarLander/models/meshes/cube.obj";
         var textureDir = "projects/LunarLander/models/textures/";
 
@@ -141,20 +140,36 @@ public class LunarLanderGame extends Game {
                 log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
                 meshlets.addAll(results.meshlets());
             }
+
+            ufoMesh = meshes.get(0);
         }
         catch (Exception e) {
             e.printStackTrace();
-            throw new IllegalArgumentException("Could not load mesh");
+            throw new IllegalArgumentException("Could not load UFO mesh");
         }
+    }
 
-        var ufo = new UFO(this, meshes, "UFO");
+    public void instantiateUFOs(int num, Vector startingPos) {
+        for(int i = 0; i < num; i++) {
+            instantiateUFO(startingPos, "UFO_"+i);
+        }
+    }
+
+    public UFO instantiateUFO(Vector pos, String id) {
+        var ufo = new UFO(this, List.of(new Mesh[]{ufoMesh}), id);
         ufo.setScale(1f);
-        ufo.setPos(new Vector(0, 0, -20));
+        ufo.setPos(pos);
         ufo.selfRenderableReference = getRenderablesFromModel(ufo).get(0);
 
         models.add(ufo);
         ufos.add(ufo);
         renderer.renderables.add(ufo.selfRenderableReference);
+
+        renderer.prepareTexture((TextureVK) ufo.selfRenderableReference.getMaterial().texture);
+        ufo.selfRenderableReference.textureDescriptorSet =
+                renderer.generateTextureDescriptorSet((TextureVK) ufo.selfRenderableReference.getMaterial().texture);
+
+        return ufo;
     }
 
     public void createLandingPad() {
@@ -187,7 +202,15 @@ public class LunarLanderGame extends Game {
         landing.setScale(25,1,1);
         landing.setPos(new Vector(-0, -12, -20));
         models.add(landing);
-        renderer.renderables.addAll(getRenderablesFromModel(landing));
+        var landingPadRenderable = getRenderablesFromModel(landing);
+        renderer.renderables.addAll(landingPadRenderable);
+
+        landingPadRenderable.forEach(r -> {
+            renderer.prepareTexture((TextureVK) r.getMaterial().texture);
+            r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
+
+            renderer.deletionQueue.add(() -> r.cleanUp(renderer.vmaAllocator));
+        });
     }
 
     @Override
@@ -211,10 +234,25 @@ public class LunarLanderGame extends Game {
             performInputHandling(this.timeDelta);
             renderer.multiViewRenderPass.frames.get(renderer.currentMultiViewFrameIndex).shouldUpdateObjectBuffer = true;
 
-            ufos.forEach(ufo -> ufo.process(null, timeDelta));
+            // Should start new gen
+            if(ufos.size() == 0) {
+                System.out.println("Here");
+                instantiateUFOs(populationSize, startingPos);
+                renderer.generateMeshBuffers();
+            }
 
-            // Call tick on all models
+            ufos.forEach(ufo -> ufo.process(null, timeDelta));
             models.forEach(m -> m.tick(null, input, timeDelta, false));
+
+
+            if(timeSinceStartedRun >= timePerRun) {
+                models.removeAll(ufos);
+                renderer.renderables.removeAll(ufos.stream().map(u -> u.selfRenderableReference).collect(Collectors.toList()));
+                ufos.clear();
+                timeSinceStartedRun = 0;
+            }else {
+                timeSinceStartedRun += timeDelta;
+            }
 
         }
 

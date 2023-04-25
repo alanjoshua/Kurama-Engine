@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.logPerSec;
+import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRDynamicRendering.*;
@@ -66,6 +67,10 @@ public class LunarLanderRenderer extends VulkanRendererBase {
     public LunarLanderRenderer(Game game) {
         super(game);
         DEVICE_EXTENSIONS.add(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+
+        // Temporary, to not print all the debug vulkan errors cuz this project is repurposing the
+        // multiview rendering code, which does not really suit for this
+        ENABLE_VALIDATION_LAYERS = DEBUG.get(false);
     }
 
     public void render() {
@@ -96,9 +101,15 @@ public class LunarLanderRenderer extends VulkanRendererBase {
             callCompute(curMultiViewFrame, stack);
             renderMultiViewFrame(curMultiViewFrame, stack);
 
+//            vkWaitForFences(device, drawFences.get(currentDisplayBufferIndex), true, UINT64_MAX);
+//            vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
+
             prepareFrame();
             drawViewFrame(curMultiViewFrame.timeLineSemaphore, 0);
             submitFrame();
+
+//            vkWaitForFences(device, drawFences.get(currentDisplayBufferIndex), true, UINT64_MAX);
+//            vkResetFences(device, drawFences.get(currentDisplayBufferIndex));
 
             prepareFrame();
             drawViewFrame(curMultiViewFrame.timeLineSemaphore, 1);
@@ -606,12 +617,12 @@ public class LunarLanderRenderer extends VulkanRendererBase {
             timeLineInfo.sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
             timeLineInfo.pWaitSemaphoreValues(stack.longs(2));
 
-            if(viewImageToRender == 0) {
+//            if(viewImageToRender == 0) {
                 timeLineInfo.pSignalSemaphoreValues(stack.longs(3, 0)); //Signals timeline semaphore of val=3
-            }
-            else {
-                timeLineInfo.pSignalSemaphoreValues(stack.longs(4, 0)); //Signals timeline semaphore of val=4
-            }
+//            }
+//            else {
+//                timeLineInfo.pSignalSemaphoreValues(stack.longs(4, 0)); //Signals timeline semaphore of val=4
+//            }
 
             recordViewCommandBuffer(viewImageToRender);
 
