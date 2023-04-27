@@ -29,7 +29,7 @@ public class LunarLanderGame extends Game {
     public static float winMaxAngle = 5f;
     public static float winMaxSpeed = 0.001f;
     public float thrustAccel = gravity * 1.4f;
-    public float turnVel = 45f;
+    public float turnVel = 20f;
     public List<UFO> ufos = new ArrayList<>();
     public Mesh ufoMesh;
 
@@ -241,7 +241,7 @@ public class LunarLanderGame extends Game {
                 renderer.generateMeshBuffers();
             }
 
-            ufos.forEach(ufo -> ufo.process(null, timeDelta));
+            ufos.forEach(ufo -> ufo.process(timeDelta));
             models.forEach(m -> m.tick(null, input, timeDelta, false));
 
 

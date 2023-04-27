@@ -36,7 +36,7 @@ public class UFO extends Model {
     }
 
 
-    public float[] process(Object frameData, float timeDelta) {
+    public float[] process(float timeDelta) {
         if(!hasRunEnded) {
 
             var orient = orientation.getCoordinate();
