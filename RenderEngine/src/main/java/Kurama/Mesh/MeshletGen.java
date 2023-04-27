@@ -394,14 +394,16 @@ public class MeshletGen {
         colorMap.put(7, new Vector(240f/255f, 50f/255f, 230f/255f, 1f));
         colorMap.put(8, new Vector(210f/255f, 245f/255f, 60f/255f, 1f));
 
+        var white = new Vector(1,1,1,1);
         if(colorMode == PerMeshlet) {
             int curColorInd = 0;
             for(var meshlet: meshlets) {
 //                Vector randomColor = Vector.getRandomVector(new Vector(0,0,0,1),
 //                        new Vector(1,1,1,1), rand);
 
-                var color = colorMap.get(curColorInd%8);
-                log("chosen color Index: "+curColorInd%8);
+//                var color = colorMap.get(curColorInd%8);
+                var color = white;
+
                 if(color == null) {
                     throw new RuntimeException("Gotten color cannot be null. key is: "+ curColorInd);
                 }
