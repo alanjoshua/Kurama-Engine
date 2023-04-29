@@ -273,7 +273,6 @@ public class MeshletGen {
             rootMeshlet.treeDepth = curDepth;
             rootMeshlet.vertIndices = new ArrayList<>();
             rootMeshlet.vertIndices.addAll(sortedRemainingVertices);
-//            log("Reached leaf node with num Verts: "+ rootMeshlet.vertIndices.size());
         }
 
         else {
