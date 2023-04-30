@@ -3,9 +3,11 @@ package main;
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
 
+import static Kurama.utils.Logger.log;
+
 public class NeuralNetwork {
 
-    public int[] layers = new int[]{7, 50, 3};
+    public int[] layers;
     public Matrix w1;
     public Matrix w2;
 
@@ -14,9 +16,34 @@ public class NeuralNetwork {
         instantiateWeights();
     }
 
+    public NeuralNetwork(int[] layers, float[] chromosome) {
+        this.layers = layers;
+        instantiateWeights(chromosome);
+    }
+
     public void instantiateWeights() {
         w1 = Matrix.createRandomMatrix(layers[1], layers[0], null);
         w2 = Matrix.createRandomMatrix(layers[2], layers[1], null);
+    }
+
+    public void instantiateWeights(float[] chromosome) {
+
+        float[][] w1Vals = new float[layers[1]][layers[0]];
+        for(int i = 0; i < layers[1]; i++) {
+            for(int j = 0; j < layers[0]; j++) {
+                w1Vals[i][j] = chromosome[i * j];
+            }
+        }
+
+        float[][] w2Vals = new float[layers[2]][layers[1]];
+        for(int i = 0; i < layers[2]; i++) {
+            for(int j = 0; j < layers[1]; j++) {
+                w2Vals[i][j] = chromosome[(layers[1] * layers[0]) + (i * j)];
+            }
+        }
+
+        w1 = new Matrix(w1Vals);
+        w2 = new Matrix(w2Vals);
     }
 
     public Vector runBrain(Vector input) {

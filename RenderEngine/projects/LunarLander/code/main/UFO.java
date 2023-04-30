@@ -16,10 +16,10 @@ import static main.LunarLanderGame.winMaxSpeed;
 
 public class UFO extends Model {
 
-    public long timeAlive = 0;
-    public long timeTakenToLand = 0;
+    public int framesAlive = 0;
+    public int framesTakenToLand = 0;
     public NeuralNetwork brain; // neuralNetwork
-    public Object chromosome;
+    public float[] chromosome;
     public boolean hasRunEnded = false;
     public boolean landedSuccessfully = false;
     public float fitness = 0;
@@ -28,19 +28,20 @@ public class UFO extends Model {
     private Vector xAxis = new Vector(1,0,0);
     private Vector yAxis = new Vector(0,1,0);
 
-    public UFO(Game game, List<Mesh> meshes, String identifier) {
+    public UFO(Game game, List<Mesh> meshes, float[] chromosome, String identifier) {
         super(game, meshes, identifier);
         gameHandler = (LunarLanderGame) game;
+        this.chromosome = chromosome;
 
-        brain = new NeuralNetwork(gameHandler.layers);
+        brain = new NeuralNetwork(gameHandler.layers, chromosome);
     }
 
 
-    public float[] process(float timeDelta) {
+    public float[] process() {
         if(!hasRunEnded) {
+            var pitchYawRoll = orientation.getPitchYawRoll();
 
-            var orient = orientation.getCoordinate();
-            var nnInput = new Vector(new float[]{pos.get(0), pos.get(1), orient.get(0), orient.get(1), orient.get(2), orient.get(3)});
+            var nnInput = new Vector(new float[]{pos.get(0), pos.get(1), pitchYawRoll.get(0)/180f, pitchYawRoll.get(1)/180f, pitchYawRoll.get(2)});
             var brainOutput = brain.runBrain(nnInput);
 
             var isUp = brainOutput.get(0) >= 0.5 ? true: false;
@@ -48,27 +49,14 @@ public class UFO extends Model {
             var isRight = brainOutput.get(1) < brainOutput.get(2) ? true: false;
 
             // Use the neural network to decide how to move the ufo
-            processMovement(isUp, isLeft, isRight, timeDelta);
-            timeAlive+=timeDelta;
+            processMovement(isUp, isLeft, isRight);
+            framesAlive++;
         }
 
         return null;
     }
 
-    public float calcFinalFitness() {
-        if(landedSuccessfully) {
-            fitness = 1000f;
-
-            fitness += (gameHandler.timePerRun / timeTakenToLand) * 100;
-        }
-        else {
-            fitness = (timeAlive / gameHandler.timePerRun) * 500f;
-        }
-
-        return fitness;
-    }
-
-    public void processMovement(boolean up, boolean left, boolean right, float timeDelta) {
+    public void processMovement(boolean up, boolean left, boolean right) {
 
         if(up) {
             Vector[] rotationMatrix = getOrientation().getRotationMatrix().convertToColumnVectorArray();
@@ -77,48 +65,76 @@ public class UFO extends Model {
             Vector y = new Vector(new float[] {0,0,1});
             Vector dir = x.cross(y).normalise();
 
-            acceleration = dir.scalarMul(-gameHandler.thrustAccel * timeDelta);
+            acceleration = dir.scalarMul(-gameHandler.thrustAccel);
         }
         else {
             acceleration = new Vector(0f, 0, 0f);
         }
 
-        if(left) {
-//            if(curAngle < 85f) {
-                orientation = orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, gameHandler.turnVel * timeDelta));
-//            }
-//            else {
-//                orientation = orientation.multiply(Quaternion.getAxisAsQuat(0,0,1,-5));
-//            }
+        var angle = orientation.getPitchYawRoll();
+
+        if(left && !right) {
+            orientation = orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, gameHandler.turnVel));
+
+            if(angle.get(0) != 0f) {
+                orientation = orientation.multiply(Quaternion.getAxisAsQuat(0,0,1,-5));
+            }
+
         }
 
-        else if(right) {
-//            if(curAngle < 85f) {
-                orientation = orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -gameHandler.turnVel * timeDelta));
-//            }
-//            else {
-//                orientation = orientation.multiply(Quaternion.getAxisAsQuat(0,0,1,5));
-//            }
+        if(right && !left) {
+            orientation = orientation.multiply(Quaternion.getQuaternionFromEuler(0, 0, -gameHandler.turnVel));
+
+            if(angle.get(0) != 0f) {
+                orientation = orientation.multiply(Quaternion.getAxisAsQuat(0,0,1,5));
+            }
         }
 
-        acceleration = acceleration.add(new Vector(0f, -gameHandler.gravity*timeDelta, 0f));
+        acceleration = acceleration.add(new Vector(0f, -gameHandler.gravity, 0f));
         velocity = velocity.add(acceleration);
         pos = pos.add(velocity);
 
         selfRenderableReference.isDirty = true;
 
+        float curAngle = orientation.getAngleOfRotation();
+        var angleWithXAxis = Math.toRadians(xAxis.getAngleBetweenVectors(velocity));
+        var horizontalVel = velocity.getNorm() * Math.sin(angleWithXAxis);
+        var verticalVel =  velocity.getNorm() * Math.cos(angleWithXAxis);
+        var vertDirection = yAxis.dot(velocity.normalise());
+
+        fitness += 2f; // points for staying alive
+
+        if(horizontalVel < winMaxSpeed) {
+            fitness += 1;
+        }
+
+        if(verticalVel < winMaxSpeed) {
+            fitness += 1;
+        }
+
+        if(curAngle < winMaxAngle && verticalVel < winMaxSpeed) {
+            fitness += 2;
+        }
+
+        if(curAngle < winMaxAngle && verticalVel < winMaxSpeed && horizontalVel < winMaxSpeed) {
+            fitness += 5;
+        }
+
+        float distFromGround = (pos.get(1) - gameHandler.yBottom);
+        fitness += Math.min(2f, (gameHandler.yTop - gameHandler.yBottom)/distFromGround);
+
+        fitness += Math.min(2f, 90f/(90f-Math.max(curAngle, 0.01f)));
+
+        // Check for win or lose conditions
         if(pos.get(1) < gameHandler.yBottom) {
-
-            var angleWithXAxis = Math.toRadians(xAxis.getAngleBetweenVectors(velocity));
-            var horizontalVel = velocity.getNorm() * Math.sin(angleWithXAxis);
-            var verticalVel =  velocity.getNorm() * Math.cos(angleWithXAxis);
-            var vertDirection = yAxis.dot(velocity.normalise());
-
-            float curAngle = orientation.getAngleOfRotation();
 
             if(curAngle < winMaxAngle && horizontalVel < winMaxSpeed && (vertDirection >= 0 || verticalVel < winMaxSpeed)) {
                 landedSuccessfully = true;
-                timeTakenToLand = timeAlive;
+                framesTakenToLand = framesAlive;
+                fitness += 10000 + (gameHandler.framesPerRun - framesTakenToLand) * 100f;
+            }
+            else {
+                fitness-= 500;
             }
 
             hasRunEnded = true;
@@ -127,20 +143,17 @@ public class UFO extends Model {
         }
 
         if(pos.get(1) > gameHandler.yTop) {
-            pos.setDataElement(1, gameHandler.yTop - 0.2f);
-            velocity = new Vector(0,0,0);
+            fitness -= 1000;
             hasRunEnded = true;
         }
 
         if(pos.get(0) > gameHandler.xRight) {
-            pos.setDataElement(0, gameHandler.xRight - 0.2f);
-            velocity = new Vector(0,0,0);
+            fitness -= 1000;
             hasRunEnded = true;
         }
 
         if(pos.get(0) < gameHandler.xLeft) {
-            pos.setDataElement(0, gameHandler.xLeft + 0.2f);
-            velocity = new Vector(0,0,0);
+            fitness -= 1000;
             hasRunEnded = true;
         }
 

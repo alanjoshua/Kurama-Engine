@@ -1,8 +1,11 @@
 package main;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+
+import static Kurama.utils.Logger.log;
 
 public class LunarLanderES {
 
@@ -20,14 +23,20 @@ public class LunarLanderES {
     public float alpha;
     public int numIterations;
     public float mutationRate, crossOverRate;
-    public float convergenceTolerance = 0.01f;
-    public int convergenceCheckRate = 10;
-    float runningFitnessDiff;
-    float previousBestXY;
     public int currentGen = 0;
+    public List<float[]> population = new ArrayList<>();
     Random random;
+    public LunarLanderGame game;
+    List<Float> scores = new ArrayList<>();
+    float curHighestFitness = Float.NEGATIVE_INFINITY;
+    float[] curBest = null;
+    float averageScore = 0;
+    float totalFitness;
+    int cumCandidateEval = 0;
 
-    public class RepresentationSortable implements Comparable<RepresentationSortable> {
+    public boolean hasRunEnded = false;
+
+    public static class RepresentationSortable implements Comparable<RepresentationSortable> {
 
         public float[] representation;
         public float score;
@@ -42,7 +51,7 @@ public class LunarLanderES {
                 return 0;
             }
 
-            else if (score < o.score) {
+            else if (score > o.score) {
                 return 1;
             }
             else {
@@ -51,20 +60,99 @@ public class LunarLanderES {
         }
     }
 
-    public LunarLanderES(int lambda, int mu, int maxIterations, int convergenceRateCheck, float convergenceTolerance,
+    public LunarLanderES(LunarLanderGame game, int lambda, int mu, int maxIterations,
                          float mutationRate, float recombRate, float T, float epsilon, float alpha) {
         this.lambda = lambda;
         this.mu = mu;
-        this.convergenceTolerance = convergenceTolerance;
-        this.convergenceCheckRate = convergenceRateCheck;
         this.T = T;
         this.epsilon = epsilon;
         this.numIterations = maxIterations;
         this.alpha = alpha;
         this.mutationRate = mutationRate;
         this.crossOverRate = recombRate;
+        this.game = game;
 
         this.random = new Random();
+
+        initialisePopulation();
+    }
+
+    public List<float[]> iterate(List<RepresentationSortable> rankedChromosomes) {
+
+        if(currentGen >= numIterations) {
+            hasRunEnded = true;
+            return population;
+        }
+
+        //reset values;
+        scores.clear();
+        averageScore = 0;
+        totalFitness = 0;
+        curHighestFitness = Float.NEGATIVE_INFINITY;
+        curBest = null;
+
+        for(var chromosome: rankedChromosomes) {
+
+            scores.add(chromosome.score);
+            totalFitness += chromosome.score;
+
+            if(chromosome.score > curHighestFitness) {
+                curHighestFitness = chromosome.score;
+                curBest = chromosome.representation;
+            }
+        }
+
+        cumCandidateEval += population.size();
+        averageScore = totalFitness/(float)population.size();
+
+        // Select MU parents
+        var muParents = new ArrayList<float[]>();
+        for(int j = 0; j < mu; j++) {
+            muParents.add(rankedChromosomes.get(rankedChromosomes.size()-1-j).representation);
+        }
+
+        // Create children by first mutating parents
+        int numChildPerParent = lambda/mu;
+
+        var children = new ArrayList<float[]>();
+
+        for(var p: muParents) {
+            for(int __ = 0; __ < numChildPerParent; __++) {
+                children.add(mutate(p));
+            }
+        }
+
+        // Recomb children among themselves
+        Collections.shuffle(children); // To randomize pairing
+        var recombChildren = new ArrayList<float[]>();
+        for(int k = 0; k < children.size()/2; k++) {
+            var p1 = children.get(k * 2 + 0);
+            var p2 = children.get(k * 2 + 1);
+
+            recombChildren.addAll(recombination(p1, p2));
+        }
+
+        population = recombChildren;
+        currentGen++;
+
+        return population;
+    }
+
+    public void initialisePopulation() {
+        int numWeights = (game.layers[0] * game.layers[1]) + (game.layers[1] * game.layers[2]);
+
+        for(int i = 0; i < lambda; i++) {
+
+            float[] res = new float[numWeights * 2];
+            for(int j = 0; j < numWeights; j++) {
+                res[j] = random.nextFloat();
+
+                // Randomly initialize sigma to any value between epsilon to 5X of epsilon
+                res[res.length/2 + j] =  random.nextFloat(epsilon, epsilon*5);
+            }
+
+            population.add(res);
+        }
     }
 
     // BLX-α
@@ -112,27 +200,12 @@ public class LunarLanderES {
             }
         }
 
-
-
-        float x = gene[0];
-        float y = gene[1];
-        float sigma1 = gene[2];
-        float sigma2 = gene[3];
-
-        float sigma1P = (float) (sigma1 * Math.exp(random.nextGaussian(0, T)));
-        float sigma2P = (float) (sigma2 * Math.exp(random.nextGaussian(0, T)));
-
-        if(sigma1P < epsilon)
-            sigma1P = epsilon;
-
-        if(sigma2P < epsilon) {
-            sigma2P = epsilon;
+        // Calculate new weight values
+        for(int i = 0; i < gene.length/2; i++) {
+            res[i] = (float) random.nextGaussian(gene[i], res[gene.length/2 + i]);
         }
 
-        float xp = (float) random.nextGaussian(x, sigma1P);
-        float yp = (float) random.nextGaussian(y, sigma2P);
-
-        return new float[]{xp, yp, sigma1P, sigma2P};
+        return res;
     }
 
 }

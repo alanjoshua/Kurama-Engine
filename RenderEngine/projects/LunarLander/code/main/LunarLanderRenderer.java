@@ -122,7 +122,7 @@ public class LunarLanderRenderer extends VulkanRendererBase {
 
             bufferReader.unmapBuffer();
 
-            logPerSec("Rendered object count: " + objectRenderCount);
+//            logPerSec("Rendered object count: " + objectRenderCount);
 
             // Only for multiview
             currentMultiViewFrameIndex = (currentMultiViewFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -533,8 +533,6 @@ public class LunarLanderRenderer extends VulkanRendererBase {
 
         // Probably needs to be static, or better optimized. Will be done when Compute shaders are enabled
         var indirectBatches = compactDraws(renderables);
-
-        logPerSec("Num of indirect Batches: " + indirectBatches.size());
 
         int stride = VkDrawIndexedIndirectCommand.SIZEOF;
         for(var batch: indirectBatches) {

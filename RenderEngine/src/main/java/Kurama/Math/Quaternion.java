@@ -330,6 +330,7 @@ public class Quaternion {
 	}
 
 	public float getAngleOfRotation() {
+		this.normalise();
 		float angle = (float) (2 * Math.acos(this.coordinate.get(0)));
 		angle = (float) Math.toDegrees(angle);
 		return angle;
