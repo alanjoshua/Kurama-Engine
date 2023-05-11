@@ -14,11 +14,13 @@ import Kurama.inputs.InputLWJGL;
 import com.github.mreutegg.laszip4j.LASReader;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static Kurama.IOps.PointCloudWriter.writePointCloudToFile;
 import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.*;
 import static Kurama.utils.Logger.log;
@@ -144,6 +146,13 @@ public class PointCloudController extends Game {
 
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
+
+        try {
+            writePointCloudToFile("projects/PointCloud/models/test.pc",
+                    (PointCloud) renderer.models.get(0), renderer.globalVertAttribs, renderer.meshletToIndexMapping);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {

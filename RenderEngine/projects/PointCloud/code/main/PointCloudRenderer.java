@@ -577,7 +577,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 }
             }
 
-            MeshletGen.MeshletGenOutput results = null;
+            MeshletGen.MeshletGenOutput results;
             if(model instanceof PointCloud) {
                 log("Num of verts in this mesh before meshlet gen: "+ model.meshes.get(0).getVertices().size());
                 log("Starting to generating LOD hierarchy");
@@ -587,12 +587,6 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 log("done");
 
                 log("Deepest tree level = " + deepestLevel(root, 0));
-
-                var newVertsList = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
-
-                for(var key: meshAttribsToLoad) {
-                    newVertsList.put(key, new ArrayList<>());
-                }
 
                 int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
                 float avgNumVerts=0, averageDensity=0,averageRadius=0, minD=Float.POSITIVE_INFINITY, maxD=Float.NEGATIVE_INFINITY, minR=Float.POSITIVE_INFINITY, maxR=Float.NEGATIVE_INFINITY;
@@ -656,6 +650,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 }
                 averageDensity /= meshletsInOrder.size();
                 averageRadius /= meshletsInOrder.size();
+                ((PointCloud) model).vertexCount = (int) avgNumVerts;
                 avgNumVerts /= meshlets.size();
                 log("Average/min/max density of meshlets in the point cloud: " + averageDensity+ " " + minD + " " + maxD);
                 log("Average radius of meshlets in the point cloud: " + averageRadius+ " " + minR + " " + maxR);
@@ -663,6 +658,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
 //                log("Meshlet ID: 11456; depth= "+ meshlets.get(11456).treeDepth + " vertCount=" + meshlets.get(11456).vertexCount);
                 log("Ttoal num of meshlets = "+meshlets.size() + " other count=" + getNumMeshlets(root));
+
+                ((PointCloud) model).root = root;
             }
             else {
 
