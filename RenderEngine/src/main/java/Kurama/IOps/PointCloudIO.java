@@ -4,6 +4,7 @@ import Kurama.ComponentSystem.components.model.PointCloud;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
 import Kurama.Mesh.Meshlet;
+import main.PointCloudRenderer;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -16,10 +17,9 @@ import java.util.stream.Collectors;
 import static Kurama.Mesh.MeshletGen.getMeshletsInBFOrder;
 import static Kurama.utils.Logger.log;
 
-public class PointCloudWriter {
+public class PointCloudIO {
 
-    public static PointCloud loadPointCloud(String fileName, Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs,
-                                            HashMap<Meshlet, Integer> meshletToIndexMapping) {
+    public static PointCloud loadPointCloud(String fileName, PointCloudRenderer renderer) {
         return null;
     }
 
