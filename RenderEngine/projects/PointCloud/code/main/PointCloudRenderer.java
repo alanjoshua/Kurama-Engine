@@ -60,7 +60,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public boolean individualDepthLevelToggle = true;
     public boolean updateNumTreeDepthLevelsToRender = false;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
     public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
     public List<MeshletUpdateInfo> meshletsToBeUpdated = new ArrayList<>();
     public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();

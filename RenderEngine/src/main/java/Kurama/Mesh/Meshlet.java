@@ -16,6 +16,7 @@ public class Meshlet {
     public int treeDepth = -1;
     public Meshlet parent = null;
     public List<Meshlet> children = new ArrayList<>();
+    public List<Integer> childrenIndices = new ArrayList<>(); // Used temporarily while loading point cloud from file, deleted once the model has finished loading
     public boolean isRendered = false;
     public boolean areChildrenRendered = false;
 

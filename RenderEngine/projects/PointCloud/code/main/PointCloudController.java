@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static Kurama.IOps.PointCloudIO.loadPointCloud;
 import static Kurama.IOps.PointCloudIO.writePointCloudToFile;
 import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Mesh.MeshletGen.MeshletColorMode.*;
@@ -123,16 +124,22 @@ public class PointCloudController extends Game {
 //        createRoom();
 
 
-        Vector tl = new Vector(627772.4f, 1013350.6f);
-        Vector tr = new Vector(627906.9f, 1013343.1f);
-        Vector br = new Vector(627918.4f, 1013175.5f);
-        Vector bl = new Vector(627739.8f, 1013185.0f);
+//        Vector tl = new Vector(627772.4f, 1013350.6f);
+//        Vector tr = new Vector(627906.9f, 1013343.1f);
+//        Vector br = new Vector(627918.4f, 1013175.5f);
+//        Vector bl = new Vector(627739.8f, 1013185.0f);
 
-        createHead();
+//        createHead();
 //        loadLidar(10000000, tl, tr, br, bl);
-        renderer.createMeshletsAndSyncGeoData( 64);
+//        renderer.createMeshletsAndSyncGeoData( 64);
 
-        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
+//        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
+
+        var head = new PointCloud(this, new Mesh(null, null, null, null, "projects/PointCloud/models/test.pc", null), "head");
+        head.setScale(10);
+        renderer.addModel(head);
+
+        loadPointCloud("projects/PointCloud/models/test.pc", renderer);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, 0).boxed().toList());
@@ -147,12 +154,10 @@ public class PointCloudController extends Game {
         log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
 
-        try {
-            writePointCloudToFile("projects/PointCloud/models/test.pc",
-                    (PointCloud) renderer.models.get(0), renderer.globalVertAttribs, renderer.meshletToIndexMapping);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+//        writePointCloudToFile("projects/PointCloud/models/test.pc",
+//                    (PointCloud) renderer.models.get(0), renderer.globalVertAttribs, renderer.meshletToIndexMapping);
+
     }
 
     public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {
