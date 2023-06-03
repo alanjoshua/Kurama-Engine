@@ -12,6 +12,7 @@ import Kurama.ComponentSystem.components.model.Model;
 import Kurama.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Text extends Model {
@@ -114,9 +115,9 @@ public class Text extends Model {
         }
         float width = startx;
 
-        List<List<Vector>> vertAttribs = new ArrayList<>();
-        vertAttribs.add(positions);
-        vertAttribs.add(textCoords);
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, positions);
+        vertAttribs.put(Mesh.VERTATTRIB.TEXTURE, textCoords);
 
         Mesh res = new Mesh(null,faces,vertAttribs,null, null, null);
         res = MeshBuilder.triangulate(res,false, null);

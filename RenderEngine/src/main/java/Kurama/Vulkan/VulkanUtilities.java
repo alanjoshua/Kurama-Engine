@@ -14,20 +14,19 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
+import static Kurama.Mesh.Mesh.VERTATTRIB.NORMAL;
+import static Kurama.Mesh.Mesh.VERTATTRIB.TEXTURE;
 import static Kurama.utils.Logger.log;
+import static Kurama.utils.Logger.logError;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
-import static org.lwjgl.system.Configuration.DEBUG;
 import static org.lwjgl.system.MemoryStack.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
-import static org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
@@ -65,6 +64,23 @@ public class VulkanUtilities {
             vmaCreateImage(vmaAllocator, imageInfo, allocInfo, pImage, pAllocation, null);
 
             return new AllocatedImage(pImage.get(0), pAllocation.get(0));
+        }
+    }
+
+    public static void insertImageMemoryBarrier(VkCommandBuffer cmd, long image, int srcAccessMask, int dstAccessMask,
+                                                int oldImageLayout, int newImageLayout, int srcStageMask, int dstStageMask,
+                                                VkImageSubresourceRange subresourceRange) {
+        try (var stack = stackPush()) {
+            var imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+            imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+            imageBarrier.srcAccessMask(srcAccessMask);
+            imageBarrier.dstAccessMask(dstAccessMask);
+            imageBarrier.oldLayout(oldImageLayout);
+            imageBarrier.newLayout(newImageLayout);
+            imageBarrier.image(image);
+            imageBarrier.subresourceRange(subresourceRange);
+
+            vkCmdPipelineBarrier(cmd, srcStageMask, dstStageMask, 0, null, null, imageBarrier);
         }
     }
 
@@ -355,7 +371,6 @@ public class VulkanUtilities {
     }
 
     public static VkCommandPoolCreateInfo createCommandPoolCreateInfo(int queueFamilyIndex, int flags, MemoryStack stack) {
-        log("queue family index queue;: "+ queueFamilyIndex);
         VkCommandPoolCreateInfo info = VkCommandPoolCreateInfo.calloc(stack);
         info.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
         info.queueFamilyIndex(queueFamilyIndex);
@@ -443,7 +458,7 @@ public class VulkanUtilities {
     public static int findDepthFormat(VkPhysicalDevice physicalDevice) {
         return findSupportedFormat(
                 physicalDevice,
-                stackGet().ints(VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT),
+                stackGet().ints(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT),
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
@@ -477,9 +492,39 @@ public class VulkanUtilities {
     }
 
 
-    public static void memcpyInt(ByteBuffer buffer, List<Integer> indices) {
+    public static void memcpyInt(ByteBuffer buffer, List<Integer> data) {
+        int id = 0;
+        try {
+            for(int val : data) {
+                buffer.putInt(val);
+                id++;
+            }
+        }
+        catch (RuntimeException e) {
+            logError("memcpyInt failed at index: "+id);
+            throw e;
+        }
+    }
+    public static void memcpyInt(ByteBuffer buffer, int[] data) {
+        int id = 0;
+        try {
+            for(int val : data) {
+                buffer.putInt(val);
+                id++;
+            }
+        }
+        catch (RuntimeException e) {
+            logError("memcpyInt failed at index: "+id);
+            throw e;
+        }
+    }
+
+    public static void memcpyIntWithPadding(ByteBuffer buffer, List<Integer> indices) {
         for(int index : indices) {
             buffer.putInt(index);
+            buffer.putInt(0);
+            buffer.putInt(0);
+            buffer.putInt(0);
         }
     }
 
@@ -495,12 +540,12 @@ public class VulkanUtilities {
             buffer.putFloat(mesh.getVertices().get(i).get(1));
             buffer.putFloat(mesh.getVertices().get(i).get(2));
 
-            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(0));
-            buffer.putFloat(mesh.getAttributeList(Mesh.TEXTURE).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(TEXTURE).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(TEXTURE).get(i).get(1));
 
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(0));
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(1));
-            buffer.putFloat(mesh.getAttributeList(Mesh.NORMAL).get(i).get(2));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(0));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(1));
+            buffer.putFloat(mesh.getAttributeList(NORMAL).get(i).get(2));
         }
     }
 
@@ -641,6 +686,7 @@ public class VulkanUtilities {
                     .collect(toSet())
                     .containsAll(deviceExtensions);
         }
+//        return true;
     }
 
     public record SwapChainSupportDetails (VkSurfaceCapabilitiesKHR capabilities, VkSurfaceFormatKHR.Buffer formats, IntBuffer presentModes) { }

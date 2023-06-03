@@ -12,6 +12,9 @@ import static Kurama.Vulkan.ShaderSPIRVUtils.compileShaderFile;
 import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTMeshShader.VK_SHADER_STAGE_MESH_BIT_EXT;
+import static org.lwjgl.vulkan.EXTMeshShader.VK_SHADER_STAGE_TASK_BIT_EXT;
+import static org.lwjgl.vulkan.KHRDynamicRendering.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class PipelineBuilder {
@@ -32,6 +35,9 @@ public class PipelineBuilder {
         public ViewPort(float width, float height) {
             this(0f, 0f, width, height, 0f, 1f);
         }
+    }
+    public record ViewPortState(int viewPortCount, int scissorCount, int flags) {
+        public ViewPortState() {this(1,1,0);}
     }
     public record Scissor(int offsetX, int offsetY, VkExtent2D extent){
         public Scissor(VkExtent2D extent) {
@@ -91,8 +97,10 @@ public class PipelineBuilder {
     public VertexBindingDescription vertexBindingDescription;
     public List<VertexAttributeDescription> vertexAttributeDescriptions;
     public InputAssemblyCreateInfo inputAssemblyCreateInfo = new InputAssemblyCreateInfo();
-    public ViewPort viewport;
-    public Scissor scissor;
+    public ViewPort viewport = null;
+    public Scissor scissor = null;
+    public ViewPortState viewPortState = new ViewPortState();
+    public List<Integer> dynamicStates = new ArrayList<>();
     public PipelineRasterizationStateCreateInfo rasterizer = new PipelineRasterizationStateCreateInfo();
     public PipelineDepthStencilStateCreateInfo depthStencil = new PipelineDepthStencilStateCreateInfo();
     public PipelineColorBlendStateCreateInfo colorBlendAttach = new PipelineColorBlendStateCreateInfo();
@@ -100,7 +108,8 @@ public class PipelineBuilder {
     public PushConstant pushConstant;
     public long[] descriptorSetLayouts;
     public PipelineType pipelineType;
-    public enum PipelineType {COMPUTE, VERTEX_FRAGMENT};
+    public enum PipelineType {COMPUTE, GRAPHICS};
+    public Integer colorAttachmentImageFormat = null;
 
     public PipelineBuilder(PipelineType pipelineType) {
         super();
@@ -108,16 +117,10 @@ public class PipelineBuilder {
     }
 
     public PipelineBuilder() {
-        this.pipelineType = PipelineType.VERTEX_FRAGMENT;
+        this.pipelineType = PipelineType.GRAPHICS;
     }
 
-    private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, long renderPass) {
-        if(viewport == null) {
-            throw new IllegalArgumentException("Viewport cannot be null");
-        }
-        if(scissor == null) {
-            throw new IllegalArgumentException("Scissor cannot be null");
-        }
+    private PipelineLayoutAndPipeline buildVertexFragPipeline(VkDevice device, Long renderPass) {
 
         try(var stack = stackPush()) {
 
@@ -139,6 +142,12 @@ public class PipelineBuilder {
                         break;
                     case VK_SHADER_STAGE_FRAGMENT_BIT:
                         shaderKind = FRAGMENT_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_MESH_BIT_EXT:
+                        shaderKind = MESH_SHADER;
+                        break;
+                    case VK_SHADER_STAGE_TASK_BIT_EXT:
+                        shaderKind = TASK_SHADER;
                         break;
                 }
 
@@ -193,28 +202,51 @@ public class PipelineBuilder {
             }
 
             // ASSEMBLY STAGE
-            var inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
-            inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            inputAssembly.topology(inputAssemblyCreateInfo.topology);
-            inputAssembly.primitiveRestartEnable(inputAssemblyCreateInfo.primitiveRestartEnable);
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly = null;
+            if(inputAssemblyCreateInfo != null) {
+                inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
+                inputAssembly.sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+                inputAssembly.topology(inputAssemblyCreateInfo.topology);
+                inputAssembly.primitiveRestartEnable(inputAssemblyCreateInfo.primitiveRestartEnable);
+            }
 
             // VIEWPORT and SCISSOR
-            VkViewport.Buffer viewportBuffer = VkViewport.calloc(1, stack);
-            viewportBuffer.x(viewport.x);
-            viewportBuffer.y(viewport.y);
-            viewportBuffer.width(viewport.width);
-            viewportBuffer.height(viewport.height);
-            viewportBuffer.minDepth(viewport.minDepth);
-            viewportBuffer.maxDepth(viewport.maxDepth);
-
-            VkRect2D.Buffer scissorBuffer = VkRect2D.calloc(1, stack);
-            scissorBuffer.offset(VkOffset2D.calloc(stack).set(scissor.offsetX, scissor.offsetY));
-            scissorBuffer.extent(scissor.extent);
-
             VkPipelineViewportStateCreateInfo viewportState = VkPipelineViewportStateCreateInfo.calloc(stack);
             viewportState.sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            viewportState.pViewports(viewportBuffer);
-            viewportState.pScissors(scissorBuffer);
+            viewportState.flags(viewPortState.flags);
+
+            if(viewport != null) {
+                VkViewport.Buffer viewportBuffer = VkViewport.calloc(1, stack);
+                viewportBuffer.x(viewport.x);
+                viewportBuffer.y(viewport.y);
+                viewportBuffer.width(viewport.width);
+                viewportBuffer.height(viewport.height);
+                viewportBuffer.minDepth(viewport.minDepth);
+                viewportBuffer.maxDepth(viewport.maxDepth);
+
+                viewportState.pViewports(viewportBuffer);
+            }
+            else {
+                viewportState.viewportCount(viewPortState.viewPortCount);
+            }
+
+            if(scissor != null) {
+                VkRect2D.Buffer scissorBuffer = VkRect2D.calloc(1, stack);
+                scissorBuffer.offset(VkOffset2D.calloc(stack).set(scissor.offsetX, scissor.offsetY));
+                scissorBuffer.extent(scissor.extent);
+
+                viewportState.pScissors(scissorBuffer);
+            }
+            else {
+                viewportState.scissorCount(viewPortState.scissorCount);
+            }
+
+            VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = null;
+            if(dynamicStates.size() > 0) {
+                dynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo.calloc(stack);
+                dynamicStateCreateInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+                dynamicStateCreateInfo.pDynamicStates(stack.ints(dynamicStates.stream().mapToInt(i -> i).toArray()));
+            }
 
             // ===> RASTERIZATION STAGE <===
             var rasterizerInfo = VkPipelineRasterizationStateCreateInfo.calloc(stack);
@@ -239,10 +271,11 @@ public class PipelineBuilder {
 
             // ===> MULTISAMPLING <===
 
-            VkPipelineMultisampleStateCreateInfo multisampling = null;
+            var multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
+            multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+            multisampling.rasterizationSamples(1);
+
             if(multiSample != null) {
-                multisampling = VkPipelineMultisampleStateCreateInfo.calloc(stack);
-                multisampling.sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
                 multisampling.sampleShadingEnable(multiSample.sampleShadingEnabled);
                 multisampling.rasterizationSamples(multiSample.rasterizationSamples);
                 multisampling.minSampleShading(multiSample.minSampleShading);
@@ -289,22 +322,47 @@ public class PipelineBuilder {
             VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
             pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             pipelineInfo.pStages(shaderStagesBuffer);
-            pipelineInfo.pVertexInputState(vertexInputInfo);
-            pipelineInfo.pInputAssemblyState(inputAssembly);
+
+            if(vertexBindingDescription != null) {
+                pipelineInfo.pVertexInputState(vertexInputInfo);
+            }
+            else {
+                pipelineInfo.pVertexInputState(null);
+            }
+            if(inputAssemblyCreateInfo!= null) {
+                pipelineInfo.pInputAssemblyState(inputAssembly);
+            }
+            else {
+                pipelineInfo.pInputAssemblyState(null);
+            }
+
             pipelineInfo.pViewportState(viewportState);
             pipelineInfo.pRasterizationState(rasterizerInfo);
             pipelineInfo.pDepthStencilState(depthStencilInfo);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(pipelineLayout);
-            pipelineInfo.renderPass(renderPass);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
 
-            if(multiSample != null) {
-                pipelineInfo.pMultisampleState(multisampling);
+            if(dynamicStates.size() > 0) {
+                pipelineInfo.pDynamicState(dynamicStateCreateInfo);
             }
 
-            LongBuffer pGraphicsPipeline = stack.mallocLong(1);
+            if(renderPass == null) {
+                var renderingInfo = VkPipelineRenderingCreateInfoKHR.calloc(stack);
+                renderingInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR);
+                renderingInfo.pColorAttachmentFormats(stack.ints(colorAttachmentImageFormat));
+                pipelineInfo.pNext(renderingInfo);
+                pipelineInfo.renderPass(VK_NULL_HANDLE);
+            }
+            else{
+                pipelineInfo.renderPass(renderPass);
+                pipelineInfo.pNext(VK_NULL_HANDLE);
+            }
+
+            pipelineInfo.pMultisampleState(multisampling);
+
+            LongBuffer pGraphicsPipeline = stack.callocLong(1);
 
             if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create graphics pipeline");
@@ -340,16 +398,8 @@ public class PipelineBuilder {
                 var entryPoint = stack.UTF8(shader.entryPoint);
                 ShaderSPIRVUtils.ShaderKind shaderKind = null;
 
-                switch (shader.ShaderType) {
-                    case VK_SHADER_STAGE_VERTEX_BIT:
-                        shaderKind = VERTEX_SHADER;
-                        break;
-                    case VK_SHADER_STAGE_FRAGMENT_BIT:
-                        shaderKind = FRAGMENT_SHADER;
-                        break;
-                    case VK_SHADER_STAGE_COMPUTE_BIT:
-                        shaderKind = COMPUTE_SHADER;
-                        break;
+                if (shader.ShaderType == VK_SHADER_STAGE_COMPUTE_BIT) {
+                    shaderKind = COMPUTE_SHADER;
                 }
 
                 if(shaderKind == null) {
@@ -395,7 +445,7 @@ public class PipelineBuilder {
 
     public PipelineLayoutAndPipeline build(VkDevice device, Long renderPass) {
 
-        if(pipelineType == PipelineType.VERTEX_FRAGMENT) {
+        if(pipelineType == PipelineType.GRAPHICS) {
             return buildVertexFragPipeline(device, renderPass);
         }
 

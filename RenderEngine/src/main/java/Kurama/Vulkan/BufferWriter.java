@@ -2,10 +2,10 @@ package Kurama.Vulkan;
 
 import Kurama.Math.Matrix;
 import Kurama.Math.Vector;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.vmaMapMemory;
@@ -42,13 +42,26 @@ public class BufferWriter {
     public void put(Matrix data) {
         put(data.getData());
     }
+    public void put(Boolean data) {
+        buffer.put((byte) (data ? 1 : 0));
+    }
 
     public void put(int data) {
         buffer.putInt(data);
     }
 
+    public void putFloat(float data) {
+        buffer.putFloat(data);
+    }
+
     public void put(float data) {
         buffer.putFloat(data);
+    }
+
+    public void put(Vector data) {
+        for(var v: data.getData()) {
+            buffer.putFloat(v);
+        }
     }
 
     public void put(float[][] data) {

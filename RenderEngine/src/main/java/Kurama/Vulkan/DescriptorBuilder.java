@@ -9,7 +9,6 @@ import java.util.List;
 
 import static Kurama.Vulkan.VulkanUtilities.createWriteDescriptorSet;
 import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logError;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -19,6 +18,7 @@ public class DescriptorBuilder {
     private List<DescriptorBinding> bindings = new ArrayList<>();
     private DescriptorSetLayoutCache cache;
     private DescriptorAllocator allocator;
+    private boolean shouldSupportBindlessTextureArray = false;
     public record LayoutAndSet(long layout, long descriptorSet) {}
 
     public DescriptorBuilder(DescriptorSetLayoutCache layoutCache, DescriptorAllocator descAllocator) {
@@ -28,7 +28,11 @@ public class DescriptorBuilder {
 
     public LayoutAndSet build() {
 
-        var layout = cache.createDescriptorLayout(bindings);
+        if(shouldSupportBindlessTextureArray && !(allocator instanceof BindlessTextureDescriptorAllocator)) {
+            throw new IllegalArgumentException("If bindless texture support is required, please use a bindless descriptor allocator");
+        }
+
+        var layout = cache.createDescriptorLayout(bindings, shouldSupportBindlessTextureArray);
         var descriptorSet = allocator.allocate(layout);
 
         try (var stack = stackPush()) {
@@ -79,6 +83,14 @@ public class DescriptorBuilder {
 
         bindings.add(new DescriptorBinding(binding, descriptorType, stageFlags));
         writes.add(new DescriptorWrite(binding, descriptorType, imageInfo));
+        return this;
+    }
+
+    public DescriptorBuilder createBindlessTextureArray(int binding, int descriptorType, int stageFlags) {
+        if(!(allocator instanceof BindlessTextureDescriptorAllocator)) {
+            throw new IllegalArgumentException("Please use a bindless descriptor allocator to create a descriptor set with support for bindless texture arrays");
+        }
+        bindings.add(new DescriptorBinding(binding, descriptorType, stageFlags));
         return this;
     }
 

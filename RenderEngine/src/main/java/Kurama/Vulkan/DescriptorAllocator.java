@@ -5,22 +5,22 @@ import org.lwjgl.vulkan.*;
 import java.nio.LongBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 
-import static Kurama.Vulkan.VulkanUtilities.device;
 import static Kurama.Vulkan.VulkanUtilities.vkCheck;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTDescriptorIndexing.VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+import static org.lwjgl.vulkan.EXTDescriptorIndexing.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 import static org.lwjgl.vulkan.VK11.VK_ERROR_OUT_OF_POOL_MEMORY;
 
 public class DescriptorAllocator {
 
-    VkDevice device;
+    protected VkDevice device;
     public LinkedList<Long> freePools = new LinkedList<>();
     public LinkedList<Long> usedPools = new LinkedList<>();
 
-    private Long currentPool = null;
+    protected Long currentPool = null;
 
     public HashMap<Integer, Float> poolSizes = new HashMap<>();
 
@@ -78,7 +78,7 @@ public class DescriptorAllocator {
                 allocinfo.descriptorPool(currentPool);
 
                 // throw error if allocation still fails
-                vkCheck(vkAllocateDescriptorSets(device, allocinfo, pDescriptorSet));
+                VulkanUtilities.vkCheck(vkAllocateDescriptorSets(device, allocinfo, pDescriptorSet));
 
                 return pDescriptorSet.get(0);
             }
@@ -92,14 +92,15 @@ public class DescriptorAllocator {
 
     }
 
-    private long grabPool() {
+    protected long grabPool() {
 
         if(freePools.size() > 0) {
             return freePools.removeLast();
         }
 
         else {
-            return createPool(device, poolSizes, poolDescriptorCount, 0);
+            // VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT is required for supporting bindless textures
+            return createPool(device, poolSizes, poolDescriptorCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
         }
     }
 
@@ -132,7 +133,7 @@ public class DescriptorAllocator {
             poolInfo.flags(descriptorPoolCreateFlags);
 
             LongBuffer pDescriptorPool = stack.mallocLong(1);
-            vkCheck(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool));
+            VulkanUtilities.vkCheck(vkCreateDescriptorPool(device, poolInfo, null, pDescriptorPool));
 
             return pDescriptorPool.get(0);
         }

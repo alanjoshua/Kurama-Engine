@@ -73,9 +73,7 @@ public class StereoCamera extends Camera {
         leftWorldToCam = leftObjectToWorld.getInverse();
         rightWorldToCam = rightObjectToWorld.getInverse();
 
-        // Temporary, need to create one big frustum
         generateStereoFrustum();
-//        frustumIntersection.set(leftProjection.matMul(leftWorldToCam));
     }
 
     private void generateStereoFrustum() {

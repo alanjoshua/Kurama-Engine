@@ -34,5 +34,9 @@ public class RenderingEngineGL extends RenderingEngine {
         guiRenderPipeline.cleanUp();
     }
 
+    public void tick() {
+
+    }
+
 }
 

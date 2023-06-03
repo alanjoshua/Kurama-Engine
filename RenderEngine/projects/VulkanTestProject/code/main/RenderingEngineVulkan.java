@@ -211,36 +211,36 @@
 //
 //                Mesh previousMesh = null;
 //
-////                for(int i = 0; i < renderables.size(); i++) {
-////                    var renderable = renderables.get(i);
-////                    var model = renderable.model;
-////
-////                    if(previousMesh != renderable.mesh) {
-////                        LongBuffer offsets = stack.longs(0);
-////                        LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
-////                        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
-////                        vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-////                    }
-////                    previousMesh = renderable.mesh;
-////
-////                    MeshPushConstants pushConstant = new MeshPushConstants();
-////                    pushConstant.renderMatrix = model.objectToWorldMatrix;
-////
-////                    if(i == 0) {
-////                        pushConstant.data = new Vector(0f,0f,1f,1f);
-////                    }
-////                    else {
-////                        pushConstant.data = new Vector(1f,1f,0f,1f);
-////                    }
-////
-////                    vkCmdPushConstants(commandBuffer,
-////                            pipelineLayout,
-////                            VK_SHADER_STAGE_VERTEX_BIT,
-////                            0,
-////                            pushConstant.getAsFloatBuffer());
-////
-////                    vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
-////                }
+//                for(int i = 0; i < renderables.size(); i++) {
+//                    var renderable = renderables.get(i);
+//                    var model = renderable.model;
+//
+//                    if(previousMesh != renderable.mesh) {
+//                        LongBuffer offsets = stack.longs(0);
+//                        LongBuffer vertexBuffers = stack.longs(renderable.vertexBuffer.buffer);
+//                        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers, offsets);
+//                        vkCmdBindIndexBuffer(commandBuffer, renderable.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+//                    }
+//                    previousMesh = renderable.mesh;
+//
+//                    MeshPushConstants pushConstant = new MeshPushConstants();
+//                    pushConstant.renderMatrix = model.objectToWorldMatrix;
+//
+//                    if(i == 0) {
+//                        pushConstant.data = new Vector(0f,0f,1f,1f);
+//                    }
+//                    else {
+//                        pushConstant.data = new Vector(1f,1f,0f,1f);
+//                    }
+//
+//                    vkCmdPushConstants(commandBuffer,
+//                            pipelineLayout,
+//                            VK_SHADER_STAGE_VERTEX_BIT,
+//                            0,
+//                            pushConstant.getAsFloatBuffer());
+//
+//                    vkCmdDrawIndexed(commandBuffer, renderable.mesh.indices.size(), 1, 0, 0, i);
+//                }
 //            }
 //            vkCmdEndRenderPass(commandBuffer);
 //

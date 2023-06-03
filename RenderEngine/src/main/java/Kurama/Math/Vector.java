@@ -1,12 +1,16 @@
 package Kurama.Math;
 
+import Kurama.Mesh.MeshletGen;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Vector {
+import static Kurama.Mesh.MeshletGen.getMortonCode;
+
+public class Vector implements Comparable {
 
 	private float[] data;
 	private int numberOfDimensions;
@@ -15,7 +19,7 @@ public class Vector {
 		return numberOfDimensions;
 	}
 
-	public Vector(float[] data) {
+	public Vector(float... data) {
 		this.data = data;
 		this.numberOfDimensions = data.length;
 	}
@@ -605,4 +609,41 @@ public class Vector {
 		return res;
 	}
 
+	public float getMax() {
+		float curMax = Float.NEGATIVE_INFINITY;
+		for(var v: data) {
+			if (v > curMax)
+				curMax = v;
+		}
+		return curMax;
+	}
+	public float getMin() {
+		float curMin = Float.POSITIVE_INFINITY;
+		for(var v: data) {
+			if (v < curMin)
+				curMin = v;
+		}
+		return curMin;
+	}
+
+	@Override
+	public int compareTo(Object o) {
+
+		var v2 = (Vector) o;
+
+		if(v2.numberOfDimensions != this.numberOfDimensions) {
+			throw new IllegalArgumentException("It is illegal to compare vectors of different sizes");
+		}
+
+		var morton1 = getMortonCode(this);
+		var morton2 = getMortonCode(v2);
+
+		if (morton1 < morton2)
+			return -1;
+		else if (morton1 == morton2)
+			return 0;
+		else {
+			return 1;
+		}
+	}
 }

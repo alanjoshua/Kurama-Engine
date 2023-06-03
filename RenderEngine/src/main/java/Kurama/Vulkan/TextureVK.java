@@ -11,7 +11,6 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.function.Consumer;
 
-import static Kurama.Vulkan.VulkanUtilities.*;
 import static Kurama.Vulkan.VulkanUtilities.memcpy;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.stb.STBImage.*;
@@ -48,7 +47,7 @@ public class TextureVK extends Texture {
                 throw new RuntimeException("Failed to load texture image ");
             }
 
-            var stagingBuffer = createBufferVMA(vmaAllocator,
+            var stagingBuffer = VulkanUtilities.createBufferVMA(vmaAllocator,
                     imageSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
@@ -56,7 +55,7 @@ public class TextureVK extends Texture {
             PointerBuffer data = stack.mallocPointer(1);
             vmaMapMemory(vmaAllocator, stagingBuffer.allocation, data);
             {
-                memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
+                VulkanUtilities.memcpy(data.getByteBuffer(0, (int) imageSize), pixels, imageSize);
             }
             vmaUnmapMemory(vmaAllocator, stagingBuffer.allocation);
 
@@ -65,7 +64,7 @@ public class TextureVK extends Texture {
             int imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
             var extent = VkExtent3D.calloc(stack).width(pWidth.get(0)).height(pHeight.get(0)).depth(1);
 
-            var imageInfo = createImageCreateInfo(
+            var imageInfo = VulkanUtilities.createImageCreateInfo(
                     imageFormat,
                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                     extent,
@@ -79,12 +78,12 @@ public class TextureVK extends Texture {
                     .usage(VMA_MEMORY_USAGE_AUTO)
                     .requiredFlags(VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
-            texture.imageBuffer = createImage(imageInfo, memoryAllocInfo, vmaAllocator);
+            texture.imageBuffer = VulkanUtilities.createImage(imageInfo, memoryAllocInfo, vmaAllocator);
             texture.id = texture.imageBuffer.image;
 
             Consumer<VkCommandBuffer> transition_copyBuffer_generateMipMap = (cmd) -> {
 
-                transitionImageLayout(texture.imageBuffer.image,
+                VulkanUtilities.transitionImageLayout(texture.imageBuffer.image,
                         imageFormat,
                         VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -96,7 +95,7 @@ public class TextureVK extends Texture {
                 generateMipMaps(texture.imageBuffer.image, imageFormat, pWidth.get(0), pHeight.get(0), texture.mipLevels, physicalDevice, cmd);
 
             };
-            submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext);
+            VulkanUtilities.submitImmediateCommand(transition_copyBuffer_generateMipMap, singleTimeCommandContext);
 
            vmaDestroyBuffer(vmaAllocator, stagingBuffer.buffer, stagingBuffer.allocation);
         }
@@ -106,7 +105,7 @@ public class TextureVK extends Texture {
         try (var stack = stackPush()) {
 
             var viewInfo =
-                    createImageViewCreateInfo(
+                    VulkanUtilities.createImageViewCreateInfo(
                             VK_FORMAT_R8G8B8A8_SRGB,
                             texture.imageBuffer.image,
                             VK_IMAGE_ASPECT_COLOR_BIT,
@@ -115,7 +114,7 @@ public class TextureVK extends Texture {
                             VK_IMAGE_VIEW_TYPE_2D,
                             stack
                     );
-            texture.textureImageView = createImageView(viewInfo, device);
+            texture.textureImageView = VulkanUtilities.createImageView(viewInfo, VulkanUtilities.device);
         }
     }
 
@@ -142,7 +141,7 @@ public class TextureVK extends Texture {
 
             LongBuffer pTextureSampler = stack.mallocLong(1);
 
-            if(vkCreateSampler(device, samplerInfo, null, pTextureSampler) != VK_SUCCESS) {
+            if(VK10.vkCreateSampler(VulkanUtilities.device, samplerInfo, null, pTextureSampler) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create texture sampler");
             }
 
@@ -176,7 +175,6 @@ public class TextureVK extends Texture {
 
             int mipWidth = texWidth;
             int mipHeight = texHeight;
-            log("mipmap levels: "+mipLevels);
 
             for(int i = 1; i < mipLevels; i++) {
                 barrier.subresourceRange().baseMipLevel(i-1);

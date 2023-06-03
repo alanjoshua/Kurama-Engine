@@ -46,7 +46,7 @@ public class DisplayVulkan extends Display {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         // Create the window
-        window = glfwCreateWindow(defaultWindowedWidth, defaultWindowedHeight, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(defaultWindowedWidth, defaultWindowedHeight, game.name, NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 

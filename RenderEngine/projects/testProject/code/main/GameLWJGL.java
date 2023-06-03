@@ -494,7 +494,7 @@ public class GameLWJGL extends Game implements Runnable {
         hints.isInstanced = false;
 
         Texture cubeTexture = Texture.createTexture("res/misc/grassblock.png");
-        Material cubeMat = new Material(cubeTexture, "minecraftCubeMat");
+        Material cubeMat = new Material(cubeTexture, "cubeMat");
         cubeMat.diffuseMap = cubeMat.texture;
         cubeMat.specularMap = cubeMat.texture;
         cubeMat.specularPower = 10;
@@ -511,6 +511,7 @@ public class GameLWJGL extends Game implements Runnable {
                 Model cube = new Model(this,cubeMesh , "cube"+Utils.getUniqueID());
                 minecraftWall.addChild(cube);
                 cube.setPos(pos);
+//                cube.setOrientation(Quaternion.getAxisAsQuat(1,0,0,90));
                 cube.setScale(boxScale,boxScale,1);
                 scene.addModel(cube, Arrays.asList(new String[]{DefaultRenderPipeline.sceneShaderBlockID}));
             }

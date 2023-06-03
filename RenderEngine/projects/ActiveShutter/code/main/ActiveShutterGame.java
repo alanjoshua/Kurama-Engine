@@ -3,9 +3,11 @@ package main;
 import Kurama.ComponentSystem.components.model.Model;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
+import Kurama.Vulkan.Renderable;
+import Kurama.Vulkan.TextureVK;
 import Kurama.Mesh.Mesh;
+import Kurama.Mesh.Meshlet;
 import Kurama.Mesh.Texture;
-import Kurama.Vulkan.*;
 import Kurama.camera.StereoCamera;
 import Kurama.display.DisplayVulkan;
 import Kurama.game.Game;
@@ -15,7 +17,9 @@ import Kurama.inputs.InputLWJGL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static Kurama.Mesh.MeshletGen.*;
 import static Kurama.Vulkan.Renderable.getRenderablesFromModel;
+import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class ActiveShutterGame extends Game {
@@ -26,11 +30,6 @@ public class ActiveShutterGame extends Game {
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
     public boolean isGameRunning = true;
-
-    // This is a temporary visual to manually swap the rendered image between the left and right images
-    public float viewSwapInterval = 0.5f;
-    public float swapDelta = 0;
-    public int currentViewImage = 0;
 
     public List<Model> models = new ArrayList<>();
     public ActiveShutterRenderer renderer;
@@ -100,6 +99,7 @@ public class ActiveShutterGame extends Game {
         var textureDir = "projects/ActiveShutter/models/textures/";
 
         List<Mesh> meshes;
+        List<Meshlet> meshlets = new ArrayList<>();
 
         try {
             meshes = AssimpStaticLoader.load(location, textureDir);
@@ -109,9 +109,14 @@ public class ActiveShutterGame extends Game {
             for(var m: meshes) {
                 m.materials.get(0).texture = tex;
                 m.boundingRadius = 50;
+                log("Creating meshlets");
+                var results = generateMeshlets(m, 64);
+                log("Finished creating meshlets. Nul of meshlets: " + results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                meshlets.addAll(results.meshlets());
             }
         }
         catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalArgumentException("Could not load mesh");
         }
 
@@ -127,7 +132,15 @@ public class ActiveShutterGame extends Game {
             var tex = Texture.createTexture(textureDir + "viking_room.png");
             for(var m: meshes2) {
                 m.materials.get(0).texture = tex;
+                log("Creating meshlets");
+                var results = generateMeshlets(m, 64);
+                log("Finished creating meshlets. Nul of meshlets: "+ results.meshlets().size() + " for num of prims: "+ m.indices.size()/3);
+                for(var meshlet: results.meshlets()) {
+                    meshlet.vertexBegin += 124;
+                }
+                meshlets.addAll(results.meshlets());
             }
+            log("total num of meshlets in this scene = "+ meshlets.size());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -145,7 +158,6 @@ public class ActiveShutterGame extends Game {
         renderer.renderables.add(new Renderable(vikingRoom.meshes.get(0), vikingRoom));
 
         renderer.renderables.forEach(r -> {
-//            renderer.uploadMeshData(r);
             renderer.prepareTexture((TextureVK) r.getMaterial().texture);
             r.textureDescriptorSet = renderer.generateTextureDescriptorSet((TextureVK) r.getMaterial().texture);
 
@@ -189,14 +201,6 @@ public class ActiveShutterGame extends Game {
 
             // Call tick on all models
             models.forEach(m -> m.tick(null, input, timeDelta, false));
-
-            if(swapDelta >= viewSwapInterval) {
-                swapDelta = 0;
-                currentViewImage = (currentViewImage + 1) % 2;
-            }
-            else {
-                swapDelta += timeDelta;
-            }
 
         }
 

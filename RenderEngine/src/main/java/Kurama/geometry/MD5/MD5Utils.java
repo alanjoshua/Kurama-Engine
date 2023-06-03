@@ -10,7 +10,10 @@ import Kurama.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import static Kurama.Mesh.Mesh.VERTATTRIB.*;
 
 public class MD5Utils {
 
@@ -158,7 +161,7 @@ public class MD5Utils {
 //                Logger.log(normals.get(i));
             }
 
-            List<List<Vector>> vertAttribs = new ArrayList<>();
+            var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
             List<Material> mats = new ArrayList<>();
             mats.add(new Material());
             List<Vector> matList = new ArrayList<>();
@@ -193,12 +196,12 @@ public class MD5Utils {
             }
 
             Mesh m = new Mesh(indexList, mesh.triangles, vertAttribs, mats, null, null);
-            m.setAttribute(vertPositions, Mesh.POSITION);
-            m.setAttribute(textCoords, Mesh.TEXTURE);
-            m.setAttribute(normals, Mesh.NORMAL);
-            m.setAttribute(weightBiasesPerVert, Mesh.WEIGHTBIASESPERVERT);
-            m.setAttribute(jointIndicesPerVert, Mesh.JOINTINDICESPERVERT);
-            m.setAttribute(matList, Mesh.MATERIAL);
+            m.setAttribute(vertPositions, POSITION);
+            m.setAttribute(textCoords, TEXTURE);
+            m.setAttribute(normals, NORMAL);
+            m.setAttribute(weightBiasesPerVert, WEIGHTBIASESPERVERT);
+            m.setAttribute(jointIndicesPerVert, JOINTINDICESPERVERT);
+            m.setAttribute(matList, MATERIAL);
             m = MeshBuilder.bakeMesh(m, null);
 
             if(hints != null && hints.isInstanced) {

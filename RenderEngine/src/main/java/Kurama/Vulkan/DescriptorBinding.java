@@ -5,11 +5,21 @@ public class DescriptorBinding {
     int binding;
     int descriptorType;
     int stageFlags;
+    int descriptorCount = 1;
+    boolean isTextureArray = false;
 
     public DescriptorBinding(int binding, int descriptorType, int stageFlags) {
         this.binding = binding;
         this.descriptorType = descriptorType;
         this.stageFlags = stageFlags;
+    }
+
+    public DescriptorBinding(int binding, int descriptorType, int stageFlags, int descriptorCount, boolean isTextureArray) {
+        this.binding = binding;
+        this.descriptorType = descriptorType;
+        this.stageFlags = stageFlags;
+        this.descriptorCount = descriptorCount;
+        this.isTextureArray = isTextureArray;
     }
 
     @Override

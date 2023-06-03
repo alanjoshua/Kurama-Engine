@@ -1,0 +1,114 @@
+#version 450
+#extension GL_EXT_mesh_shader : require
+#extension GL_EXT_control_flow_attributes: require
+#define UNROLL_LOOP [[unroll]]
+
+layout (set = 0, binding = 0) uniform CameraBuffer
+{
+	mat4 projview;
+	mat4 view;
+	mat4 proj;
+    vec4 frustumPlanes[6];
+} camera;
+
+struct ObjectData {
+    mat4 model;
+    float scale;
+    vec3 _padding;
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+struct Vertex {
+    vec4 pos;
+    vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+};
+
+layout(std430, set = 0, binding = 2) readonly buffer VertexBuffer {
+    Vertex vertices[];
+}vertexBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer RenderStats
+{
+    int meshletDrawCount;
+    int meshletRemovedCount;
+    int meshletChildAddedCount;
+    int meshletChildrenRemovedCount;
+} renderStats;
+
+layout(set = 1, binding = 1) buffer RenderConfig {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
+    float desiredDensity;
+    int totalVertices;
+} renderConfig;
+
+struct Meshlet {
+    int vertexBegin;
+    int vertexCount;
+    int objectId;
+    float density;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    uint treeDepth;
+    float calculateDensity;
+    bool isChildrenRenderer;
+    uint parentInd;
+};
+
+layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout(points, max_vertices = 64, max_primitives = 64) out;
+
+layout(location = 0) out VertexOutput
+{
+	vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+} OUT[];
+
+struct Task {
+  uint subIDs[32];
+};
+
+taskPayloadSharedEXT Task task;
+
+
+void main()
+{
+    uint meshletID = task.subIDs[gl_WorkGroupID.x];
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
+	mat4 mvp = camera.projview * relatedModel.model;
+
+	uint laneID = gl_LocalInvocationID.x * 2;
+	uint finalVertId = curMeshlet.vertexBegin + laneID;
+
+    gl_MeshVerticesEXT[laneID].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+    gl_MeshVerticesEXT[laneID].gl_PointSize = 1;
+    OUT[laneID].color = vertexBuffer.vertices[finalVertId].color;
+    gl_PrimitivePointIndicesEXT[laneID] = finalVertId;
+
+    gl_MeshVerticesEXT[laneID+1].gl_Position = mvp * (vertexBuffer.vertices[finalVertId+1].pos);
+    gl_MeshVerticesEXT[laneID+1].gl_PointSize = 1;
+    OUT[laneID+1].color = vertexBuffer.vertices[finalVertId+1].color;
+    gl_PrimitivePointIndicesEXT[laneID+1] = finalVertId+1;
+
+    SetMeshOutputsEXT(curMeshlet.vertexCount, curMeshlet.vertexCount);
+
+}

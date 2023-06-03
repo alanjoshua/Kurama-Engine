@@ -37,6 +37,10 @@ public class RenderingEngineSR extends RenderingEngine {
 
     }
 
+    public void tick() {
+
+    }
+
     public RenderMultiplicationMode_Deprecated getRenderPipeline() {
         return renderMultiplicationModeDeprecated;
     }

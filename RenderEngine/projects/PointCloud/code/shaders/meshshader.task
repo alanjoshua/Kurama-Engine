@@ -1,0 +1,203 @@
+/* Copyright (c) 2021, Sascha Willems
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+#version 450
+#extension GL_EXT_mesh_shader : require
+#extension GL_KHR_shader_subgroup_ballot : require
+#extension GL_EXT_control_flow_attributes: require
+#define UNROLL_LOOP [[unroll]]
+
+struct ObjectData {
+    mat4 model;
+    float scale;
+    vec3 _padding;
+};
+
+layout (set = 0, binding = 0) uniform CameraBuffer
+{
+    mat4 projview;
+    mat4 view;
+    mat4 proj;
+    vec4 frustumPlanes[6];
+} camera;
+
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer RenderStats
+{
+    int meshletDrawCount;
+    int meshletRemovedCount;
+    int meshletChildAddedCount;
+    int meshletChildrenRemovedCount;
+} renderStats;
+
+layout(set = 1, binding = 1) buffer RenderConfig {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
+    float desiredDensity;
+} renderConfig;
+
+layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+layout(set = 1, binding = 3) writeonly buffer MeshletsToBeRemoved {
+    int array[];
+} meshletsToBeRemoved;
+
+layout(set = 1, binding = 4) writeonly buffer MeshletsChildrenAdded {
+    int array[];
+} meshletsChildrenAdded;
+
+layout(set = 1, binding = 5) writeonly buffer MeshletsChildrenToBeRemoved {
+    int array[];
+} meshletsChildrenToBeRemoved;
+
+struct Meshlet {
+    int vertexBegin;
+    int vertexCount;
+    int objectId;
+    float density;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    uint treeDepth;
+    float cumDensity; // cummulative upto here from previous frame
+    bool isChildrenRenderer;
+    uint parentInd;
+};
+
+layout(std430, set = 1, binding = 0) buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+layout(local_size_x=32) in;
+
+struct Task {
+    uint subIDs[32];
+};
+
+taskPayloadSharedEXT Task task;
+
+bool isWithinFrustum(vec4 pos, float radius) {
+    // Check sphere against frustum planes
+
+    UNROLL_LOOP
+    for (int i = 0; i < 6; i++) {
+
+        float dotProd = dot(pos, camera.frustumPlanes[i]);
+        if (dotProd + radius < 0.0) {
+            return false;
+        }
+
+    }
+    return true;
+}
+
+void removeChildren(int meshletID) {
+    int offset = atomicAdd(renderStats.meshletChildrenRemovedCount, 1);
+    meshletsChildrenToBeRemoved.array[offset] = meshletID;
+}
+
+void removeCurrentMeshlet(int meshletID) {
+    meshletsToBeRemoved.array[atomicAdd(renderStats.meshletRemovedCount, 1)] = meshletID;
+}
+
+void addChildren(int meshletID) {
+    int offset = atomicAdd(renderStats.meshletChildAddedCount, 1);
+    meshletsChildrenAdded.array[offset] = meshletID;
+}
+
+void main() {
+
+    if(gl_GlobalInvocationID.x >= renderConfig.meshletCount) {
+        return;
+    }
+
+    // Clear stats on first invocation
+    if (gl_GlobalInvocationID.x == 0) {
+        atomicExchange(renderStats.meshletDrawCount, 0);
+        atomicExchange(renderStats.meshletRemovedCount, 0);
+        atomicExchange(renderStats.meshletChildAddedCount, 0);
+        atomicExchange(renderStats.meshletChildrenRemovedCount, 0);
+    }
+
+    int meshletID = meshletsToBeDrawn.indices[int(gl_GlobalInvocationID.x)];
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    Meshlet parentMeshlet = meshletBuffer.meshlets[curMeshlet.parentInd];
+
+    ObjectData relatedModel = objectBuffer.objects[int(curMeshlet.objectId)];
+
+    vec3 pos = curMeshlet.bound.xyz;
+    float radius = curMeshlet.bound.w * relatedModel.scale;
+
+    mat4 mv = relatedModel.model;
+    vec4 transfPos = mv * vec4(pos.xyz, 1.0);
+
+    bool shouldRender = false;
+
+    shouldRender = isWithinFrustum(transfPos, radius);
+
+    uvec4 vote = subgroupBallot(shouldRender);
+    uint numMeshlets = subgroupBallotBitCount(vote);
+
+    if(shouldRender) {
+        uint idxOffset = subgroupBallotExclusiveBitCount(vote);
+        task.subIDs[idxOffset] = uint(meshletID);
+
+        atomicAdd(renderStats.meshletDrawCount, 1);
+
+//        if((renderStats.meshletChildrenRemovedCount + renderStats.meshletChildAddedCount + renderStats.meshletRemovedCount) < renderConfig.maxMeshletsToUpdate) {
+            float distToCamera = length((camera.view * transfPos).xyz);
+            float apparentRadius = radius / distToCamera;
+            float apparentDensity = float(curMeshlet.vertexCount) / ((4.0/3.0) * 3.14 * apparentRadius * apparentRadius * apparentRadius);// Prob wrong
+
+            float parentCumDensity = 0.0;
+            // not root
+            if(meshletID > 0) {
+                parentCumDensity = parentMeshlet.cumDensity;
+            }
+
+            float cumulativeDensity = apparentDensity + parentCumDensity;
+            meshletBuffer.meshlets[meshletID].cumDensity = cumulativeDensity;
+
+            if (cumulativeDensity < renderConfig.desiredDensity) {
+                if (!curMeshlet.isChildrenRenderer) {
+                    addChildren(meshletID);
+                    meshletBuffer.meshlets[meshletID].isChildrenRenderer = true;
+                }
+            }
+            else {
+                if (curMeshlet.isChildrenRenderer) {
+                    removeChildren(meshletID);
+                    meshletBuffer.meshlets[meshletID].isChildrenRenderer = false;
+                }
+            }
+
+//        }
+    }
+    else {
+//        if((renderStats.meshletChildrenRemovedCount + renderStats.meshletChildAddedCount + renderStats.meshletRemovedCount) < renderConfig.maxMeshletsToUpdate) {
+            // Dont remove root
+            if(meshletID != 0) {
+                removeCurrentMeshlet(meshletID);
+//                curMeshlet.isRendered = false;
+            }
+
+            if(curMeshlet.isChildrenRenderer) {
+                removeChildren(meshletID);
+                meshletBuffer.meshlets[meshletID].isChildrenRenderer = false;
+            }
+//        }
+
+    }
+
+    EmitMeshTasksEXT(numMeshlets, 1, 1);
+
+}

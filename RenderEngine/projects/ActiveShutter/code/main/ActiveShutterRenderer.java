@@ -16,11 +16,13 @@ import java.util.function.Consumer;
 
 import static Kurama.Vulkan.RenderUtils.compactDraws;
 import static Kurama.Vulkan.VulkanUtilities.*;
-import static Kurama.utils.Logger.log;
-import static Kurama.utils.Logger.logPerSec;
+import static Kurama.utils.Logger.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.vma.Vma.*;
+import static org.lwjgl.vulkan.KHRDynamicRendering.*;
+import static org.lwjgl.vulkan.KHRMultiview.VK_KHR_MULTIVIEW_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
+import static org.lwjgl.vulkan.KHRSynchronization2.VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO;
 import static org.lwjgl.vulkan.VK12.*;
@@ -28,8 +30,7 @@ import static org.lwjgl.vulkan.VK12.*;
 public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public int MAXOBJECTS = 10000;
-    public int MAXCOMMANDS = 10000;
-    public static final int MAX_FRAMES_IN_FLIGHT = 2;
+    public static final int MAX_FRAMES_IN_FLIGHT = 1;
     public AllocatedBuffer gpuSceneBuffer;
     public List<Long> imageInputDescriptorSets;
 
@@ -38,7 +39,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         public List<MultiViewRenderPassFrame> frames;
         public FrameBufferAttachment depthAttachment;
         public FrameBufferAttachment colorAttachment;
-        public long renderPass;
+        public long renderPass = VK_NULL_HANDLE;
         // Global Descriptor set contains the camera data and other scene parameters
         public long cameraAndSceneDescriptorSetLayout;
         public long computeDescriptorSetLayout;
@@ -58,12 +59,12 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     public GPUSceneData gpuSceneData;
     public ComputeUBOIn computeUBOIn = new ComputeUBOIn();
     public int multiViewNumLayers = 2;
-
     public boolean shouldUpdateGPUSceneBuffer = true;
     public int objectRenderCount;
 
     public ActiveShutterRenderer(Game game) {
         super(game);
+        DEVICE_EXTENSIONS.add(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     }
 
     public void render() {
@@ -91,10 +92,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             callCompute(curMultiViewFrame, stack);
-
-            prepareFrame();
             renderMultiViewFrame(curMultiViewFrame, stack);
 
+            prepareFrame();
             drawViewFrame(curMultiViewFrame.timeLineSemaphore, 0);
             submitFrame();
 
@@ -116,6 +116,10 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
+    public void tick() {
+
+    }
+
     // Update frustum whenever camera is updated
     public void cameraUpdatedEvent() {
         for(var frame: multiViewRenderPass.frames) {
@@ -125,7 +129,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         computeUBOIn.frustumPlanes = Arrays.asList(((ActiveShutterGame)game).mainCamera.frustumIntersection.planes);
     }
 
-    public void meshesMergedEvent() {
+    public void geometryUpdatedEvent() {
         computeUBOIn.objectCount = renderables.size();
         recordComputeCommandBuffers();
         int i = 0;
@@ -163,8 +167,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         deletionQueue.add(() -> multiViewRenderPass.frames.forEach(MultiViewRenderPassFrame::cleanUp));
 
         initPipelines();
-
-        deletionQueue.add(() -> cleanupSwapChainAndRelatedObjects());
     }
 
     public void initBuffers() {
@@ -187,7 +189,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
             frame.indirectCommandBuffer = createBufferVMA(
                     vmaAllocator,
-                    MAXCOMMANDS * VkDrawIndexedIndirectCommand.SIZEOF,
+                    MAXOBJECTS * VkDrawIndexedIndirectCommand.SIZEOF,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                     VMA_MEMORY_USAGE_AUTO,
                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
@@ -247,34 +249,67 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 
-            VkRenderPassBeginInfo renderPassInfo = VkRenderPassBeginInfo.calloc(stack);
-            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO);
-
-            renderPassInfo.renderPass(renderPass);
-
-            VkRect2D renderArea = VkRect2D.calloc(stack);
-            renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
-            renderArea.extent(swapChainExtent);
-            renderPassInfo.renderArea(renderArea);
-
-            VkClearValue.Buffer clearValues = VkClearValue.calloc(1, stack);
-            clearValues.get(0).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
-            renderPassInfo.pClearValues(clearValues);
-
             if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
-            renderPassInfo.framebuffer(frameBuffers.get(currentDisplayBufferIndex));
+            insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(currentDisplayBufferIndex).swapChainImage,
+                    0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VkImageSubresourceRange.calloc(stack)
+                            .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                            .baseMipLevel(0)
+                            .levelCount(1)
+                            .layerCount(1)
+                            .baseArrayLayer(0));
 
-            vkCmdBeginRenderPass(commandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            var colorAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
+            colorAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
+            colorAttachment.imageView(swapChainAttachments.get(currentDisplayBufferIndex).swapChainImageView);
+            colorAttachment.imageLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
+            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            colorAttachment.clearValue().color(VkClearValue.calloc(stack).color().float32(stack.floats(0.0f, 0.0f, 0.0f, 0.0f)));
+
+            var depthStencilAttachment = VkRenderingAttachmentInfoKHR.calloc(1, stack);
+            depthStencilAttachment.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR);
+            depthStencilAttachment.imageView(VK_NULL_HANDLE);
+
+            VkRect2D renderArea = VkRect2D.calloc(stack);
+            renderArea.offset(VkOffset2D.calloc(stack).set(0, 0));
+            renderArea.extent(swapChainExtent);
+
+            var renderingInfo = VkRenderingInfo.calloc(stack);
+            renderingInfo.sType(VK_STRUCTURE_TYPE_RENDERING_INFO_KHR);
+            renderingInfo.renderArea(renderArea);
+            renderingInfo.layerCount(1);
+            renderingInfo.pColorAttachments(colorAttachment);
+            renderingInfo.pDepthAttachment(depthStencilAttachment.get(0));
+            renderingInfo.pStencilAttachment(depthStencilAttachment.get(0));
+
+            vkCmdBeginRenderingKHR(commandBuffer, renderingInfo);
+
+            var viewportBuffer = VkViewport.calloc(1, stack);
+            viewportBuffer.width(swapChainExtent.width());
+            viewportBuffer.height(swapChainExtent.height());
+            viewportBuffer.minDepth(0.0f);
+            viewportBuffer.maxDepth(1.0f);
+
+            var scissorBuffer = VkRect2D.calloc(1, stack);
+            scissorBuffer.offset(VkOffset2D.calloc(stack).set(0, 0));
+            scissorBuffer.extent(swapChainExtent);
+
+            vkCmdSetViewport(commandBuffer, 0, viewportBuffer);
+            vkCmdSetScissor(commandBuffer, 0, scissorBuffer);
+
             {
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
                 // Bind color Attachment from previous multiview Renderpass as input
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         pipelineLayout, 0,
                         stack.longs(imageInputDescriptorSets.get(currentDisplayBufferIndex)), null);
-
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
                 vkCmdPushConstants(commandBuffer,
                         pipelineLayout,
@@ -284,10 +319,20 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
                 // Render a fullscreen triangle, so that the fragment shader is run for each pixel
                 vkCmdDraw(commandBuffer, 3, 1,0, 0);
-
             }
-            vkCmdEndRenderPass(commandBuffer);
 
+            vkCmdEndRenderingKHR(commandBuffer);
+
+            insertImageMemoryBarrier(commandBuffer, swapChainAttachments.get(currentDisplayBufferIndex).swapChainImage,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                    VkImageSubresourceRange.calloc(stack)
+                            .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                            .baseMipLevel(0)
+                            .levelCount(1)
+                            .layerCount(1)
+                            .baseArrayLayer(0));
 
             if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to record command buffer");
@@ -303,8 +348,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             for(int i = 0; i < multiViewRenderPass.frames.size(); i++) {
                 var frame = multiViewRenderPass.frames.get(i);
                 var commandBuffer = frame.computeCommandBuffer;
-
-//                vkCheck(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset compute command buffer");
 
                 VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
                 beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -391,6 +434,19 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
+            var viewportBuffer = VkViewport.calloc(1, stack);
+            viewportBuffer.width(swapChainExtent.width());
+            viewportBuffer.height(swapChainExtent.height());
+            viewportBuffer.minDepth(0);
+            viewportBuffer.maxDepth(1);
+
+            var scissorBuffer = VkRect2D.calloc(1, stack);
+            scissorBuffer.offset(VkOffset2D.calloc(stack).set(0, 0));
+            scissorBuffer.extent(swapChainExtent);
+
+            vkCmdSetViewport(commandBuffer, 0, viewportBuffer);
+            vkCmdSetScissor(commandBuffer, 0, scissorBuffer);
+
             // Acquire barrier
             // Add memory barrier to ensure that the indirect commands have been consumed before the compute shader updates them
             if(queueFamilyIndices.graphicsFamily != queueFamilyIndices.computeFamily) {
@@ -467,13 +523,13 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         logPerSec("Num of indirect Batches: " + indirectBatches.size());
 
+        int stride = VkDrawIndexedIndirectCommand.SIZEOF;
         for(var batch: indirectBatches) {
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     multiViewPipelineLayout, 2, stack.longs(renderables.get(batch.first).textureDescriptorSet), null);
 
             long offset = batch.first * VkDrawIndexedIndirectCommand.SIZEOF;
-            int stride = VkDrawIndexedIndirectCommand.SIZEOF;
 
             vkCmdDrawIndexedIndirect(commandBuffer, currentFrame.indirectCommandBuffer.buffer,
                     offset, batch.count, stride);
@@ -602,7 +658,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
     public void initRenderPasses() {
         createMultiViewRenderPass();
-        createViewRenderPass();
     }
 
     @Override
@@ -725,20 +780,8 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         }
     }
 
-    private void cleanupSwapChainAndRelatedObjects() {
-        frameBuffers.forEach(fb -> vkDestroyFramebuffer(device, fb, null));
+    public void swapChainRecreatedEvent() {
         vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
-
-        vkDestroyPipeline(device, multiViewGraphicsPipeline, null);
-        vkDestroyPipeline(device, graphicsPipeline, null);
-
-        vkDestroyPipelineLayout(device, multiViewPipelineLayout, null);
-        vkDestroyPipelineLayout(device, pipelineLayout, null);
-
-        vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null);
-        vkDestroyRenderPass(device, renderPass, null);
-
-        swapChainAttachments.forEach(attachment -> vkDestroyImageView(device, attachment.swapChainImageView, null));
 
         vkDestroyImageView(device, multiViewRenderPass.depthAttachment.imageView, null);
         vmaDestroyImage(vmaAllocator, multiViewRenderPass.depthAttachment.allocatedImage.image, multiViewRenderPass.depthAttachment.allocatedImage.allocation);
@@ -746,21 +789,10 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         vkDestroyImageView(device, multiViewRenderPass.colorAttachment.imageView, null);
         vmaDestroyImage(vmaAllocator, multiViewRenderPass.colorAttachment.allocatedImage.image, multiViewRenderPass.colorAttachment.allocatedImage.allocation);
 
-        vkDestroySwapchainKHR(device, swapChain, null);
-    }
-
-    public void swapChainRecreatedEvent() {
-        cleanupSwapChainAndRelatedObjects();
-
-        createSwapChain();
-        createSwapChainImageViews();
-
         createMultiViewColorAttachment();
         createMultiViewDepthAttachment();
-        initRenderPasses();
-        initDrawFrameBuffers();
+
         initMultiViewFrameBuffers();
-        initPipelines();
 
         updateViewRenderPassImageInputDescriptorSet();
 
@@ -910,51 +942,7 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             multiViewRenderPass.renderPass = pRenderPass.get(0);
-        }
-    }
-
-    public void createViewRenderPass() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            VkAttachmentDescription.Buffer attachments;
-            VkAttachmentReference.Buffer attachmentRefs;
-
-            attachments = VkAttachmentDescription.calloc(1, stack);
-            attachmentRefs = VkAttachmentReference.calloc(1, stack);
-
-            // Color attachment
-            var colorAttachment = attachments.get(0);
-            colorAttachment.format(swapChainImageFormat);
-            colorAttachment.samples(numOfSamples);
-            colorAttachment.loadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-            colorAttachment.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            colorAttachment.stencilLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR);
-            colorAttachment.stencilStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE);
-            colorAttachment.initialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-            colorAttachment.finalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-            var colorAttachmentRef = attachmentRefs.get(0);
-            colorAttachmentRef.attachment(0);
-            colorAttachmentRef.layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-            VkSubpassDescription.Buffer subpass = VkSubpassDescription.calloc(1, stack);
-            subpass.pipelineBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            subpass.colorAttachmentCount(1);
-            subpass.pColorAttachments(VkAttachmentReference.calloc(1, stack).put(0, colorAttachmentRef));
-
-            VkRenderPassCreateInfo renderPassInfo = VkRenderPassCreateInfo.calloc(stack);
-            renderPassInfo.sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO);
-            renderPassInfo.pAttachments(attachments);
-            renderPassInfo.pSubpasses(subpass);
-
-            LongBuffer pRenderPass = stack.mallocLong(1);
-
-            if(vkCreateRenderPass(device, renderPassInfo, null, pRenderPass) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create render pass");
-            }
-
-            renderPass = pRenderPass.get(0);
+            deletionQueue.add(() -> vkDestroyRenderPass(device, multiViewRenderPass.renderPass, null));
         }
     }
 
@@ -986,9 +974,9 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         builder.vertexAttributeDescriptions = attribs;
         builder.vertexBindingDescription = new PipelineBuilder.VertexBindingDescription(0, (3 + 2 + 3) * Float.BYTES, VK_VERTEX_INPUT_RATE_VERTEX);
-        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
-        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
         builder.inputAssemblyCreateInfo = new PipelineBuilder.InputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.vert", VK_SHADER_STAGE_VERTEX_BIT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/multiview.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -996,13 +984,17 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
 
         var pipeLineCreateResults = builder.build(device, multiViewRenderPass.renderPass);
         multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
+        multiViewPipelineLayout = pipeLineCreateResults.pipelineLayout();
         multiViewGraphicsPipeline = pipeLineCreateResults.pipeline();
+
+        deletionQueue.add(() -> vkDestroyPipeline(device, multiViewGraphicsPipeline, null));
+        deletionQueue.add(() -> vkDestroyPipelineLayout(device, multiViewPipelineLayout, null));
     }
 
     public void createViewGraphicsPipeline() {
         var builder = new PipelineBuilder();
-        builder.viewport = new PipelineBuilder.ViewPort(swapChainExtent.width(), swapChainExtent.height());
-        builder.scissor = new PipelineBuilder.Scissor(swapChainExtent);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
+        builder.dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.vert", VK_SHADER_STAGE_VERTEX_BIT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/ActiveShutterView.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
@@ -1010,10 +1002,14 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
         builder.pushConstant = new PipelineBuilder.PushConstant(0, Float.BYTES, VK_SHADER_STAGE_FRAGMENT_BIT);
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(false, false, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);
         builder.rasterizer = new PipelineBuilder.PipelineRasterizationStateCreateInfo(VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-        var pipeLineCreateResults = builder.build(device, renderPass);
+        builder.colorAttachmentImageFormat = swapChainImageFormat;
+        
+        var pipeLineCreateResults = builder.build(device, null);
         pipelineLayout = pipeLineCreateResults.pipelineLayout();
         graphicsPipeline = pipeLineCreateResults.pipeline();
+
+        deletionQueue.add(() -> vkDestroyPipeline(device, graphicsPipeline, null));
+        deletionQueue.add(() -> vkDestroyPipelineLayout(device, pipelineLayout, null));
     }
 
     public void initMultiViewFrameBuffers() {
@@ -1040,80 +1036,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             }
 
             multiViewRenderPass.frameBuffer = pFramebuffer.get(0);
-        }
-    }
-
-    public void createLogicalDevice() {
-        try(MemoryStack stack = stackPush()) {
-
-            QueueFamilyIndices indices = VulkanUtilities.findQueueFamilies(physicalDevice, surface);
-
-            queueFamilyIndices = indices;
-            int[] uniqueQueueFamilies = indices.unique();
-
-            VkDeviceQueueCreateInfo.Buffer queueCreateInfos = VkDeviceQueueCreateInfo.calloc(uniqueQueueFamilies.length, stack);
-
-            for(int i = 0;i < uniqueQueueFamilies.length;i++) {
-                VkDeviceQueueCreateInfo queueCreateInfo = queueCreateInfos.get(i);
-                queueCreateInfo.sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
-                queueCreateInfo.queueFamilyIndex(uniqueQueueFamilies[i]);
-                queueCreateInfo.pQueuePriorities(stack.floats(1.0f));
-            }
-
-            var deviceFeatures = VkPhysicalDeviceFeatures.calloc(stack);
-            deviceFeatures.samplerAnisotropy(true);
-            if(msaaEnabled) {
-                deviceFeatures.sampleRateShading(true);
-            }
-            if(deviceFeatures.multiDrawIndirect()) {
-                deviceFeatures.multiDrawIndirect(true);
-            }
-
-            var vkPhysicalDeviceVulkan11Features = VkPhysicalDeviceVulkan11Features.calloc(stack);
-            vkPhysicalDeviceVulkan11Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
-            vkPhysicalDeviceVulkan11Features.shaderDrawParameters(true);
-            vkPhysicalDeviceVulkan11Features.multiview(true);
-
-            var physicalDevice12Features = VkPhysicalDeviceVulkan12Features.calloc(stack);
-            physicalDevice12Features.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
-            physicalDevice12Features.timelineSemaphore(true);
-
-            VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
-
-            createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
-            createInfo.pQueueCreateInfos(queueCreateInfos);
-            createInfo.pNext(vkPhysicalDeviceVulkan11Features);
-            createInfo.pNext(physicalDevice12Features);
-            // queueCreateInfoCount is automatically set
-            createInfo.pEnabledFeatures(deviceFeatures);
-
-            createInfo.ppEnabledExtensionNames(VulkanUtilities.asPointerBuffer(DEVICE_EXTENSIONS));
-            if(ENABLE_VALIDATION_LAYERS) {
-                createInfo.ppEnabledLayerNames(VulkanUtilities.asPointerBuffer(VALIDATION_LAYERS));
-            }
-
-            PointerBuffer pDevice = stack.pointers(VK_NULL_HANDLE);
-
-            if(vkCreateDevice(physicalDevice, createInfo, null, pDevice) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create logical device");
-            }
-
-            device = new VkDevice(pDevice.get(0), physicalDevice, createInfo);
-            deletionQueue.add(() -> vkDestroyDevice(device, null));
-
-            PointerBuffer pQueue = stack.pointers(VK_NULL_HANDLE);
-
-            vkGetDeviceQueue(device, indices.graphicsFamily, 0, pQueue);
-            graphicsQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
-            presentQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.computeFamily, 0, pQueue);
-            computeQueue = new VkQueue(pQueue.get(0), device);
-
-            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
-            transferQueue = new VkQueue(pQueue.get(0), device);
         }
     }
 
@@ -1184,7 +1106,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
     }
 
     public void updateSceneGPUDataInMemory(int currentFrame) {
-
         var alignment = (int)padUniformBufferSize(GPUSceneData.SIZEOF, minUniformBufferOffsetAlignment);
         int bufferSize = alignment * MAX_FRAMES_IN_FLIGHT;
 
@@ -1334,7 +1255,6 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
             VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
             semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
 
-            // For multiview renderpass
             LongBuffer timeLineSemaphore = stack.mallocLong(1);
 
             var timelineCreateInfo = VkSemaphoreTypeCreateInfo.calloc(stack);
@@ -1347,37 +1267,25 @@ public class ActiveShutterRenderer extends VulkanRendererBase {
                 vkCheck(vkCreateSemaphore(device, semaphoreInfo, null, timeLineSemaphore));
                 multiViewRenderPass.frames.get(i).timeLineSemaphore = timeLineSemaphore.get(0);
             }
+        }
+    }
 
-            // Create fence and commandPool/buffer for immediate Graphics context
-            singleTimeGraphicsCommandContext = new SingleTimeCommandContext();
-            singleTimeGraphicsCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeGraphicsCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.graphicsFamily, 0, stack), stack);
-            singleTimeGraphicsCommandContext.queue = graphicsQueue;
-            var cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeGraphicsCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeGraphicsCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+    @Override
+    public void cleanUp() {
+        // Wait for the device to complete all operations before release resources
+        vkDeviceWaitIdle(device);
 
-            // Create fence and commandPool/buffer for immediate transfer context
-            singleTimeTransferCommandContext = new SingleTimeCommandContext();
-            singleTimeTransferCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeTransferCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.transferFamily, 0, stack), stack);
-            singleTimeTransferCommandContext.queue = transferQueue;
-            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeTransferCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeTransferCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+        vkDestroyFramebuffer(device, multiViewRenderPass.frameBuffer, null);
 
-            // Create fence and commandPool/buffer for immediate compute context
-            singleTimeComputeCommandContext = new SingleTimeCommandContext();
-            singleTimeComputeCommandContext.fence = createFence(VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO));
-            singleTimeComputeCommandContext.commandPool =  createCommandPool(device,
-                    createCommandPoolCreateInfo(queueFamilyIndices.computeFamily, 0, stack), stack);
-            singleTimeComputeCommandContext.queue = computeQueue;
-            cmdAllocInfo = createCommandBufferAllocateInfo(singleTimeComputeCommandContext.commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY, stack);
-            singleTimeComputeCommandContext.commandBuffer = createCommandBuffer(device, cmdAllocInfo, stack);
+        vkDestroyImageView(device, multiViewRenderPass.depthAttachment.imageView, null);
+        vmaDestroyImage(vmaAllocator, multiViewRenderPass.depthAttachment.allocatedImage.image, multiViewRenderPass.depthAttachment.allocatedImage.allocation);
 
-            deletionQueue.add(() -> singleTimeGraphicsCommandContext.cleanUp(device));
-            deletionQueue.add(() -> singleTimeComputeCommandContext.cleanUp(device));
-            deletionQueue.add(() -> singleTimeTransferCommandContext.cleanUp(device));
+        vkDestroyImageView(device, multiViewRenderPass.colorAttachment.imageView, null);
+        vmaDestroyImage(vmaAllocator, multiViewRenderPass.colorAttachment.allocatedImage.image, multiViewRenderPass.colorAttachment.allocatedImage.allocation);
+
+        cleanUpSwapChainAndSwapImages();
+        for(int i = deletionQueue.size()-1; i >= 0; i--) {
+            deletionQueue.get(i).run();
         }
     }
 

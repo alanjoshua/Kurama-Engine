@@ -26,15 +26,21 @@ public class ShaderSPIRVUtils {
 
     public static SPIRV compileShaderAbsoluteFile(String shaderFile, ShaderKind shaderKind) {
         try {
+
+            long options = shaderc_compile_options_initialize();
+            shaderc_compile_options_set_target_env(options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+            shaderc_compile_options_set_target_spirv(options, shaderc_spirv_version_1_4);
+            shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_performance);
+
             String source = new String(Files.readAllBytes(Paths.get(new URI(shaderFile))));
-            return compileShader(shaderFile, source, shaderKind);
+            return compileShader(shaderFile, source, shaderKind, options);
         } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static SPIRV compileShader(String filename, String source, ShaderKind shaderKind) {
+    public static SPIRV compileShader(String filename, String source, ShaderKind shaderKind, long options) {
 
         long compiler = shaderc_compiler_initialize();
 
@@ -42,7 +48,7 @@ public class ShaderSPIRVUtils {
             throw new RuntimeException("Failed to create shader compiler");
         }
 
-        long result = shaderc_compile_into_spv(compiler, source, shaderKind.kind, filename, "main", NULL);
+        long result = shaderc_compile_into_spv(compiler, source, shaderKind.kind, filename, "main", options);
 
         if(result == NULL) {
             throw new RuntimeException("Failed to compile shader " + filename + " into SPIR-V");
@@ -61,6 +67,8 @@ public class ShaderSPIRVUtils {
 
         VERTEX_SHADER(shaderc_glsl_vertex_shader),
         GEOMETRY_SHADER(shaderc_glsl_geometry_shader),
+        MESH_SHADER(shaderc_glsl_mesh_shader),
+        TASK_SHADER(shaderc_glsl_task_shader),
         FRAGMENT_SHADER(shaderc_glsl_fragment_shader),
         COMPUTE_SHADER(shaderc_glsl_compute_shader);
 
