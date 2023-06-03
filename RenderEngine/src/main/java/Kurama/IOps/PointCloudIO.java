@@ -20,13 +20,15 @@ import static Kurama.utils.Logger.log;
 
 public class PointCloudIO {
 
-    public static PointCloud loadPointCloud(String fileName, PointCloudRenderer renderer) {
+    public static PointCloud loadPointCloud(String fileName, PointCloudRenderer renderer, String name) {
 
         String currentlyReadingField = "";
 
         int meshletsIndOffset = renderer.meshlets.size();
         int vertexIndOffset = renderer.globalVertAttribs.get(POSITION).size();
         var meshlets = new ArrayList<Meshlet>();
+        int vertexCount = 0;
+        int maxVertsPerMeshlet = 0;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String curLine = null;
@@ -51,6 +53,7 @@ public class PointCloudIO {
                 if(currentlyReadingField == "POS") {
                     String[] tokens = curLine.split(" ");
                     renderer.globalVertAttribs.get(POSITION).add(new Vector(Float.valueOf(tokens[0]), Float.valueOf(tokens[1]), Float.valueOf(tokens[2])));
+                    vertexCount++;
                 }
                 else if(currentlyReadingField == "COLOR") {
                     String[] tokens = curLine.split(" ");
@@ -66,11 +69,16 @@ public class PointCloudIO {
                     newMeshlet.vertexBegin = Integer.valueOf(reader.readLine()) + vertexIndOffset;
                     newMeshlet.vertexCount = Integer.valueOf(reader.readLine());
 
+                    if(newMeshlet.vertexCount > maxVertsPerMeshlet) {
+                        maxVertsPerMeshlet = newMeshlet.vertexCount;
+                    }
+
                     var posTokens = reader.readLine().split(" ");
                     newMeshlet.pos = new Vector(new Vector(Float.valueOf(posTokens[0]), Float.valueOf(posTokens[1]), Float.valueOf(posTokens[2])));
 
                     newMeshlet.boundRadius = Float.valueOf(reader.readLine());
                     newMeshlet.treeDepth = Integer.valueOf(reader.readLine());
+                    newMeshlet.objectId = renderer.models.size();
 
                     var parentId = Integer.valueOf(reader.readLine()) + meshletsIndOffset;
 
@@ -110,7 +118,11 @@ public class PointCloudIO {
             throw new RuntimeException(e);
         }
 
-        return null;
+        var res = new PointCloud(renderer.controller, new Mesh(null, null, null, null, fileName, null), name, maxVertsPerMeshlet);
+        res.root = meshlets.get(0);
+        res.vertexCount = vertexCount;
+        renderer.addModel(res);
+        return res;
     }
 
     public static void writePointCloudToFile(String fileName, PointCloud pointCloud,

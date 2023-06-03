@@ -10,11 +10,14 @@ public class PointCloud extends Model {
 
     public Meshlet root;
     public int vertexCount;
-    public PointCloud(Game game, List<Mesh> meshes, String identifier) {
+    public int maxVertsPerMeshlet;
+    public PointCloud(Game game, List<Mesh> meshes, String identifier, int maxVertsPerMeshlet) {
         super(game, meshes, identifier);
+        this.maxVertsPerMeshlet = maxVertsPerMeshlet;
     }
 
-    public PointCloud(Game game, Mesh mesh, String identifier) {
+    public PointCloud(Game game, Mesh mesh, String identifier, int maxVertsPerMeshlet) {
         super(game, mesh, identifier);
+        this.maxVertsPerMeshlet = maxVertsPerMeshlet;
     }
 }

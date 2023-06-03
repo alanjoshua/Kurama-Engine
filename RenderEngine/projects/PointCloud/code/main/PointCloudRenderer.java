@@ -571,6 +571,8 @@ public class PointCloudRenderer extends VulkanRendererBase {
             log("model ind: "+modelInd);
             var model = models.get(modelInd);
 
+            if(model instanceof PointCloud && ((PointCloud)model).root != null) continue;
+
             for(var key: meshAttribsToLoad) {
                 if(!model.meshes.get(0).vertAttributes.containsKey(key)) {
                     throw new RuntimeException("Mesh "+ model.meshes.get(0).meshLocation + " does not have the required vertex attribute: "+ key);
@@ -579,87 +581,86 @@ public class PointCloudRenderer extends VulkanRendererBase {
 
             MeshletGen.MeshletGenOutput results;
             if(model instanceof PointCloud) {
-                log("Num of verts in this mesh before meshlet gen: "+ model.meshes.get(0).getVertices().size());
-                log("Starting to generating LOD hierarchy");
-                var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
-                log("Getting meshlets in BF order");
-                var meshletsInOrder = getMeshletsInBFOrder(root);
-                log("done");
+                PointCloud pointCloud = (PointCloud) model;
 
-                log("Deepest tree level = " + deepestLevel(root, 0));
+                // Must create the meshlet structures
+                if(pointCloud.root == null) {
 
-                int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
-                float avgNumVerts=0, averageDensity=0,averageRadius=0, minD=Float.POSITIVE_INFINITY, maxD=Float.NEGATIVE_INFINITY, minR=Float.POSITIVE_INFINITY, maxR=Float.NEGATIVE_INFINITY;
+                    var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
+                    var meshletsInOrder = getMeshletsInBFOrder(root);
 
-                for(var meshlet: meshletsInOrder) {
-                    meshlet.vertexBegin = vertexIndexOffset;
-                    meshlet.pos = new Vector(0,0,0);
-                    meshlet.vertexCount = meshlet.vertIndices.size();
-                    avgNumVerts += meshlet.vertexCount;
-                    var curBounds = new BoundValues();
+                    int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
+                    float avgNumVerts = 0, averageDensity = 0, averageRadius = 0, minD = Float.POSITIVE_INFINITY, maxD = Float.NEGATIVE_INFINITY, minR = Float.POSITIVE_INFINITY, maxR = Float.NEGATIVE_INFINITY;
 
-                    for(int i = 0; i < meshlet.vertIndices.size(); i++) {
-                        var vertInd = meshlet.vertIndices.get(i);
+                    for (var meshlet : meshletsInOrder) {
+                        meshlet.vertexBegin = vertexIndexOffset;
+                        meshlet.pos = new Vector(0, 0, 0);
+                        meshlet.vertexCount = meshlet.vertIndices.size();
+                        avgNumVerts += meshlet.vertexCount;
+                        var curBounds = new BoundValues();
 
-                        for(var key: meshAttribsToLoad) {
-                            globalVertAttribs.get(key).add(model.meshes.get(0).getAttributeList(key).get(vertInd));
+                        for (int i = 0; i < meshlet.vertIndices.size(); i++) {
+                            var vertInd = meshlet.vertIndices.get(i);
+
+                            for (var key : meshAttribsToLoad) {
+                                globalVertAttribs.get(key).add(model.meshes.get(0).getAttributeList(key).get(vertInd));
+                            }
+                            var v = model.meshes.get(0).getAttributeList(POSITION).get(vertInd);
+                            meshlet.pos = meshlet.pos.add(v);
+
+                            if (v.get(0) > curBounds.maxx)
+                                curBounds.maxx = v.get(0);
+                            if (v.get(1) > curBounds.maxy)
+                                curBounds.maxy = v.get(1);
+                            if (v.get(2) > curBounds.maxz)
+                                curBounds.maxz = v.get(2);
+
+                            if (v.get(0) < curBounds.minx)
+                                curBounds.minx = v.get(0);
+                            if (v.get(1) < curBounds.miny)
+                                curBounds.miny = v.get(1);
+                            if (v.get(2) < curBounds.minz)
+                                curBounds.minz = v.get(2);
                         }
-                        var v = model.meshes.get(0).getAttributeList(POSITION).get(vertInd);
-                        meshlet.pos = meshlet.pos.add(v);
 
-                        if (v.get(0) > curBounds.maxx)
-                            curBounds.maxx = v.get(0);
-                        if (v.get(1) > curBounds.maxy)
-                            curBounds.maxy = v.get(1);
-                        if (v.get(2) > curBounds.maxz)
-                            curBounds.maxz = v.get(2);
+                        meshlet.pos = meshlet.pos.scalarMul(1f / meshlet.vertexCount);
+                        meshlet.boundRadius = calculateBoundRadius(curBounds);
+                        meshlet.density = calculatePointCloudDensity(meshlet.boundRadius, meshlet.vertexCount);
 
-                        if (v.get(0) < curBounds.minx)
-                            curBounds.minx = v.get(0);
-                        if (v.get(1) < curBounds.miny)
-                            curBounds.miny = v.get(1);
-                        if (v.get(2) < curBounds.minz)
-                            curBounds.minz = v.get(2);
+                        averageDensity += meshlet.density;
+                        averageRadius += meshlet.boundRadius;
+
+                        if (meshlet.boundRadius < minR) {
+                            minR = meshlet.boundRadius;
+                        }
+                        if (meshlet.boundRadius > maxR) {
+                            maxR = meshlet.boundRadius;
+                        }
+                        if (meshlet.density < minD) {
+                            minD = meshlet.density;
+                        }
+                        if (meshlet.density > maxD) {
+                            maxD = meshlet.density;
+                        }
+
+                        meshlet.objectId = modelInd;
+
+                        meshlet.vertIndices = null;
+                        vertexIndexOffset += meshlet.vertexCount;
+                        addMeshlet(meshlet);
                     }
 
-                    meshlet.pos = meshlet.pos.scalarMul(1f/meshlet.vertexCount);
-                    meshlet.boundRadius = calculateBoundRadius(curBounds);
-                    meshlet.density = calculatePointCloudDensity(meshlet.boundRadius, meshlet.vertexCount);
-
-                    averageDensity += meshlet.density;
-                    averageRadius += meshlet.boundRadius;
-
-                    if(meshlet.boundRadius < minR) {
-                        minR = meshlet.boundRadius;
-                    }
-                    if(meshlet.boundRadius > maxR) {
-                        maxR = meshlet.boundRadius;
-                    }
-                    if(meshlet.density < minD) {
-                        minD = meshlet.density;
-                    }
-                    if(meshlet.density > maxD) {
-                        maxD = meshlet.density;
-                    }
-
-                    meshlet.objectId = modelInd;
-
-                    meshlet.vertIndices = null;
-                    vertexIndexOffset += meshlet.vertexCount;
-                    addMeshlet(meshlet);
+                    ((PointCloud) model).root = root;
                 }
-                averageDensity /= meshletsInOrder.size();
-                averageRadius /= meshletsInOrder.size();
-                ((PointCloud) model).vertexCount = (int) avgNumVerts;
-                avgNumVerts /= meshlets.size();
-                log("Average/min/max density of meshlets in the point cloud: " + averageDensity+ " " + minD + " " + maxD);
-                log("Average radius of meshlets in the point cloud: " + averageRadius+ " " + minR + " " + maxR);
-                log("Avg num of verts per meshlet: " + avgNumVerts);
 
-//                log("Meshlet ID: 11456; depth= "+ meshlets.get(11456).treeDepth + " vertCount=" + meshlets.get(11456).vertexCount);
-                log("Ttoal num of meshlets = "+meshlets.size() + " other count=" + getNumMeshlets(root));
+                // Point cloud model already contains the meshlet information, which means it has already been directly added to the renderer
+                else {
+//                    if(pointCloud.maxVertsPerMeshlet > maxVerts) {
+//                        throw new IllegalArgumentException("The Point Cloud "+pointCloud.identifier + " max vert param is greater than the Renderer's value of " + maxVerts);
+//                    }
 
-                ((PointCloud) model).root = root;
+//                    getMeshletsInBFOrder(pointCloud.root).forEach(m -> addMeshlet(m));
+                }
             }
             else {
 

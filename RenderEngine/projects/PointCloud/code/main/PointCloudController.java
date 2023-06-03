@@ -128,23 +128,22 @@ public class PointCloudController extends Game {
 //        Vector tr = new Vector(627906.9f, 1013343.1f);
 //        Vector br = new Vector(627918.4f, 1013175.5f);
 //        Vector bl = new Vector(627739.8f, 1013185.0f);
-
-//        createHead();
-//        loadLidar(10000000, tl, tr, br, bl);
-//        renderer.createMeshletsAndSyncGeoData( 64);
-
+//
+////        createHead();
+//        loadLidar(100000, tl, tr, br, bl);
 //        setMeshletColors(PerMeshlet, renderer.meshlets,renderer.globalVertAttribs);
 
-        var head = new PointCloud(this, new Mesh(null, null, null, null, "projects/PointCloud/models/test.pc", null), "head");
+//        var head = new PointCloud(this, new Mesh(null, null, null, null, "projects/PointCloud/models/test.pc", null), "head");
+//        head.setScale(10);
+//        renderer.addModel(head);
+        var head = loadPointCloud("projects/PointCloud/models/test.pc", renderer, "head");
         head.setScale(10);
-        renderer.addModel(head);
-
-        loadPointCloud("projects/PointCloud/models/test.pc", renderer);
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, 0).boxed().toList());
 //        renderer.curFrameMeshletsDrawIndices.forEach(i -> renderer.meshlets.get(i).isRendered = true);
 
+        renderer.createMeshletsAndSyncGeoData( 64);
         renderer.geometryUpdatedEvent();
 
 //           createMinecraftWorld();
@@ -162,7 +161,7 @@ public class PointCloudController extends Game {
 
     public void loadLidar(int numVerticesToLoad, Vector tl ,Vector tr, Vector br, Vector bl) {
         log("Loading LAZ file: ");
-        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
+        var lasReader = new LASReader(new File("C:\\Users\\alank\\Documents\\Lidar\\2022-09-14 lidar one\\YS-20220914-134052-20221122-130404.copc.laz"));
 //        var lasReader = new LASReader(new File("E:\\rich-lidar\\2022-09-15 lidar two\\YS-20220915-132041-20221122-144832.copc.laz"));
 
         List<Vector> lidarPoints;
@@ -239,7 +238,7 @@ public class PointCloudController extends Game {
         var lidarMesh = new Mesh(null, null, vertAttribs, null, "lidar", null);
         lidarMesh.boundingRadius = 100000;
 
-        var lidarModel = new PointCloud(this, lidarMesh, "lidarPointCloud");
+        var lidarModel = new PointCloud(this, lidarMesh, "lidarPointCloud", 64);
         lidarModel.setScale(scale);
 //        lidarModel.setPos(avgPos.scalarMul(1));
         lidarModel.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
@@ -306,7 +305,7 @@ public class PointCloudController extends Game {
         }
 
         //Add texture loc
-        var head = new PointCloud(this, meshes, "head");
+        var head = new PointCloud(this, meshes, "head", 64);
 //        vikingRoom.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
 //        vikingRoom.setPos(new Vector(0, 50, 0));
         head.setScale(10);
