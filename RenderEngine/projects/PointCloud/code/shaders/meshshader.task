@@ -7,7 +7,8 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
 #extension GL_KHR_shader_subgroup_ballot : require
-
+#extension GL_EXT_control_flow_attributes: require
+#define UNROLL_LOOP [[unroll]]
 
 struct ObjectData {
     mat4 model;
@@ -79,7 +80,6 @@ layout(std430, set = 1, binding = 0) buffer MeshletBuffer {
 layout(local_size_x=32) in;
 
 struct Task {
-    uint baseID;
     uint subIDs[32];
 };
 
@@ -87,11 +87,12 @@ taskPayloadSharedEXT Task task;
 
 bool isWithinFrustum(vec4 pos, float radius) {
     // Check sphere against frustum planes
+
+    UNROLL_LOOP
     for (int i = 0; i < 6; i++) {
 
         float dotProd = dot(pos, camera.frustumPlanes[i]);
         if (dotProd + radius < 0.0) {
-
             return false;
         }
 
@@ -149,7 +150,6 @@ void main() {
     if(shouldRender) {
         uint idxOffset = subgroupBallotExclusiveBitCount(vote);
         task.subIDs[idxOffset] = uint(meshletID);
-        task.baseID = gl_WorkGroupID.x;
 
         atomicAdd(renderStats.meshletDrawCount, 1);
 
@@ -198,10 +198,6 @@ void main() {
 
     }
 
-
-    if(gl_LocalInvocationID.x == 0) {
-        EmitMeshTasksEXT(numMeshlets, 1, 1);
-    }
-
+    EmitMeshTasksEXT(numMeshlets, 1, 1);
 
 }

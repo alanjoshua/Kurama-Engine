@@ -1,5 +1,7 @@
 #version 450
 #extension GL_EXT_mesh_shader : require
+#extension GL_EXT_control_flow_attributes: require
+#define UNROLL_LOOP [[unroll]]
 
 layout (set = 0, binding = 0) uniform CameraBuffer
 {
@@ -45,6 +47,7 @@ layout(set = 1, binding = 1) buffer RenderConfig {
     int numDepthLevelsToRender;
     bool shouldRenderIndividualDepthLevels;
     float desiredDensity;
+    int totalVertices;
 } renderConfig;
 
 struct Meshlet {
@@ -68,7 +71,7 @@ layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
 } meshletsToBeDrawn;
 
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 layout(points, max_vertices = 64, max_primitives = 64) out;
 
@@ -80,7 +83,6 @@ layout(location = 0) out VertexOutput
 } OUT[];
 
 struct Task {
-  uint baseID;
   uint subIDs[32];
 };
 
@@ -90,24 +92,22 @@ taskPayloadSharedEXT Task task;
 void main()
 {
     uint meshletID = task.subIDs[gl_WorkGroupID.x];
-
     Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
     ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
-
 	mat4 mvp = camera.projview * relatedModel.model;
 
-	for(int i = 0; i < curMeshlet.vertexCount; i++) {
-        int finalVertId = curMeshlet.vertexBegin + i;
+	uint laneID = gl_LocalInvocationID.x * 2;
+	uint finalVertId = curMeshlet.vertexBegin + laneID;
 
-        gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
-        gl_MeshVerticesEXT[i].gl_PointSize = 1;
+    gl_MeshVerticesEXT[laneID].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+    gl_MeshVerticesEXT[laneID].gl_PointSize = 1;
+    OUT[laneID].color = vertexBuffer.vertices[finalVertId].color;
+    gl_PrimitivePointIndicesEXT[laneID] = finalVertId;
 
-        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
-//        OUT[i].tex = vertexBuffer.vertices[finalVertId].tex;
-//        OUT[i]._padding = vertexBuffer.vertices[finalVertId]._padding;
-
-        gl_PrimitivePointIndicesEXT[i] = finalVertId;
-	}
+    gl_MeshVerticesEXT[laneID+1].gl_Position = mvp * (vertexBuffer.vertices[finalVertId+1].pos);
+    gl_MeshVerticesEXT[laneID+1].gl_PointSize = 1;
+    OUT[laneID+1].color = vertexBuffer.vertices[finalVertId+1].color;
+    gl_PrimitivePointIndicesEXT[laneID+1] = finalVertId+1;
 
     SetMeshOutputsEXT(curMeshlet.vertexCount, curMeshlet.vertexCount);
 

@@ -41,9 +41,9 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public long meshletDescriptorSetLayout;
 
     public PointCloudController controller;
-    public int MAXOBJECTS = 10000;
-    public int MAXVERTICES = 40000000;
-    public int MAXMESHLETS = 1000000;
+    public int MAXOBJECTS = 1000;
+    public int MAXVERTICES = 1280000;
+    public int MAXMESHLETS = 20000;
     public int MAXMESHLETUPDATESPERFRAME = 10000;
     public int MAXMESHLETSPERFRAME = MAXMESHLETS;
     public int GPUObjectData_SIZEOF = Float.BYTES * (16+4);
@@ -52,7 +52,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public List<Frame> frames = new ArrayList<>();
     public List<Meshlet> meshlets = new ArrayList<>();
     public HashMap<Meshlet, Integer> meshletToIndexMapping = new HashMap<>();
-    public int RENDERCONFIGSIZE = (Integer.BYTES * 4) + (Float.BYTES * 1);
+    public int RENDERCONFIGSIZE = (Integer.BYTES * 5) + (Float.BYTES * 1);
     public int RENDERSTATSOUTPUTSIZE = (Integer.BYTES * 4);
     int previousMeshletsDrawnCount = -1;
     public float desiredDensityThreshold = 2000;
@@ -708,6 +708,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 bw.put(numTreeDepthLevelsToRender);
                 bw.put(individualDepthLevelToggle?1: 0);
                 bw.put(desiredDensityThreshold);
+                bw.put(globalVertAttribs.get(POSITION).size());
                 bw.unmapBuffer();
             }
         }
@@ -979,11 +980,11 @@ public class PointCloudRenderer extends VulkanRendererBase {
                             VMA_ALLOCATION_CREATE_MAPPED_BIT
             );
 
-            // Initialize with 0s values
+            // Initialize with -1 values
             bw = new BufferWriter(vmaAllocator, frame.meshletsChildToBeAddedBuffer, Integer.BYTES, Integer.BYTES*MAXMESHLETSPERFRAME);
             bw.mapBuffer();
             for(int i = 0; i < MAXMESHLETSPERFRAME; i++) {
-                bw.put(0f);
+                bw.put(-1);
             }
             bw.unmapBuffer();
 

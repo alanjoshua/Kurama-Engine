@@ -143,7 +143,7 @@ public class PointCloudController extends Game {
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, 0).boxed().toList());
-        renderer.curFrameMeshletsDrawIndices.forEach(i -> renderer.meshlets.get(i).isRendered = true);
+//        renderer.curFrameMeshletsDrawIndices.forEach(i -> renderer.meshlets.get(i).isRendered = true);
 
         renderer.geometryUpdatedEvent();
 
