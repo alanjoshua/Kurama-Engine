@@ -96,18 +96,26 @@ void main()
     ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
 	mat4 mvp = camera.projview * relatedModel.model;
 
-	uint laneID = gl_LocalInvocationID.x * 2;
-	uint finalVertId = curMeshlet.vertexBegin + laneID;
+//	uint laneID = gl_LocalInvocationID.x * 2;
+//	uint finalVertId = curMeshlet.vertexBegin + laneID;
 
-    gl_MeshVerticesEXT[laneID].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
-    gl_MeshVerticesEXT[laneID].gl_PointSize = 1;
-    OUT[laneID].color = vertexBuffer.vertices[finalVertId].color;
-    gl_PrimitivePointIndicesEXT[laneID] = finalVertId;
+    for(uint i = 0; i < curMeshlet.vertexCount; i++) {
+        uint finalVertId = curMeshlet.vertexBegin + i;
+        gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+        gl_MeshVerticesEXT[i].gl_PointSize = 5;
+        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+        gl_PrimitivePointIndicesEXT[i] = finalVertId;
+    }
 
-    gl_MeshVerticesEXT[laneID+1].gl_Position = mvp * (vertexBuffer.vertices[finalVertId+1].pos);
-    gl_MeshVerticesEXT[laneID+1].gl_PointSize = 1;
-    OUT[laneID+1].color = vertexBuffer.vertices[finalVertId+1].color;
-    gl_PrimitivePointIndicesEXT[laneID+1] = finalVertId+1;
+//    gl_MeshVerticesEXT[laneID].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+//    gl_MeshVerticesEXT[laneID].gl_PointSize = 1;
+//    OUT[laneID].color = vertexBuffer.vertices[finalVertId].color;
+//    gl_PrimitivePointIndicesEXT[laneID] = finalVertId;
+//
+//    gl_MeshVerticesEXT[laneID+1].gl_Position = mvp * (vertexBuffer.vertices[finalVertId+1].pos);
+//    gl_MeshVerticesEXT[laneID+1].gl_PointSize = 1;
+//    OUT[laneID+1].color = vertexBuffer.vertices[finalVertId+1].color;
+//    gl_PrimitivePointIndicesEXT[laneID+1] = finalVertId+1;
 
     SetMeshOutputsEXT(curMeshlet.vertexCount, curMeshlet.vertexCount);
 

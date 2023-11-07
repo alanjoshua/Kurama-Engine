@@ -3,12 +3,12 @@
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$" dumb="true">
       <sourceFolder url="file://$MODULE_DIR$/Editor/editor" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/libraries/laszip4j/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/ActiveShutter/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/Anaglyph/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/PointCloud/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/VulkanTestProject/code" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projects/testProject/code" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/libraries/laszip4j/src/main/java" isTestSource="false" />
     </content>
   </component>
 </module>

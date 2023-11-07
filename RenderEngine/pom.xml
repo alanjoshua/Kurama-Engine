@@ -8,11 +8,10 @@
     <artifactId>KuramaEngine</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <lwjgl.version>3.3.2-SNAPSHOT</lwjgl.version>
-        <joml.version>1.10.5</joml.version>
+        <lwjgl.version>3.3.3</lwjgl.version>
         <lwjgl.natives>natives-windows</lwjgl.natives>
-        <maven.compiler.source>1.13</maven.compiler.source>
-        <maven.compiler.target>1.13</maven.compiler.target>
+<!--        <maven.compiler.source>1.13</maven.compiler.source>-->
+<!--        <maven.compiler.target>1.13</maven.compiler.target>-->
     </properties>
 
     <build>
@@ -20,34 +19,34 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>19</source>
-                    <target>19</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
         </plugins>
     </build>
 
-    <dependencyManagement>
-        <dependencies>
+<!--    <dependencyManagement>-->
+<!--        <dependencies>-->
 
-            <dependency>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <version>3.8.1</version>-->
+<!--            </dependency>-->
 
-            <dependency>
-                <groupId>org.lwjgl</groupId>
-                <artifactId>lwjgl-bom</artifactId>
-                <version>${lwjgl.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.lwjgl</groupId>-->
+<!--                <artifactId>lwjgl-bom</artifactId>-->
+<!--                <version>${lwjgl.version}</version>-->
+<!--                <scope>import</scope>-->
+<!--                <type>pom</type>-->
+<!--            </dependency>-->
 
-            <!-- https://mvnrepository.com/artifact/org.joml/joml -->
+<!--            &lt;!&ndash; https://mvnrepository.com/artifact/org.joml/joml &ndash;&gt;-->
 
-        </dependencies>
-    </dependencyManagement>
+<!--        </dependencies>-->
+<!--    </dependencyManagement>-->
 
     <repositories>
         <repository>
@@ -58,7 +57,26 @@
         </repository>
     </repositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.lwjgl</groupId>
+                <artifactId>lwjgl-bom</artifactId>
+                <version>${lwjgl.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.joml/joml -->
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>1.10.5</version>
+        </dependency>
+
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
@@ -85,11 +103,19 @@
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-freetype</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-harfbuzz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-hwloc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
@@ -252,12 +278,22 @@
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-freetype</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
             <classifier>${lwjgl.natives}</classifier>
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-harfbuzz</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-hwloc</artifactId>
             <classifier>${lwjgl.natives}</classifier>
         </dependency>
         <dependency>
@@ -419,17 +455,6 @@
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-zstd</artifactId>
             <classifier>${lwjgl.natives}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.joml</groupId>
-            <artifactId>joml</artifactId>
-            <version>${joml.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>RELEASE</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     

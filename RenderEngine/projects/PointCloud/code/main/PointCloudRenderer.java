@@ -12,7 +12,6 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
 import java.util.function.Consumer;
@@ -60,7 +59,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
     public boolean individualDepthLevelToggle = true;
     public boolean updateNumTreeDepthLevelsToRender = false;
     public Map<Mesh.VERTATTRIB, List<Vector>> globalVertAttribs = new HashMap<>();
-    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
+    public List<Mesh.VERTATTRIB> meshAttribsToLoad = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION));
     public List<Mesh.VERTATTRIB> meshAttribsToRender = new ArrayList<>(Arrays.asList(Mesh.VERTATTRIB.POSITION, COLOR));
     public List<MeshletUpdateInfo> meshletsToBeUpdated = new ArrayList<>();
     public List<ObjectDataUpdate> objectInfoToBeUpdated = new ArrayList<>();

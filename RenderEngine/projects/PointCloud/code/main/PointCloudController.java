@@ -5,6 +5,7 @@ import Kurama.ComponentSystem.components.model.PointCloud;
 import Kurama.Math.Quaternion;
 import Kurama.Math.Vector;
 import Kurama.Mesh.Mesh;
+import Kurama.Mesh.MeshletGen;
 import Kurama.Mesh.Texture;
 import Kurama.camera.Camera;
 import Kurama.display.DisplayVulkan;
@@ -14,16 +15,14 @@ import Kurama.inputs.InputLWJGL;
 import com.github.mreutegg.laszip4j.LASReader;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static Kurama.IOps.PointCloudIO.loadPointCloud;
-import static Kurama.IOps.PointCloudIO.writePointCloudToFile;
-import static Kurama.Mesh.MeshletGen.*;
-import static Kurama.Mesh.MeshletGen.MeshletColorMode.*;
+import static Kurama.Mesh.MeshletGen.mergeMeshes;
+import static Kurama.Mesh.MeshletGen.setMeshletColors;
 import static Kurama.utils.Logger.log;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
@@ -31,8 +30,8 @@ import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 public class PointCloudController extends Game {
 
     public PointCloudRenderer renderer;
-    public float mouseXSensitivity = 20f;
-    public float mouseYSensitivity = 20f;
+    public float mouseXSensitivity = 100f;
+    public float mouseYSensitivity = 100f;
     public float speed = 15f;
     public float speedMultiplier = 1;
     public float speedIncreaseMultiplier = 2;
@@ -136,21 +135,30 @@ public class PointCloudController extends Game {
 //        var head = new PointCloud(this, new Mesh(null, null, null, null, "projects/PointCloud/models/test.pc", null), "head");
 //        head.setScale(10);
 //        renderer.addModel(head);
-        var head = loadPointCloud("projects/PointCloud/models/test.pc", renderer, "head");
-        head.setScale(10);
+//
+//        var head = loadPointCloud("projects/PointCloud/models/test.pc", renderer, "head");
+//        head.setScale(10);
+
+
+        var hand = loadHand();
+        renderer.addModel(hand);
+//        hand.setScale(new Vector(10,10,10));
 
         renderer.models.forEach(m -> m.tick(null, input, timeDelta, false));
         renderer.curFrameMeshletsDrawIndices = new ArrayList<>(IntStream.rangeClosed(0, 0).boxed().toList());
 //        renderer.curFrameMeshletsDrawIndices.forEach(i -> renderer.meshlets.get(i).isRendered = true);
+//        renderer.
 
         renderer.createMeshletsAndSyncGeoData( 64);
+        setMeshletColors(MeshletGen.MeshletColorMode.PerMeshlet, renderer.meshlets, renderer.globalVertAttribs);
+
         renderer.geometryUpdatedEvent();
 
 //           createMinecraftWorld();
 
         log("vertex buffer count = " +renderer.globalVertAttribs.get(Mesh.VERTATTRIB.POSITION).size());
 
-        log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
+//        log(" num of total colors: "+ renderer.globalVertAttribs.get(Mesh.VERTATTRIB.COLOR).size());
         log("total num of meshlets: "+renderer.meshlets.size());
 
 
@@ -243,6 +251,59 @@ public class PointCloudController extends Game {
 //        lidarModel.setPos(avgPos.scalarMul(1));
         lidarModel.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
         renderer.addModel(lidarModel);
+    }
+
+    public PointCloud loadHand() {
+        var threshold = 0.3f;
+
+//        var data = "[87.0, -81.25, -166.0], [87.0, -75.0, -156.0], [97.0, -62.5, -166.0], [107.0, -31.25, -186.0], [97.0, -93.75, -166.0], [77.0, -68.75, -166.0], [87.0, -43.75, -166.0], [77.0, -43.75, -166.0], [117.0, -75.0, -176.0], [87.0, -75.0, -176.0], [87.0, -87.5, -166.0], [107.0, 31.25, -186.0], [97.0, -62.5, -166.0], [87.0, -68.75, -176.0], [87.0, -75.0, -186.0], [117.0, -31.25, -176.0], [97.0, -87.5, -166.0], [87.0, -50.0, -166.0], [97.0, -18.75, -176.0], [117.0, 18.75, -176.0], [357.0, 0.0, -246.0], [77.0, -78.58428955078125, -126.0], [97.0, -84.83428955078125, -136.0], [137.0, -78.58428955078125, -136.0], [167.0, -78.58428955078125, -166.0], [57.0, -84.83428955078125, -126.0], [57.0, -97.33428955078125, -136.0], [77.0, -116.08428955078125, -136.0], [127.0, -128.58428955078125, -146.0], [57.0, -72.33428955078125, -156.0], [57.0, -91.08428955078125, -156.0], [67.0, -116.08428955078125, -166.0], [117.0, -122.33428955078125, -176.0], [57.0, -72.33428955078125, -176.0], [57.0, -84.83428955078125, -176.0], [67.0, -109.83428955078125, -186.0], [117.0, -116.08428955078125, -196.0], [57.0, -78.58428955078125, -206.0], [67.0, -91.08428955078125, -216.0], [87.0, -97.33428955078125, -216.0], [117.0, -103.58428955078125, -216.0], [207.0, -84.83428955078125, -196.0]";
+//        var scoreData = "0.0055575598962605, 0.0081764692440629, 0.009658074006438255, 0.00853562168776989, 0.00835314579308033, 0.012276462279260159, 0.009069574996829033, 0.002978245262056589, 0.01668013259768486, 0.012600606307387352, 0.01906680129468441, 0.004842771682888269, 0.01292137335985899, 0.01605168916285038, 0.01967347227036953, 0.004534152802079916, 0.01017997320741415, 0.009401324205100536, 0.009820147417485714, 0.0027163391932845116, 0.0037745358422398567, 0.7456676959991455, 0.7165987491607666, 0.8160498738288879, 0.7610171437263489, 0.6264868378639221, 0.6894381642341614, 0.6975233554840088, 0.7961252331733704, 0.7905790209770203, 0.7951110005378723, 0.8550177216529846, 0.8426766991615295, 0.7840620279312134, 0.8113357424736023, 0.770899772644043, 0.7826843857765198, 0.7189541459083557, 0.7892793416976929, 0.7599977254867554, 0.8353912830352783, 0.9099342823028564";
+//
+
+//
+      var data = "[112.27734375, 37.5, -240.0234375], [577.62890625, -68.75, -693.12890625], [100.03125, -68.75, -240.0234375], [-144.890625, -18.75, -68.578125], [100.03125, -62.5, -252.26953125], [100.03125, -43.75, -240.0234375], [-95.90625, 75.0, -533.9296875], [100.03125, 43.75, -252.26953125], [577.62890625, -131.25, -693.12890625], [100.03125, 68.75, -252.26953125], [577.62890625, -6.25, -693.12890625], [234.73828125, 25.0, -693.12890625], [124.5234375, -125.0, -435.9609375], [-144.890625, -37.5, -484.9453125], [100.03125, 43.75, -252.26953125], [259.23046875, -31.25, -668.63671875], [100.03125, -87.5, -240.0234375], [100.03125, 0.0, -252.26953125], [357.19921875, -87.5, -497.19140625], [112.27734375, -87.5, -240.0234375], [393.9375, 0.0, -472.69921875], [173.5078125, 3.8511157035827637, -460.453125], [234.73828125, -108.64888763427734, -325.74609375], [357.19921875, -83.64888763427734, -435.9609375], [357.19921875, -21.148883819580078, -423.71484375], [283.72265625, -83.64888763427734, -325.74609375], [234.73828125, -52.39888381958008, -325.74609375], [283.72265625, -77.39888763427734, -325.74609375], [283.72265625, 41.35111618041992, -325.74609375], [283.72265625, -96.14888763427734, -325.74609375], [369.4453125, -77.39888763427734, -448.20703125], [283.72265625, -89.89888763427734, -325.74609375], [357.19921875, -64.89888763427734, -435.9609375], [295.96875, -89.89888763427734, -325.74609375], [357.19921875, -108.64888763427734, -435.9609375], [271.4765625, -64.89888763427734, -325.74609375], [357.19921875, -77.39888763427734, -448.20703125], [283.72265625, -21.148883819580078, -325.74609375], [357.19921875, -46.14888381958008, -582.9140625], [271.4765625, -21.148883819580078, -362.484375], [295.96875, 16.351116180419922, -325.74609375], [406.18359375, -2.3988842964172363, -484.9453125]";
+      var scoreData = "0.013422129675745964, 0.013395249843597412, 0.003688783384859562, 0.0022490171249955893, 0.003556072013452649, 0.0020106362644582987, 0.002490299753844738, 0.0015704560792073607, 0.002598994644358754, 0.005768058355897665, 0.0029140340629965067, 0.009226190857589245, 0.004275889601558447, 0.0021670132409781218, 0.0021472759544849396, 0.0017759008333086967, 0.002432356821373105, 0.002457666676491499, 0.0028732866048812866, 0.0018910232465714216, 0.029777206480503082, 0.0018886253237724304, 0.0012809495674446225, 0.002148487837985158, 0.0009929646039381623, 0.001166476053185761, 0.0009272891911678016, 0.00168671237770468, 0.009142383001744747, 0.000991216511465609, 0.0013484612572938204, 0.0013342387974262238, 0.0008502445998601615, 0.0010821056785061955, 0.0008418015204370022, 0.002683481201529503, 0.0013273871736600995, 0.001384675852023065, 0.0016466197557747364, 0.0018581525655463338, 0.0014233565889298916, 0.05070071294903755";
+
+        var points =
+                Arrays.stream(data.split("], "))
+                        .map(s -> new Vector(Arrays.stream(
+                                 s.replace("[","")
+                                  .replace("]","")
+                                 .split(", "))
+                                        .map(valstr -> Float.parseFloat(valstr))
+                                        .toList()
+                        ))
+                        .toList();
+        var scores = Arrays.stream(scoreData.split(", ")).map(s -> Float.parseFloat(s)).toList();
+
+        var average = new Vector(0,0,0);
+
+        List<Vector> newPoints = new ArrayList<Vector>();
+        for(int i = 0; i < 42; i++) {
+            if (scores.get(i) >= threshold || i >= 21) {
+                newPoints.add(points.get(i));
+                average = average.add(points.get(i));
+            }
+        }
+
+        Vector avg = average.scalarMul(1f/newPoints.size());
+
+        System.out.println("Num of joints = " + newPoints.size());
+
+       newPoints = newPoints.stream().map(p -> p.sub(avg)).toList();
+
+        var vertAttribs = new HashMap<Mesh.VERTATTRIB, List<Vector>>();
+        vertAttribs.put(Mesh.VERTATTRIB.POSITION, newPoints);
+
+        var lidarMesh = new Mesh(null, null, vertAttribs, null, "lidar", null);
+        lidarMesh.boundingRadius = 100;
+
+        var model = new PointCloud(this, lidarMesh, "Hand", 64);
+//        lidarModel.setPos(avgPos.scalarMul(1));
+//        model.orientation = Quaternion.getQuaternionFromEuler(-90, 0, 0);
+        renderer.addModel(model);
+
+        return model;
     }
 
     public void createRoom() {

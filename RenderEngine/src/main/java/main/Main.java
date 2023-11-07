@@ -1,13 +1,6 @@
 package main;
 
-import Kurama.Math.Vector;
 import Kurama.game.Game;
-import editor.Editor;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import static Kurama.utils.Logger.log;
 
 public class Main {
 
