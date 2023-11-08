@@ -1,0 +1,168 @@
+#version 450
+#extension GL_EXT_mesh_shader : require
+#extension GL_EXT_control_flow_attributes: require
+#define UNROLL_LOOP [[unroll]]
+
+layout (set = 0, binding = 0) uniform CameraBuffer
+{
+	mat4 projview;
+	mat4 view;
+	mat4 proj;
+    vec4 frustumPlanes[6];
+} camera;
+
+struct ObjectData {
+    mat4 model;
+    float scale;
+    vec3 _padding;
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer ObjectBuffer {
+    ObjectData objects[];
+}objectBuffer;
+
+struct Vertex {
+    vec4 pos;
+    vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+};
+
+layout(std430, set = 0, binding = 2) readonly buffer VertexBuffer {
+    Vertex vertices[];
+}vertexBuffer;
+
+// Binding 3: Indirect draw stats
+layout (set = 0, binding = 3) buffer RenderStats
+{
+    int meshletDrawCount;
+    int meshletRemovedCount;
+    int meshletChildAddedCount;
+    int meshletChildrenRemovedCount;
+} renderStats;
+
+layout(set = 1, binding = 1) buffer RenderConfig {
+    int meshletCount;
+    int maxMeshletsToUpdate;
+    int numDepthLevelsToRender;
+    bool shouldRenderIndividualDepthLevels;
+    float desiredDensity;
+    int totalVertices;
+} renderConfig;
+
+struct Meshlet {
+    int vertexBegin;
+    int vertexCount;
+    int objectId;
+    float density;
+    vec4 bound; //vec3 = pos, w = bound sphere radius
+    uint treeDepth;
+    float calculateDensity;
+    bool isChildrenRenderer;
+    uint parentInd;
+};
+
+layout(std430, set = 1, binding = 0) readonly buffer MeshletBuffer {
+    Meshlet meshlets[];
+} meshletBuffer;
+
+layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
+    int indices[];
+} meshletsToBeDrawn;
+
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout(lines, max_vertices = 64, max_primitives = 64) out;
+
+layout(location = 0) out VertexOutput
+{
+	vec4 color;
+//    vec2 tex;
+//    vec2 _padding;
+} OUT[];
+
+struct Task {
+  uint subIDs[32];
+};
+
+taskPayloadSharedEXT Task task;
+
+
+void main()
+{
+    uint meshletID = task.subIDs[gl_WorkGroupID.x];
+    Meshlet curMeshlet = meshletBuffer.meshlets[meshletID];
+    ObjectData relatedModel = objectBuffer.objects[curMeshlet.objectId];
+	mat4 mvp = camera.projview * relatedModel.model;
+
+//	uint laneID = gl_LocalInvocationID.x * 2;
+//	uint finalVertId = curMeshlet.vertexBegin + laneID;
+
+    for(uint i = 0; i < curMeshlet.vertexCount; i++) {
+        uint finalVertId = curMeshlet.vertexBegin + i;
+        gl_MeshVerticesEXT[i].gl_Position = mvp * (vertexBuffer.vertices[finalVertId].pos);
+        gl_MeshVerticesEXT[i].gl_PointSize = 5;
+//        OUT[i].color = vertexBuffer.vertices[finalVertId].color;
+        OUT[i].color = vec4(255,255,255,255);
+        if (i < 4) {
+            OUT[i].color = vec4(255,0,0,255);
+        }
+
+        else if (i < 8) {
+            OUT[i].color = vec4(0,255,0,255);
+        }
+
+        else if (i < 12)  {
+            OUT[i].color = vec4(0,0,255,255);
+        }
+
+        else if (i < 16) {
+            OUT[i].color = vec4(255,255,0,255);
+        }
+
+        else if (i < 20) {
+            OUT[i].color = vec4(0,255,255,255);
+        }
+
+//        if (i == 2) {
+//            OUT[i].color = vec4(0,0,255,255);
+//        }
+//
+       if(i == 20) {
+            OUT[i].color = vec4(0,0,0,255);
+        }
+    }
+
+    uint vertOffset = curMeshlet.vertexBegin;
+
+    gl_PrimitiveLineIndicesEXT[0] = uvec2(0,1);
+    gl_PrimitiveLineIndicesEXT[1] = uvec2(1,2);
+    gl_PrimitiveLineIndicesEXT[2] = uvec2(2,3);
+
+    gl_PrimitiveLineIndicesEXT[3] = uvec2(4,5);
+    gl_PrimitiveLineIndicesEXT[4] = uvec2(5,6);
+    gl_PrimitiveLineIndicesEXT[5] = uvec2(6,7);
+
+    gl_PrimitiveLineIndicesEXT[6] = uvec2(8,9);
+    gl_PrimitiveLineIndicesEXT[7] = uvec2(9,10);
+    gl_PrimitiveLineIndicesEXT[8] = uvec2(10,11);
+
+    gl_PrimitiveLineIndicesEXT[9] = uvec2(12,13);
+    gl_PrimitiveLineIndicesEXT[10] = uvec2(13,14);
+    gl_PrimitiveLineIndicesEXT[11] = uvec2(14,15);
+
+    gl_PrimitiveLineIndicesEXT[12] = uvec2(16,17);
+    gl_PrimitiveLineIndicesEXT[13] = uvec2(17,18);
+    gl_PrimitiveLineIndicesEXT[14] = uvec2(18,19);
+
+    gl_PrimitiveLineIndicesEXT[15] = uvec2(20,3);
+    gl_PrimitiveLineIndicesEXT[16] = uvec2(20,7);
+    gl_PrimitiveLineIndicesEXT[17] = uvec2(20,11);
+    gl_PrimitiveLineIndicesEXT[18] = uvec2(20,15);
+    gl_PrimitiveLineIndicesEXT[19] = uvec2(20,19);
+
+
+    SetMeshOutputsEXT(curMeshlet.vertexCount, 21);
+
+}

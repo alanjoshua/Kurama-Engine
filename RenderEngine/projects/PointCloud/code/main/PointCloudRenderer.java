@@ -585,7 +585,13 @@ public class PointCloudRenderer extends VulkanRendererBase {
                 // Must create the meshlet structures
                 if(pointCloud.root == null) {
 
-                    var root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
+                    Meshlet root = null;
+                    if (((PointCloud) model).shouldSortVertices) {
+                        root = genHierLODPointCloud(model.meshes.get(0), 64, 4);
+                    }
+                    else {
+                        root = genHierLODPointCloudWithoutSorting(model.meshes.get(0), 64, 4);
+                    }
                     var meshletsInOrder = getMeshletsInBFOrder(root);
 
                     int vertexIndexOffset = globalVertAttribs.get(POSITION).size();
@@ -1105,7 +1111,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
         builder.descriptorSetLayouts = new long[]{descriptorSet1Layout, meshletDescriptorSetLayout};
 
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.task", VK_SHADER_STAGE_TASK_BIT_EXT));
-        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.mesh", VK_SHADER_STAGE_MESH_BIT_EXT));
+        builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshaderLines.mesh", VK_SHADER_STAGE_MESH_BIT_EXT));
         builder.shaderStages.add(new PipelineBuilder.ShaderStageCreateInfo("shaders/meshshader.frag", VK_SHADER_STAGE_FRAGMENT_BIT));
 
         builder.depthStencil = new PipelineBuilder.PipelineDepthStencilStateCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL, false, false);

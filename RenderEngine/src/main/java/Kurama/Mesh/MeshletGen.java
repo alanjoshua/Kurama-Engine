@@ -161,6 +161,22 @@ public class MeshletGen {
         return (float) (numPoints/((4.0/3.0) * Math.PI * Math.pow(radius, 3)));
     }
 
+    public static Meshlet genHierLODPointCloudWithoutSorting(Mesh mesh, int maxVertsPerMeshlet, int maxChildrenPerLevel) {
+
+        // Index list of the sorted points
+//        var remainingVertIndices = sortedPoints.stream().map(p -> p.prevIndex).collect(Collectors.toList());
+        var remainingVertIndices = IntStream.rangeClosed(0, mesh.getVertices().size()-1).boxed().collect(Collectors.toList());
+
+        var rootMeshlet = new Meshlet();
+        rootMeshlet.parent = rootMeshlet;
+        rootMeshlet.treeDepth = 0;
+
+        // Recursively creates the hierarchy LOD structure, and all the info is stored in 'rootMeshlet'
+        log("Generating the actual heirarchy structure here");
+        return createHierarchyStructure(remainingVertIndices, rootMeshlet, maxChildrenPerLevel,
+                maxVertsPerMeshlet, 0);
+    }
+
     public static Meshlet genHierLODPointCloud(Mesh mesh, int maxVertsPerMeshlet, int maxChildrenPerLevel) {
 
 //        var sortedPoints = new ArrayList<PosWrapper>(mesh.getVertices().size());
