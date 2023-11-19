@@ -53,7 +53,7 @@ public class MeshletGen {
         }
     }
 
-    public static MeshletGenOutput generateMeshlets(Mesh mesh, int maxVerts) {
+    private static MeshletGenOutput generateMeshletsInner(Mesh mesh, int maxVerts, boolean shouldSortVertices) {
 
         if(maxVerts <= 0) {
             throw new IllegalArgumentException("Max Vertices per meshlet cannot be " + maxVerts);
@@ -82,7 +82,10 @@ public class MeshletGen {
             ind++;
         }
         boundValues.calculateRanges();
-        Collections.sort(sortedPoints);
+
+        if (shouldSortVertices) {
+            Collections.sort(sortedPoints);
+        }
 
         var meshlets = new ArrayList<Meshlet>();
         // Index list to resort the vertices before inserting into vertexbuffer
@@ -155,6 +158,14 @@ public class MeshletGen {
         meshlets.add(curMeshlet);
 
         return new MeshletGenOutput(meshlets, mesh, vertIndices);
+    }
+
+    public static MeshletGenOutput generateMeshlets(Mesh mesh, int maxVerts) {
+        return generateMeshletsInner(mesh, maxVerts, true);
+    }
+
+    public static MeshletGenOutput generateMeshlets(Mesh mesh, int maxVerts, boolean shouldSortVertices) {
+        return generateMeshletsInner(mesh, maxVerts, shouldSortVertices);
     }
 
     public static float calculatePointCloudDensity(float radius, int numPoints) {

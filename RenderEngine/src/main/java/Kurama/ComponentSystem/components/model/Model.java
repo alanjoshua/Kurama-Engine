@@ -20,6 +20,9 @@ public class Model extends SceneComponent {
 	public HashMap<String, List<Integer>> matAtlasOffset = new HashMap<>();  //List per mesh could only have a maximum of 8 mats.
 	//--------------------------------------------------------------------------------------------
 
+	// Useful when the user already knows that the point cloud is sorted, or is using the point cloud functionality for something else that does not require sorting
+	public boolean shouldSortVertices = false;
+
 	public Model(Game game, List<Mesh> meshes, String identifier) {
 		super(game, null, identifier);
 		this.meshes = meshes;

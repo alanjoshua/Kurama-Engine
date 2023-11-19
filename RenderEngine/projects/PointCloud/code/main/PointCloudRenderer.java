@@ -669,7 +669,7 @@ public class PointCloudRenderer extends VulkanRendererBase {
             }
             else {
 
-                results = generateMeshlets(model.meshes.get(0), maxVerts);
+                results = generateMeshlets(model.meshes.get(0), maxVerts, model.shouldSortVertices);
 
                 var vertIndexOffset = globalVertAttribs.get(POSITION).size();
                 for(var meshlet: results.meshlets()) {

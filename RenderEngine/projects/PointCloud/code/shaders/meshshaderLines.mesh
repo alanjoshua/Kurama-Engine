@@ -71,9 +71,9 @@ layout(set = 1, binding = 2) readonly buffer MeshletsToBeDrawn {
 } meshletsToBeDrawn;
 
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout(lines, max_vertices = 64, max_primitives = 64) out;
+layout(lines, max_vertices = 21, max_primitives = 21) out;
 
 layout(location = 0) out VertexOutput
 {
@@ -156,11 +156,11 @@ void main()
     gl_PrimitiveLineIndicesEXT[13] = uvec2(17,18);
     gl_PrimitiveLineIndicesEXT[14] = uvec2(18,19);
 
-    gl_PrimitiveLineIndicesEXT[15] = uvec2(20,3);
-    gl_PrimitiveLineIndicesEXT[16] = uvec2(20,7);
-    gl_PrimitiveLineIndicesEXT[17] = uvec2(20,11);
-    gl_PrimitiveLineIndicesEXT[18] = uvec2(20,15);
-    gl_PrimitiveLineIndicesEXT[19] = uvec2(20,19);
+    gl_PrimitiveLineIndicesEXT[15] = uvec2(20,0);
+    gl_PrimitiveLineIndicesEXT[16] = uvec2(20,4);
+    gl_PrimitiveLineIndicesEXT[17] = uvec2(20,8);
+    gl_PrimitiveLineIndicesEXT[18] = uvec2(20,12);
+    gl_PrimitiveLineIndicesEXT[19] = uvec2(20,16);
 
 
     SetMeshOutputsEXT(curMeshlet.vertexCount, 21);
